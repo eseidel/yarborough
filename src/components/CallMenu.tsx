@@ -1,5 +1,5 @@
-import type { CallInterpretation } from '../bridge';
-import { CallDisplay } from './CallDisplay';
+import type { CallInterpretation } from "../bridge";
+import { CallDisplay } from "./CallDisplay";
 
 export function CallMenu({
   interpretations,
@@ -20,8 +20,12 @@ export function CallMenu({
             <CallDisplay call={interp.call} />
           </div>
           <div>
-            {interp.ruleName && <div className="font-semibold text-sm">{interp.ruleName}</div>}
-            {interp.description && <div className="text-sm text-gray-500">{interp.description}</div>}
+            {interp.ruleName && (
+              <div className="font-semibold text-sm">{interp.ruleName}</div>
+            )}
+            {interp.description && (
+              <div className="text-sm text-gray-500">{interp.description}</div>
+            )}
             {!interp.ruleName && !interp.description && (
               <div className="text-sm text-gray-400">Unknown</div>
             )}

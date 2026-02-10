@@ -100,7 +100,11 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn new(dealer: Position, vulnerability: Vulnerability, hands: HashMap<Position, Hand>) -> Self {
+    pub fn new(
+        dealer: Position,
+        vulnerability: Vulnerability,
+        hands: HashMap<Position, Hand>,
+    ) -> Self {
         Self {
             dealer,
             vulnerability,

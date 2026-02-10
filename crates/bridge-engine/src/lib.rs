@@ -60,14 +60,14 @@ pub fn get_interpretations(calls_string: &str, dealer: &str) -> JsValue {
     serde_wasm_bindgen::to_value(&interpretations).unwrap()
 }
 
-mod schema;
 mod engine;
+mod schema;
 
 use engine::Engine;
 use schema::System;
 
 /// Receives a board and auction state in the "identifier" format
-/// and returns the next bid. 
+/// and returns the next bid.
 /// Uses the SAYC bidding engine.
 #[wasm_bindgen]
 pub fn get_next_bid(identifier: &str) -> String {
@@ -83,8 +83,8 @@ pub fn get_next_bid(identifier: &str) -> String {
 
     let current_player = auction.current_player();
     let hand = match board.hands.get(&current_player) {
-         Some(h) => h,
-         None => return "P".to_string(), // Should not happen if board is valid
+        Some(h) => h,
+        None => return "P".to_string(), // Should not happen if board is valid
     };
 
     // Load constraints
@@ -98,8 +98,8 @@ pub fn get_next_bid(identifier: &str) -> String {
             call.render()
         }
         None => {
-             // Fallback: mostly pass if no rule matches
-             "P".into()
+            // Fallback: mostly pass if no rule matches
+            "P".into()
         }
     }
 }
@@ -114,11 +114,11 @@ mod tests {
         // North has 40 HCP (all high cards).
         // SAYC "Strong 2C" rule requires 22+ HCP.
         assert_eq!(get_next_bid("1-00000000000000000000000000"), "2C");
-        
+
         // Test a hand suitable for 1NT (15-17 HCP, balanced).
         // Let's modify the hex deal string slightly or mock it differently.
         // Or just rely on Board 1 for now ensuring engine is hooked up.
-        
+
         // If the engine returns "P" for unknown situations (like passed hand or response):
         assert_eq!(get_next_bid("1-00000000000000000000000000:1C"), "P"); // We haven't implemented responses yet
     }

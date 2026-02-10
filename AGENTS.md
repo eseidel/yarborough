@@ -7,7 +7,9 @@ pnpm wasm:build       # Build Rust WASM crate only
 pnpm test             # Run Vitest (watches by default)
 pnpm test -- --run    # Run Vitest once without watch mode
 pnpm lint             # ESLint
+pnpm format:check     # Prettier format check
 cargo test            # Run all Rust tests
+cargo fmt --check     # Rust format check
 cargo test -p bridge-core  # Run tests for a single crate
 ```
 

@@ -16,7 +16,7 @@ pub fn export_board(board: &Board) -> String {
     s.push_str(&format!("[East \"?\"]\n"));
     s.push_str(&format!("[South \"?\"]\n"));
     s.push_str(&format!("[Dealer \"{}\"]\n", board.dealer.to_char()));
-    
+
     let vuln_str = match board.vulnerability {
         Vulnerability::None => "None",
         Vulnerability::NS => "NS",
@@ -44,14 +44,14 @@ pub fn export_board(board: &Board) -> String {
     s.push_str("[Declarer \"?\"]\n");
     s.push_str("[Contract \"?\"]\n");
     s.push_str("[Result \"?\"]\n");
-    
+
     s
 }
 
 pub fn export_hand(hand: &Hand) -> String {
     let mut sorted_hand = hand.clone();
     sorted_hand.sort();
-    
+
     let mut s = String::new();
     for (i, suit) in Suit::ALL.iter().rev().enumerate() {
         if i > 0 {
@@ -85,19 +85,21 @@ pub fn import_board(pbn: &str) -> Option<Board> {
                 _ => Vulnerability::None,
             };
         } else if line.starts_with("[Deal \"") {
-             let deal_str = &line[7..line.len() - 2];
-             let parts: Vec<&str> = deal_str.split(':').collect();
-             if parts.len() != 2 { continue; }
-             let start_pos_char = parts[0].chars().next()?;
-             let mut current_pos = Position::from_char(start_pos_char)?;
-             
-             let hands_str = parts[1].split(' ').collect::<Vec<&str>>();
-             for hand_str in hands_str {
-                 if hand_str != "?" {
-                     hands.insert(current_pos, import_hand(hand_str)?);
-                 }
-                 current_pos = current_pos.next();
-             }
+            let deal_str = &line[7..line.len() - 2];
+            let parts: Vec<&str> = deal_str.split(':').collect();
+            if parts.len() != 2 {
+                continue;
+            }
+            let start_pos_char = parts[0].chars().next()?;
+            let mut current_pos = Position::from_char(start_pos_char)?;
+
+            let hands_str = parts[1].split(' ').collect::<Vec<&str>>();
+            for hand_str in hands_str {
+                if hand_str != "?" {
+                    hands.insert(current_pos, import_hand(hand_str)?);
+                }
+                current_pos = current_pos.next();
+            }
         }
     }
 
@@ -110,11 +112,13 @@ pub fn import_board(pbn: &str) -> Option<Board> {
 
 pub fn import_hand(hand_str: &str) -> Option<Hand> {
     let suits: Vec<&str> = hand_str.split('.').collect();
-    if suits.len() != 4 { return None; }
-    
+    if suits.len() != 4 {
+        return None;
+    }
+
     let mut cards = Vec::new();
     let suit_sequence = [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs];
-    
+
     for (i, suit_str) in suits.iter().enumerate() {
         let suit = suit_sequence[i];
         for c in suit_str.chars() {
@@ -122,27 +126,33 @@ pub fn import_hand(hand_str: &str) -> Option<Hand> {
             cards.push(Card { suit, rank });
         }
     }
-    
+
     Some(Hand { cards })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::board::Vulnerability;
     use crate::board::Position;
+    use crate::board::Vulnerability;
 
     #[test]
     fn test_pbn_roundtrip() {
         let mut hands = HashMap::new();
-        hands.insert(Position::North, Hand::new(vec![Card::new(Suit::Spades, Rank::Ace)]));
+        hands.insert(
+            Position::North,
+            Hand::new(vec![Card::new(Suit::Spades, Rank::Ace)]),
+        );
         let board = Board::new(Position::North, Vulnerability::None, hands);
-        
+
         let exported = export_board(&board);
         let imported = import_board(&exported).unwrap();
-        
+
         assert_eq!(imported.dealer, board.dealer);
         assert_eq!(imported.vulnerability, board.vulnerability);
-        assert_eq!(imported.get_hand(Position::North).unwrap().cards[0], Card::new(Suit::Spades, Rank::Ace));
+        assert_eq!(
+            imported.get_hand(Position::North).unwrap().cards[0],
+            Card::new(Suit::Spades, Rank::Ace)
+        );
     }
 }

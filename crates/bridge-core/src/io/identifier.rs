@@ -1,10 +1,10 @@
+use crate::auction::Auction;
 use crate::board::{Board, Position, Vulnerability};
+use crate::call::Call;
 use crate::card::Card;
 use crate::hand::Hand;
 use crate::rank::Rank;
 use crate::suit::Suit;
-use crate::call::Call;
-use crate::auction::Auction;
 use std::collections::HashMap;
 
 /// Imports a board and optionally an auction from a saycbridge identifier.
@@ -21,7 +21,10 @@ pub fn import_board(identifier: &str) -> Option<(Board, Option<Auction>)> {
     let (deal_identifier, call_history_str) = if components.len() == 2 {
         let second_part = components[1];
         if let Some(colon_idx) = second_part.find(':') {
-            (&second_part[..colon_idx], Some(&second_part[colon_idx + 1..]))
+            (
+                &second_part[..colon_idx],
+                Some(&second_part[colon_idx + 1..]),
+            )
         } else {
             (second_part, None)
         }
@@ -90,7 +93,12 @@ pub fn import_hex_deal(identifier: &str) -> Option<HashMap<Position, Hand>> {
     }
 
     let mut hands = HashMap::new();
-    let positions = [Position::North, Position::East, Position::South, Position::West];
+    let positions = [
+        Position::North,
+        Position::East,
+        Position::South,
+        Position::West,
+    ];
     for (i, cards) in hands_cards.into_iter().enumerate() {
         hands.insert(positions[i], Hand { cards });
     }
@@ -130,7 +138,12 @@ pub fn export_board(board: &Board, board_number: u32, auction: Option<&Auction>)
 
 pub fn export_hex_deal(hands: &HashMap<Position, Hand>) -> String {
     let mut position_for_card = [0u8; 52];
-    let positions = [Position::North, Position::East, Position::South, Position::West];
+    let positions = [
+        Position::North,
+        Position::East,
+        Position::South,
+        Position::West,
+    ];
 
     for (pos_idx, pos) in positions.iter().enumerate() {
         if let Some(hand) = hands.get(pos) {
@@ -185,27 +198,50 @@ mod tests {
 
     #[test]
     fn test_card_id_mapping() {
-        assert_eq!(card_id(&Card { suit: Suit::Clubs, rank: Rank::Two }), 0);
-        assert_eq!(card_id(&Card { suit: Suit::Clubs, rank: Rank::Ace }), 12);
-        assert_eq!(card_id(&Card { suit: Suit::Spades, rank: Rank::Ace }), 51);
+        assert_eq!(
+            card_id(&Card {
+                suit: Suit::Clubs,
+                rank: Rank::Two
+            }),
+            0
+        );
+        assert_eq!(
+            card_id(&Card {
+                suit: Suit::Clubs,
+                rank: Rank::Ace
+            }),
+            12
+        );
+        assert_eq!(
+            card_id(&Card {
+                suit: Suit::Spades,
+                rank: Rank::Ace
+            }),
+            51
+        );
     }
 
     #[test]
     fn test_hex_deal_roundtrip() {
         let mut hands = HashMap::new();
-        let positions = [Position::North, Position::East, Position::South, Position::West];
-        
+        let positions = [
+            Position::North,
+            Position::East,
+            Position::South,
+            Position::West,
+        ];
+
         // Distribute all 52 cards
         for i in 0..52 {
             let pos = positions[(i % 4) as usize];
             let hand = hands.entry(pos).or_insert(Hand { cards: Vec::new() });
             hand.cards.push(card_from_id(i).unwrap());
         }
-        
+
         let exported = export_hex_deal(&hands);
         assert_eq!(exported.len(), 26);
         let imported = import_hex_deal(&exported).unwrap();
-        
+
         for pos in positions {
             assert_eq!(imported.get(&pos).unwrap().cards.len(), 13);
         }
@@ -217,14 +253,20 @@ mod tests {
         // North is 0. 0*4 + 0 = 0. So 26 '0's means all cards to North.
         let identifier = "1-00000000000000000000000000:1S,P,X,XX";
         let (board, auction) = import_board(identifier).unwrap();
-        
+
         assert_eq!(board.dealer, Position::North);
         assert_eq!(board.vulnerability, Vulnerability::None);
         assert_eq!(board.hands.get(&Position::North).unwrap().cards.len(), 52);
-        
+
         let a = auction.unwrap();
         assert_eq!(a.calls.len(), 4);
-        assert!(matches!(a.calls[0], Call::Bid { level: 1, strain: crate::strain::Strain::Spades }));
+        assert!(matches!(
+            a.calls[0],
+            Call::Bid {
+                level: 1,
+                strain: crate::strain::Strain::Spades
+            }
+        ));
         assert!(matches!(a.calls[1], Call::Pass));
         assert!(matches!(a.calls[2], Call::Double));
         assert!(matches!(a.calls[3], Call::Redouble));

@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
 use bridge_core::suit::Suit;
+use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_deserialize_constraint() {
         let yaml = "
@@ -14,7 +14,7 @@ min: 12
         let c: Constraint = serde_yaml::from_str(yaml).expect("Failed to parse");
         assert_eq!(c, Constraint::MinHCP { min: 12 });
     }
-    
+
     #[test]
     fn test_deserialize_rule() {
         let yaml = "
@@ -62,5 +62,5 @@ pub enum Constraint {
     MaxHCP { max: u8 },
     MinLength { suit: Suit, count: u8 },
     MaxLength { suit: Suit, count: u8 },
-    IsBalanced { balanced: bool }, 
+    IsBalanced { balanced: bool },
 }
