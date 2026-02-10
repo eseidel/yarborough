@@ -18,7 +18,7 @@ struct TestVector {
 
 #[test]
 fn test_io_roundtrip() {
-    let yaml_content = fs::read_to_string("../../tests/board/io_roundtrip.yaml")
+    let yaml_content = fs::read_to_string("../../tests/board/formats.yaml")
         .expect("Failed to read test vectors");
     let vectors: Vec<TestVector> = serde_yaml::from_str(&yaml_content)
         .expect("Failed to parse test vectors");
