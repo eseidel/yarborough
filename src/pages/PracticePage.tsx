@@ -4,41 +4,13 @@ import { NavBar } from "../components/NavBar";
 import { HandDisplay } from "../components/HandDisplay";
 import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
-import {
-  type Call,
-  type CallHistory,
-  type Position,
-  handForPosition,
-  highCardPoints,
-} from "../bridge";
+import { type Call, handForPosition, highCardPoints } from "../bridge";
 import { parseBoardId, generateBoardId } from "../bridge/identifier";
-
-const POSITION_ORDER: Position[] = ["N", "E", "S", "W"];
-
-function currentPlayer(history: CallHistory): Position {
-  const dealerIdx = POSITION_ORDER.indexOf(history.dealer);
-  return POSITION_ORDER[(dealerIdx + history.calls.length) % 4];
-}
-
-function isAuctionComplete(history: CallHistory): boolean {
-  const { calls } = history;
-  if (calls.length < 4) return false;
-  return calls.slice(-3).every((c) => c.type === "pass");
-}
-
-/** Find the last actual bid (not pass/double/redouble) in the call history. */
-function lastBidCall(history: CallHistory): Call | undefined {
-  return [...history.calls].reverse().find((c) => c.type === "bid");
-}
-
-/** Add robot passes until it's South's turn or the auction completes. */
-function addRobotPasses(history: CallHistory): CallHistory {
-  let h = history;
-  while (!isAuctionComplete(h) && currentPlayer(h) !== "S") {
-    h = { ...h, calls: [...h.calls, { type: "pass" as const }] };
-  }
-  return h;
-}
+import {
+  isAuctionComplete,
+  lastBidCall,
+  addRobotPasses,
+} from "../bridge/auction";
 
 export function PracticePage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -46,8 +18,8 @@ export function PracticePage() {
 
   const parsed = boardId ? parseBoardId(boardId) : null;
 
-  const [history, setHistory] = useState<CallHistory>(() =>
-    addRobotPasses({ dealer: parsed?.dealer ?? "N", calls: [] }),
+  const [history, setHistory] = useState(() =>
+    addRobotPasses({ dealer: parsed?.dealer ?? "N", calls: [] }, "S"),
   );
 
   const auctionDone = isAuctionComplete(history);
@@ -55,7 +27,7 @@ export function PracticePage() {
   const handleBid = useCallback((call: Call) => {
     setHistory((prev) => {
       const afterUser = { ...prev, calls: [...prev.calls, call] };
-      return addRobotPasses(afterUser);
+      return addRobotPasses(afterUser, "S");
     });
   }, []);
 
@@ -74,7 +46,7 @@ export function PracticePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <NavBar title="Practice Bidding" />
+      <NavBar />
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
         {/* User's hand */}
         <div className="flex flex-col items-center gap-1">

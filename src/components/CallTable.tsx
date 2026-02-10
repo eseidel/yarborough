@@ -1,11 +1,6 @@
 import { type CallHistory, CALL_TABLE_ORDER, POSITION_NAMES } from "../bridge";
+import { isAuctionComplete } from "../bridge/auction";
 import { CallDisplay } from "./CallDisplay";
-
-function isAuctionComplete(history: CallHistory): boolean {
-  const { calls } = history;
-  if (calls.length < 4) return false;
-  return calls.slice(-3).every((c) => c.type === "pass");
-}
 
 export function CallTable({ callHistory }: { callHistory: CallHistory }) {
   const { dealer, calls } = callHistory;
