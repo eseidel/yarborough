@@ -97,6 +97,8 @@ export interface CallInterpretation {
   description?: string;
 }
 
+export type Vulnerability = 'None' | 'NS' | 'EW' | 'Both';
+
 const HCP_VALUES: Partial<Record<RankName, number>> = { A: 4, K: 3, Q: 2, J: 1 };
 
 export function highCardPoints(hand: Hand): number {
