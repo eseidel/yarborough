@@ -5,6 +5,7 @@ import {
   lastBidCall,
   callToString,
   addRobotBids,
+  isCallLegal,
 } from "../auction";
 import type { CallHistory, Call } from "../types";
 
@@ -186,5 +187,87 @@ describe("addRobotBids", () => {
     const result = await addRobotBids(history, "S", boardId);
     expect(result.calls).toHaveLength(6);
     expect(currentPlayer(result)).toBe("S");
+  });
+});
+
+const dbl: Call = { type: "double" };
+const rdbl: Call = { type: "redouble" };
+const oneDiamond: Call = { type: "bid", level: 1, strain: "D" };
+const oneSpade: Call = { type: "bid", level: 1, strain: "S" };
+const twoClubs: Call = { type: "bid", level: 2, strain: "C" };
+
+describe("isCallLegal", () => {
+  it("pass is always legal when auction is open", () => {
+    expect(isCallLegal(pass, { dealer: "N", calls: [] })).toBe(true);
+    expect(isCallLegal(pass, { dealer: "N", calls: [oneClub] })).toBe(true);
+  });
+
+  it("nothing is legal when auction is complete", () => {
+    const done: CallHistory = {
+      dealer: "N",
+      calls: [oneClub, pass, pass, pass],
+    };
+    expect(isCallLegal(pass, done)).toBe(false);
+    expect(isCallLegal(twoClubs, done)).toBe(false);
+  });
+
+  it("any bid is legal when no prior bid exists", () => {
+    const empty: CallHistory = { dealer: "N", calls: [] };
+    expect(isCallLegal(oneClub, empty)).toBe(true);
+    expect(isCallLegal(oneHeart, empty)).toBe(true);
+
+    // After only passes
+    const onlyPasses: CallHistory = { dealer: "N", calls: [pass, pass] };
+    expect(isCallLegal(oneClub, onlyPasses)).toBe(true);
+  });
+
+  it("bid must be higher than last bid", () => {
+    const after1H: CallHistory = { dealer: "N", calls: [oneHeart] };
+    // Lower bids are illegal
+    expect(isCallLegal(oneClub, after1H)).toBe(false);
+    expect(isCallLegal(oneDiamond, after1H)).toBe(false);
+    expect(isCallLegal(oneHeart, after1H)).toBe(false);
+    // Higher strain at same level is legal
+    expect(isCallLegal(oneSpade, after1H)).toBe(true);
+    expect(isCallLegal(oneNT, after1H)).toBe(true);
+    // Higher level is legal
+    expect(isCallLegal(twoClubs, after1H)).toBe(true);
+  });
+
+  it("double is legal only after opponent's bid", () => {
+    // N bids 1C, E's turn — E can double opponent's bid
+    const after1C: CallHistory = { dealer: "N", calls: [oneClub] };
+    expect(isCallLegal(dbl, after1C)).toBe(true);
+
+    // N bids 1C, E passes, S's turn — S cannot double partner's bid
+    const partnerBid: CallHistory = { dealer: "N", calls: [oneClub, pass] };
+    expect(isCallLegal(dbl, partnerBid)).toBe(false);
+
+    // No bids yet — cannot double
+    expect(isCallLegal(dbl, { dealer: "N", calls: [] })).toBe(false);
+
+    // N bids 1C, E passes, S passes, W's turn — W can double opponent's bid
+    const opponentBidWithPasses: CallHistory = {
+      dealer: "N",
+      calls: [oneClub, pass, pass],
+    };
+    expect(isCallLegal(dbl, opponentBidWithPasses)).toBe(true);
+  });
+
+  it("redouble is legal only after opponent's double", () => {
+    // N bids 1C, E doubles, S's turn — S can redouble (opponent doubled)
+    const afterDbl: CallHistory = { dealer: "N", calls: [oneClub, dbl] };
+    expect(isCallLegal(rdbl, afterDbl)).toBe(true);
+
+    // N bids 1C, E doubles, S passes, W's turn — W cannot redouble partner's double
+    const partnerDbl: CallHistory = {
+      dealer: "N",
+      calls: [oneClub, dbl, pass],
+    };
+    expect(isCallLegal(rdbl, partnerDbl)).toBe(false);
+
+    // No double — cannot redouble
+    const noDbl: CallHistory = { dealer: "N", calls: [oneClub] };
+    expect(isCallLegal(rdbl, noDbl)).toBe(false);
   });
 });

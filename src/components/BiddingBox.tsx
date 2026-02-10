@@ -1,32 +1,21 @@
 import {
   type Call,
+  type CallHistory,
   type StrainName,
   strainSymbol,
   strainColor,
 } from "../bridge";
+import { isCallLegal } from "../bridge/auction";
 
 const STRAINS: StrainName[] = ["C", "D", "H", "S", "N"];
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 
-/** Returns true if `call` is a legal bid given the current highest bid. */
-function isLegalBid(
-  level: number,
-  strain: StrainName,
-  lastBid?: Call,
-): boolean {
-  if (!lastBid || lastBid.type !== "bid") return true;
-  if (level > lastBid.level!) return true;
-  if (level < lastBid.level!) return false;
-  // Same level: compare strain rank (C < D < H < S < N)
-  return STRAINS.indexOf(strain) > STRAINS.indexOf(lastBid.strain!);
-}
-
 export function BiddingBox({
   onBid,
-  lastBid,
+  callHistory,
 }: {
   onBid: (call: Call) => void;
-  lastBid?: Call;
+  callHistory: CallHistory;
 }) {
   return (
     <div className="bg-white rounded-lg shadow p-3 space-y-2">
@@ -42,12 +31,13 @@ export function BiddingBox({
       <div className="grid grid-cols-5 gap-1">
         {LEVELS.map((level) =>
           STRAINS.map((strain) => {
-            const legal = isLegalBid(level, strain, lastBid);
+            const call: Call = { type: "bid", level, strain };
+            const legal = isCallLegal(call, callHistory);
             return (
               <button
                 key={`${level}${strain}`}
                 disabled={!legal}
-                onClick={() => onBid({ type: "bid", level, strain })}
+                onClick={() => onBid(call)}
                 className={`py-1.5 rounded text-sm font-semibold transition-colors ${
                   legal
                     ? "bg-gray-100 hover:bg-emerald-100"

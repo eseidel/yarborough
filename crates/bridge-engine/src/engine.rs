@@ -1,7 +1,14 @@
-use crate::schema::{Constraint, System, Variant};
+use crate::schema::{BidRule, Constraint, System, Variant};
 use bridge_core::auction::Auction;
 use bridge_core::call::Call;
 use bridge_core::hand::Hand;
+
+/// A call paired with the rule name and description from the bidding system.
+pub struct Interpretation {
+    pub call: Call,
+    pub rule_name: String,
+    pub description: String,
+}
 
 pub struct Engine {
     system: System,
@@ -10,6 +17,49 @@ pub struct Engine {
 impl Engine {
     pub fn new(system: System) -> Self {
         Self { system }
+    }
+
+    /// Return interpretations for all legal next calls given the current auction.
+    /// Each legal call is paired with its rule name/description if one exists.
+    pub fn get_interpretations(&self, auction: &Auction) -> Vec<Interpretation> {
+        let rules = self.rules_for_context(auction);
+        let legal_calls = auction.legal_calls();
+
+        legal_calls
+            .into_iter()
+            .map(|call| {
+                let rule_match = rules.iter().find(|r| Call::from_str(&r.call) == Some(call));
+
+                match rule_match {
+                    Some(rule) => {
+                        // Use the highest-priority variant's name/description
+                        let best_variant = rule.variants.iter().max_by_key(|v| v.priority);
+                        match best_variant {
+                            Some(v) => Interpretation {
+                                call,
+                                rule_name: v.name.clone(),
+                                description: v.description.clone(),
+                            },
+                            None => Interpretation {
+                                call,
+                                rule_name: String::new(),
+                                description: String::new(),
+                            },
+                        }
+                    }
+                    None if call == Call::Pass => Interpretation {
+                        call,
+                        rule_name: "Pass".into(),
+                        description: String::new(),
+                    },
+                    None => Interpretation {
+                        call,
+                        rule_name: String::new(),
+                        description: String::new(),
+                    },
+                }
+            })
+            .collect()
     }
 
     pub fn get_best_bid(&self, hand: &Hand, auction: &Auction) -> Option<(Call, Variant)> {
@@ -24,11 +74,9 @@ impl Engine {
         let mut best_match: Option<(Call, Variant)> = None;
 
         for rule in rules {
-            // We need to parse the rule.call string into a Call object
-            // to ensure it's valid and to return it.
             let call = match Call::from_str(&rule.call) {
                 Some(c) => c,
-                None => continue, // Skip invalid call strings in rules
+                None => continue,
             };
 
             for variant in &rule.variants {
@@ -47,6 +95,16 @@ impl Engine {
             }
         }
         best_match
+    }
+
+    /// Return the rules for the current auction context.
+    fn rules_for_context(&self, auction: &Auction) -> &[BidRule] {
+        if self.is_opening(auction) {
+            &self.system.opening
+        } else {
+            // No response/competitive rules yet
+            &[]
+        }
     }
 
     fn is_opening(&self, auction: &Auction) -> bool {

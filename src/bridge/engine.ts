@@ -21,8 +21,9 @@ interface RawInterpretation {
   description: string;
 }
 
+/** Parse a call string in the Rust engine's format: "P", "X", "XX", "1C", "2N", etc. */
 function parseCallName(name: string): Call {
-  if (name === "Pass") return { type: "pass" };
+  if (name === "P") return { type: "pass" };
   if (name === "X") return { type: "double" };
   if (name === "XX") return { type: "redouble" };
 
@@ -38,22 +39,19 @@ function parseCallName(name: string): Call {
   return { type: "bid", level, strain };
 }
 
-/** Parse a short call string from the Rust engine (e.g. "P", "1N", "X"). */
-function parseShortCallName(name: string): Call {
-  if (name === "P") return { type: "pass" };
-  if (name === "X") return { type: "double" };
-  if (name === "XX") return { type: "redouble" };
-  return parseCallName(name);
-}
-
 /** Call the WASM engine to get bid interpretations for the current auction state. */
 export async function getInterpretations(
   callsString: string,
   dealer: string,
+  vulnerability: string = "None",
 ): Promise<CallInterpretation[]> {
   await ensureInit();
 
-  const raw = get_interpretations(callsString, dealer) as RawInterpretation[];
+  const raw = get_interpretations(
+    callsString,
+    dealer,
+    vulnerability,
+  ) as RawInterpretation[];
 
   return raw.map((r) => ({
     call: parseCallName(r.call_name),
@@ -69,5 +67,5 @@ export async function getInterpretations(
 export async function getNextBid(identifier: string): Promise<Call> {
   await ensureInit();
   const result = get_next_bid(identifier);
-  return parseShortCallName(result);
+  return parseCallName(result);
 }

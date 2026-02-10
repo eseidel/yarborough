@@ -1,5 +1,6 @@
 use crate::board::Position;
 use crate::call::Call;
+use crate::strain::Strain;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -97,6 +98,39 @@ impl Auction {
             }
         }
         true
+    }
+
+    /// Return all calls that would be legal as the next call in this auction.
+    pub fn legal_calls(&self) -> Vec<Call> {
+        if self.is_finished() {
+            return Vec::new();
+        }
+
+        let mut result = Vec::new();
+        result.push(Call::Pass);
+
+        // All bids higher than the current highest bid
+        for level in 1..=7u8 {
+            for &strain in &Strain::ALL {
+                let call = Call::Bid { level, strain };
+                let mut test = self.calls.clone();
+                test.push(call);
+                if Self::validate_calls(&test) {
+                    result.push(call);
+                }
+            }
+        }
+
+        // Double and Redouble
+        for call in [Call::Double, Call::Redouble] {
+            let mut test = self.calls.clone();
+            test.push(call);
+            if Self::validate_calls(&test) {
+                result.push(call);
+            }
+        }
+
+        result
     }
 
     fn is_finished_at(calls: &[Call], len: usize) -> bool {
@@ -217,6 +251,53 @@ mod tests {
             Call::Redouble, // Partner's double? No, di = 1 (East). We are West (3). (3-1)%2=0. Friend.
         ];
         assert!(!Auction::validate_calls(&calls));
+    }
+
+    #[test]
+    fn test_legal_calls_empty_auction() {
+        let auction = Auction::new(Position::North);
+        let calls = auction.legal_calls();
+        // Pass + 35 bids (7 levels × 5 strains) = 36
+        assert_eq!(calls.len(), 36);
+        assert_eq!(calls[0], Call::Pass);
+        assert_eq!(
+            calls[1],
+            Call::Bid {
+                level: 1,
+                strain: Strain::Clubs
+            }
+        );
+    }
+
+    #[test]
+    fn test_legal_calls_after_bid() {
+        let mut auction = Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Hearts,
+        });
+        let calls = auction.legal_calls();
+        // Pass + higher bids + Double (opponent can double)
+        assert!(calls.contains(&Call::Pass));
+        assert!(calls.contains(&Call::Double));
+        assert!(!calls.contains(&Call::Bid {
+            level: 1,
+            strain: Strain::Clubs
+        }));
+        assert!(calls.contains(&Call::Bid {
+            level: 1,
+            strain: Strain::Spades
+        }));
+    }
+
+    #[test]
+    fn test_legal_calls_finished_auction() {
+        let mut auction = Auction::new(Position::North);
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Pass);
+        assert!(auction.legal_calls().is_empty());
     }
 
     #[test]
