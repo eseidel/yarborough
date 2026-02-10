@@ -3,6 +3,7 @@ import type { Call, CallInterpretation, StrainName } from "./types";
 // These will be resolved after wasm-pack builds the crate
 import init, {
   get_interpretations,
+  get_next_bid,
 } from "../../crates/bridge-engine/pkg/bridge_engine";
 
 let initialized = false;
@@ -37,6 +38,14 @@ function parseCallName(name: string): Call {
   return { type: "bid", level, strain };
 }
 
+/** Parse a short call string from the Rust engine (e.g. "P", "1N", "X"). */
+function parseShortCallName(name: string): Call {
+  if (name === "P") return { type: "pass" };
+  if (name === "X") return { type: "double" };
+  if (name === "XX") return { type: "redouble" };
+  return parseCallName(name);
+}
+
 /** Call the WASM engine to get bid interpretations for the current auction state. */
 export async function getInterpretations(
   callsString: string,
@@ -51,4 +60,14 @@ export async function getInterpretations(
     ruleName: r.rule_name,
     description: r.description,
   }));
+}
+
+/**
+ * Call the WASM engine to get the next bid for the current player.
+ * @param identifier - Board identifier in format "<board>-<hex>[:<calls>]"
+ */
+export async function getNextBid(identifier: string): Promise<Call> {
+  await ensureInit();
+  const result = get_next_bid(identifier);
+  return parseShortCallName(result);
 }

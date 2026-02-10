@@ -7,4 +7,5 @@ declare module "../../crates/bridge-engine/pkg/bridge_engine" {
     calls_string: string,
     dealer: string,
   ): unknown;
+  export function get_next_bid(identifier: string): string;
 }

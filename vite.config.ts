@@ -6,4 +6,10 @@ import topLevelAwait from "vite-plugin-top-level-await";
 
 export default defineConfig({
   plugins: [wasm(), topLevelAwait(), react(), tailwindcss()],
+  server: {
+    watch: {
+      // Watch the wasm-pack output directory (gitignored, so Vite may skip it)
+      ignored: ["!**/crates/*/pkg/**"],
+    },
+  },
 });
