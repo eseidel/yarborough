@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavBar } from "../components/NavBar";
+import { ErrorBar } from "../components/ErrorBar";
 import { CallTable } from "../components/CallTable";
 import { CallMenu } from "../components/CallMenu";
 import type { CallHistory, CallInterpretation, Vulnerability } from "../bridge";
@@ -17,17 +18,26 @@ export function ExplorePage() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const callsString = history.calls.map(callToString).join(",");
-    getInterpretations(callsString, history.dealer).then((result) => {
-      if (!cancelled) {
-        setInterpretations(result);
-        setLoading(false);
-      }
-    });
+    getInterpretations(callsString, history.dealer)
+      .then((result) => {
+        if (!cancelled) {
+          setError(null);
+          setInterpretations(result);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(String(err));
+          setLoading(false);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -50,6 +60,7 @@ export function ExplorePage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavBar />
+      {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full p-4 gap-4">
         <div className="text-sm text-gray-500 font-medium text-center">
           {vulnerabilityLabel(vulnerability)}
