@@ -4,7 +4,12 @@ import { NavBar } from "../components/NavBar";
 import { HandDisplay } from "../components/HandDisplay";
 import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
-import { type Call, handForPosition, highCardPoints } from "../bridge";
+import {
+  type Call,
+  handForPosition,
+  highCardPoints,
+  vulnerabilityLabel,
+} from "../bridge";
 import { parseBoardId, generateBoardId } from "../bridge/identifier";
 import {
   isAuctionComplete,
@@ -72,7 +77,7 @@ export function PracticePage() {
     return <Navigate to="/" replace />;
   }
 
-  const { deal } = parsed;
+  const { deal, vulnerability } = parsed;
   const southHand = handForPosition(deal, "S");
   const hcp = highCardPoints(southHand);
 
@@ -83,7 +88,9 @@ export function PracticePage() {
         {/* User's hand */}
         <div className="flex flex-col items-center gap-1">
           <HandDisplay hand={southHand} position="S" />
-          <div className="text-sm text-gray-500 font-medium">{hcp} HCP</div>
+          <div className="text-sm text-gray-500 font-medium">
+            {hcp} HCP &middot; {vulnerabilityLabel(vulnerability)}
+          </div>
         </div>
 
         {/* Auction table */}

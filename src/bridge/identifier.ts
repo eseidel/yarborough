@@ -1,4 +1,13 @@
-import type { Card, Deal, Hand, Position, SuitName, RankName } from "./types";
+import type {
+  Card,
+  Deal,
+  Hand,
+  Position,
+  SuitName,
+  RankName,
+  Vulnerability,
+} from "./types";
+import { vulnerabilityFromBoardNumber } from "./types";
 import { randomDeal } from "./mock";
 
 const SUIT_INDEX: Record<SuitName, number> = { C: 0, D: 1, H: 2, S: 3 };
@@ -106,18 +115,29 @@ export function dealerFromBoardNumber(boardNumber: number): Position {
 export function generateBoardId(): {
   boardNumber: number;
   deal: Deal;
+  vulnerability: Vulnerability;
   id: string;
 } {
   const boardNumber = Math.floor(Math.random() * 16) + 1;
   const deal = randomDeal();
   const id = `${boardNumber}-${encodeDeal(deal)}`;
-  return { boardNumber, deal, id };
+  return {
+    boardNumber,
+    deal,
+    vulnerability: vulnerabilityFromBoardNumber(boardNumber),
+    id,
+  };
 }
 
 /** Parse a board identifier string. Returns null if invalid. */
 export function parseBoardId(
   id: string,
-): { boardNumber: number; deal: Deal; dealer: Position } | null {
+): {
+  boardNumber: number;
+  deal: Deal;
+  dealer: Position;
+  vulnerability: Vulnerability;
+} | null {
   const dashIdx = id.indexOf("-");
   if (dashIdx < 1) return null;
 
@@ -127,5 +147,10 @@ export function parseBoardId(
   const deal = decodeDeal(id.substring(dashIdx + 1));
   if (!deal) return null;
 
-  return { boardNumber, deal, dealer: dealerFromBoardNumber(boardNumber) };
+  return {
+    boardNumber,
+    deal,
+    dealer: dealerFromBoardNumber(boardNumber),
+    vulnerability: vulnerabilityFromBoardNumber(boardNumber),
+  };
 }

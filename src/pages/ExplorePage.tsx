@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { NavBar } from "../components/NavBar";
 import { CallTable } from "../components/CallTable";
 import { CallMenu } from "../components/CallMenu";
-import type { CallHistory, CallInterpretation } from "../bridge";
+import type { CallHistory, CallInterpretation, Vulnerability } from "../bridge";
+import { vulnerabilityLabel } from "../bridge";
 import { getInterpretations } from "../bridge/engine";
 import { callToString } from "../bridge/auction";
 
 export function ExplorePage() {
+  const [vulnerability] = useState<Vulnerability>("None");
   const [history, setHistory] = useState<CallHistory>({
     dealer: "N",
     calls: [],
@@ -49,6 +51,9 @@ export function ExplorePage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavBar />
       <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full p-4 gap-4">
+        <div className="text-sm text-gray-500 font-medium text-center">
+          {vulnerabilityLabel(vulnerability)}
+        </div>
         <CallTable callHistory={history} />
         <div className="flex-1 overflow-y-auto bg-white rounded-lg shadow">
           {loading ? (
