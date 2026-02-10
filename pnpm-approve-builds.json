@@ -1,3 +1,4 @@
 {
-  "esbuild@0.27.3": true
+  "esbuild@0.27.3": true,
+  "@swc/core@1.15.11": true
 }
