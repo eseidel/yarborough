@@ -4,7 +4,7 @@ import { CallTable } from "../components/CallTable";
 import { CallMenu } from "../components/CallMenu";
 import type { CallHistory, CallInterpretation } from "../bridge";
 import { getInterpretations } from "../bridge/engine";
-import { callToString } from "../bridge/auction";
+import { callToString, isCallLegal } from "../bridge/auction";
 
 export function ExplorePage() {
   const [history, setHistory] = useState<CallHistory>({
@@ -22,7 +22,9 @@ export function ExplorePage() {
     const callsString = history.calls.map(callToString).join(",");
     getInterpretations(callsString, history.dealer).then((result) => {
       if (!cancelled) {
-        setInterpretations(result);
+        setInterpretations(
+          result.filter((interp) => isCallLegal(interp.call, history)),
+        );
         setLoading(false);
       }
     });

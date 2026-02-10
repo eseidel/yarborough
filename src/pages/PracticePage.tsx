@@ -6,11 +6,7 @@ import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
 import { type Call, handForPosition, highCardPoints } from "../bridge";
 import { parseBoardId, generateBoardId } from "../bridge/identifier";
-import {
-  isAuctionComplete,
-  lastBidCall,
-  addRobotBids,
-} from "../bridge/auction";
+import { isAuctionComplete, addRobotBids } from "../bridge/auction";
 import type { CallHistory } from "../bridge";
 
 export function PracticePage() {
@@ -104,7 +100,7 @@ export function PracticePage() {
             </div>
           </div>
         ) : (
-          <BiddingBox onBid={handleBid} lastBid={lastBidCall(history)} />
+          <BiddingBox onBid={handleBid} callHistory={history} />
         )}
       </div>
 
