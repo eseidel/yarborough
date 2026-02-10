@@ -130,9 +130,7 @@ export function generateBoardId(): {
 }
 
 /** Parse a board identifier string. Returns null if invalid. */
-export function parseBoardId(
-  id: string,
-): {
+export function parseBoardId(id: string): {
   boardNumber: number;
   deal: Deal;
   dealer: Position;

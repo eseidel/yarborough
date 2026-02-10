@@ -36,11 +36,7 @@ export function PracticePage() {
   useEffect(() => {
     if (!boardId) return;
     let cancelled = false;
-    addRobotBids(
-      { dealer: parsed?.dealer ?? "N", calls: [] },
-      "S",
-      boardId,
-    )
+    addRobotBids({ dealer: parsed?.dealer ?? "N", calls: [] }, "S", boardId)
       .then((h) => {
         if (!cancelled) {
           setError(null);
