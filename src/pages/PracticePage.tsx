@@ -1,19 +1,19 @@
-import { useState, useCallback } from 'react';
-import { NavBar } from '../components/NavBar';
-import { HandDisplay } from '../components/HandDisplay';
-import { CallTable } from '../components/CallTable';
-import { BiddingBox } from '../components/BiddingBox';
+import { useState, useCallback } from "react";
+import { useParams, useNavigate, Navigate } from "react-router-dom";
+import { NavBar } from "../components/NavBar";
+import { HandDisplay } from "../components/HandDisplay";
+import { CallTable } from "../components/CallTable";
+import { BiddingBox } from "../components/BiddingBox";
 import {
-  type Deal,
   type Call,
   type CallHistory,
   type Position,
-  randomDeal,
   handForPosition,
   highCardPoints,
-} from '../bridge';
+} from "../bridge";
+import { parseBoardId, generateBoardId } from "../bridge/identifier";
 
-const POSITION_ORDER: Position[] = ['N', 'E', 'S', 'W'];
+const POSITION_ORDER: Position[] = ["N", "E", "S", "W"];
 
 function currentPlayer(history: CallHistory): Position {
   const dealerIdx = POSITION_ORDER.indexOf(history.dealer);
@@ -23,44 +23,54 @@ function currentPlayer(history: CallHistory): Position {
 function isAuctionComplete(history: CallHistory): boolean {
   const { calls } = history;
   if (calls.length < 4) return false;
-  return calls.slice(-3).every(c => c.type === 'pass');
+  return calls.slice(-3).every((c) => c.type === "pass");
 }
 
 /** Find the last actual bid (not pass/double/redouble) in the call history. */
 function lastBidCall(history: CallHistory): Call | undefined {
-  return [...history.calls].reverse().find(c => c.type === 'bid');
+  return [...history.calls].reverse().find((c) => c.type === "bid");
 }
 
 /** Add robot passes until it's South's turn or the auction completes. */
 function addRobotPasses(history: CallHistory): CallHistory {
   let h = history;
-  while (!isAuctionComplete(h) && currentPlayer(h) !== 'S') {
-    h = { ...h, calls: [...h.calls, { type: 'pass' as const }] };
+  while (!isAuctionComplete(h) && currentPlayer(h) !== "S") {
+    h = { ...h, calls: [...h.calls, { type: "pass" as const }] };
   }
   return h;
 }
 
 export function PracticePage() {
-  const [deal, setDeal] = useState<Deal>(() => randomDeal());
+  const { boardId } = useParams<{ boardId: string }>();
+  const navigate = useNavigate();
+
+  const parsed = boardId ? parseBoardId(boardId) : null;
+
   const [history, setHistory] = useState<CallHistory>(() =>
-    addRobotPasses({ dealer: 'N', calls: [] }),
+    addRobotPasses({ dealer: parsed?.dealer ?? "N", calls: [] }),
   );
 
   const auctionDone = isAuctionComplete(history);
-  const southHand = handForPosition(deal, 'S');
-  const hcp = highCardPoints(southHand);
 
   const handleBid = useCallback((call: Call) => {
-    setHistory(prev => {
+    setHistory((prev) => {
       const afterUser = { ...prev, calls: [...prev.calls, call] };
       return addRobotPasses(afterUser);
     });
   }, []);
 
   const handleRedeal = useCallback(() => {
-    setDeal(randomDeal());
-    setHistory(addRobotPasses({ dealer: 'N', calls: [] }));
-  }, []);
+    const { id } = generateBoardId();
+    navigate(`/bid/${id}`);
+  }, [navigate]);
+
+  if (!parsed) {
+    return <Navigate to="/" replace />;
+  }
+
+  const { deal } = parsed;
+  const southHand = handForPosition(deal, "S");
+  const hcp = highCardPoints(southHand);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -82,9 +92,9 @@ export function PracticePage() {
               Auction Complete
             </div>
             <div className="grid grid-cols-3 gap-2 justify-items-center">
-              <HandDisplay hand={handForPosition(deal, 'W')} position="W" />
-              <HandDisplay hand={handForPosition(deal, 'N')} position="N" />
-              <HandDisplay hand={handForPosition(deal, 'E')} position="E" />
+              <HandDisplay hand={handForPosition(deal, "W")} position="W" />
+              <HandDisplay hand={handForPosition(deal, "N")} position="N" />
+              <HandDisplay hand={handForPosition(deal, "E")} position="E" />
             </div>
           </div>
         ) : (
