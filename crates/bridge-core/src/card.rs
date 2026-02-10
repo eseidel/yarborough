@@ -24,3 +24,14 @@ impl fmt::Display for Card {
         write!(f, "{}", self.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_card_display() {
+        let card = Card::new(Suit::Spades, Rank::Ace);
+        assert_eq!(card.to_string(), "AS");
+    }
+}

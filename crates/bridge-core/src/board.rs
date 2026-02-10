@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum Position {
+    #[default]
     North,
     East,
     South,
@@ -52,8 +53,9 @@ impl fmt::Display for Position {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum Vulnerability {
+    #[default]
     None,
     NS,
     EW,
@@ -110,5 +112,13 @@ mod tests {
         assert!(Vulnerability::NS.is_vulnerable(Position::North));
         assert!(!Vulnerability::NS.is_vulnerable(Position::East));
         assert!(Vulnerability::Both.is_vulnerable(Position::West));
+        assert!(!Vulnerability::None.is_vulnerable(Position::South));
+    }
+
+    #[test]
+    fn test_position_char() {
+        assert_eq!(Position::North.to_char(), 'N');
+        assert_eq!(Position::from_char('W'), Some(Position::West));
+        assert_eq!(Position::from_char('X'), None);
     }
 }

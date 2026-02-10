@@ -83,4 +83,15 @@ mod tests {
         let dist = hand.distribution();
         assert_eq!(dist, [2, 1, 0, 0]);
     }
+
+    #[test]
+    fn test_hand_sorting() {
+        let mut hand = Hand::new(vec![
+            Card::new(Suit::Clubs, Rank::Ace),
+            Card::new(Suit::Spades, Rank::Two),
+        ]);
+        hand.sort();
+        assert_eq!(hand.cards[0].suit, Suit::Spades);
+        assert_eq!(hand.cards[1].suit, Suit::Clubs);
+    }
 }

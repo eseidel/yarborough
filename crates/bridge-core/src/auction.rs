@@ -52,4 +52,12 @@ mod tests {
         auction.add_call(Call::Pass);
         assert!(auction.is_finished());
     }
+
+    #[test]
+    fn test_current_player() {
+        let mut auction = Auction::new(Position::North);
+        assert_eq!(auction.current_player(), Position::North);
+        auction.add_call(Call::Pass);
+        assert_eq!(auction.current_player(), Position::East);
+    }
 }

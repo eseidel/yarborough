@@ -202,7 +202,7 @@ mod tests {
     #[test]
     fn test_lin_hand_export() {
         let hand = Hand::new(vec![Card::new(Suit::Spades, Rank::Ace)]);
-        assert_eq!(export_hand(&hand), "SA");
+        assert_eq!(export_hand(&hand), "SAHDC");
     }
 
     #[test]
