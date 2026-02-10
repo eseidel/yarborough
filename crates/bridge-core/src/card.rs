@@ -14,14 +14,14 @@ impl Card {
         Self { suit, rank }
     }
 
-    pub fn to_string(self) -> String {
+    pub fn render(self) -> String {
         format!("{}{}", self.rank, self.suit)
     }
 }
 
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", self.render())
     }
 }
 

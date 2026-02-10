@@ -45,6 +45,11 @@ impl Position {
             _ => None,
         }
     }
+
+    pub fn dealer_from_board_number(board_number: u32) -> Self {
+        let index = (board_number + 3) % 4;
+        Position::ALL[index as usize]
+    }
 }
 
 impl fmt::Display for Position {
@@ -69,6 +74,17 @@ impl Vulnerability {
             Vulnerability::NS => pos == Position::North || pos == Position::South,
             Vulnerability::EW => pos == Position::East || pos == Position::West,
             Vulnerability::Both => true,
+        }
+    }
+
+    pub fn from_board_number(board_number: u32) -> Self {
+        // http://www.jazclass.aust.com/bridge/scoring/score11.htm
+        match board_number % 16 {
+            1 | 8 | 11 | 14 => Vulnerability::None,
+            2 | 5 | 12 | 15 => Vulnerability::NS,
+            3 | 6 | 9 | 0 => Vulnerability::EW,
+            4 | 7 | 10 | 13 => Vulnerability::Both,
+            _ => unreachable!(),
         }
     }
 }

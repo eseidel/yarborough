@@ -1,0 +1,68 @@
+- name: "Board 1: All to North, No Auction"
+  board_number: 1
+  dealer: North
+  vulnerability: None
+  hands:
+    North: "SAKQJT98765432.HAKQJT98765432.DAKQJT98765432.CAKQJT98765432"
+    East: ""
+    South: ""
+    West: ""
+  auction: []
+  expected:
+    identifier: "1-00000000000000000000000000"
+
+- name: "Board 2: All to East, Simple Auction"
+  board_number: 2
+  dealer: East
+  vulnerability: NS
+  hands:
+    North: ""
+    East: "SAKQJT98765432.HAKQJT98765432.DAKQJT98765432.CAKQJT98765432"
+    South: ""
+    West: ""
+  auction: ["1S", "P", "4S", "P", "P", "P"]
+  expected:
+    identifier: "2-55555555555555555555555555:1S,P,4S,P,P,P"
+
+- name: "Board 3: All to South, Complex Auction"
+  board_number: 3
+  dealer: South
+  vulnerability: EW
+  hands:
+    North: ""
+    East: ""
+    South: "SAKQJT98765432.HAKQJT98765432.DAKQJT98765432.CAKQJT98765432"
+    West: ""
+  auction: ["1H", "X", "XX", "1S", "P", "P", "P"]
+  expected:
+    identifier: "3-aaaaaaaaaaaaaaaaaaaaaaaaaa:1H,X,XX,1S,P,P,P"
+
+- name: "Board 4: All to West, PBN/LIN verification"
+  board_number: 4
+  dealer: West
+  vulnerability: Both
+  hands:
+    North: ""
+    East: ""
+    South: ""
+    West: "SAKQJT98765432.HAKQJT98765432.DAKQJT98765432.CAKQJT98765432"
+  auction: ["P", "P", "P", "P"]
+  expected:
+    identifier: "4-ffffffffffffffffffffffffff:P,P,P,P"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "1"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "All"]
+      [Deal "W:AKQJT98765432.AKQJT98765432.AKQJT98765432.AKQJT98765432 ? ? ?"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+    lin: "md|4,SAKQJT98765432HAKQJT98765432DAKQJT98765432CAKQJT98765432,sv|b|mb|p|mb|p|mb|p|mb|p|"
