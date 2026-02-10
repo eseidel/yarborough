@@ -10,3 +10,4 @@ crate-type = ["cdylib"]
 wasm-bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde-wasm-bindgen = "0.6"
+bridge-core = { path = "../bridge-core" }
