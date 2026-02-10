@@ -4,7 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "/yarborough/" : "/",
   plugins: [wasm(), topLevelAwait(), react(), tailwindcss()],
   server: {
     watch: {
@@ -12,4 +13,4 @@ export default defineConfig({
       ignored: ["!**/crates/*/pkg/**"],
     },
   },
-});
+}));

@@ -22,7 +22,7 @@ function PracticeRoute() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<RedirectToNewBoard />} />
         <Route path="/bid/:boardId" element={<PracticeRoute />} />
