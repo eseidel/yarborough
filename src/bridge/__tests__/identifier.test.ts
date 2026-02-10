@@ -6,6 +6,7 @@ import {
   generateBoardId,
   parseBoardId,
 } from "../identifier";
+import { vulnerabilityFromBoardNumber } from "../types";
 import { randomDeal, MOCK_DEAL } from "../mock";
 
 describe("encodeDeal / decodeDeal", () => {
@@ -100,6 +101,9 @@ describe("parseBoardId", () => {
     expect(parsed).not.toBeNull();
     expect(parsed!.boardNumber).toBe(boardNumber);
     expect(parsed!.dealer).toBe(dealerFromBoardNumber(boardNumber));
+    expect(parsed!.vulnerability).toBe(
+      vulnerabilityFromBoardNumber(boardNumber),
+    );
     expect(parsed!.deal.north.cards).toHaveLength(13);
   });
 

@@ -143,6 +143,52 @@ export interface Call {
   strain?: StrainName;
 }
 
+export type Vulnerability = "None" | "NS" | "EW" | "Both";
+
+/** Derive vulnerability from board number (1–16), matching standard bridge rotation. */
+export function vulnerabilityFromBoardNumber(
+  boardNumber: number,
+): Vulnerability {
+  switch (boardNumber % 16) {
+    case 1:
+    case 8:
+    case 11:
+    case 14:
+      return "None";
+    case 2:
+    case 5:
+    case 12:
+    case 15:
+      return "NS";
+    case 3:
+    case 6:
+    case 9:
+    case 0:
+      return "EW";
+    case 4:
+    case 7:
+    case 10:
+    case 13:
+      return "Both";
+    default:
+      return "None";
+  }
+}
+
+/** Human-readable vulnerability label. */
+export function vulnerabilityLabel(vul: Vulnerability): string {
+  switch (vul) {
+    case "None":
+      return "None Vul";
+    case "NS":
+      return "N-S Vul";
+    case "EW":
+      return "E-W Vul";
+    case "Both":
+      return "Both Vul";
+  }
+}
+
 export interface CallHistory {
   dealer: Position;
   calls: Call[];

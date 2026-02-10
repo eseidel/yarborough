@@ -1,10 +1,16 @@
 import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
+import { ErrorBar } from "../components/ErrorBar";
 import { HandDisplay } from "../components/HandDisplay";
 import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
-import { type Call, handForPosition, highCardPoints } from "../bridge";
+import {
+  type Call,
+  handForPosition,
+  highCardPoints,
+  vulnerabilityLabel,
+} from "../bridge";
 import { parseBoardId, generateBoardId } from "../bridge/identifier";
 import {
   isAuctionComplete,
@@ -24,21 +30,26 @@ export function PracticePage() {
     calls: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // On mount, run robot bids for the opening
   useEffect(() => {
     if (!boardId) return;
     let cancelled = false;
-    addRobotBids(
-      { dealer: parsed?.dealer ?? "N", calls: [] },
-      "S",
-      boardId,
-    ).then((h) => {
-      if (!cancelled) {
-        setHistory(h);
-        setLoading(false);
-      }
-    });
+    addRobotBids({ dealer: parsed?.dealer ?? "N", calls: [] }, "S", boardId)
+      .then((h) => {
+        if (!cancelled) {
+          setError(null);
+          setHistory(h);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(String(err));
+          setLoading(false);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -55,10 +66,16 @@ export function PracticePage() {
         calls: [...history.calls, call],
       };
       setHistory(afterUser);
-      addRobotBids(afterUser, "S", boardId).then((h) => {
-        setHistory(h);
-        setLoading(false);
-      });
+      addRobotBids(afterUser, "S", boardId)
+        .then((h) => {
+          setError(null);
+          setHistory(h);
+          setLoading(false);
+        })
+        .catch((err) => {
+          setError(String(err));
+          setLoading(false);
+        });
     },
     [boardId, history],
   );
@@ -72,18 +89,21 @@ export function PracticePage() {
     return <Navigate to="/" replace />;
   }
 
-  const { deal } = parsed;
+  const { deal, vulnerability } = parsed;
   const southHand = handForPosition(deal, "S");
   const hcp = highCardPoints(southHand);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavBar />
+      {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
         {/* User's hand */}
         <div className="flex flex-col items-center gap-1">
           <HandDisplay hand={southHand} position="S" />
-          <div className="text-sm text-gray-500 font-medium">{hcp} HCP</div>
+          <div className="text-sm text-gray-500 font-medium">
+            {hcp} HCP &middot; {vulnerabilityLabel(vulnerability)}
+          </div>
         </div>
 
         {/* Auction table */}
