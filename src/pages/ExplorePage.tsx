@@ -25,7 +25,6 @@ export function ExplorePage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     const callsString = history.calls.map(callToString).join(",");
     getInterpretations(callsString, history.dealer).then((result) => {
@@ -41,6 +40,7 @@ export function ExplorePage() {
   }, [history]);
 
   function handleSelect(interp: CallInterpretation) {
+    setLoading(true);
     setHistory((prev) => ({
       ...prev,
       calls: [...prev.calls, interp.call],
@@ -48,6 +48,7 @@ export function ExplorePage() {
   }
 
   function handleClear() {
+    setLoading(true);
     setHistory({ dealer: "N", calls: [] });
   }
 
