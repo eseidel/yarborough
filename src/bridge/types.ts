@@ -1,0 +1,98 @@
+export type SuitName = 'C' | 'D' | 'H' | 'S';
+
+export interface Suit {
+  name: SuitName;
+  displayName: string;
+  symbol: string;
+  color: string; // Tailwind text color class
+}
+
+export const SUITS: Record<SuitName, Suit> = {
+  C: { name: 'C', displayName: 'Clubs', symbol: '\u2663', color: 'text-blue-900' },
+  D: { name: 'D', displayName: 'Diamonds', symbol: '\u2666', color: 'text-orange-600' },
+  H: { name: 'H', displayName: 'Hearts', symbol: '\u2665', color: 'text-red-600' },
+  S: { name: 'S', displayName: 'Spades', symbol: '\u2660', color: 'text-black' },
+};
+
+// Display order: spades on top
+export const SUIT_ORDER: SuitName[] = ['S', 'H', 'D', 'C'];
+
+export type RankName = 'A' | 'K' | 'Q' | 'J' | 'T' | '9' | '8' | '7' | '6' | '5' | '4' | '3' | '2';
+
+export const RANK_ORDER: RankName[] = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+export function displayRank(rank: RankName): string {
+  return rank === 'T' ? '10' : rank;
+}
+
+export interface Card {
+  suit: SuitName;
+  rank: RankName;
+}
+
+export interface Hand {
+  cards: Card[];
+}
+
+export function cardsBySuit(hand: Hand): Record<SuitName, Card[]> {
+  const result: Record<SuitName, Card[]> = { S: [], H: [], D: [], C: [] };
+  for (const card of hand.cards) {
+    result[card.suit].push(card);
+  }
+  for (const suit of SUIT_ORDER) {
+    result[suit].sort((a, b) => RANK_ORDER.indexOf(a.rank) - RANK_ORDER.indexOf(b.rank));
+  }
+  return result;
+}
+
+export type Position = 'N' | 'E' | 'S' | 'W';
+
+export const POSITION_NAMES: Record<Position, string> = {
+  N: 'North', E: 'East', S: 'South', W: 'West',
+};
+
+export const CALL_TABLE_ORDER: Position[] = ['W', 'N', 'E', 'S'];
+
+export interface Deal {
+  north: Hand;
+  east: Hand;
+  south: Hand;
+  west: Hand;
+}
+
+export function handForPosition(deal: Deal, position: Position): Hand {
+  const map: Record<Position, Hand> = { N: deal.north, E: deal.east, S: deal.south, W: deal.west };
+  return map[position];
+}
+
+// Strains: suits + notrump (for bidding)
+export type StrainName = SuitName | 'N';
+
+export function strainSymbol(strain: StrainName): string {
+  if (strain === 'N') return 'NT';
+  return SUITS[strain].symbol;
+}
+
+export function strainColor(strain: StrainName): string {
+  if (strain === 'N') return 'text-black';
+  return SUITS[strain].color;
+}
+
+export type CallType = 'bid' | 'pass' | 'double' | 'redouble';
+
+export interface Call {
+  type: CallType;
+  level?: number;
+  strain?: StrainName;
+}
+
+export interface CallHistory {
+  dealer: Position;
+  calls: Call[];
+}
+
+export interface CallInterpretation {
+  call: Call;
+  ruleName?: string;
+  description?: string;
+}
