@@ -3,7 +3,8 @@
 ```bash
 pnpm dev              # Start Vite dev server
 pnpm build            # Full build: wasm-pack → tsc → vite build
-pnpm wasm:build       # Build Rust WASM crate only
+pnpm wasm:dev         # Build Rust WASM crate (debug, fast)
+pnpm wasm:build       # Build Rust WASM crate (release, optimized)
 pnpm test             # Run Vitest (watches by default)
 pnpm test -- --run    # Run Vitest once without watch mode
 pnpm lint             # ESLint
@@ -23,5 +24,5 @@ Write tests for all code changes. Goal is 90% test coverage.
 ## Gotchas
 
 - **verbatimModuleSyntax** is enabled — use `import type { Foo }` or `import { type Foo, bar }` for type-only imports
-- **WASM is not auto-rebuilt** by the Vite dev server — run `pnpm wasm:build` after Rust changes
+- **WASM is not auto-rebuilt** by the Vite dev server — run `pnpm wasm:dev` after Rust changes
 - **bridge-engine** is currently a stub returning hardcoded data

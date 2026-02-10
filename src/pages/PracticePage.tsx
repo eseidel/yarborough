@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { HandDisplay } from "../components/HandDisplay";
@@ -9,8 +9,9 @@ import { parseBoardId, generateBoardId } from "../bridge/identifier";
 import {
   isAuctionComplete,
   lastBidCall,
-  addRobotPasses,
+  addRobotBids,
 } from "../bridge/auction";
+import type { CallHistory } from "../bridge";
 
 export function PracticePage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -18,18 +19,49 @@ export function PracticePage() {
 
   const parsed = boardId ? parseBoardId(boardId) : null;
 
-  const [history, setHistory] = useState(() =>
-    addRobotPasses({ dealer: parsed?.dealer ?? "N", calls: [] }, "S"),
-  );
+  const [history, setHistory] = useState<CallHistory>({
+    dealer: parsed?.dealer ?? "N",
+    calls: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  // On mount, run robot bids for the opening
+  useEffect(() => {
+    if (!boardId) return;
+    let cancelled = false;
+    addRobotBids(
+      { dealer: parsed?.dealer ?? "N", calls: [] },
+      "S",
+      boardId,
+    ).then((h) => {
+      if (!cancelled) {
+        setHistory(h);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, parsed?.dealer]);
 
   const auctionDone = isAuctionComplete(history);
 
-  const handleBid = useCallback((call: Call) => {
-    setHistory((prev) => {
-      const afterUser = { ...prev, calls: [...prev.calls, call] };
-      return addRobotPasses(afterUser, "S");
-    });
-  }, []);
+  const handleBid = useCallback(
+    (call: Call) => {
+      if (!boardId) return;
+      setLoading(true);
+      const afterUser: CallHistory = {
+        ...history,
+        calls: [...history.calls, call],
+      };
+      setHistory(afterUser);
+      addRobotBids(afterUser, "S", boardId).then((h) => {
+        setHistory(h);
+        setLoading(false);
+      });
+    },
+    [boardId, history],
+  );
 
   const handleRedeal = useCallback(() => {
     const { id } = generateBoardId();
@@ -58,7 +90,9 @@ export function PracticePage() {
         <CallTable callHistory={history} />
 
         {/* Bidding box or results */}
-        {auctionDone ? (
+        {loading ? (
+          <div className="text-center text-sm text-gray-400">Thinking...</div>
+        ) : auctionDone ? (
           <div className="space-y-3">
             <div className="text-center text-sm font-semibold text-gray-600">
               Auction Complete

@@ -6,7 +6,8 @@
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "dev": "vite",
-    "wasm:build": "wasm-pack build crates/bridge-engine --target web --out-dir pkg",
+    "wasm:dev": "wasm-pack build crates/bridge-engine --target web --out-dir pkg --dev",
+    "wasm:build": "wasm-pack build crates/bridge-engine --target web --out-dir pkg --release",
     "build": "pnpm wasm:build && tsc -b && vite build",
     "format:check": "prettier --check .",
     "lint": "eslint .",

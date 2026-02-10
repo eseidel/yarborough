@@ -2,16 +2,9 @@ import { useState, useEffect } from "react";
 import { NavBar } from "../components/NavBar";
 import { CallTable } from "../components/CallTable";
 import { CallMenu } from "../components/CallMenu";
-import type { CallHistory, CallInterpretation, Call } from "../bridge";
+import type { CallHistory, CallInterpretation } from "../bridge";
 import { getInterpretations } from "../bridge/engine";
-
-function callToString(call: Call): string {
-  if (call.type === "pass") return "Pass";
-  if (call.type === "double") return "X";
-  if (call.type === "redouble") return "XX";
-  const strainMap = { C: "C", D: "D", H: "H", S: "S", N: "N" } as const;
-  return `${call.level}${strainMap[call.strain!]}`;
-}
+import { callToString } from "../bridge/auction";
 
 export function ExplorePage() {
   const [history, setHistory] = useState<CallHistory>({
