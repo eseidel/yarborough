@@ -13,10 +13,10 @@ export function HomePage() {
           Bid Explorer
         </Link>
         <Link
-          to="/play"
+          to="/practice"
           className="px-8 py-4 bg-white text-emerald-900 rounded-xl font-semibold text-lg hover:bg-emerald-100 transition-colors shadow-lg"
         >
-          Play
+          Practice Bidding
         </Link>
       </div>
     </div>

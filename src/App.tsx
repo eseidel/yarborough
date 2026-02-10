@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { ExplorePage } from './pages/ExplorePage';
-import { PlayPage } from './pages/PlayPage';
+import { PracticePage } from './pages/PracticePage';
 
 export default function App() {
   return (
@@ -9,7 +9,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/explore" element={<ExplorePage />} />
-        <Route path="/play" element={<PlayPage />} />
+        <Route path="/practice" element={<PracticePage />} />
       </Routes>
     </BrowserRouter>
   );

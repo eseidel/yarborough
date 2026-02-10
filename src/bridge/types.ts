@@ -96,3 +96,9 @@ export interface CallInterpretation {
   ruleName?: string;
   description?: string;
 }
+
+const HCP_VALUES: Partial<Record<RankName, number>> = { A: 4, K: 3, Q: 2, J: 1 };
+
+export function highCardPoints(hand: Hand): number {
+  return hand.cards.reduce((sum, card) => sum + (HCP_VALUES[card.rank] ?? 0), 0);
+}
