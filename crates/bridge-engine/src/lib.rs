@@ -1,7 +1,5 @@
 use bridge_core::auction::Auction;
-use bridge_core::call::Call;
 use bridge_core::io::identifier;
-use bridge_core::strain::Strain;
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
@@ -62,52 +60,48 @@ pub fn get_interpretations(calls_string: &str, dealer: &str) -> JsValue {
     serde_wasm_bindgen::to_value(&interpretations).unwrap()
 }
 
+mod schema;
+mod engine;
+
+use engine::Engine;
+use schema::System;
+
 /// Receives a board and auction state in the "identifier" format
 /// and returns the next bid. 
-/// Dummy implementation: always returns the cheapest available non-pass, non-double call.
+/// Uses the SAYC bidding engine.
 #[wasm_bindgen]
 pub fn get_next_bid(identifier: &str) -> String {
-    let (_, auction) = match identifier::import_board(identifier) {
+    let (board, auction) = match identifier::import_board(identifier) {
         Some(val) => val,
         None => return "P".to_string(), // Fallback for invalid input
     };
 
     let auction = auction.unwrap_or_else(|| {
         // If no auction in identifier, create one from the dealer (derived from board number)
-        let components: Vec<&str> = identifier.split('-').collect();
-        let board_number: u32 = components[0].parse().unwrap_or(1);
-        Auction::new(bridge_core::board::Position::dealer_from_board_number(board_number))
+        Auction::new(board.dealer)
     });
 
-    let last_bid = auction.calls.iter().rev().find_map(|c| match c {
-        Call::Bid { level, strain } => Some((*level, *strain)),
-        _ => None,
-    });
-
-    let next_call = match last_bid {
-        None => Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        },
-        Some((level, strain)) => {
-            let next_strain_idx = Strain::ALL.iter().position(|&s| s == strain).unwrap() + 1;
-            if next_strain_idx < Strain::ALL.len() {
-                Call::Bid {
-                    level,
-                    strain: Strain::ALL[next_strain_idx],
-                }
-            } else if level < 7 {
-                Call::Bid {
-                    level: level + 1,
-                    strain: Strain::Clubs,
-                }
-            } else {
-                Call::Pass
-            }
-        }
+    let current_player = auction.current_player();
+    let hand = match board.hands.get(&current_player) {
+         Some(h) => h,
+         None => return "P".to_string(), // Should not happen if board is valid
     };
 
-    next_call.render()
+    // Load constraints
+    let yaml_data = include_str!("rules/sayc.yaml");
+    let system: System = serde_yaml::from_str(yaml_data).expect("Failed to parse SAYC rules");
+    let engine = Engine::new(system);
+
+    match engine.get_best_bid(hand, &auction) {
+        Some((call, _variant)) => {
+            // We could return variant info too if we change the return type to JsValue
+            call.render()
+        }
+        None => {
+             // Fallback: mostly pass if no rule matches
+             "P".into()
+        }
+    }
 }
 
 #[cfg(test)]
@@ -116,22 +110,16 @@ mod tests {
 
     #[test]
     fn test_get_next_bid() {
-        // Board 1, all cards to North, no calls. Next should be 1C.
-        assert_eq!(get_next_bid("1-00000000000000000000000000"), "1C");
+        // Board 1, all cards to North (00..00), no calls.
+        // North has 40 HCP (all high cards).
+        // SAYC "Strong 2C" rule requires 22+ HCP.
+        assert_eq!(get_next_bid("1-00000000000000000000000000"), "2C");
         
-        // Last bid 1C -> 1D
-        assert_eq!(get_next_bid("1-00000000000000000000000000:1C"), "1D");
+        // Test a hand suitable for 1NT (15-17 HCP, balanced).
+        // Let's modify the hex deal string slightly or mock it differently.
+        // Or just rely on Board 1 for now ensuring engine is hooked up.
         
-        // Last bid 1S -> 1N
-        assert_eq!(get_next_bid("1-00000000000000000000000000:1S"), "1N");
-        
-        // Last bid 1N -> 2C
-        assert_eq!(get_next_bid("1-00000000000000000000000000:1N"), "2C");
-        
-        // Last bid 7N -> P (No more bids)
-        assert_eq!(get_next_bid("1-00000000000000000000000000:7N"), "P");
-        
-        // Competitive auction
-        assert_eq!(get_next_bid("1-00000000000000000000000000:1H,X,2H"), "2S");
+        // If the engine returns "P" for unknown situations (like passed hand or response):
+        assert_eq!(get_next_bid("1-00000000000000000000000000:1C"), "P"); // We haven't implemented responses yet
     }
 }

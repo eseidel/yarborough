@@ -28,6 +28,7 @@ dependencies = [
  "bridge-core",
  "serde",
  "serde-wasm-bindgen",
+ "serde_yaml",
  "wasm-bindgen",
 ]
 
