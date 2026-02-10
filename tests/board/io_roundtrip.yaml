@@ -66,3 +66,1082 @@
       [Contract "?"]
       [Result "?"]
     lin: "md|4,SAKQJT98765432HAKQJT98765432DAKQJT98765432CAKQJT98765432,sv|b|mb|p|mb|p|mb|p|mb|p|"
+- name: "Board 5"
+  board_number: 5
+  dealer: North
+  vulnerability: NS
+  hands:
+    North: "SQ632H953DA65CKJ7"
+    East: "SAK54HAJT7D974C92"
+    South: "SJHKQDQJT8CAQ6543"
+    West: "ST987H8642DK32CT8"
+  auction: ["P", "P", "P", "P"]
+  expected:
+    identifier: "5-6a8dc8bd066acccdc5a414ff85:P,P,P,P"
+    lin: "md|1SJHKQDQJT8CAQ6543,ST987H8642DK32CT8,SQ632H953DA65CKJ7|sv|n|mb|p|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "5"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "NS"]
+      [Deal "N:Q632.953.A65.KJ7 AK54.AJT7.974.92 J.KQ.QJT8.AQ6543 T987.8642.K32.T8"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 6"
+  board_number: 6
+  dealer: East
+  vulnerability: EW
+  hands:
+    North: "SQHAJ97532DQ96CA2"
+    East: "S865HQ64DT7CKQJ97"
+    South: "SK94HK8DAKJ8432C3"
+    West: "SAJT732HTD5CT8654"
+  auction: ["P", "P", "P", "P"]
+  expected:
+    identifier: "6-2fddd52ac618a0448c63e5dbcb:P,P,P,P"
+    lin: "md|2SK94HK8DAKJ8432C3,SAJT732HTD5CT8654,SQHAJ97532DQ96CA2|sv|e|mb|p|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "6"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "EW"]
+      [Deal "E:865.Q64.T7.KQJ97 K94.K8.AKJ8432.3 AJT732.T.5.T8654 Q.AJ97532.Q96.A2"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 7"
+  board_number: 7
+  dealer: South
+  vulnerability: Both
+  hands:
+    North: "SQ9653HJ9DJ76CAK9"
+    East: "SJT42HKQ632DKQ5C5"
+    South: "SK7HA87DT984CQ632"
+    West: "SA8HT54DA32CJT874"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "7-adbcf83e42a175f68c5910b14b:1N,P,3N,P,P,P"
+    lin: "md|3SK7HA87DT984CQ632,SA8HT54DA32CJT874,SQ9653HJ9DJ76CAK9|sv|b|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "7"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "All"]
+      [Deal "S:K7.A87.T984.Q632 A8.T54.A32.JT874 Q9653.J9.J76.AK9 JT42.KQ632.KQ5.5"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 8"
+  board_number: 8
+  dealer: West
+  vulnerability: None
+  hands:
+    North: "STHAJ3DK652CA9862"
+    East: "SQ95HKT87DJ3CKT54"
+    South: "SAJ863H2DAQ94CQJ3"
+    West: "SK742HQ9654DT87C7"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "8-253069060fb628fd74d3b6e49e:1N,P,3N,P,P,P"
+    lin: "md|4SAJ863H2DAQ94CQJ3,SK742HQ9654DT87C7,STHAJ3DK652CA9862|sv|o|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "8"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "None"]
+      [Deal "W:K742.Q9654.T87.7 T.AJ3.K652.A9862 Q95.KT87.J3.KT54 AJ863.2.AQ94.QJ3"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 9"
+  board_number: 9
+  dealer: North
+  vulnerability: EW
+  hands:
+    North: "SK8HQ6DAJT8CA9875"
+    East: "S93HAT853D75CKT62"
+    South: "SA5HKJ974DQ964C43"
+    West: "SQJT7642H2DK32CQJ"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "9-68407d3e6482cd9266277bc7f2:1N,P,3N,P,P,P"
+    lin: "md|1SA5HKJ974DQ964C43,SQJT7642H2DK32CQJ,SK8HQ6DAJT8CA9875|sv|e|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "9"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "EW"]
+      [Deal "N:K8.Q6.AJT8.A9875 93.AT853.75.KT62 A5.KJ974.Q964.43 QJT7642.2.K32.QJ"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 10"
+  board_number: 10
+  dealer: East
+  vulnerability: Both
+  hands:
+    North: "SAT92HKQ9842D42C9"
+    East: "SK7654HJ6D765CA82"
+    South: "S8HA753D98CQJT754"
+    West: "SQJ3HTDAKQJT3CK63"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "10-7ae4ab4c56bff2260d08d560f4:1N,P,3N,P,P,P"
+    lin: "md|2S8HA753D98CQJT754,SQJ3HTDAKQJT3CK63,SAT92HKQ9842D42C9|sv|b|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "10"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "All"]
+      [Deal "E:K7654.J6.765.A82 8.A753.98.QJT754 QJ3.T.AKQJT3.K63 AT92.KQ9842.42.9"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 11"
+  board_number: 11
+  dealer: South
+  vulnerability: None
+  hands:
+    North: "S9742HK654DJCAJ87"
+    East: "SQJT8H3DQ652CQT96"
+    South: "SK6HAQJT2DKT94C32"
+    West: "SA53H987DA873CK54"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "11-af41471e5fa1b903fa88ce115b:1N,P,3N,P,P,P"
+    lin: "md|3SK6HAQJT2DKT94C32,SA53H987DA873CK54,S9742HK654DJCAJ87|sv|o|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "11"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "None"]
+      [Deal "S:K6.AQJT2.KT94.32 A53.987.A873.K54 9742.K654.J.AJ87 QJT8.3.Q652.QT96"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 12"
+  board_number: 12
+  dealer: West
+  vulnerability: NS
+  hands:
+    North: "SQTHK64DQJ843CAK3"
+    East: "SJ752HQJDA9752C75"
+    South: "SK83H972DKT6CT964"
+    West: "SA964HAT853DCQJ82"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "12-c99ebc1064609b32ed4db76c4b:1N,P,3N,P,P,P"
+    lin: "md|4SK83H972DKT6CT964,SA964HAT853DCQJ82,SQTHK64DQJ843CAK3|sv|n|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "12"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "NS"]
+      [Deal "W:A964.AT853..QJ82 QT.K64.QJ843.AK3 J752.QJ.A9752.75 K83.972.KT6.T964"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 13"
+  board_number: 13
+  dealer: North
+  vulnerability: Both
+  hands:
+    North: "SAQ752H6DK63CJ653"
+    East: "SJT3HJ3DQT9875CK7"
+    South: "S94HAT987DJ4CQ942"
+    West: "SK86HKQ542DA2CAT8"
+  auction: ["P", "P", "P", "P"]
+  expected:
+    identifier: "13-881ec9f245593df2a9f863394c:P,P,P,P"
+    lin: "md|1S94HAT987DJ4CQ942,SK86HKQ542DA2CAT8,SAQ752H6DK63CJ653|sv|b|mb|p|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "13"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "All"]
+      [Deal "N:AQ752.6.K63.J653 JT3.J3.QT9875.K7 94.AT987.J4.Q942 K86.KQ542.A2.AT8"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 14"
+  board_number: 14
+  dealer: East
+  vulnerability: None
+  hands:
+    North: "ST72HT52D98C97542"
+    East: "SJ964HA93DK4CKQJT"
+    South: "S83HKQJ76DQT73C86"
+    West: "SAKQ5H84DAJ652CA3"
+  auction: ["P", "P", "P", "P"]
+  expected:
+    identifier: "14-308855f9f82e71cad2a49d247f:P,P,P,P"
+    lin: "md|2S83HKQJ76DQT73C86,SAKQ5H84DAJ652CA3,ST72HT52D98C97542|sv|o|mb|p|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "14"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "None"]
+      [Deal "E:J964.A93.K4.KQJT 83.KQJ76.QT73.86 AKQ5.84.AJ652.A3 T72.T52.98.97542"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 15"
+  board_number: 15
+  dealer: South
+  vulnerability: NS
+  hands:
+    North: "SK85H865DKT95CQ96"
+    East: "S632HK7432DJ83CA7"
+    South: "SAQT97HAQTDAQ7C83"
+    West: "SJ4HJ9D642CKJT542"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "15-ef18f377390625413b99718ae2:1N,P,3N,P,P,P"
+    lin: "md|3SAQT97HAQTDAQ7C83,SJ4HJ9D642CKJT542,SK85H865DKT95CQ96|sv|n|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "15"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "NS"]
+      [Deal "S:AQT97.AQT.AQ7.83 J4.J9.642.KJT542 K85.865.KT95.Q96 632.K7432.J83.A7"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 16"
+  board_number: 16
+  dealer: West
+  vulnerability: EW
+  hands:
+    North: "SKJ932H53DT5CQ752"
+    East: "SA5HQT76DKQ73CAK6"
+    South: "SQT6HA982DJ2CJT93"
+    West: "S874HKJ4DA9864C84"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "16-2c4ea16737c978c5a77836f221:1N,P,3N,P,P,P"
+    lin: "md|4SQT6HA982DJ2CJT93,S874HKJ4DA9864C84,SKJ932H53DT5CQ752|sv|e|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "16"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "EW"]
+      [Deal "W:874.KJ4.A9864.84 KJ932.53.T5.Q752 A5.QT76.KQ73.AK6 QT6.A982.J2.JT93"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 17"
+  board_number: 17
+  dealer: North
+  vulnerability: None
+  hands:
+    North: "SQ8642HK2DAJ4CAK7"
+    East: "SJ7HAQT6DK98CJ863"
+    South: "SK3H9854DT652C942"
+    West: "SAT95HJ73DQ73CQT5"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "17-9b46dc2cad6343a7a7448c4f4b:1N,P,3N,P,P,P"
+    lin: "md|1SK3H9854DT652C942,SAT95HJ73DQ73CQT5,SQ8642HK2DAJ4CAK7|sv|o|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "17"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "None"]
+      [Deal "N:Q8642.K2.AJ4.AK7 J7.AQT6.K98.J863 K3.9854.T652.942 AT95.J73.Q73.QT5"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 18"
+  board_number: 18
+  dealer: East
+  vulnerability: NS
+  hands:
+    North: "SAQT972HQT86DCQT2"
+    East: "S5HAKJ943DKQJ8C98"
+    South: "SJ643H72DT765CK65"
+    West: "SK8H5DA9432CAJ743"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "18-3eb532ffa9e579721114a6308c:1N,P,3N,P,P,P"
+    lin: "md|2SJ643H72DT765CK65,SK8H5DA9432CAJ743,SAQT972HQT86DCQT2|sv|n|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "18"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "NS"]
+      [Deal "E:5.AKJ943.KQJ8.98 J643.72.T765.K65 K8.5.A9432.AJ743 AQT972.QT86..QT2"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 19"
+  board_number: 19
+  dealer: South
+  vulnerability: EW
+  hands:
+    North: "SQ65HA4DKQ95CT763"
+    East: "SA8H72DAJT8762C85"
+    South: "SJ743HJ953DCAJ942"
+    West: "SKT92HKQT86D43CKQ"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "19-89062f9f1514162deef3a09f8d:1N,P,3N,P,P,P"
+    lin: "md|3SJ743HJ953DCAJ942,SKT92HKQT86D43CKQ,SQ65HA4DKQ95CT763|sv|e|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "19"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "EW"]
+      [Deal "S:J743.J953..AJ942 KT92.KQT86.43.KQ Q65.A4.KQ95.T763 A8.72.AJT8762.85"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 20"
+  board_number: 20
+  dealer: West
+  vulnerability: Both
+  hands:
+    North: "SKQJ732HT65D873C6"
+    East: "SA85HQJ9DAQ5C9875"
+    South: "SHA7DKJ642CKQJT32"
+    West: "ST964HK8432DT9CA4"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "20-ad15aae260f99fc2d178371f01:1N,P,3N,P,P,P"
+    lin: "md|4SHA7DKJ642CKQJT32,ST964HK8432DT9CA4,SKQJ732HT65D873C6|sv|b|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "20"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "All"]
+      [Deal "W:T964.K8432.T9.A4 KQJ732.T65.873.6 A85.QJ9.AQ5.9875 .A7.KJ642.KQJT32"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 21"
+  board_number: 21
+  dealer: North
+  vulnerability: NS
+  hands:
+    North: "SK753HJ3DT762C986"
+    East: "ST98H9852DAK9CAT2"
+    South: "SJ62H764DJ8543CQ3"
+    West: "SAQ4HAKQTDQCKJ754"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "21-6f307b4a824b549a5cfe3215b3:1N,P,3N,P,P,P"
+    lin: "md|1SJ62H764DJ8543CQ3,SAQ4HAKQTDQCKJ754,SK753HJ3DT762C986|sv|n|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "21"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "NS"]
+      [Deal "N:K753.J3.T762.986 T98.9852.AK9.AT2 J62.764.J8543.Q3 AQ4.AKQT.Q.KJ754"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 22"
+  board_number: 22
+  dealer: East
+  vulnerability: EW
+  hands:
+    North: "SQ6HJT42DK87C8743"
+    East: "S872H76DT432CKJT9"
+    South: "SAJ93HK85DAQ65CA2"
+    West: "SKT54HAQ93DJ9CQ65"
+  auction: ["1S", "P", "4S", "P", "P", "P"]
+  expected:
+    identifier: "22-83c15d95a0de2325b0edbc5b8e:1S,P,4S,P,P,P"
+    lin: "md|2SAJ93HK85DAQ65CA2,SKT54HAQ93DJ9CQ65,SQ6HJT42DK87C8743|sv|e|mb|1s|mb|p|mb|4s|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "22"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "EW"]
+      [Deal "E:872.76.T432.KJT9 AJ93.K85.AQ65.A2 KT54.AQ93.J9.Q65 Q6.JT42.K87.8743"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 23"
+  board_number: 23
+  dealer: South
+  vulnerability: Both
+  hands:
+    North: "SJ3HQJ975DA976CQ9"
+    East: "SAKQ76H864DJ83CA7"
+    South: "S854H32DKQ42C8653"
+    West: "ST92HAKTDT5CKJT42"
+  auction: ["1S", "P", "4S", "P", "P", "P"]
+  expected:
+    identifier: "23-ee98f366c1368a444c3f296f15:1S,P,4S,P,P,P"
+    lin: "md|3S854H32DKQ42C8653,ST92HAKTDT5CKJT42,SJ3HQJ975DA976CQ9|sv|b|mb|1s|mb|p|mb|4s|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "23"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "All"]
+      [Deal "S:854.32.KQ42.8653 T92.AKT.T5.KJT42 J3.QJ975.A976.Q9 AKQ76.864.J83.A7"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 24"
+  board_number: 24
+  dealer: West
+  vulnerability: None
+  hands:
+    North: "SAQ864H2DK82CAJ82"
+    East: "SJT2HQJT875DT5CT5"
+    South: "S73HA96DAQ6CQ9743"
+    West: "SK95HK43DJ9743CK6"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "24-29e24b0f6cde23d965798c8d4c:1N,P,3N,P,P,P"
+    lin: "md|4S73HA96DAQ6CQ9743,SK95HK43DJ9743CK6,SAQ864H2DK82CAJ82|sv|o|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "24"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "None"]
+      [Deal "W:K95.K43.J9743.K6 AQ864.2.K82.AJ82 JT2.QJT875.T5.T5 73.A96.AQ6.Q9743"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 25"
+  board_number: 25
+  dealer: North
+  vulnerability: EW
+  hands:
+    North: "S752HJD7432CJT832"
+    East: "SJ964HK73DAKJ8CQ7"
+    South: "SKTHQT986DQ965CA9"
+    West: "SAQ83HA542DTCK654"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "25-0fd20780a1b65df9a89cd1367b:1N,P,3N,P,P,P"
+    lin: "md|1SKTHQT986DQ965CA9,SAQ83HA542DTCK654,S752HJD7432CJT832|sv|e|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "25"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "EW"]
+      [Deal "N:752.J.7432.JT832 J964.K73.AKJ8.Q7 KT.QT986.Q965.A9 AQ83.A542.T.K654"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 26"
+  board_number: 26
+  dealer: East
+  vulnerability: Both
+  hands:
+    North: "SK5HJ73DAK976CJ43"
+    East: "SJT8764H865DJCKQ9"
+    South: "SA3HK42DQ543CT652"
+    West: "SQ92HAQT9DT82CA87"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "26-82bd85fa833608947cef915d72:1N,P,3N,P,P,P"
+    lin: "md|2SA3HK42DQ543CT652,SQ92HAQT9DT82CA87,SK5HJ73DAK976CJ43|sv|b|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "26"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "All"]
+      [Deal "E:JT8764.865.J.KQ9 A3.K42.Q543.T652 Q92.AQT9.T82.A87 K5.J73.AK976.J43"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 27"
+  board_number: 27
+  dealer: South
+  vulnerability: None
+  hands:
+    North: "SKQ73HJ7DT84CT987"
+    East: "S64HT863DJ76CK542"
+    South: "SAT9HAQ942DAK5C63"
+    West: "SJ852HK5DQ932CAQJ"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "27-65803dfc94c7a9b464bb1d3ac2:1N,P,3N,P,P,P"
+    lin: "md|3SAT9HAQ942DAK5C63,SJ852HK5DQ932CAQJ,SKQ73HJ7DT84CT987|sv|o|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "27"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "None"]
+      [Deal "S:AT9.AQ942.AK5.63 J852.K5.Q932.AQJ KQ73.J7.T84.T987 64.T863.J76.K542"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 28"
+  board_number: 28
+  dealer: West
+  vulnerability: NS
+  hands:
+    North: "S432H9DKQ9853CK42"
+    East: "SKJ97HK532DT62CJ3"
+    South: "SA865HAQJDJ74CAT7"
+    West: "SQTHT8764DACQ9865"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "28-13ef9c92181835dfce980a6776:1N,P,3N,P,P,P"
+    lin: "md|4SA865HAQJDJ74CAT7,SQTHT8764DACQ9865,S432H9DKQ9853CK42|sv|n|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "28"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "NS"]
+      [Deal "W:QT.T8764.A.Q9865 432.9.KQ9853.K42 KJ97.K532.T62.J3 A865.AQJ.J74.AT7"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 29"
+  board_number: 29
+  dealer: North
+  vulnerability: Both
+  hands:
+    North: "SKT7H53DAKQT83C92"
+    East: "S96542HQT4D954CJ6"
+    South: "SQJHJ76D7CAKT8754"
+    West: "SA83HAK982DJ62CQ3"
+  auction: ["1S", "P", "4S", "P", "P", "P"]
+  expected:
+    identifier: "29-3a689eb1784c0c4af67dd534a3:1S,P,4S,P,P,P"
+    lin: "md|1SQJHJ76D7CAKT8754,SA83HAK982DJ62CQ3,SKT7H53DAKQT83C92|sv|b|mb|1s|mb|p|mb|4s|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "29"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "All"]
+      [Deal "N:KT7.53.AKQT83.92 96542.QT4.954.J6 QJ.J76.7.AKT8754 A83.AK982.J62.Q3"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 30"
+  board_number: 30
+  dealer: East
+  vulnerability: None
+  hands:
+    North: "S942H72DAJT96CA76"
+    East: "SJ653HQT865DCT985"
+    South: "ST8HAJ9DKQ52CKQ43"
+    West: "SAKQ7HK43D8743CJ2"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "30-e9057a2f8f0283d4667845e27f:1N,P,3N,P,P,P"
+    lin: "md|2ST8HAJ9DKQ52CKQ43,SAKQ7HK43D8743CJ2,S942H72DAJT96CA76|sv|o|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "30"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "None"]
+      [Deal "E:J653.QT865..T985 T8.AJ9.KQ52.KQ43 AKQ7.K43.8743.J2 942.72.AJT96.A76"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 31"
+  board_number: 31
+  dealer: South
+  vulnerability: NS
+  hands:
+    North: "SK973HKQ96D53C543"
+    East: "ST8542H543D642CKJ"
+    South: "SJHJT87DJT97CA987"
+    West: "SAQ6HA2DAKQ8CQT62"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "31-c0eadd911babfd528a0d1711b3:1N,P,3N,P,P,P"
+    lin: "md|3SJHJT87DJT97CA987,SAQ6HA2DAKQ8CQT62,SK973HKQ96D53C543|sv|n|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "31"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "NS"]
+      [Deal "S:J.JT87.JT97.A987 AQ6.A2.AKQ8.QT62 K973.KQ96.53.543 T8542.543.642.KJ"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 32"
+  board_number: 32
+  dealer: West
+  vulnerability: EW
+  hands:
+    North: "SAK9HT8754DK53CQ5"
+    East: "S75H3DA764CAK9872"
+    South: "SQJ42HKQ92DJ82CT3"
+    West: "ST863HAJ6DQT9CJ64"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "32-6cd5b16116fb190c23aee773a0:1N,P,3N,P,P,P"
+    lin: "md|4SQJ42HKQ92DJ82CT3,ST863HAJ6DQT9CJ64,SAK9HT8754DK53CQ5|sv|e|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "32"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "EW"]
+      [Deal "W:T863.AJ6.QT9.J64 AK9.T8754.K53.Q5 75.3.A764.AK9872 QJ42.KQ92.J82.T3"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 33"
+  board_number: 33
+  dealer: North
+  vulnerability: None
+  hands:
+    North: "S9654H43DAJ96CKQ7"
+    East: "SAKHQ95DKT72CA543"
+    South: "ST83HAKJ862D85CJ2"
+    West: "SQJ72HT7DQ43CT986"
+  auction: ["1S", "P", "4S", "P", "P", "P"]
+  expected:
+    identifier: "33-95cfe05f8613481b9e6b80e2f5:1S,P,4S,P,P,P"
+    lin: "md|1ST83HAKJ862D85CJ2,SQJ72HT7DQ43CT986,S9654H43DAJ96CKQ7|sv|o|mb|1s|mb|p|mb|4s|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "33"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "None"]
+      [Deal "N:9654.43.AJ96.KQ7 AK.Q95.KT72.A543 T83.AKJ862.85.J2 QJ72.T7.Q43.T986"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 34"
+  board_number: 34
+  dealer: East
+  vulnerability: NS
+  hands:
+    North: "ST9HT75DQ94CK7543"
+    East: "SAK52HADKT62CAQT9"
+    South: "S743HJ9842DJ73CJ8"
+    West: "SQJ86HKQ63DA85C62"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "34-c0c96458db187b8ca2f5a7b0f5:1N,P,3N,P,P,P"
+    lin: "md|2S743HJ9842DJ73CJ8,SQJ86HKQ63DA85C62,ST9HT75DQ94CK7543|sv|n|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "34"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "NS"]
+      [Deal "E:AK52.A.KT62.AQT9 743.J9842.J73.J8 QJ86.KQ63.A85.62 T9.T75.Q94.K7543"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 35"
+  board_number: 35
+  dealer: South
+  vulnerability: EW
+  hands:
+    North: "S7H8765DAT85CKQ87"
+    East: "ST864HA43DJ9CAJ62"
+    South: "SAQJ532HQ9DKQ76C5"
+    West: "SK9HKJT2D432CT943"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "35-7e43d07f28468d402fb6991dae:1N,P,3N,P,P,P"
+    lin: "md|3SAQJ532HQ9DKQ76C5,SK9HKJT2D432CT943,S7H8765DAT85CKQ87|sv|e|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "35"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "EW"]
+      [Deal "S:AQJ532.Q9.KQ76.5 K9.KJT2.432.T943 7.8765.AT85.KQ87 T864.A43.J9.AJ62"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 36"
+  board_number: 36
+  dealer: West
+  vulnerability: Both
+  hands:
+    North: "ST2H96DA63CQJT952"
+    East: "SA83HAQJT5DQ4C863"
+    South: "SK75HK743DT82CAK4"
+    West: "SQJ964H82DKJ975C7"
+  auction: ["1S", "P", "4S", "P", "P", "P"]
+  expected:
+    identifier: "36-187402a1ceedce92c5647b9cf9:1S,P,4S,P,P,P"
+    lin: "md|4SK75HK743DT82CAK4,SQJ964H82DKJ975C7,ST2H96DA63CQJT952|sv|b|mb|1s|mb|p|mb|4s|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "36"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "All"]
+      [Deal "W:QJ964.82.KJ975.7 T2.96.A63.QJT952 A83.AQJT5.Q4.863 K75.K743.T82.AK4"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 37"
+  board_number: 37
+  dealer: North
+  vulnerability: NS
+  hands:
+    North: "SAT4HA532DT863CQ6"
+    East: "SKQ95HQT8DA75C875"
+    South: "S82HK964DKQ9CAK93"
+    West: "SJ763HJ7DJ42CJT42"
+  auction: ["P", "P", "P", "P"]
+  expected:
+    identifier: "37-ed16f2b3448e908b6762c7e4d4:P,P,P,P"
+    lin: "md|1S82HK964DKQ9CAK93,SJ763HJ7DJ42CJT42,SAT4HA532DT863CQ6|sv|n|mb|p|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "37"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "N"]
+      [Vulnerable "NS"]
+      [Deal "N:AT4.A532.T863.Q6 KQ95.QT8.A75.875 82.K964.KQ9.AK93 J763.J7.J42.JT42"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 38"
+  board_number: 38
+  dealer: East
+  vulnerability: EW
+  hands:
+    North: "S52HJT87DJ9762C76"
+    East: "SAKJ8764HAQ4DQC95"
+    South: "SQTHK652DT54CAKQJ"
+    West: "S93H93DAK83CT8432"
+  auction: ["1N", "P", "3N", "P", "P", "P"]
+  expected:
+    identifier: "38-fd0dea8e8321fb683064d15e65:1N,P,3N,P,P,P"
+    lin: "md|2SQTHK652DT54CAKQJ,S93H93DAK83CT8432,S52HJT87DJ9762C76|sv|e|mb|1n|mb|p|mb|3n|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "38"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "E"]
+      [Vulnerable "EW"]
+      [Deal "E:AKJ8764.AQ4.Q.95 QT.K652.T54.AKQJ 93.93.AK83.T8432 52.JT87.J9762.76"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 39"
+  board_number: 39
+  dealer: South
+  vulnerability: Both
+  hands:
+    North: "SK72HA97DAT74CQ73"
+    East: "S86543HT52D95CJ86"
+    South: "SAJ9HQDK83CAKT952"
+    West: "SQTHKJ8643DQJ62C4"
+  auction: ["P", "P", "P", "P"]
+  expected:
+    identifier: "39-8e4692b8724f87dcc7b0551bb2:P,P,P,P"
+    lin: "md|3SAJ9HQDK83CAKT952,SQTHKJ8643DQJ62C4,SK72HA97DAT74CQ73|sv|b|mb|p|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "39"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "S"]
+      [Vulnerable "All"]
+      [Deal "S:AJ9.Q.K83.AKT952 QT.KJ8643.QJ62.4 K72.A97.AT74.Q73 86543.T52.95.J86"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
+
+- name: "Board 40"
+  board_number: 40
+  dealer: West
+  vulnerability: None
+  hands:
+    North: "SKT32HKQT7D987CA3"
+    East: "SAQ8H93DAJT643C74"
+    South: "SJ6HA854DKQCQJ965"
+    West: "S9754HJ62D52CKT82"
+  auction: ["1S", "P", "4S", "P", "P", "P"]
+  expected:
+    identifier: "40-c69eeb35d0169dac93083edc91:1S,P,4S,P,P,P"
+    lin: "md|4SJ6HA854DKQCQJ965,S9754HJ62D52CKT82,SKT32HKQT7D987CA3|sv|o|mb|1s|mb|p|mb|4s|mb|p|mb|p|mb|p|"
+    pbn: |
+      [Event "?"]
+      [Site "?"]
+      [Date "?"]
+      [Board "40"]
+      [West "?"]
+      [North "?"]
+      [East "?"]
+      [South "?"]
+      [Dealer "W"]
+      [Vulnerable "None"]
+      [Deal "W:9754.J62.52.KT82 KT32.KQT7.987.A3 AQ8.93.AJT643.74 J6.A854.KQ.QJ965"]
+      [Scoring "?"]
+      [Declarer "?"]
+      [Contract "?"]
+      [Result "?"]
