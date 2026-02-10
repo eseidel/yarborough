@@ -74,7 +74,7 @@ export function PracticePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <NavBar title="Practice Bidding" />
+      <NavBar />
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
         {/* User's hand */}
         <div className="flex flex-col items-center gap-1">

@@ -54,7 +54,7 @@ export function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <NavBar title="Bid Explorer" />
+      <NavBar />
       <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full p-4 gap-4">
         <CallTable callHistory={history} />
         <div className="flex-1 overflow-y-auto bg-white rounded-lg shadow">
