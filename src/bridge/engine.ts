@@ -1,0 +1,48 @@
+import type { Call, CallInterpretation, StrainName } from './types';
+
+// These will be resolved after wasm-pack builds the crate
+import init, { get_interpretations } from '../../crates/bridge-engine/pkg/bridge_engine';
+
+let initialized = false;
+
+async function ensureInit() {
+  if (!initialized) {
+    await init();
+    initialized = true;
+  }
+}
+
+interface RawInterpretation {
+  call_name: string;
+  rule_name: string;
+  description: string;
+}
+
+function parseCallName(name: string): Call {
+  if (name === 'Pass') return { type: 'pass' };
+  if (name === 'X') return { type: 'double' };
+  if (name === 'XX') return { type: 'redouble' };
+
+  const level = parseInt(name[0], 10);
+  const strainMap: Record<string, StrainName> = {
+    C: 'C', D: 'D', H: 'H', S: 'S', N: 'N',
+  };
+  const strain = strainMap[name.slice(1)] ?? 'N';
+  return { type: 'bid', level, strain };
+}
+
+/** Call the WASM engine to get bid interpretations for the current auction state. */
+export async function getInterpretations(
+  callsString: string,
+  dealer: string,
+): Promise<CallInterpretation[]> {
+  await ensureInit();
+
+  const raw = get_interpretations(callsString, dealer) as RawInterpretation[];
+
+  return raw.map(r => ({
+    call: parseCallName(r.call_name),
+    ruleName: r.rule_name,
+    description: r.description,
+  }));
+}
