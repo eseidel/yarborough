@@ -74,28 +74,31 @@ The solver does **not** traverse a tree. It iterates through the `BidRule` list 
 
 1. **Initialize Candidates:** Create an empty list `valid_bids`.
 2. **Iterate Rules:** For each `BidRule` in `context_rules`:
-  * **Sort Variants:** Sort `variants` by `priority` (Descending).
-  * **Check Variants:**
-    * For each `Variant`:
-      * Check if `hand` satisfies *all* `constraints`.
-  * **Optimization:** If a high-priority variant matches, stop checking lower-priority variants for *this specific bid*.
-  * **Store Match:** If a variant matches, push `(Bid, Variant, Score)` to `valid_bids`.
+
+- **Sort Variants:** Sort `variants` by `priority` (Descending).
+- **Check Variants:**
+  - For each `Variant`:
+    - Check if `hand` satisfies _all_ `constraints`.
+- **Optimization:** If a high-priority variant matches, stop checking lower-priority variants for _this specific bid_.
+- **Store Match:** If a variant matches, push `(Bid, Variant, Score)` to `valid_bids`.
+
 3. **Selection:**
-  * If `valid_bids` is empty -> Trigger **Natural Fallback** (Section 5).
-  * If `valid_bids` has items -> Return the one with the highest `Variant.priority`.
+
+- If `valid_bids` is empty -> Trigger **Natural Fallback** (Section 5).
+- If `valid_bids` has items -> Return the one with the highest `Variant.priority`.
 
 ---
 
 ## 4. The Context Manager (State Machine)
 
-The engine must know *which* rules to load. The `ContextManager` analyzes the `AuctionHistory` to determine the current state.
+The engine must know _which_ rules to load. The `ContextManager` analyzes the `AuctionHistory` to determine the current state.
 
 **State Definitions:**
 
-* `Context::Opening`: No bids yet (or all Pass). -> Load `rules/opening.json`
-* `Context::Response`: Partner opened, RHO (Right Hand Opponent) passed. -> Load `rules/responses.json`
-* `Context::Overcall`: RHO opened. -> Load `rules/competitive.json`
-* `Context::Balancing`: Auction is about to pass out. -> Load `rules/balancing.json`
+- `Context::Opening`: No bids yet (or all Pass). -> Load `rules/opening.json`
+- `Context::Response`: Partner opened, RHO (Right Hand Opponent) passed. -> Load `rules/responses.json`
+- `Context::Overcall`: RHO opened. -> Load `rules/competitive.json`
+- `Context::Balancing`: Auction is about to pass out. -> Load `rules/balancing.json`
 
 **Implementation Note:**
 The Context Manager acts as the **Filter** for the Solver. It prevents the engine from checking "Response to 1NT" rules when the auction is actually in "Opening" phase.
@@ -109,18 +112,18 @@ The Context Manager acts as the **Filter** for the Solver. It prevents the engin
 **Problem:** A bid represents two disjoint hand types (Weak OR Strong).
 **Solution:** Use **Multiple Variants**.
 
-* Define `Variant A` (Weak): Constraints `HCP < 10` AND `5-5 Majors`.
-* Define `Variant B` (Strong): Constraints `HCP > 16` AND `5-5 Majors`.
-* *Note:* The gap (11-15 HCP) is naturally excluded. If the hand falls in the gap, no variant matches, and the solver moves to the next bid (e.g., Simple Overcall).
+- Define `Variant A` (Weak): Constraints `HCP < 10` AND `5-5 Majors`.
+- Define `Variant B` (Strong): Constraints `HCP > 16` AND `5-5 Majors`.
+- _Note:_ The gap (11-15 HCP) is naturally excluded. If the hand falls in the gap, no variant matches, and the solver moves to the next bid (e.g., Simple Overcall).
 
 ### 5.2 The "Exception" Problem (e.g., 1D on 3 cards)
 
 **Problem:** A bid usually implies X, but strictly implies Y in rare cases.
 **Solution:** Use **Priority Ordering**.
 
-* **Variant 1 (Priority 100):** "Natural Diamond". Requires `Length >= 4`.
-* **Variant 2 (Priority 50):** "Stuck 1D". Requires `Length == 3` AND `Shape == 4-4-3-2` AND `HCP in [12, 21]`.
-* *Logic:* The solver checks Variant 1 first. If it fails (hand has 3 diamonds), it checks Variant 2. If that succeeds, it returns the bid with the description: *"Forced 1D bid (4-4-3-2 shape)."*
+- **Variant 1 (Priority 100):** "Natural Diamond". Requires `Length >= 4`.
+- **Variant 2 (Priority 50):** "Stuck 1D". Requires `Length == 3` AND `Shape == 4-4-3-2` AND `HCP in [12, 21]`.
+- _Logic:_ The solver checks Variant 1 first. If it fails (hand has 3 diamonds), it checks Variant 2. If that succeeds, it returns the bid with the description: _"Forced 1D bid (4-4-3-2 shape)."_
 
 ---
 
@@ -141,14 +144,16 @@ trait NaturalEvaluator {
 
 1. **Candidate Generation:** Generate logical natural bids (Pass, Raise Partner, Bid Own Suit, Bid NT).
 2. **Heuristic: Law of Total Tricks (LOTT):**
-  * Calculate `Total Trumps` = (My Suit Length + Partner's Estimated Length).
-  * Calculate `Safe Level` = `Total Trumps - 6`.
-  * Adjust for `Combined HCP` (e.g., if HCP > 25, force Game).
+
+- Calculate `Total Trumps` = (My Suit Length + Partner's Estimated Length).
+- Calculate `Safe Level` = `Total Trumps - 6`.
+- Adjust for `Combined HCP` (e.g., if HCP > 25, force Game).
 
 3. **Simulation (Advanced/Optional):**
-  * Generate 20 valid hands for the other 3 players consistent with `AuctionHistory`.
-  * Solve Double Dummy for all candidates.
-  * Pick the bid with the highest expected IMP/Matchpoint score.
+
+- Generate 20 valid hands for the other 3 players consistent with `AuctionHistory`.
+- Solve Double Dummy for all candidates.
+- Pick the bid with the highest expected IMP/Matchpoint score.
 
 ---
 
@@ -156,10 +161,10 @@ trait NaturalEvaluator {
 
 ### 7.1 Crate Structure
 
-* `bridge-core`: Basic types (`Card`, `Suit`, `Hand`).
-* `bridge-solver`: The logic engine (`Solver`, `ContextManager`, `Evaluator`).
-* `bridge-rules`: The JSON definitions for SAYC/2/1.
-* `bridge-wasm`: The `wasm-bindgen` interface exposing the `get_best_bid` function to JavaScript.
+- `bridge-core`: Basic types (`Card`, `Suit`, `Hand`).
+- `bridge-solver`: The logic engine (`Solver`, `ContextManager`, `Evaluator`).
+- `bridge-rules`: The JSON definitions for SAYC/2/1.
+- `bridge-wasm`: The `wasm-bindgen` interface exposing the `get_best_bid` function to JavaScript.
 
 ### 7.2 Integration Steps for the Coding Agent
 
@@ -171,7 +176,7 @@ trait NaturalEvaluator {
 
 ## 8. Requirements Checklist
 
-* [ ] **Strictness:** Engine must never make an illegal bid (e.g., responding to Blackwood without Aces).
-* [ ] **Explainability:** Returns *why* a bid was chosen (e.g., "Matched Variant: Weak Michaels").
-* [ ] **Performance:** `get_best_bid` must return in < 50ms via WASM.
-* [ ] **Extensibility:** Adding "2/1 Game Force" should only require adding a `2over1.json` rule file, not recompiling code.
+- [ ] **Strictness:** Engine must never make an illegal bid (e.g., responding to Blackwood without Aces).
+- [ ] **Explainability:** Returns _why_ a bid was chosen (e.g., "Matched Variant: Weak Michaels").
+- [ ] **Performance:** `get_best_bid` must return in < 50ms via WASM.
+- [ ] **Extensibility:** Adding "2/1 Game Force" should only require adding a `2over1.json` rule file, not recompiling code.

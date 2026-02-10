@@ -1,4 +1,4 @@
-export type SuitName = 'C' | 'D' | 'H' | 'S';
+export type SuitName = "C" | "D" | "H" | "S";
 
 export interface Suit {
   name: SuitName;
@@ -8,21 +8,68 @@ export interface Suit {
 }
 
 export const SUITS: Record<SuitName, Suit> = {
-  C: { name: 'C', displayName: 'Clubs', symbol: '\u2663', color: 'text-blue-900' },
-  D: { name: 'D', displayName: 'Diamonds', symbol: '\u2666', color: 'text-orange-600' },
-  H: { name: 'H', displayName: 'Hearts', symbol: '\u2665', color: 'text-red-600' },
-  S: { name: 'S', displayName: 'Spades', symbol: '\u2660', color: 'text-black' },
+  C: {
+    name: "C",
+    displayName: "Clubs",
+    symbol: "\u2663",
+    color: "text-blue-900",
+  },
+  D: {
+    name: "D",
+    displayName: "Diamonds",
+    symbol: "\u2666",
+    color: "text-orange-600",
+  },
+  H: {
+    name: "H",
+    displayName: "Hearts",
+    symbol: "\u2665",
+    color: "text-red-600",
+  },
+  S: {
+    name: "S",
+    displayName: "Spades",
+    symbol: "\u2660",
+    color: "text-black",
+  },
 };
 
 // Display order: spades on top
-export const SUIT_ORDER: SuitName[] = ['S', 'H', 'D', 'C'];
+export const SUIT_ORDER: SuitName[] = ["S", "H", "D", "C"];
 
-export type RankName = 'A' | 'K' | 'Q' | 'J' | 'T' | '9' | '8' | '7' | '6' | '5' | '4' | '3' | '2';
+export type RankName =
+  | "A"
+  | "K"
+  | "Q"
+  | "J"
+  | "T"
+  | "9"
+  | "8"
+  | "7"
+  | "6"
+  | "5"
+  | "4"
+  | "3"
+  | "2";
 
-export const RANK_ORDER: RankName[] = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+export const RANK_ORDER: RankName[] = [
+  "A",
+  "K",
+  "Q",
+  "J",
+  "T",
+  "9",
+  "8",
+  "7",
+  "6",
+  "5",
+  "4",
+  "3",
+  "2",
+];
 
 export function displayRank(rank: RankName): string {
-  return rank === 'T' ? '10' : rank;
+  return rank === "T" ? "10" : rank;
 }
 
 export interface Card {
@@ -40,18 +87,23 @@ export function cardsBySuit(hand: Hand): Record<SuitName, Card[]> {
     result[card.suit].push(card);
   }
   for (const suit of SUIT_ORDER) {
-    result[suit].sort((a, b) => RANK_ORDER.indexOf(a.rank) - RANK_ORDER.indexOf(b.rank));
+    result[suit].sort(
+      (a, b) => RANK_ORDER.indexOf(a.rank) - RANK_ORDER.indexOf(b.rank),
+    );
   }
   return result;
 }
 
-export type Position = 'N' | 'E' | 'S' | 'W';
+export type Position = "N" | "E" | "S" | "W";
 
 export const POSITION_NAMES: Record<Position, string> = {
-  N: 'North', E: 'East', S: 'South', W: 'West',
+  N: "North",
+  E: "East",
+  S: "South",
+  W: "West",
 };
 
-export const CALL_TABLE_ORDER: Position[] = ['W', 'N', 'E', 'S'];
+export const CALL_TABLE_ORDER: Position[] = ["W", "N", "E", "S"];
 
 export interface Deal {
   north: Hand;
@@ -61,24 +113,29 @@ export interface Deal {
 }
 
 export function handForPosition(deal: Deal, position: Position): Hand {
-  const map: Record<Position, Hand> = { N: deal.north, E: deal.east, S: deal.south, W: deal.west };
+  const map: Record<Position, Hand> = {
+    N: deal.north,
+    E: deal.east,
+    S: deal.south,
+    W: deal.west,
+  };
   return map[position];
 }
 
 // Strains: suits + notrump (for bidding)
-export type StrainName = SuitName | 'N';
+export type StrainName = SuitName | "N";
 
 export function strainSymbol(strain: StrainName): string {
-  if (strain === 'N') return 'NT';
+  if (strain === "N") return "NT";
   return SUITS[strain].symbol;
 }
 
 export function strainColor(strain: StrainName): string {
-  if (strain === 'N') return 'text-black';
+  if (strain === "N") return "text-black";
   return SUITS[strain].color;
 }
 
-export type CallType = 'bid' | 'pass' | 'double' | 'redouble';
+export type CallType = "bid" | "pass" | "double" | "redouble";
 
 export interface Call {
   type: CallType;
@@ -97,8 +154,16 @@ export interface CallInterpretation {
   description?: string;
 }
 
-const HCP_VALUES: Partial<Record<RankName, number>> = { A: 4, K: 3, Q: 2, J: 1 };
+const HCP_VALUES: Partial<Record<RankName, number>> = {
+  A: 4,
+  K: 3,
+  Q: 2,
+  J: 1,
+};
 
 export function highCardPoints(hand: Hand): number {
-  return hand.cards.reduce((sum, card) => sum + (HCP_VALUES[card.rank] ?? 0), 0);
+  return hand.cards.reduce(
+    (sum, card) => sum + (HCP_VALUES[card.rank] ?? 0),
+    0,
+  );
 }

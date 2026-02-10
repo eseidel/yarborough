@@ -1,8 +1,7 @@
-use crate::schema::{System, Constraint, Variant};
-use bridge_core::hand::Hand;
-use bridge_core::call::Call;
+use crate::schema::{Constraint, System, Variant};
 use bridge_core::auction::Auction;
-
+use bridge_core::call::Call;
+use bridge_core::hand::Hand;
 
 pub struct Engine {
     system: System,
@@ -35,7 +34,9 @@ impl Engine {
             for variant in &rule.variants {
                 if self.check_constraints(hand, &variant.constraints) {
                     let is_better = match &best_match {
-                        Some((_, current_best_variant)) => variant.priority > current_best_variant.priority,
+                        Some((_, current_best_variant)) => {
+                            variant.priority > current_best_variant.priority
+                        }
                         None => true,
                     };
 
@@ -76,9 +77,9 @@ impl Engine {
                 let has_singleton_or_void = dist.iter().any(|&count| count <= 1);
                 // Also 5-4-2-2 is sometimes treated as semi-balanced, but strict balanced usually means no more than one doubleton.
                 let doubleton_count = dist.iter().filter(|&&count| count == 2).count();
-                
+
                 let is_balanced = !has_singleton_or_void && doubleton_count <= 1;
-                
+
                 is_balanced == *balanced
             }
         }

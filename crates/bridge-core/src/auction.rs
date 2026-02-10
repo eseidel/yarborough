@@ -58,9 +58,7 @@ impl Auction {
                         strain: last_strain,
                     }) = last_bid
                     {
-                        if *level < last_level
-                            || (*level == last_level && *strain <= last_strain)
-                        {
+                        if *level < last_level || (*level == last_level && *strain <= last_strain) {
                             return false;
                         }
                     }
@@ -204,7 +202,7 @@ mod tests {
                 level: 1,
                 strain: Strain::Clubs,
             },
-            Call::Double, // Opponent
+            Call::Double,   // Opponent
             Call::Redouble, // Opponent's double (friend of bidder)
         ];
         assert!(Auction::validate_calls(&calls));

@@ -1,16 +1,16 @@
+use crate::auction::Auction;
 use crate::board::{Board, Position, Vulnerability};
+use crate::call::Call;
 use crate::card::Card;
 use crate::hand::Hand;
 use crate::rank::Rank;
-use crate::suit::Suit;
-use crate::call::Call;
-use crate::auction::Auction;
 use crate::strain::Strain;
+use crate::suit::Suit;
 use std::collections::HashMap;
 
 pub fn export_board(board: &Board, auction: Option<&Auction>) -> String {
     let mut parts = Vec::new();
-    
+
     // md (deal)
     // LIN uses 1=N, 2=E, 3=S, 4=W
     // Format: md|3S...H...D...C...,...|
@@ -21,13 +21,13 @@ pub fn export_board(board: &Board, auction: Option<&Auction>) -> String {
         Position::South => 3,
         Position::West => 4,
     };
-    
+
     let mut md = format!("md|{}", dealer_idx);
     let mut current_pos = Position::South; // LIN often starts with South? No, actually it can start anywhere but let's be careful.
-    // The convention is often md|dealer_idx_plus_offset...
-    // Let's use the first hand as South by convention if possible.
-    // Actually, LIN md format is usually md|dealer_idxHand1,Hand2,Hand3| where Hand4 is inferred.
-    
+                                           // The convention is often md|dealer_idx_plus_offset...
+                                           // Let's use the first hand as South by convention if possible.
+                                           // Actually, LIN md format is usually md|dealer_idxHand1,Hand2,Hand3| where Hand4 is inferred.
+
     for i in 0..3 {
         if i > 0 {
             md.push(',');
@@ -39,7 +39,7 @@ pub fn export_board(board: &Board, auction: Option<&Auction>) -> String {
     }
     md.push('|');
     parts.push(md);
-    
+
     // sv (vulnerability) : o (none), n (ns), e (ew), b (both)
     let sv = match board.vulnerability {
         Vulnerability::None => "o",
@@ -48,14 +48,14 @@ pub fn export_board(board: &Board, auction: Option<&Auction>) -> String {
         Vulnerability::Both => "b",
     };
     parts.push(format!("sv|{}|", sv));
-    
+
     // mb (bids)
     if let Some(a) = auction {
         for call in &a.calls {
             parts.push(format!("mb|{}|", export_call(*call)));
         }
     }
-    
+
     parts.join("")
 }
 
@@ -97,12 +97,12 @@ pub fn import_board(lin: &str) -> Option<(Board, Option<Auction>)> {
     let mut vulnerability = Vulnerability::None;
     let mut hands = HashMap::new();
     let mut calls = Vec::new();
-    
+
     let mut i = 0;
     while i < parts.len() {
         match parts[i] {
             "md" if i + 1 < parts.len() => {
-                let md_val = parts[i+1];
+                let md_val = parts[i + 1];
                 let (d_char, hands_str) = md_val.split_at(1);
                 let d_idx = d_char.parse::<u8>().ok()?;
                 dealer = match d_idx {
@@ -112,7 +112,7 @@ pub fn import_board(lin: &str) -> Option<(Board, Option<Auction>)> {
                     4 => Position::West,
                     _ => Position::South,
                 };
-                
+
                 let h_parts: Vec<&str> = hands_str.split(',').collect();
                 let mut current_pos = Position::South;
                 for h_str in h_parts {
@@ -122,12 +122,12 @@ pub fn import_board(lin: &str) -> Option<(Board, Option<Auction>)> {
                     current_pos = current_pos.next();
                 }
                 // Handle the 4th hand if it's there (sometimes only 3 are provided)
-                // If only 3 are provided, we'd need to calculate the 4th. 
+                // If only 3 are provided, we'd need to calculate the 4th.
                 // For now let's assume all or 3 are provided.
                 i += 1;
-            },
+            }
             "sv" if i + 1 < parts.len() => {
-                vulnerability = match parts[i+1] {
+                vulnerability = match parts[i + 1] {
                     "o" => Vulnerability::None,
                     "n" => Vulnerability::NS,
                     "e" => Vulnerability::EW,
@@ -135,46 +135,46 @@ pub fn import_board(lin: &str) -> Option<(Board, Option<Auction>)> {
                     _ => Vulnerability::None,
                 };
                 i += 1;
-            },
+            }
             "mb" if i + 1 < parts.len() => {
-                if let Some(call) = import_call(parts[i+1]) {
+                if let Some(call) = import_call(parts[i + 1]) {
                     calls.push(call);
                 }
                 i += 1;
-            },
+            }
             _ => {}
         }
         i += 1;
     }
-    
+
     let board = Board {
         dealer,
         vulnerability,
         hands,
     };
-    
+
     let auction = if !calls.is_empty() {
-        Some(Auction {
-            dealer,
-            calls,
-        })
+        Some(Auction { dealer, calls })
     } else {
         None
     };
-    
+
     Some((board, auction))
 }
 
 fn import_hand(s: &str) -> Option<Hand> {
     let mut cards = Vec::new();
     let mut current_suit = Suit::Spades;
-    
+
     let mut chars = s.chars();
     while let Some(c) = chars.next() {
         if let Some(suit) = Suit::from_char(c) {
             current_suit = suit;
         } else if let Some(rank) = Rank::from_char(c) {
-            cards.push(Card { suit: current_suit, rank });
+            cards.push(Card {
+                suit: current_suit,
+                rank,
+            });
         }
     }
     Some(Hand { cards })
@@ -190,7 +190,7 @@ fn import_call(s: &str) -> Option<Call> {
             let suit_char = s.chars().nth(1)?;
             let strain = Strain::from_char(suit_char)?;
             Some(Call::Bid { level, strain })
-        },
+        }
         _ => None,
     }
 }
@@ -207,8 +207,20 @@ mod tests {
 
     #[test]
     fn test_lin_call_import() {
-        assert_eq!(import_call("1S"), Some(Call::Bid { level: 1, strain: Strain::Spades }));
-        assert_eq!(import_call("1N"), Some(Call::Bid { level: 1, strain: Strain::NoTrump }));
+        assert_eq!(
+            import_call("1S"),
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Spades
+            })
+        );
+        assert_eq!(
+            import_call("1N"),
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::NoTrump
+            })
+        );
         assert_eq!(import_call("p"), Some(Call::Pass));
     }
 }

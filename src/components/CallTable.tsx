@@ -1,10 +1,10 @@
-import { type CallHistory, CALL_TABLE_ORDER, POSITION_NAMES } from '../bridge';
-import { CallDisplay } from './CallDisplay';
+import { type CallHistory, CALL_TABLE_ORDER, POSITION_NAMES } from "../bridge";
+import { CallDisplay } from "./CallDisplay";
 
 function isAuctionComplete(history: CallHistory): boolean {
   const { calls } = history;
   if (calls.length < 4) return false;
-  return calls.slice(-3).every(c => c.type === 'pass');
+  return calls.slice(-3).every((c) => c.type === "pass");
 }
 
 export function CallTable({ callHistory }: { callHistory: CallHistory }) {
@@ -14,7 +14,7 @@ export function CallTable({ callHistory }: { callHistory: CallHistory }) {
   return (
     <div className="bg-gray-100 rounded-lg p-4">
       <div className="grid grid-cols-4 gap-1 text-center">
-        {CALL_TABLE_ORDER.map(pos => (
+        {CALL_TABLE_ORDER.map((pos) => (
           <div key={pos} className="font-bold text-sm text-gray-600 py-1">
             {POSITION_NAMES[pos]}
           </div>

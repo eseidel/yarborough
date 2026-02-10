@@ -1,47 +1,54 @@
-import { useState, useEffect } from 'react';
-import { NavBar } from '../components/NavBar';
-import { CallTable } from '../components/CallTable';
-import { CallMenu } from '../components/CallMenu';
-import type { CallHistory, CallInterpretation, Call } from '../bridge';
-import { getInterpretations } from '../bridge/engine';
+import { useState, useEffect } from "react";
+import { NavBar } from "../components/NavBar";
+import { CallTable } from "../components/CallTable";
+import { CallMenu } from "../components/CallMenu";
+import type { CallHistory, CallInterpretation, Call } from "../bridge";
+import { getInterpretations } from "../bridge/engine";
 
 function callToString(call: Call): string {
-  if (call.type === 'pass') return 'Pass';
-  if (call.type === 'double') return 'X';
-  if (call.type === 'redouble') return 'XX';
-  const strainMap = { C: 'C', D: 'D', H: 'H', S: 'S', N: 'N' } as const;
+  if (call.type === "pass") return "Pass";
+  if (call.type === "double") return "X";
+  if (call.type === "redouble") return "XX";
+  const strainMap = { C: "C", D: "D", H: "H", S: "S", N: "N" } as const;
   return `${call.level}${strainMap[call.strain!]}`;
 }
 
 export function ExplorePage() {
-  const [history, setHistory] = useState<CallHistory>({ dealer: 'N', calls: [] });
-  const [interpretations, setInterpretations] = useState<CallInterpretation[]>([]);
+  const [history, setHistory] = useState<CallHistory>({
+    dealer: "N",
+    calls: [],
+  });
+  const [interpretations, setInterpretations] = useState<CallInterpretation[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
 
-    const callsString = history.calls.map(callToString).join(',');
-    getInterpretations(callsString, history.dealer).then(result => {
+    const callsString = history.calls.map(callToString).join(",");
+    getInterpretations(callsString, history.dealer).then((result) => {
       if (!cancelled) {
         setInterpretations(result);
         setLoading(false);
       }
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [history]);
 
   function handleSelect(interp: CallInterpretation) {
-    setHistory(prev => ({
+    setHistory((prev) => ({
       ...prev,
       calls: [...prev.calls, interp.call],
     }));
   }
 
   function handleClear() {
-    setHistory({ dealer: 'N', calls: [] });
+    setHistory({ dealer: "N", calls: [] });
   }
 
   return (
@@ -53,7 +60,10 @@ export function ExplorePage() {
           {loading ? (
             <div className="p-4 text-center text-gray-400">Loading...</div>
           ) : (
-            <CallMenu interpretations={interpretations} onSelect={handleSelect} />
+            <CallMenu
+              interpretations={interpretations}
+              onSelect={handleSelect}
+            />
           )}
         </div>
         {history.calls.length > 0 && (
