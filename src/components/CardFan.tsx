@@ -22,10 +22,14 @@ function MiniCard({ card, overlap }: { card: Card; overlap: boolean }) {
     <div
       className={`${overlap ? "-ml-5" : ""} relative w-10 h-14 bg-white rounded-md border border-gray-300 shadow-sm select-none shrink-0`}
     >
-      <span className={`${suit.color} absolute top-0 left-1 text-lg font-bold leading-none`}>
+      <span
+        className={`${suit.color} absolute top-0 left-1 text-lg font-bold leading-none`}
+      >
         {displayRank(card.rank)}
       </span>
-      <span className={`${suit.color} absolute bottom-0 right-0.5 text-3xl leading-none`}>
+      <span
+        className={`${suit.color} absolute bottom-0 right-0.5 text-3xl leading-none`}
+      >
         {suit.symbol}
       </span>
     </div>

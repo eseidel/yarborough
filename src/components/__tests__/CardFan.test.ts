@@ -33,10 +33,19 @@ describe("fanOrderCards", () => {
 
     // Diamonds first (high to low), then Clubs, Hearts, Spades
     expect(labels).toEqual([
-      "QD", "8D", "4D",
-      "JC", "7C", "3C",
-      "KH", "9H", "5H",
-      "AS", "TS", "6S", "2S",
+      "QD",
+      "8D",
+      "4D",
+      "JC",
+      "7C",
+      "3C",
+      "KH",
+      "9H",
+      "5H",
+      "AS",
+      "TS",
+      "6S",
+      "2S",
     ]);
   });
 
@@ -54,9 +63,9 @@ describe("fanOrderCards", () => {
     const suits = ordered.map((c) => c.suit);
 
     // No D or C cards, only H then S
-    expect(suits).toEqual(["Q", "J", "A", "K"].map((_, i) =>
-      i < 2 ? "H" : "S"
-    ));
+    expect(suits).toEqual(
+      ["Q", "J", "A", "K"].map((_, i) => (i < 2 ? "H" : "S")),
+    );
     expect(ordered).toHaveLength(4);
   });
 
