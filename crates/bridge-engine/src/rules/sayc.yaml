@@ -99,7 +99,7 @@ opening:
   - call: "1N"
     variants:
       - name: "Opening 1NT"
-        priority: 30
+        priority: 40
         description: "15-17 HCP, Balanced"
         constraints:
           - type: MinHCP
@@ -163,7 +163,7 @@ opening:
   - call: "2N"
     variants:
       - name: "Opening 2NT"
-        priority: 30
+        priority: 40
         description: "20-21 HCP, Balanced"
         constraints:
           - type: MinHCP
