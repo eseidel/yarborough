@@ -8,6 +8,7 @@ import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
 import { type Call, type CallInterpretation, handForPosition } from "../bridge";
 import { CallDisplay } from "../components/CallDisplay";
+import { AboutFooter } from "../components/AboutFooter";
 import { parseBoardId, generateBoardId } from "../bridge/identifier";
 import {
   isAuctionComplete,
@@ -217,6 +218,7 @@ export function PracticePage() {
             )}
           </div>
         )}
+        <AboutFooter />
       </div>
     </div>
   );
