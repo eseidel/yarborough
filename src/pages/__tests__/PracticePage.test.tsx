@@ -1,9 +1,16 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PracticePage } from "../PracticePage";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import * as auction from "../../bridge/auction";
 import * as identifier from "../../bridge/identifier";
+import * as engine from "../../bridge/engine";
 
 // Mock the bridge modules
 vi.mock("../../bridge/auction", async (importOriginal) => {
@@ -24,9 +31,19 @@ vi.mock("../../bridge/identifier", async (importOriginal) => {
   };
 });
 
+vi.mock("../../bridge/engine", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../bridge/engine")>();
+  return {
+    ...actual,
+    getSuggestedBid: vi.fn(),
+    getInterpretations: vi.fn(),
+  };
+});
+
 const mockAddRobotBids = vi.mocked(auction.addRobotBids);
 const mockIsAuctionComplete = vi.mocked(auction.isAuctionComplete);
 const mockParseBoardId = vi.mocked(identifier.parseBoardId);
+const mockGetInterpretations = vi.mocked(engine.getInterpretations);
 
 describe("PracticePage", () => {
   const boardId = "1-00000000000000000000000000";
@@ -85,6 +102,78 @@ describe("PracticePage", () => {
         "S",
         boardId,
       );
+    });
+  });
+
+  it("shows explanation when a bid in call history is clicked", async () => {
+    mockAddRobotBids.mockResolvedValue({
+      dealer: "N",
+      calls: [
+        { type: "bid", level: 1, strain: "C" },
+        { type: "pass" },
+      ],
+    });
+    mockGetInterpretations.mockResolvedValue([
+      {
+        call: { type: "bid", level: 1, strain: "C" },
+        ruleName: "Opening 1♣",
+        description: "12-21 HCP, 3+ clubs",
+      },
+      {
+        call: { type: "pass" },
+        ruleName: undefined,
+        description: undefined,
+      },
+    ]);
+
+    renderPage();
+
+    // Wait for initial render with calls
+    await waitFor(() =>
+      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
+    );
+
+    // Click the 1♣ bid in the call table (not the BiddingBox)
+    const callTable = screen.getByTestId("call-table");
+    const clubSymbol = within(callTable).getByText("♣");
+    fireEvent.click(clubSymbol.closest("div")!);
+
+    // Should show explanation
+    await waitFor(() => {
+      expect(screen.getByText(/Opening 1♣/)).toBeInTheDocument();
+      expect(screen.getByText("12-21 HCP, 3+ clubs")).toBeInTheDocument();
+    });
+
+    expect(mockGetInterpretations).toHaveBeenCalledWith("", "N", "None");
+  });
+
+  it("shows 'No interpretation available' for unrecognized bids", async () => {
+    mockAddRobotBids.mockResolvedValue({
+      dealer: "N",
+      calls: [{ type: "pass" }],
+    });
+    mockGetInterpretations.mockResolvedValue([
+      {
+        call: { type: "pass" },
+        ruleName: undefined,
+        description: undefined,
+      },
+    ]);
+
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
+    );
+
+    // Click Pass in the call table (not the BiddingBox)
+    const callTable = screen.getByTestId("call-table");
+    fireEvent.click(within(callTable).getByText("Pass"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/No interpretation available/),
+      ).toBeInTheDocument();
     });
   });
 

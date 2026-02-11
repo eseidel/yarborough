@@ -15,7 +15,7 @@ import {
   addRobotBids,
   callToString,
 } from "../bridge/auction";
-import { getSuggestedBid } from "../bridge/engine";
+import { getSuggestedBid, getInterpretations } from "../bridge/engine";
 import type { CallHistory } from "../bridge";
 
 export function PracticePage() {
@@ -32,6 +32,12 @@ export function PracticePage() {
   const [error, setError] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<CallInterpretation | null>(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
+  const [selectedCallIndex, setSelectedCallIndex] = useState<number | null>(
+    null,
+  );
+  const [callExplanation, setCallExplanation] =
+    useState<CallInterpretation | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
 
   // On mount, run robot bids for the opening
   useEffect(() => {
@@ -79,6 +85,8 @@ export function PracticePage() {
       if (!boardId) return;
       setLoading(true);
       setSuggestion(null);
+      setSelectedCallIndex(null);
+      setCallExplanation(null);
       const afterUser: CallHistory = {
         ...history,
         calls: [...history.calls, call],
@@ -107,6 +115,8 @@ export function PracticePage() {
     if (!boardId || !parsed) return;
     setLoading(true);
     setSuggestion(null);
+    setSelectedCallIndex(null);
+    setCallExplanation(null);
     setError(null);
     const initialHistory: CallHistory = {
       dealer: parsed.dealer,
@@ -123,6 +133,44 @@ export function PracticePage() {
       });
   }, [boardId, parsed]);
 
+  const handleCallClick = useCallback(
+    (callIndex: number) => {
+      if (selectedCallIndex === callIndex) {
+        setSelectedCallIndex(null);
+        setCallExplanation(null);
+        return;
+      }
+      setSelectedCallIndex(callIndex);
+      setCallExplanation(null);
+      setExplanationLoading(true);
+      const callsBefore = history.calls.slice(0, callIndex);
+      const callsStr = callsBefore.map(callToString).join(",");
+      const clickedCall = history.calls[callIndex];
+      getInterpretations(
+        callsStr,
+        history.dealer,
+        parsed?.vulnerability ?? "None",
+      )
+        .then((interps) => {
+          const match = interps.find(
+            (i) =>
+              i.call.type === clickedCall.type &&
+              i.call.level === clickedCall.level &&
+              i.call.strain === clickedCall.strain,
+          );
+          setCallExplanation(
+            match ?? { call: clickedCall, ruleName: undefined, description: undefined },
+          );
+          setExplanationLoading(false);
+        })
+        .catch((err) => {
+          setError(String(err));
+          setExplanationLoading(false);
+        });
+    },
+    [history, selectedCallIndex, parsed?.vulnerability],
+  );
+
   if (!parsed) {
     return <Navigate to="/" replace />;
   }
@@ -136,7 +184,14 @@ export function PracticePage() {
       {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
         {/* Auction table */}
-        <CallTable callHistory={history} vulnerability={vulnerability} />
+        <CallTable
+          callHistory={history}
+          vulnerability={vulnerability}
+          onCallClick={handleCallClick}
+          selectedCallIndex={selectedCallIndex}
+          callExplanation={callExplanation}
+          explanationLoading={explanationLoading}
+        />
 
         {/* User's hand */}
         <div className="flex flex-col items-center">
