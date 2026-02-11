@@ -157,6 +157,12 @@ impl Engine {
 
                 is_balanced == *balanced
             }
+            Constraint::RuleOfTwenty { met } => {
+                let mut dist = hand.distribution();
+                dist.sort_by(|a, b| b.cmp(a));
+                let rule_of_twenty = (hand.hcp() + dist[0] + dist[1]) >= 20;
+                rule_of_twenty == *met
+            }
         }
     }
 }

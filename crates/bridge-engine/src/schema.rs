@@ -70,4 +70,5 @@ pub enum Constraint {
     MinLength { suit: Suit, count: u8 },
     MaxLength { suit: Suit, count: u8 },
     IsBalanced { balanced: bool },
+    RuleOfTwenty { met: bool },
 }

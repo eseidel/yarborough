@@ -7,65 +7,93 @@ opening:
     variants:
       - name: "Pass"
         priority: 1
-        description: "Less than 12 HCP"
+        description: "Does not meet Rule of Twenty"
         constraints:
-          - type: MaxHCP
-            max: 11
-
-  - call: "1C"
-    variants:
-      - name: "Opening 1C"
-        priority: 10
-        description: "12-21 HCP, 3+ Clubs, no 5-card major"
-        constraints:
-          - type: MinHCP
-            min: 12
-          - type: MaxHCP
-            max: 21
-          - type: MinLength
-            suit: Clubs
-            count: 3
+          - type: RuleOfTwenty
+            met: false
 
   - call: "1D"
     variants:
-      - name: "Opening 1D"
-        priority: 10
-        description: "12-21 HCP, 3+ Diamonds, no 5-card major"
+      - name: "Opening 1D (5+)"
+        priority: 29
+        description: "Rule of 20, 5+ Diamonds"
         constraints:
-          - type: MinHCP
-            min: 12
-          - type: MaxHCP
-            max: 21
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Diamonds
+            count: 5
+      - name: "Opening 1D (4)"
+        priority: 27
+        description: "Rule of 20, 4 Diamonds"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Diamonds
+            count: 4
+      - name: "Opening 1D (3)"
+        priority: 24
+        description: "Rule of 20, 3 Diamonds"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
           - type: MinLength
             suit: Diamonds
             count: 3
 
-  - call: "1H"
+  - call: "1C"
     variants:
-      - name: "Opening 1H"
-        priority: 20
-        description: "12-21 HCP, 5+ Hearts"
+      - name: "Opening 1C (5+)"
+        priority: 29
+        description: "Rule of 20, 5+ Clubs"
         constraints:
-          - type: MinHCP
-            min: 12
-          - type: MaxHCP
-            max: 21
+          - type: RuleOfTwenty
+            met: true
           - type: MinLength
-            suit: Hearts
+            suit: Clubs
             count: 5
+      - name: "Opening 1C (4)"
+        priority: 26
+        description: "Rule of 20, 4 Clubs"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Clubs
+            count: 4
+      - name: "Opening 1C (3)"
+        priority: 25
+        description: "Rule of 20, 3+ Clubs"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Clubs
+            count: 3
 
   - call: "1S"
     variants:
       - name: "Opening 1S"
-        priority: 20
-        description: "12-21 HCP, 5+ Spades"
+        priority: 31
+        description: "Rule of 20, 5+ Spades"
         constraints:
-          - type: MinHCP
-            min: 12
-          - type: MaxHCP
-            max: 21
+          - type: RuleOfTwenty
+            met: true
           - type: MinLength
             suit: Spades
+            count: 5
+
+  - call: "1H"
+    variants:
+      - name: "Opening 1H"
+        priority: 30
+        description: "Rule of 20, 5+ Hearts"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Hearts
             count: 5
 
   - call: "1N"
