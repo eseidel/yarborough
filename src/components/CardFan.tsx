@@ -1,20 +1,11 @@
 import {
   type Hand,
   type Card,
-  type SuitName,
   SUITS,
+  FAN_SUIT_ORDER,
   cardsBySuit,
   displayRank,
 } from "../bridge";
-
-/** Suit display order for the card fan: D, C, H, S (left to right). */
-export const FAN_SUIT_ORDER: SuitName[] = ["D", "C", "H", "S"];
-
-/** Return all cards from a hand in fan display order (DCHS, high-to-low within each suit). */
-export function fanOrderCards(hand: Hand): Card[] {
-  const bySuit = cardsBySuit(hand);
-  return FAN_SUIT_ORDER.flatMap((suit) => bySuit[suit]);
-}
 
 function MiniCard({ card, overlap }: { card: Card; overlap: boolean }) {
   const suit = SUITS[card.suit];

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fanOrderCards, FAN_SUIT_ORDER } from "../CardFan";
+import { fanOrderCards, FAN_SUIT_ORDER } from "../../bridge";
 import type { Hand } from "../../bridge";
 
 describe("FAN_SUIT_ORDER", () => {
