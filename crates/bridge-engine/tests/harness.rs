@@ -172,7 +172,10 @@ fn run_sayc_test_vectors() {
             if !update_mode {
                 if let Some(expected_status) = prev_status {
                     // Strip annotations (e.g. "| skip: reason") before comparing
-                    let prev_base = expected_status.split(" | ").next().unwrap_or(expected_status);
+                    let prev_base = expected_status
+                        .split(" | ")
+                        .next()
+                        .unwrap_or(expected_status);
                     let curr_base = status.split(" | ").next().unwrap_or(&status);
                     if prev_base != curr_base {
                         failures.push(format!(
@@ -196,7 +199,8 @@ fn run_sayc_test_vectors() {
 
     if update_mode {
         use std::io::Write;
-        let mut file = fs::File::create(expectations_path).expect("Failed to create expectations file");
+        let mut file =
+            fs::File::create(expectations_path).expect("Failed to create expectations file");
         for (suite_name, results) in new_expectations {
             writeln!(file, "{}:", suite_name).unwrap();
             for (key, status) in results {
