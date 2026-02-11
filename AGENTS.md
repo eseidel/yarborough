@@ -1,5 +1,6 @@
 ```bash
 pnpm test
+pnpm format:check
 cargo test
 cargo fmt --check
 ```
