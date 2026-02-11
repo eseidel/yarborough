@@ -7,7 +7,8 @@ responses:
             priority: 20
             description: "6+ HCP, 4+ Spades"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MinLength
                 suit: Spades
@@ -18,9 +19,11 @@ responses:
             priority: 25
             description: "6-10 HCP, 3+ Hearts"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: Hearts
                 min: 6
-              - type: MaxHCP
+              - type: MaxPoints
+                suit: Hearts
                 max: 10
               - type: MinLength
                 suit: Hearts
@@ -31,7 +34,8 @@ responses:
             priority: 10
             description: "6-10 HCP"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MaxHCP
                 max: 10
@@ -63,7 +67,8 @@ responses:
             priority: 30
             description: "13+ HCP, 4+ Hearts"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: Hearts
                 min: 13
               - type: MinLength
                 suit: Hearts
@@ -74,9 +79,11 @@ responses:
             priority: 26
             description: "10-12 HCP, 3+ Hearts"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: Hearts
                 min: 10
-              - type: MaxHCP
+              - type: MaxPoints
+                suit: Hearts
                 max: 12
               - type: MinLength
                 suit: Hearts
@@ -84,10 +91,11 @@ responses:
       - call: "4H"
         variants:
           - name: "Weak Game Jump"
-            priority: 20
+            priority: 27
             description: "<10 HCP, 5+ Hearts"
             constraints:
-              - type: MaxHCP
+              - type: MaxPoints
+                suit: Hearts
                 max: 10
               - type: MinLength
                 suit: Hearts
@@ -101,9 +109,11 @@ responses:
             priority: 25
             description: "6-10 HCP, 3+ Spades"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: Spades
                 min: 6
-              - type: MaxHCP
+              - type: MaxPoints
+                suit: Spades
                 max: 10
               - type: MinLength
                 suit: Spades
@@ -114,7 +124,8 @@ responses:
             priority: 10
             description: "6-10 HCP"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MaxHCP
                 max: 10
@@ -146,7 +157,8 @@ responses:
             priority: 16
             description: "10+ HCP, 5+ Hearts"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 10
               - type: MinLength
                 suit: Hearts
@@ -157,7 +169,8 @@ responses:
             priority: 30
             description: "13+ HCP, 4+ Spades"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: Spades
                 min: 13
               - type: MinLength
                 suit: Spades
@@ -168,9 +181,11 @@ responses:
             priority: 26
             description: "10-12 HCP, 3+ Spades"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: Spades
                 min: 10
-              - type: MaxHCP
+              - type: MaxPoints
+                suit: Spades
                 max: 12
               - type: MinLength
                 suit: Spades
@@ -178,10 +193,11 @@ responses:
       - call: "4S"
         variants:
           - name: "Weak Game Jump"
-            priority: 20
+            priority: 27
             description: "<10 HCP, 5+ Spades"
             constraints:
-              - type: MaxHCP
+              - type: MaxPoints
+                suit: Spades
                 max: 10
               - type: MinLength
                 suit: Spades

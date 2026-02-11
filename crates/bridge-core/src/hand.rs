@@ -55,6 +55,38 @@ impl Hand {
             }
         });
     }
+
+    pub fn points(&self, trump: Option<Suit>) -> u8 {
+        let hcp = self.hcp();
+        if let Some(t) = trump {
+            // Dummy points: HCP + shortness
+            let mut shortness = 0;
+            for s in Suit::ALL {
+                if s == t {
+                    continue;
+                }
+                let l = self.length(s);
+                if l == 0 {
+                    shortness += 5;
+                } else if l == 1 {
+                    shortness += 3;
+                } else if l == 2 {
+                    shortness += 1;
+                }
+            }
+            hcp + shortness
+        } else {
+            // Length points: HCP + cards > 4
+            let mut length_pts = 0;
+            for s in Suit::ALL {
+                let l = self.length(s);
+                if l > 4 {
+                    length_pts += l - 4;
+                }
+            }
+            hcp + length_pts
+        }
+    }
 }
 
 #[cfg(test)]

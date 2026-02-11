@@ -193,6 +193,8 @@ impl Engine {
                     (hand.hcp() + hand.length(bridge_core::suit::Suit::Spades)) >= 15;
                 rule_of_fifteen == *met
             }
+            Constraint::MinPoints { suit, min } => hand.points(*suit) >= *min,
+            Constraint::MaxPoints { suit, max } => hand.points(*suit) <= *max,
         }
     }
 }

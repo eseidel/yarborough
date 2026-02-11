@@ -135,14 +135,14 @@ test_third_and_fourth_seat_opens:
   43.765.K83.AQJ75:P P P:None: PASS
   Q98.J972.KJ3.AT9:P P P:None: PASS
   AKT75.K75.T8.742:P P P:None: PASS
-  3.K8764.AT93.K85:P P P 1S P:None: PASS
+  3.K8764.AT93.K85:P P P 1S P:None: "FAIL: step 5, expected 3S, got 2D"
 test_minimum_response_to_one_of_a_major:
   T64.652.KJ5.A954:1H P:None: PASS
   9543.K73.T6.A976:1H P:None: PASS
   KQ975.7532.K7.98:1H P:None: PASS
-  753.97.Q753.K982:1H P:None: "FAIL: step 2, expected 2H, got P"
-  753.97.Q753.K982:1S P:None: "FAIL: step 2, expected 2S, got P"
-  742.J98.AT874.T6:1S P:None: "FAIL: step 2, expected 1N, got P"
+  753.97.Q753.K982:1H P:None: PASS
+  753.97.Q753.K982:1S P:None: PASS
+  742.J98.AT874.T6:1S P:None: PASS
   742.J98.AT874.T6:1H P:None: PASS
   T53.QT93.972.QJ4:1H P:Both: PASS
 test_invitational_response_to_one_of_a_major:
@@ -150,11 +150,11 @@ test_invitational_response_to_one_of_a_major:
   Q98.KJ732.KJ.JT9:1H P:None: PASS
   QJ54.J753.KT2.A4:1S P:None: PASS
   43.KT76.K85.A753:1H P:None: PASS
-  AKJ52.J.J9743.54:1H P:None: "FAIL: step 2, expected 2C, got 3H"
+  AKJ52.J.J9743.54:1H P:None: "FAIL: step 2, expected 2C, got 2N"
 test_game_forcing_resonse_to_one_of_a_major:
   K84.AKQ9.76.J984:1H P:None: PASS
   987.Q732.QJ743.9:1H P:None: PASS
-  42.KJ653.KJ5.KJ7:1H P:None: "FAIL: step 2, expected 2D, got 3H"
+  42.KJ653.KJ5.KJ7:1H P:None: PASS
   QJ52.AKQ7.97.KJ2:1H P:Both: "FAIL: step 2, expected 3N, got 2C"
 test_jacoby_two_nt_response_to_one_of_a_major:
   QJ5.A75.KT8.AT42:1S P:None: PASS
@@ -169,7 +169,7 @@ test_jacoby_two_nt_response_to_one_of_a_major:
   432.432.AK32.AK2:1S P:None: "FAIL: step 2, expected 2N, got P"
   A82.AK8.Q874.T42:1S P:Both: "FAIL: step 2, expected 2N, got P"
   5432.43.AK32.AK2:1S P:None: PASS
-  K.K7.KJ98542.QT8:1H P:Both: "FAIL: step 2, expected 2N, got 3H"
+  K.K7.KJ98542.QT8:1H P:Both: PASS
   K.A743.K.AJ65432:1S P 2N P:E-W: "FAIL: step 4, expected 3C, got P"
   K.K932.7.AK97653:P 1S P 2N P:E-W: "FAIL: step 5, expected 3C, got P"
 test_slam_zone_responses_to_one_of_a_major:
@@ -322,8 +322,8 @@ test_subsequent_bidding_by_responder:
   KJ643.9863.A9.K9:1S P 2C P 2H P:None: "FAIL: step 6, expected 2S, got P"
   KJT432.K74.KT8.7:1S P 2C P 2H P:None: "FAIL: step 6, expected 3C, got P"
   AQ643.KQ75.763.5:1S P 2C P 2D P:None: "FAIL: step 6, expected 3D, got P"
-  KJ643.A874.T.K97:1S P 2C P 2H P:None: "FAIL: step 2, expected 2C, got 3S"
-  KJ643.A874.T.K97:1S P 2C P 3C P:None: "FAIL: step 2, expected 2C, got 3S"
+  KJ643.A874.T.K97:1S P 2C P 2H P:None: "FAIL: step 6, expected 3S, got P"
+  KJ643.A874.T.K97:1S P 2C P 3C P:None: "FAIL: step 6, expected 4S, got P"
   AJ432.J85.QT7.AQ:1S P 2C P 2H P:None: "FAIL: step 6, expected 3D, got P"
   KJ643.K3.K975.65:1S P 2C P 2D P:None: "FAIL: step 6, expected 2N, got P"
   AKQJ2.975.53.964:1H P 2C P 2H P:None: PASS

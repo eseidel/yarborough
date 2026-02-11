@@ -82,4 +82,6 @@ pub enum Constraint {
     RuleOfTwenty { met: bool },
     Seat { min: u8, max: u8 },
     RuleOfFifteen { met: bool },
+    MinPoints { suit: Option<Suit>, min: u8 },
+    MaxPoints { suit: Option<Suit>, max: u8 },
 }
