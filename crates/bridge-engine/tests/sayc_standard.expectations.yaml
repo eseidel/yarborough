@@ -130,9 +130,9 @@ test_rule_of_twenty_open:
   AK75.9875.AT876.::None: PASS
   K95.AJ765.Q76.J8::None: PASS
 test_third_and_fourth_seat_opens:
-  AKT9.T87.QJ8.J32:P P:None: "FAIL: step 2, expected 1C, got P"
+  AKT9.T87.QJ8.J32:P P:None: PASS
   KJ3.J8765.9.AJT9:P P:None: PASS
-  43.765.K83.AQJ75:P P P:None: "FAIL: step 3, expected 1S, got P"
+  43.765.K83.AQJ75:P P P:None: PASS
   Q98.J972.KJ3.AT9:P P P:None: PASS
   AKT75.K75.T8.742:P P P:None: PASS
   3.K8764.AT93.K85:P P P 1S P:None: "FAIL: step 5, expected 3S, got 2S"
@@ -371,7 +371,7 @@ test_preemption:
   Q98.JT8.53.AKT95::None: PASS
   Q98.JT8.53.AKT95:P:None: PASS
   Q98.JT8.53.AKT95:P P:None: "FAIL: step 2, expected 2S, got P"
-  Q98.JT8.53.AKT95:P P P:None: "FAIL: step 3, expected 1S, got P"
+  Q98.JT8.53.AKT95:P P P:None: PASS
   Q83.K9.Q8.AQJ874::None: PASS
   Q83.K9.Q8.AQJ874:P:None: PASS
   Q83.K9.Q8.AQJ874:P P:None: PASS
@@ -396,7 +396,7 @@ test_preemption:
   J4.T.QJT.AJT7653::None: "FAIL: step 0, expected P, got 3S"
   J4.T.QJT.AJT7653:P:None: "FAIL: step 1, expected P, got 3S"
   J4.T.QJT.AJT7653:P P:None: PASS
-  J4.T.QJT.AJT7653:P P P:None: "FAIL: step 3, expected 1S, got 3S"
+  J4.T.QJT.AJT7653:P P P:None: PASS
   J64.85.KQT9852.5::None: PASS
   J64.85.KQT9852.5:P:None: PASS
   J64.85.KQT9852.5:P P:None: PASS
@@ -434,7 +434,7 @@ test_preemption:
   KT3..74.AJT87432::None: "FAIL: step 0, expected 4S, got 3S"
   KT3..74.AJT87432:P:None: "FAIL: step 1, expected 4S, got 3S"
   KT3..74.AJT87432:P P:None: "FAIL: step 2, expected 4S, got 3S"
-  KT3..74.AJT87432:P P P:None: "FAIL: step 3, expected 1S, got 3S"
+  KT3..74.AJT87432:P P P:None: PASS
   3.KT5.A.KQT98642::None: PASS
   8.9873.AKQT864.4::None: "FAIL: step 0, expected 4H, got 1H"
   8.9873.AKQT864.4:P:None: "FAIL: step 1, expected 4H, got 1H"

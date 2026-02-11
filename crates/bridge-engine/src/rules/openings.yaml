@@ -3,10 +3,8 @@ opening:
     variants:
       - name: "Pass"
         priority: 1
-        description: "Does not meet Rule of Twenty"
-        constraints:
-          - type: RuleOfTwenty
-            met: false
+        description: "Does not meet opening requirements"
+        constraints: [] # Always available as a low-priority option
 
   - call: "1D"
     variants:
@@ -33,6 +31,30 @@ opening:
         description: "Rule of 20, 3 Diamonds"
         constraints:
           - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Diamonds
+            count: 3
+      - name: "Opening 1D (3rd Seat Light)"
+        priority: 24
+        description: "10-12 HCP, 4+ Diamonds (3rd Seat)"
+        constraints:
+          - type: Seat
+            min: 3
+            max: 3
+          - type: MinHCP
+            min: 11
+          - type: MinLength
+            suit: Diamonds
+            count: 4
+      - name: "Opening 1D (4th Seat Rule of 15)"
+        priority: 20
+        description: "Rule of 15 (4th Seat)"
+        constraints:
+          - type: Seat
+            min: 4
+            max: 4
+          - type: RuleOfFifteen
             met: true
           - type: MinLength
             suit: Diamonds
@@ -67,6 +89,30 @@ opening:
           - type: MinLength
             suit: Clubs
             count: 3
+      - name: "Opening 1C (3rd Seat Light)"
+        priority: 23
+        description: "10-12 HCP, 4+ Clubs (3rd Seat)"
+        constraints:
+          - type: Seat
+            min: 3
+            max: 3
+          - type: MinHCP
+            min: 11
+          - type: MinLength
+            suit: Clubs
+            count: 4
+      - name: "Opening 1C (4th Seat Rule of 15)"
+        priority: 19
+        description: "Rule of 15 (4th Seat)"
+        constraints:
+          - type: Seat
+            min: 4
+            max: 4
+          - type: RuleOfFifteen
+            met: true
+          - type: MinLength
+            suit: Clubs
+            count: 3
 
   - call: "1S"
     variants:
@@ -79,6 +125,30 @@ opening:
           - type: MinLength
             suit: Spades
             count: 5
+      - name: "Opening 1S (3rd Seat Light)"
+        priority: 26
+        description: "10-12 HCP, 5+ Spades (3rd Seat)"
+        constraints:
+          - type: Seat
+            min: 3
+            max: 3
+          - type: MinHCP
+            min: 11
+          - type: MinLength
+            suit: Spades
+            count: 5
+      - name: "Opening 1S (4th Seat Rule of 15)"
+        priority: 22
+        description: "Rule of 15 (4th Seat)"
+        constraints:
+          - type: Seat
+            min: 4
+            max: 4
+          - type: RuleOfFifteen
+            met: true
+          - type: MinLength
+            suit: Spades
+            count: 5
 
   - call: "1H"
     variants:
@@ -87,6 +157,30 @@ opening:
         description: "Rule of 20, 5+ Hearts"
         constraints:
           - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Hearts
+            count: 5
+      - name: "Opening 1H (3rd Seat Light)"
+        priority: 25
+        description: "10-12 HCP, 5+ Hearts (3rd Seat)"
+        constraints:
+          - type: Seat
+            min: 3
+            max: 3
+          - type: MinHCP
+            min: 10
+          - type: MinLength
+            suit: Hearts
+            count: 5
+      - name: "Opening 1H (4th Seat Rule of 15)"
+        priority: 21
+        description: "Rule of 15 (4th Seat)"
+        constraints:
+          - type: Seat
+            min: 4
+            max: 4
+          - type: RuleOfFifteen
             met: true
           - type: MinLength
             suit: Hearts

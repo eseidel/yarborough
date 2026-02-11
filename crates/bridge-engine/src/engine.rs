@@ -79,7 +79,7 @@ impl Engine {
             };
 
             for variant in &rule.variants {
-                if self.check_constraints(hand, &variant.constraints) {
+                if self.check_constraints(hand, auction, &variant.constraints) {
                     let is_better = match &best_match {
                         Some((_, current_best_variant)) => {
                             variant.priority > current_best_variant.priority
@@ -149,16 +149,16 @@ impl Engine {
         false
     }
 
-    fn check_constraints(&self, hand: &Hand, constraints: &[Constraint]) -> bool {
+    fn check_constraints(&self, hand: &Hand, auction: &Auction, constraints: &[Constraint]) -> bool {
         for constraint in constraints {
-            if !self.check_constraint(hand, constraint) {
+            if !self.check_constraint(hand, auction, constraint) {
                 return false;
             }
         }
         true
     }
 
-    fn check_constraint(&self, hand: &Hand, constraint: &Constraint) -> bool {
+    fn check_constraint(&self, hand: &Hand, auction: &Auction, constraint: &Constraint) -> bool {
         match constraint {
             Constraint::MinHCP { min } => hand.hcp() >= *min,
             Constraint::MaxHCP { max } => hand.hcp() <= *max,
@@ -182,6 +182,14 @@ impl Engine {
                 dist.sort_by(|a, b| b.cmp(a));
                 let rule_of_twenty = (hand.hcp() + dist[0] + dist[1]) >= 20;
                 rule_of_twenty == *met
+            }
+            Constraint::Seat { min, max } => {
+                let seat = (auction.calls.len() + 1) as u8;
+                seat >= *min && seat <= *max
+            }
+            Constraint::RuleOfFifteen { met } => {
+                let rule_of_fifteen = (hand.hcp() + hand.length(bridge_core::suit::Suit::Spades)) >= 15;
+                rule_of_fifteen == *met
             }
         }
     }

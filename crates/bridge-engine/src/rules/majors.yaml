@@ -72,10 +72,10 @@ responses:
         variants:
           - name: "Limit Raise"
             priority: 26
-            description: "11-12 HCP, 3+ Hearts"
+            description: "10-12 HCP, 3+ Hearts"
             constraints:
               - type: MinHCP
-                min: 11
+                min: 10
               - type: MaxHCP
                 max: 12
               - type: MinLength
@@ -166,10 +166,10 @@ responses:
         variants:
           - name: "Limit Raise"
             priority: 26
-            description: "11-12 HCP, 3+ Spades"
+            description: "10-12 HCP, 3+ Spades"
             constraints:
               - type: MinHCP
-                min: 11
+                min: 10
               - type: MaxHCP
                 max: 12
               - type: MinLength

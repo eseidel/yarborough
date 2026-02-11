@@ -80,4 +80,6 @@ pub enum Constraint {
     ExactLength { suit: Suit, count: u8 },
     IsBalanced { balanced: bool },
     RuleOfTwenty { met: bool },
+    Seat { min: u8, max: u8 },
+    RuleOfFifteen { met: bool },
 }
