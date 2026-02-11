@@ -21,6 +21,16 @@ Write tests for all code changes. Goal is 90% test coverage.
 - **TypeScript**: Vitest tests in `src/**/__tests__/*.test.ts`
 - **Rust**: Inline `#[cfg(test)]` unit tests; YAML test vectors in `tests/`
 
+## Before Pushing
+
+Run these checks before committing/pushing — CI will reject failures:
+
+```bash
+pnpm lint             # ESLint (includes react-refresh rules)
+pnpm format:check     # Prettier — fix with: pnpm exec prettier --write .
+cargo fmt --check     # Rust formatting
+```
+
 ## Gotchas
 
 - **verbatimModuleSyntax** is enabled — use `import type { Foo }` or `import { type Foo, bar }` for type-only imports
