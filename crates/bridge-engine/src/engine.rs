@@ -118,11 +118,7 @@ impl Engine {
     }
 
     fn matches_pattern(&self, auction: &Auction, pattern: &str) -> bool {
-        let history_vec: Vec<String> = auction
-            .calls
-            .iter()
-            .map(|c| c.render())
-            .collect();
+        let history_vec: Vec<String> = auction.calls.iter().map(|c| c.render()).collect();
 
         let history_str = history_vec.join(" ");
 
@@ -149,7 +145,12 @@ impl Engine {
         false
     }
 
-    fn check_constraints(&self, hand: &Hand, auction: &Auction, constraints: &[Constraint]) -> bool {
+    fn check_constraints(
+        &self,
+        hand: &Hand,
+        auction: &Auction,
+        constraints: &[Constraint],
+    ) -> bool {
         for constraint in constraints {
             if !self.check_constraint(hand, auction, constraint) {
                 return false;
@@ -188,7 +189,8 @@ impl Engine {
                 seat >= *min && seat <= *max
             }
             Constraint::RuleOfFifteen { met } => {
-                let rule_of_fifteen = (hand.hcp() + hand.length(bridge_core::suit::Suit::Spades)) >= 15;
+                let rule_of_fifteen =
+                    (hand.hcp() + hand.length(bridge_core::suit::Suit::Spades)) >= 15;
                 rule_of_fifteen == *met
             }
         }
