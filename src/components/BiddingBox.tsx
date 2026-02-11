@@ -19,13 +19,47 @@ export function BiddingBox({
 }) {
   return (
     <div className="bg-white rounded-lg shadow p-3 space-y-2">
-      {/* Pass button */}
-      <button
-        onClick={() => onBid({ type: "pass" })}
-        className="w-full py-2 rounded bg-gray-200 hover:bg-gray-300 font-semibold text-gray-600 transition-colors"
-      >
-        Pass
-      </button>
+      {/* Pass / Double / Redouble row */}
+      <div className="flex gap-1">
+        <button
+          onClick={() => onBid({ type: "pass" })}
+          className="flex-1 py-2 rounded bg-gray-200 hover:bg-gray-300 font-semibold text-gray-600 transition-colors"
+        >
+          Pass
+        </button>
+        {(() => {
+          const dblLegal = isCallLegal({ type: "double" }, callHistory);
+          return (
+            <button
+              disabled={!dblLegal}
+              onClick={() => onBid({ type: "double" })}
+              className={`flex-1 py-2 rounded font-semibold transition-colors ${
+                dblLegal
+                  ? "bg-red-100 hover:bg-red-200 text-red-700"
+                  : "bg-gray-50 text-gray-300 cursor-not-allowed"
+              }`}
+            >
+              X
+            </button>
+          );
+        })()}
+        {(() => {
+          const rdblLegal = isCallLegal({ type: "redouble" }, callHistory);
+          return (
+            <button
+              disabled={!rdblLegal}
+              onClick={() => onBid({ type: "redouble" })}
+              className={`flex-1 py-2 rounded font-semibold transition-colors ${
+                rdblLegal
+                  ? "bg-blue-100 hover:bg-blue-200 text-blue-700"
+                  : "bg-gray-50 text-gray-300 cursor-not-allowed"
+              }`}
+            >
+              XX
+            </button>
+          );
+        })()}
+      </div>
 
       {/* Bid grid: 7 levels × 5 strains */}
       <div className="grid grid-cols-5 gap-1">
