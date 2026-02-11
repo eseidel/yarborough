@@ -5,6 +5,12 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import * as auction from "../../bridge/auction";
 import * as identifier from "../../bridge/identifier";
 
+// Mock the WASM engine so CI doesn't need the built .wasm file
+vi.mock("../../bridge/engine", () => ({
+  getNextBid: vi.fn(),
+  getSuggestedBid: vi.fn(),
+}));
+
 // Mock the bridge modules
 vi.mock("../../bridge/auction", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../bridge/auction")>();
@@ -16,7 +22,8 @@ vi.mock("../../bridge/auction", async (importOriginal) => {
 });
 
 vi.mock("../../bridge/identifier", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../bridge/identifier")>();
+  const actual =
+    await importOriginal<typeof import("../../bridge/identifier")>();
   return {
     ...actual,
     parseBoardId: vi.fn(),
@@ -57,7 +64,7 @@ describe("PracticePage", () => {
         <Routes>
           <Route path="/bid/:boardId" element={<PracticePage />} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
   };
 
@@ -82,7 +89,7 @@ describe("PracticePage", () => {
       expect(mockAddRobotBids).toHaveBeenCalledWith(
         expect.objectContaining({ calls: [] }),
         "S",
-        boardId
+        boardId,
       );
     });
   });
@@ -93,7 +100,9 @@ describe("PracticePage", () => {
     renderPage();
 
     // Wait for render
-    const rebidHandButton = await screen.findByRole("button", { name: /rebid hand/i });
+    const rebidHandButton = await screen.findByRole("button", {
+      name: /rebid hand/i,
+    });
     expect(rebidHandButton).toBeInTheDocument();
 
     mockAddRobotBids.mockClear();
@@ -103,7 +112,7 @@ describe("PracticePage", () => {
       expect(mockAddRobotBids).toHaveBeenCalledWith(
         expect.objectContaining({ calls: [] }),
         "S",
-        boardId
+        boardId,
       );
     });
   });
