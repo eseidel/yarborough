@@ -28,7 +28,9 @@ impl Engine {
         legal_calls
             .into_iter()
             .map(|call| {
-                let rule_match = rules.iter().find(|r| r.call.parse::<Call>().ok() == Some(call));
+                let rule_match = rules
+                    .iter()
+                    .find(|r| r.call.parse::<Call>().ok() == Some(call));
 
                 match rule_match {
                     Some(rule) => {
