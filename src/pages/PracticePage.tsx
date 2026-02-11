@@ -144,21 +144,35 @@ export function PracticePage() {
               <HandDisplay hand={handForPosition(deal, "N")} position="N" />
               <HandDisplay hand={handForPosition(deal, "E")} position="E" />
             </div>
+            <button
+              onClick={handleRedeal}
+              className="w-full py-2 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold text-sm transition-colors"
+            >
+              Next Hand
+            </button>
           </div>
         ) : (
           <BiddingBox onBid={handleBid} callHistory={history} />
         )}
 
-        {/* Suggest bid button + result */}
+        {/* Suggest bid / Skip hand buttons + result */}
         {!loading && !auctionDone && (
           <div className="space-y-2">
-            <button
-              onClick={handleSuggest}
-              disabled={suggestLoading}
-              className="w-full py-2 rounded bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-sm transition-colors disabled:opacity-50"
-            >
-              {suggestLoading ? "Thinking..." : "Suggest Bid"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSuggest}
+                disabled={suggestLoading}
+                className="flex-1 py-2 rounded bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-sm transition-colors disabled:opacity-50"
+              >
+                {suggestLoading ? "Thinking..." : "Suggest Bid"}
+              </button>
+              <button
+                onClick={handleRedeal}
+                className="flex-1 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm transition-colors"
+              >
+                Skip Hand
+              </button>
+            </div>
             {suggestion && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
                 <div className="font-semibold text-amber-900">
@@ -179,15 +193,6 @@ export function PracticePage() {
           </div>
         )}
       </div>
-
-      {/* Re-deal button */}
-      <button
-        onClick={handleRedeal}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-emerald-700 text-white rounded-full shadow-lg hover:bg-emerald-600 transition-colors flex items-center justify-center text-xl"
-        aria-label="Deal new hand"
-      >
-        &#x21bb;
-      </button>
     </div>
   );
 }
