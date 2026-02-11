@@ -6,6 +6,7 @@ use bridge_core::io::identifier;
 use bridge_core::rank::Rank;
 use bridge_core::suit::Suit;
 use bridge_engine::get_next_bid;
+use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -80,25 +81,25 @@ fn create_dummy_full_deal(h: &Hand, pos: Position) -> HashMap<Position, Hand> {
 fn run_sayc_test_vectors() {
     let test_file = "../../tests/bidding/standard_bidding_with_sayc.yaml";
     let file_content = fs::read_to_string(test_file).expect("Failed to read test vectors");
-    let test_suites: HashMap<String, Vec<Vec<serde_yaml::Value>>> =
+    let test_suites: IndexMap<String, Vec<Vec<serde_yaml::Value>>> =
         serde_yaml::from_str(&file_content).expect("Failed to parse YAML");
 
     let expectations_path = "tests/expectations.yaml";
-    let expectations: HashMap<String, HashMap<String, String>> =
+    let expectations: IndexMap<String, IndexMap<String, String>> =
         if Path::new(expectations_path).exists() {
             let content = fs::read_to_string(expectations_path).unwrap();
             serde_yaml::from_str(&content).unwrap_or_default()
         } else {
-            HashMap::new()
+            IndexMap::new()
         };
 
     let update_mode = std::env::var("UPDATE_EXPECTATIONS").is_ok();
-    let mut new_expectations = HashMap::new();
+    let mut new_expectations = IndexMap::new();
     let mut failures = Vec::new();
 
     for (suite_name, cases) in test_suites {
-        let mut suite_results = HashMap::new();
-        for case in cases.iter() {
+        let mut suite_results = IndexMap::new();
+        for (_i, case) in cases.iter().enumerate() {
             let hand_str = case[0].as_str().unwrap();
             let expected_call = case[1].as_str().unwrap();
             let history_str = if case.len() > 2 {
@@ -184,6 +185,14 @@ fn run_sayc_test_vectors() {
     if update_mode {
         let yaml = serde_yaml::to_string(&new_expectations).unwrap();
         fs::write(expectations_path, yaml).unwrap();
+
+        // Run prettier to match project style
+        let _ = std::process::Command::new("npx")
+            .arg("prettier")
+            .arg("--write")
+            .arg(expectations_path)
+            .status();
+
         println!("Updated expectations.yaml");
     } else if !failures.is_empty() {
         for f in failures {

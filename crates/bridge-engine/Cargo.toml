@@ -14,3 +14,4 @@ bridge-core = { path = "../bridge-core" }
 serde_yaml = "0.9.34"
 [dev-dependencies]
 serde_yaml = "0.9.34"
+indexmap = { version = "2.2.6", features = ["serde"] }
