@@ -56,9 +56,8 @@ export function AboutFooter() {
         .
       </p>
       <p>
-        Although constructive
-        bidding works well, competitive bidding (and especially slam bidding)
-        need improvement.
+        Although constructive bidding works well, competitive bidding (and
+        especially slam bidding) need improvement.
       </p>
       <p>
         We would love to hear your suggestions! Reach us via{" "}

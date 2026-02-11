@@ -6,7 +6,7 @@ describe("AboutFooter", () => {
   it("renders the heading", () => {
     render(<AboutFooter />);
     expect(
-      screen.getByRole("heading", { name: /about saycbridge\.com/i })
+      screen.getByRole("heading", { name: /about saycbridge\.com/i }),
     ).toBeInTheDocument();
   });
 
@@ -22,7 +22,7 @@ describe("AboutFooter", () => {
     });
     expect(link).toHaveAttribute(
       "href",
-      "https://en.wikipedia.org/wiki/Standard_American"
+      "https://en.wikipedia.org/wiki/Standard_American",
     );
   });
 
@@ -31,7 +31,7 @@ describe("AboutFooter", () => {
     const link = screen.getByRole("link", { name: /acbl pamphlet/i });
     expect(link).toHaveAttribute(
       "href",
-      "http://web2.acbl.org/documentlibrary/play/SP3%20(bk)%20single%20pages.pdf"
+      "http://web2.acbl.org/documentlibrary/play/SP3%20(bk)%20single%20pages.pdf",
     );
   });
 
@@ -42,7 +42,7 @@ describe("AboutFooter", () => {
     });
     expect(link).toHaveAttribute(
       "href",
-      "https://www.amazon.com/gp/product/1897106033"
+      "https://www.amazon.com/gp/product/1897106033",
     );
   });
 
@@ -59,17 +59,14 @@ describe("AboutFooter", () => {
     });
     expect(link).toHaveAttribute(
       "href",
-      "https://github.com/eseidel/yarborough"
+      "https://github.com/eseidel/yarborough",
     );
   });
 
   it("links to twitter", () => {
     render(<AboutFooter />);
     const link = screen.getByRole("link", { name: /twitter/i });
-    expect(link).toHaveAttribute(
-      "href",
-      "https://twitter.com/SAYCBridge"
-    );
+    expect(link).toHaveAttribute("href", "https://twitter.com/SAYCBridge");
   });
 
   it("opens external links in new tabs", () => {
