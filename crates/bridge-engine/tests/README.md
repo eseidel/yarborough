@@ -4,28 +4,35 @@ This directory contains the integration test harness for the SAYC bidding engine
 
 ## Files
 
-- `harness.rs`: The test runner logic. It parses the test vectors from `tests/bidding/standard_bidding_with_sayc.yaml`, simulates the auctions, and validates the engine's output.
-- `expectations.yaml`: A snapshot of the current engine results. It tracks which tests are passing and what the failure message is for failing tests.
+- `harness.rs`: The test runner logic. It iterates over test vectors in `tests/bidding/` and validates the engine's output against corresponding expectations.
+- `sayc_standard.expectations.yaml`: A snapshot of the current engine results for the standard bidding suite.
+- `sayc_regression.expectations.yaml`: A snapshot of the current engine results for custom regression cases.
+
+### Test Vectors
+
+Test vectors are located in `tests/bidding/`:
+- `sayc_standard.yaml`: The primary suite of standard bidding scenarios (over 700 tests).
+- `sayc_regression.yaml`: Specific test cases added to prevent regressions of bug fixes or to test new generalized features (e.g., handling second-seat openings).
 
 ## How to Run
 
-To run the test harness and compare the engine's current behavior against the recorded expectations:
+To run the test harness and compare the engine's current behavior against the recorded expectations for all files:
 
 ```bash
 cargo test --test harness
 ```
 
-The test will fail if any test case changes status (e.g., a PASS becomes a FAIL, or a FAIL message changes).
+The test will fail if any test case changes status in any of the test files.
 
 ## How to Update Expectations
 
-When you intentionally change the engine logic and want to accept the new results as the official baseline, run the following command:
+When you intentionally change the engine logic and want to accept the new results as the official baseline for all suites, run the following command:
 
 ```bash
 UPDATE_EXPECTATIONS=1 cargo test --test harness
 ```
 
-This will overwrite `expectations.yaml` with the latest results from the engine. You can then review the diff of `expectations.yaml` in Git to see exactly how your changes affected the bidding behavior across the entire suite of over 700 tests.
+This will overwrite the corresponding `<stem>.expectations.yaml` files with the latest results. You can then review the diffs in Git to see how your changes affected the bidding behavior across both the standard and regression suites.
 
 ## Why Multi-Call Validation?
 

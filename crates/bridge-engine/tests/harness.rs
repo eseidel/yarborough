@@ -80,7 +80,7 @@ fn create_dummy_full_deal(h: &Hand, pos: Position) -> HashMap<Position, Hand> {
 #[test]
 fn run_sayc_test_vectors() {
     let test_files = [
-        "../../tests/bidding/standard_bidding_with_sayc.yaml",
+        "../../tests/bidding/sayc_standard.yaml",
         "../../tests/bidding/sayc_regression.yaml",
     ];
 
