@@ -25,7 +25,7 @@ fn parse_calls(calls_string: &str) -> Vec<Call> {
     }
     calls_string
         .split(',')
-        .filter_map(|s| Call::from_str(s.trim()))
+        .filter_map(|s| s.trim().parse::<Call>().ok())
         .collect()
 }
 

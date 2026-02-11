@@ -31,7 +31,7 @@ fn parse_auction(history: &str, dealer: Position) -> Auction {
         return auction;
     }
     for call_str in history.split_whitespace() {
-        if let Some(call) = Call::from_str(call_str) {
+        if let Ok(call) = call_str.parse::<Call>() {
             auction.add_call(call);
         }
     }
@@ -98,7 +98,7 @@ fn run_sayc_test_vectors() {
 
     for (suite_name, cases) in test_suites {
         let mut suite_results = HashMap::new();
-        for (_i, case) in cases.iter().enumerate() {
+        for case in cases.iter() {
             let hand_str = case[0].as_str().unwrap();
             let expected_call = case[1].as_str().unwrap();
             let history_str = if case.len() > 2 {
@@ -118,7 +118,7 @@ fn run_sayc_test_vectors() {
             let our_position = history_auction.current_player();
 
             let mut full_calls = history_auction.calls.clone();
-            if let Some(c) = Call::from_str(expected_call) {
+            if let Ok(c) = expected_call.parse::<Call>() {
                 full_calls.push(c);
             }
 
@@ -151,7 +151,7 @@ fn run_sayc_test_vectors() {
                         break;
                     }
                 }
-                temp_auction.add_call(call.clone());
+                temp_auction.add_call(*call);
             }
 
             let key = format!("{}:{}:{}", hand_str, history_str, vuln_str);

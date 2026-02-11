@@ -1,6 +1,4 @@
-use bridge_core::auction::Auction;
-use bridge_core::board::{Board, Position, Vulnerability};
-use bridge_core::io::{big_deal, identifier, lin, pbn};
+use bridge_core::io::{identifier, lin, pbn};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
@@ -10,8 +8,11 @@ struct TestVector {
     name: String,
     board_number: u32,
     dealer: String,
+    #[allow(dead_code)]
     vulnerability: String,
+    #[allow(dead_code)]
     hands: HashMap<String, String>,
+    #[allow(dead_code)]
     auction: Vec<String>,
     expected: HashMap<String, String>,
 }
@@ -27,7 +28,7 @@ fn test_io_roundtrip() {
         // Verify identifier format
         if let Some(expected_identifier) = vector.expected.get("identifier") {
             let (imported_board, imported_auction) = identifier::import_board(expected_identifier)
-                .expect(&format!("{}: Failed to import identifier", vector.name));
+                .unwrap_or_else(|| panic!("{}: Failed to import identifier", vector.name));
 
             assert_eq!(
                 imported_board.dealer.to_char().to_string(),
@@ -52,7 +53,7 @@ fn test_io_roundtrip() {
         // Verify LIN format if present
         if let Some(expected_lin) = vector.expected.get("lin") {
             let (imported_board, imported_auction) = lin::import_board(expected_lin)
-                .expect(&format!("{}: Failed to import LIN", vector.name));
+                .unwrap_or_else(|| panic!("{}: Failed to import LIN", vector.name));
 
             // LIN sometimes has normalized output, so we check if it imports correctly
             let exported_lin = lin::export_board(&imported_board, imported_auction.as_ref());
@@ -65,7 +66,7 @@ fn test_io_roundtrip() {
         // Verify PBN format if present
         if let Some(expected_pbn) = vector.expected.get("pbn") {
             let imported_board = pbn::import_board(expected_pbn)
-                .expect(&format!("{}: Failed to import PBN", vector.name));
+                .unwrap_or_else(|| panic!("{}: Failed to import PBN", vector.name));
 
             assert_eq!(
                 imported_board.dealer.to_char().to_string(),

@@ -166,8 +166,8 @@ fn import_hand(s: &str) -> Option<Hand> {
     let mut cards = Vec::new();
     let mut current_suit = Suit::Spades;
 
-    let mut chars = s.chars();
-    while let Some(c) = chars.next() {
+    let chars = s.chars();
+    for c in chars {
         if let Some(suit) = Suit::from_char(c) {
             current_suit = suit;
         } else if let Some(rank) = Rank::from_char(c) {
