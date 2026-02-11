@@ -183,16 +183,18 @@ fn run_sayc_test_vectors() {
     }
 
     if update_mode {
-        let yaml = serde_yaml::to_string(&new_expectations).unwrap();
-        fs::write(expectations_path, yaml).unwrap();
-
-        // Run prettier to match project style
-        let _ = std::process::Command::new("npx")
-            .arg("prettier")
-            .arg("--write")
-            .arg(expectations_path)
-            .status();
-
+        use std::io::Write;
+        let mut file = fs::File::create(expectations_path).expect("Failed to create expectations file");
+        for (suite_name, results) in new_expectations {
+            writeln!(file, "{}:", suite_name).unwrap();
+            for (key, status) in results {
+                if status == "PASS" {
+                    writeln!(file, "  {}: {}", key, status).unwrap();
+                } else {
+                    writeln!(file, "  {}: \"{}\"", key, status).unwrap();
+                }
+            }
+        }
         println!("Updated expectations.yaml");
     } else if !failures.is_empty() {
         for f in failures {
