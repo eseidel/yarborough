@@ -85,15 +85,57 @@ pub fn get_next_bid(identifier: &str) -> String {
     let engine = load_engine();
 
     match engine.get_best_bid(hand, &auction) {
-        Some((call, _variant)) => {
-            // We could return variant info too if we change the return type to JsValue
-            call.render()
-        }
-        None => {
-            // Fallback: mostly pass if no rule matches
-            "P".into()
-        }
+        Some((call, _variant)) => call.render(),
+        None => "P".into(),
     }
+}
+
+/// Like get_next_bid, but returns the bid along with its rule name and description.
+#[wasm_bindgen]
+pub fn get_suggested_bid(identifier: &str) -> JsValue {
+    let (board, auction) = match identifier::import_board(identifier) {
+        Some(val) => val,
+        None => {
+            return serde_wasm_bindgen::to_value(&CallInterpretation {
+                call_name: "P".into(),
+                rule_name: String::new(),
+                description: String::new(),
+            })
+            .unwrap()
+        }
+    };
+
+    let auction = auction.unwrap_or_else(|| Auction::new(board.dealer));
+
+    let current_player = auction.current_player();
+    let hand = match board.hands.get(&current_player) {
+        Some(h) => h,
+        None => {
+            return serde_wasm_bindgen::to_value(&CallInterpretation {
+                call_name: "P".into(),
+                rule_name: String::new(),
+                description: String::new(),
+            })
+            .unwrap()
+        }
+    };
+
+    let engine = load_engine();
+
+    let interp = match engine.get_best_bid(hand, &auction) {
+        Some((call, variant)) => CallInterpretation {
+            call_name: call.render(),
+            rule_name: variant.name,
+            description: variant.description,
+        },
+        None => CallInterpretation {
+            call_name: "P".into(),
+            rule_name: "Pass".into(),
+            description: String::new(),
+        },
+    };
+
+    serde_wasm_bindgen::to_value(&interp).unwrap()
 }
 
 #[cfg(test)]
@@ -182,6 +224,33 @@ mod tests {
         // All higher bids are legal but won't have rule names
         assert!(names.contains(&"1D".to_string()));
         assert!(!names.contains(&"1C".to_string())); // Can't rebid 1C
+    }
+
+    /// Helper: get a suggested bid interpretation for a given identifier (non-WASM version).
+    fn suggest_bid(identifier: &str) -> (String, String, String) {
+        let (board, auction) = identifier::import_board(identifier).unwrap();
+        let auction = auction.unwrap_or_else(|| Auction::new(board.dealer));
+        let current_player = auction.current_player();
+        let hand = board.hands.get(&current_player).unwrap();
+        let engine = load_engine();
+        match engine.get_best_bid(hand, &auction) {
+            Some((call, variant)) => (call.render(), variant.name, variant.description),
+            None => ("P".into(), "Pass".into(), String::new()),
+        }
+    }
+
+    #[test]
+    fn test_get_suggested_bid() {
+        // Board 1, all cards to North → 40 HCP → Strong 2C
+        let (call, rule, desc) = suggest_bid("1-00000000000000000000000000");
+        assert_eq!(call, "2C");
+        assert!(!rule.is_empty());
+        assert!(!desc.is_empty());
+
+        // After an opening bid, no response rules → falls back to Pass
+        let (call, rule, _) = suggest_bid("1-00000000000000000000000000:1C");
+        assert_eq!(call, "P");
+        assert_eq!(rule, "Pass");
     }
 
     #[test]

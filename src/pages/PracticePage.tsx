@@ -7,12 +7,19 @@ import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
 import {
   type Call,
+  type CallInterpretation,
   handForPosition,
   highCardPoints,
   vulnerabilityLabel,
 } from "../bridge";
+import { CallDisplay } from "../components/CallDisplay";
 import { parseBoardId, generateBoardId } from "../bridge/identifier";
-import { isAuctionComplete, addRobotBids } from "../bridge/auction";
+import {
+  isAuctionComplete,
+  addRobotBids,
+  callToString,
+} from "../bridge/auction";
+import { getSuggestedBid } from "../bridge/engine";
 import type { CallHistory } from "../bridge";
 
 export function PracticePage() {
@@ -27,6 +34,8 @@ export function PracticePage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<CallInterpretation | null>(null);
+  const [suggestLoading, setSuggestLoading] = useState(false);
 
   // On mount, run robot bids for the opening
   useEffect(() => {
@@ -53,10 +62,27 @@ export function PracticePage() {
 
   const auctionDone = isAuctionComplete(history);
 
+  const handleSuggest = useCallback(() => {
+    if (!boardId) return;
+    setSuggestLoading(true);
+    const callsStr = history.calls.map(callToString).join(",");
+    const identifier = callsStr.length > 0 ? `${boardId}:${callsStr}` : boardId;
+    getSuggestedBid(identifier)
+      .then((interp) => {
+        setSuggestion(interp);
+        setSuggestLoading(false);
+      })
+      .catch((err) => {
+        setError(String(err));
+        setSuggestLoading(false);
+      });
+  }, [boardId, history.calls]);
+
   const handleBid = useCallback(
     (call: Call) => {
       if (!boardId) return;
       setLoading(true);
+      setSuggestion(null);
       const afterUser: CallHistory = {
         ...history,
         calls: [...history.calls, call],
@@ -118,20 +144,55 @@ export function PracticePage() {
               <HandDisplay hand={handForPosition(deal, "N")} position="N" />
               <HandDisplay hand={handForPosition(deal, "E")} position="E" />
             </div>
+            <button
+              onClick={handleRedeal}
+              className="w-full py-2 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold text-sm transition-colors"
+            >
+              Next Hand
+            </button>
           </div>
         ) : (
           <BiddingBox onBid={handleBid} callHistory={history} />
         )}
-      </div>
 
-      {/* Re-deal button */}
-      <button
-        onClick={handleRedeal}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-emerald-700 text-white rounded-full shadow-lg hover:bg-emerald-600 transition-colors flex items-center justify-center text-xl"
-        aria-label="Deal new hand"
-      >
-        &#x21bb;
-      </button>
+        {/* Suggest bid / Skip hand buttons + result */}
+        {!loading && !auctionDone && (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <button
+                onClick={handleSuggest}
+                disabled={suggestLoading}
+                className="flex-1 py-2 rounded bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-sm transition-colors disabled:opacity-50"
+              >
+                {suggestLoading ? "Thinking..." : "Suggest Bid"}
+              </button>
+              <button
+                onClick={handleRedeal}
+                className="flex-1 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm transition-colors"
+              >
+                Skip Hand
+              </button>
+            </div>
+            {suggestion && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                <div className="font-semibold text-amber-900">
+                  Autobidder says: <CallDisplay call={suggestion.call} />
+                </div>
+                {suggestion.ruleName && (
+                  <div className="text-amber-800 mt-1">
+                    {suggestion.ruleName}
+                  </div>
+                )}
+                {suggestion.description && (
+                  <div className="text-amber-700 text-xs mt-0.5">
+                    {suggestion.description}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
