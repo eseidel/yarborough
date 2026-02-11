@@ -11,10 +11,10 @@ pub fn export_board(board: &Board) -> String {
     s.push_str("[Site \"?\"]\n");
     s.push_str("[Date \"?\"]\n");
     s.push_str("[Board \"1\"]\n");
-    s.push_str(&format!("[West \"?\"]\n"));
-    s.push_str(&format!("[North \"?\"]\n"));
-    s.push_str(&format!("[East \"?\"]\n"));
-    s.push_str(&format!("[South \"?\"]\n"));
+    s.push_str("[West \"?\"]\n");
+    s.push_str("[North \"?\"]\n");
+    s.push_str("[East \"?\"]\n");
+    s.push_str("[South \"?\"]\n");
     s.push_str(&format!("[Dealer \"{}\"]\n", board.dealer.to_char()));
 
     let vuln_str = match board.vulnerability {

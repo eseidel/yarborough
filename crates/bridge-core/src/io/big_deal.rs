@@ -12,7 +12,6 @@ use std::collections::HashMap;
 /// or a standard compact string if that's what's expected.
 /// Actually, "Big Deal" often refers to the `bigdeal` software.
 /// I'll implement a basic canonical representation.
-
 pub fn export_board(board: &Board) -> String {
     // Canonical order: N, E, S, W
     // Each hand: sorted S, H, D, C

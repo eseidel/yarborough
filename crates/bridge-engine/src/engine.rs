@@ -28,7 +28,7 @@ impl Engine {
         legal_calls
             .into_iter()
             .map(|call| {
-                let rule_match = rules.iter().find(|r| Call::from_str(&r.call) == Some(call));
+                let rule_match = rules.iter().find(|r| r.call.parse::<Call>().ok() == Some(call));
 
                 match rule_match {
                     Some(rule) => {
@@ -74,9 +74,9 @@ impl Engine {
         let mut best_match: Option<(Call, Variant)> = None;
 
         for rule in rules {
-            let call = match Call::from_str(&rule.call) {
-                Some(c) => c,
-                None => continue,
+            let call = match rule.call.parse::<Call>() {
+                Ok(c) => c,
+                Err(_) => continue,
             };
 
             for variant in &rule.variants {
