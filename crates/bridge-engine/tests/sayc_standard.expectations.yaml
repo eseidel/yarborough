@@ -135,7 +135,7 @@ test_third_and_fourth_seat_opens:
   43.765.K83.AQJ75:P P P:None: PASS
   Q98.J972.KJ3.AT9:P P P:None: PASS
   AKT75.K75.T8.742:P P P:None: PASS
-  3.K8764.AT93.K85:P P P 1S P:None: "FAIL: step 5, expected 3S, got 2S"
+  3.K8764.AT93.K85:P P P 1S P:None: PASS
 test_minimum_response_to_one_of_a_major:
   T64.652.KJ5.A954:1H P:None: PASS
   9543.K73.T6.A976:1H P:None: PASS
@@ -149,8 +149,8 @@ test_invitational_response_to_one_of_a_major:
   432.K765.K8.A753:1H P:None: PASS
   Q98.KJ732.KJ.JT9:1H P:None: PASS
   QJ54.J753.KT2.A4:1S P:None: PASS
-  43.KT76.K85.A753:1H P:None: "FAIL: step 2, expected 3H, got 2H"
-  AKJ52.J.J9743.54:1H P:None: "FAIL: step 2, expected 2C, got 2H"
+  43.KT76.K85.A753:1H P:None: PASS
+  AKJ52.J.J9743.54:1H P:None: "FAIL: step 2, expected 2C, got 3H"
 test_game_forcing_resonse_to_one_of_a_major:
   K84.AKQ9.76.J984:1H P:None: PASS
   987.Q732.QJ743.9:1H P:None: PASS
