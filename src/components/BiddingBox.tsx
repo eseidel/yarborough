@@ -110,9 +110,7 @@ export function BiddingBox({
           onClick={() => setExpanded(!expanded)}
           className="w-full text-xs text-gray-500 hover:text-gray-700 transition-colors"
         >
-          {expanded
-            ? "Show less"
-            : `Show all levels (${levelsWithLegal.length})`}
+          {expanded ? "Show less" : "Show more"}
         </button>
       )}
     </div>

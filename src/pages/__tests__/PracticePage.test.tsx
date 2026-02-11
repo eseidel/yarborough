@@ -16,7 +16,8 @@ vi.mock("../../bridge/auction", async (importOriginal) => {
 });
 
 vi.mock("../../bridge/identifier", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../bridge/identifier")>();
+  const actual =
+    await importOriginal<typeof import("../../bridge/identifier")>();
   return {
     ...actual,
     parseBoardId: vi.fn(),
@@ -56,7 +57,7 @@ describe("PracticePage", () => {
         <Routes>
           <Route path="/bid/:boardId" element={<PracticePage />} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
   };
 
@@ -81,7 +82,7 @@ describe("PracticePage", () => {
       expect(mockAddRobotBids).toHaveBeenCalledWith(
         expect.objectContaining({ calls: [] }),
         "S",
-        boardId
+        boardId,
       );
     });
   });
@@ -92,7 +93,9 @@ describe("PracticePage", () => {
     renderPage();
 
     // Wait for render
-    const rebidHandButton = await screen.findByRole("button", { name: /rebid hand/i });
+    const rebidHandButton = await screen.findByRole("button", {
+      name: /rebid hand/i,
+    });
     expect(rebidHandButton).toBeInTheDocument();
 
     mockAddRobotBids.mockClear();
@@ -102,7 +105,7 @@ describe("PracticePage", () => {
       expect(mockAddRobotBids).toHaveBeenCalledWith(
         expect.objectContaining({ calls: [] }),
         "S",
-        boardId
+        boardId,
       );
     });
   });
