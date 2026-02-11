@@ -1,0 +1,170 @@
+opening:
+  - call: "P"
+    variants:
+      - name: "Pass"
+        priority: 1
+        description: "Does not meet Rule of Twenty"
+        constraints:
+          - type: RuleOfTwenty
+            met: false
+
+  - call: "1D"
+    variants:
+      - name: "Opening 1D (5+)"
+        priority: 29
+        description: "Rule of 20, 5+ Diamonds"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Diamonds
+            count: 5
+      - name: "Opening 1D (4)"
+        priority: 27
+        description: "Rule of 20, 4 Diamonds"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Diamonds
+            count: 4
+      - name: "Opening 1D (3)"
+        priority: 24
+        description: "Rule of 20, 3 Diamonds"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Diamonds
+            count: 3
+
+  - call: "1C"
+    variants:
+      - name: "Opening 1C (5+)"
+        priority: 29
+        description: "Rule of 20, 5+ Clubs"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Clubs
+            count: 5
+      - name: "Opening 1C (4)"
+        priority: 26
+        description: "Rule of 20, 4 Clubs"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Clubs
+            count: 4
+      - name: "Opening 1C (3)"
+        priority: 25
+        description: "Rule of 20, 3+ Clubs"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Clubs
+            count: 3
+
+  - call: "1S"
+    variants:
+      - name: "Opening 1S"
+        priority: 31
+        description: "Rule of 20, 5+ Spades"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Spades
+            count: 5
+
+  - call: "1H"
+    variants:
+      - name: "Opening 1H"
+        priority: 30
+        description: "Rule of 20, 5+ Hearts"
+        constraints:
+          - type: RuleOfTwenty
+            met: true
+          - type: MinLength
+            suit: Hearts
+            count: 5
+
+  - call: "1N"
+    variants:
+      - name: "Opening 1NT"
+        priority: 40
+        description: "15-17 HCP, Balanced"
+        constraints:
+          - type: MinHCP
+            min: 15
+          - type: MaxHCP
+            max: 17
+          - type: IsBalanced
+            balanced: true
+
+  - call: "2C"
+    variants:
+      - name: "Strong 2C"
+        priority: 50
+        description: "22+ HCP or 9+ Tricks"
+        constraints:
+          - type: MinHCP
+            min: 22
+
+  - call: "2D"
+    variants:
+      - name: "Weak 2D"
+        priority: 20
+        description: "6-10 HCP, 6 Diamonds"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Diamonds
+            count: 6
+
+  - call: "2H"
+    variants:
+      - name: "Weak 2H"
+        priority: 20
+        description: "6-10 HCP, 6 Hearts"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Hearts
+            count: 6
+
+  - call: "2S"
+    variants:
+      - name: "Weak 2S"
+        priority: 20
+        description: "6-10 HCP, 6 Spades"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Spades
+            count: 6
+
+  - call: "2N"
+    variants:
+      - name: "Opening 2NT"
+        priority: 40
+        description: "20-21 HCP, Balanced"
+        constraints:
+          - type: MinHCP
+            min: 20
+          - type: MaxHCP
+            max: 21
+          - type: IsBalanced
+            balanced: true

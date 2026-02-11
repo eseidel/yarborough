@@ -37,9 +37,17 @@ variants:
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct System {
+    #[serde(default)]
     pub opening: Vec<BidRule>,
     #[serde(default)]
     pub responses: Vec<Situation>,
+}
+
+impl System {
+    pub fn merge(&mut self, other: System) {
+        self.opening.extend(other.opening);
+        self.responses.extend(other.responses);
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]

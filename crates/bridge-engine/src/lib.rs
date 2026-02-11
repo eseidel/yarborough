@@ -30,8 +30,24 @@ fn parse_calls(calls_string: &str) -> Vec<Call> {
 }
 
 fn load_engine() -> Engine {
-    let yaml_data = include_str!("rules/sayc.yaml");
-    let system: System = serde_yaml::from_str(yaml_data).expect("Failed to parse SAYC rules");
+    let mut system = System {
+        opening: Vec::new(),
+        responses: Vec::new(),
+    };
+
+    let shards = [
+        include_str!("rules/openings.yaml"),
+        include_str!("rules/notrump.yaml"),
+        include_str!("rules/majors.yaml"),
+        include_str!("rules/minors.yaml"),
+    ];
+
+    for shard in shards {
+        let partial_system: System =
+            serde_yaml::from_str(shard).expect("Failed to parse rule shard");
+        system.merge(partial_system);
+    }
+
     Engine::new(system)
 }
 
