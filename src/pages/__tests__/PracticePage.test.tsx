@@ -30,19 +30,20 @@ const mockParseBoardId = vi.mocked(identifier.parseBoardId);
 describe("PracticePage", () => {
   const boardId = "1-00000000000000000000000000";
   const dummyParsed = {
+    boardNumber: 1,
     deal: {
       north: { cards: [] },
       east: { cards: [] },
       south: { cards: [] },
       west: { cards: [] },
     },
-    dealer: "N",
-    vulnerability: "None",
+    dealer: "N" as const,
+    vulnerability: "None" as const,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockParseBoardId.mockReturnValue(dummyParsed as any);
+    mockParseBoardId.mockReturnValue(dummyParsed);
     mockAddRobotBids.mockResolvedValue({
       dealer: "N",
       calls: [{ type: "pass" }],
