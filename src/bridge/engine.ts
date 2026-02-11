@@ -4,6 +4,7 @@ import type { Call, CallInterpretation, StrainName } from "./types";
 import init, {
   get_interpretations,
   get_next_bid,
+  get_suggested_bid,
 } from "../../crates/bridge-engine/pkg/bridge_engine";
 
 let initialized = false;
@@ -68,4 +69,21 @@ export async function getNextBid(identifier: string): Promise<Call> {
   await ensureInit();
   const result = get_next_bid(identifier);
   return parseCallName(result);
+}
+
+/**
+ * Call the WASM engine to get a suggested bid with its interpretation.
+ * Returns the bid the engine would make plus its rule name and description.
+ * @param identifier - Board identifier in format "<board>-<hex>[:<calls>]"
+ */
+export async function getSuggestedBid(
+  identifier: string,
+): Promise<CallInterpretation> {
+  await ensureInit();
+  const raw = get_suggested_bid(identifier) as RawInterpretation;
+  return {
+    call: parseCallName(raw.call_name),
+    ruleName: raw.rule_name,
+    description: raw.description,
+  };
 }
