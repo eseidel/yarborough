@@ -5,12 +5,6 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import * as auction from "../../bridge/auction";
 import * as identifier from "../../bridge/identifier";
 
-// Mock the WASM engine so CI doesn't need the built .wasm file
-vi.mock("../../bridge/engine", () => ({
-  getNextBid: vi.fn(),
-  getSuggestedBid: vi.fn(),
-}));
-
 // Mock the bridge modules
 vi.mock("../../bridge/auction", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../bridge/auction")>();
