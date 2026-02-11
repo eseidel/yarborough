@@ -107,6 +107,26 @@ export function PracticePage() {
     navigate(`/bid/${id}`);
   }, [navigate]);
 
+  const handleRebid = useCallback(() => {
+    if (!boardId || !parsed) return;
+    setLoading(true);
+    setSuggestion(null);
+    setError(null);
+    const initialHistory: CallHistory = {
+      dealer: parsed.dealer,
+      calls: [],
+    };
+    addRobotBids(initialHistory, "S", boardId)
+      .then((h) => {
+        setHistory(h);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(String(err));
+        setLoading(false);
+      });
+  }, [boardId, parsed]);
+
   if (!parsed) {
     return <Navigate to="/" replace />;
   }
@@ -144,12 +164,20 @@ export function PracticePage() {
               <HandDisplay hand={handForPosition(deal, "N")} position="N" />
               <HandDisplay hand={handForPosition(deal, "E")} position="E" />
             </div>
-            <button
-              onClick={handleRedeal}
-              className="w-full py-2 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold text-sm transition-colors"
-            >
-              Next Hand
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRedeal}
+                className="flex-1 py-2 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold text-sm transition-colors"
+              >
+                Next Hand
+              </button>
+              <button
+                onClick={handleRebid}
+                className="flex-1 py-2 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm transition-colors"
+              >
+                Rebid Hand
+              </button>
+            </div>
           </div>
         ) : (
           <BiddingBox onBid={handleBid} callHistory={history} />
@@ -171,6 +199,12 @@ export function PracticePage() {
                 className="flex-1 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm transition-colors"
               >
                 Skip Hand
+              </button>
+              <button
+                onClick={handleRebid}
+                className="flex-1 py-2 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm transition-colors"
+              >
+                Rebid
               </button>
             </div>
             {suggestion && (
