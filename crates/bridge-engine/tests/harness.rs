@@ -99,7 +99,7 @@ fn run_sayc_test_vectors() {
 
     for (suite_name, cases) in test_suites {
         let mut suite_results = IndexMap::new();
-        for (_i, case) in cases.iter().enumerate() {
+        for case in cases.iter() {
             let hand_str = case[0].as_str().unwrap();
             let expected_call = case[1].as_str().unwrap();
             let history_str = if case.len() > 2 {
