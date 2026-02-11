@@ -77,6 +77,7 @@ pub enum Constraint {
     MaxHCP { max: u8 },
     MinLength { suit: Suit, count: u8 },
     MaxLength { suit: Suit, count: u8 },
+    ExactLength { suit: Suit, count: u8 },
     IsBalanced { balanced: bool },
     RuleOfTwenty { met: bool },
 }

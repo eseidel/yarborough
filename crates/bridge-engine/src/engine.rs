@@ -145,6 +145,7 @@ impl Engine {
             Constraint::MaxHCP { max } => hand.hcp() <= *max,
             Constraint::MinLength { suit, count } => hand.length(*suit) >= *count,
             Constraint::MaxLength { suit, count } => hand.length(*suit) <= *count,
+            Constraint::ExactLength { suit, count } => hand.length(*suit) == *count,
             Constraint::IsBalanced { balanced } => {
                 let dist = hand.distribution();
                 // Basic check for balanced: 4-3-3-3, 4-4-3-2, 5-3-3-2

@@ -156,16 +156,28 @@ fn run_sayc_test_vectors() {
             }
 
             let key = format!("{}:{}:{}", hand_str, history_str, vuln_str);
+
+            // Preserve any annotation suffix (e.g. "| skip: reason") from existing expectations
+            if let Some(prev) = expectations.get(&suite_name).and_then(|s| s.get(&key)) {
+                if let Some(pipe_pos) = prev.find(" | ") {
+                    let annotation = &prev[pipe_pos..];
+                    status = format!("{}{}", status, annotation);
+                }
+            }
+
             suite_results.insert(key.clone(), status.clone());
 
             let prev_status = expectations.get(&suite_name).and_then(|s| s.get(&key));
 
             if !update_mode {
                 if let Some(expected_status) = prev_status {
-                    if expected_status != &status {
+                    // Strip annotations (e.g. "| skip: reason") before comparing
+                    let prev_base = expected_status.split(" | ").next().unwrap_or(expected_status);
+                    let curr_base = status.split(" | ").next().unwrap_or(&status);
+                    if prev_base != curr_base {
                         failures.push(format!(
                             "{}: {} -> Status changed from {} to {}",
-                            suite_name, key, expected_status, status
+                            suite_name, key, prev_base, curr_base
                         ));
                     }
                 } else {

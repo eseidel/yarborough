@@ -124,10 +124,7 @@ opening:
             min: 6
           - type: MaxHCP
             max: 10
-          - type: MinLength
-            suit: Diamonds
-            count: 6
-          - type: MaxLength
+          - type: ExactLength
             suit: Diamonds
             count: 6
 
@@ -141,10 +138,7 @@ opening:
             min: 6
           - type: MaxHCP
             max: 10
-          - type: MinLength
-            suit: Hearts
-            count: 6
-          - type: MaxLength
+          - type: ExactLength
             suit: Hearts
             count: 6
 
@@ -158,10 +152,7 @@ opening:
             min: 6
           - type: MaxHCP
             max: 10
-          - type: MinLength
-            suit: Spades
-            count: 6
-          - type: MaxLength
+          - type: ExactLength
             suit: Spades
             count: 6
 
