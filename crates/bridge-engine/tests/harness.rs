@@ -79,12 +79,36 @@ fn create_dummy_full_deal(h: &Hand, pos: Position) -> HashMap<Position, Hand> {
 
 #[test]
 fn run_sayc_test_vectors() {
-    let test_file = "../../tests/bidding/standard_bidding_with_sayc.yaml";
+    let test_files = [
+        "../../tests/bidding/standard_bidding_with_sayc.yaml",
+        "../../tests/bidding/sayc_regression.yaml",
+    ];
+
+    let mut all_failures = Vec::new();
+
+    for test_file in test_files {
+        let file_path = Path::new(test_file);
+        let file_stem = file_path.file_stem().unwrap().to_str().unwrap();
+        let expectations_path = format!("tests/{}.expectations.yaml", file_stem);
+
+        if let Err(mut failures) = run_test_vector(test_file, &expectations_path) {
+            all_failures.append(&mut failures);
+        }
+    }
+
+    if !all_failures.is_empty() {
+        for f in all_failures {
+            println!("{}", f);
+        }
+        panic!("Tests failed or status changed. Run with UPDATE_EXPECTATIONS=1 to update expectations.");
+    }
+}
+
+fn run_test_vector(test_file: &str, expectations_path: &str) -> Result<(), Vec<String>> {
     let file_content = fs::read_to_string(test_file).expect("Failed to read test vectors");
     let test_suites: IndexMap<String, Vec<Vec<serde_yaml::Value>>> =
         serde_yaml::from_str(&file_content).expect("Failed to parse YAML");
 
-    let expectations_path = "tests/expectations.yaml";
     let expectations: IndexMap<String, IndexMap<String, String>> =
         if Path::new(expectations_path).exists() {
             let content = fs::read_to_string(expectations_path).unwrap();
@@ -179,16 +203,16 @@ fn run_sayc_test_vectors() {
                     let curr_base = status.split(" | ").next().unwrap_or(&status);
                     if prev_base != curr_base {
                         failures.push(format!(
-                            "{}: {} -> Status changed from {} to {}",
-                            suite_name, key, prev_base, curr_base
+                            "{} ({}): {} -> Status changed from {} to {}",
+                            test_file, suite_name, key, prev_base, curr_base
                         ));
                     }
                 } else {
                     // New test case not in expectations
                     if status != "PASS" {
                         failures.push(format!(
-                            "{}: {} -> New test failed: {}",
-                            suite_name, key, status
+                            "{} ({}): {} -> New test failed: {}",
+                            test_file, suite_name, key, status
                         ));
                     }
                 }
@@ -211,11 +235,12 @@ fn run_sayc_test_vectors() {
                 }
             }
         }
-        println!("Updated expectations.yaml");
-    } else if !failures.is_empty() {
-        for f in failures {
-            println!("{}", f);
-        }
-        panic!("Tests failed or status changed. Run with UPDATE_EXPECTATIONS=1 to update expectations.");
+        println!("Updated {}", expectations_path);
+    }
+
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(failures)
     }
 }

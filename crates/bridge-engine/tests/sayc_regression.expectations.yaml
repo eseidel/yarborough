@@ -1,0 +1,4 @@
+test_opening_response_generalization:
+  Q73.K652.T9.AJ72:P 1H P:None: PASS
+  Q73.K652.T9.AJ72:P P 1H P:None: PASS
+  Q73.K652.T9.AJ72:P P P 1H P:None: PASS

@@ -118,18 +118,35 @@ impl Engine {
     }
 
     fn matches_pattern(&self, auction: &Auction, pattern: &str) -> bool {
-        // Simple string matching for now.
-        // We assume the pattern is space-separated calls, e.g. "1N P 2C P"
-        // We assume auction history renders to the same format.
-
-        let history_str: String = auction
+        let history_vec: Vec<String> = auction
             .calls
             .iter()
             .map(|c| c.render())
-            .collect::<Vec<String>>()
-            .join(" ");
+            .collect();
 
-        history_str == pattern
+        let history_str = history_vec.join(" ");
+
+        if history_str == pattern {
+            return true;
+        }
+
+        // If the pattern explicitly expects a leading Pass, we don't generalized by stripping them.
+        // Otherwise, strip leading passes from the actual auction history to support 2nd/3rd/4th seat openings.
+        if !pattern.starts_with("P ") && pattern != "P" {
+            let stripped_history = auction
+                .calls
+                .iter()
+                .skip_while(|c| **c == Call::Pass)
+                .map(|c| c.render())
+                .collect::<Vec<String>>()
+                .join(" ");
+
+            if !stripped_history.is_empty() && stripped_history == pattern {
+                return true;
+            }
+        }
+
+        false
     }
 
     fn check_constraints(&self, hand: &Hand, constraints: &[Constraint]) -> bool {

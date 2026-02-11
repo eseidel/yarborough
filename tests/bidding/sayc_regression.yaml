@@ -1,0 +1,4 @@
+test_opening_response_generalization:
+  - ["Q73.K652.T9.AJ72", "1S", "P 1H P"] # 2nd seat response
+  - ["Q73.K652.T9.AJ72", "1S", "P P 1H P"] # 3rd seat response
+  - ["Q73.K652.T9.AJ72", "1S", "P P P 1H P"] # 4th seat response
