@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   type Call,
   type CallHistory,
@@ -9,6 +10,7 @@ import { isCallLegal } from "../bridge/auction";
 
 const STRAINS: StrainName[] = ["C", "D", "H", "S", "N"];
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
+const MAX_VISIBLE_ROWS = 4;
 
 export function BiddingBox({
   onBid,
@@ -17,6 +19,21 @@ export function BiddingBox({
   onBid: (call: Call) => void;
   callHistory: CallHistory;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Find levels that have at least one legal bid.
+  const levelsWithLegal = LEVELS.filter((level) =>
+    STRAINS.some((strain) =>
+      isCallLegal({ type: "bid", level, strain }, callHistory),
+    ),
+  );
+
+  const needsCollapse = levelsWithLegal.length > MAX_VISIBLE_ROWS;
+  const visibleLevels =
+    needsCollapse && !expanded
+      ? levelsWithLegal.slice(0, MAX_VISIBLE_ROWS)
+      : levelsWithLegal;
+
   return (
     <div className="bg-white rounded-lg shadow p-3 space-y-2">
       {/* Pass / Double / Redouble row */}
@@ -61,9 +78,9 @@ export function BiddingBox({
         })()}
       </div>
 
-      {/* Bid grid: 7 levels × 5 strains */}
+      {/* Bid grid: visible levels × 5 strains */}
       <div className="grid grid-cols-5 gap-1">
-        {LEVELS.map((level) =>
+        {visibleLevels.map((level) =>
           STRAINS.map((strain) => {
             const call: Call = { type: "bid", level, strain };
             const legal = isCallLegal(call, callHistory);
@@ -87,6 +104,17 @@ export function BiddingBox({
           }),
         )}
       </div>
+
+      {needsCollapse && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full text-xs text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          {expanded
+            ? "Show less"
+            : `Show all levels (${levelsWithLegal.length})`}
+        </button>
+      )}
     </div>
   );
 }

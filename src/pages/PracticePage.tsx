@@ -3,15 +3,10 @@ import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
 import { HandDisplay } from "../components/HandDisplay";
+import { CardFan } from "../components/CardFan";
 import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
-import {
-  type Call,
-  type CallInterpretation,
-  handForPosition,
-  highCardPoints,
-  vulnerabilityLabel,
-} from "../bridge";
+import { type Call, type CallInterpretation, handForPosition } from "../bridge";
 import { CallDisplay } from "../components/CallDisplay";
 import { parseBoardId, generateBoardId } from "../bridge/identifier";
 import {
@@ -107,29 +102,45 @@ export function PracticePage() {
     navigate(`/bid/${id}`);
   }, [navigate]);
 
+  const handleRebid = useCallback(() => {
+    if (!boardId || !parsed) return;
+    setLoading(true);
+    setSuggestion(null);
+    setError(null);
+    const initialHistory: CallHistory = {
+      dealer: parsed.dealer,
+      calls: [],
+    };
+    addRobotBids(initialHistory, "S", boardId)
+      .then((h) => {
+        setHistory(h);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(String(err));
+        setLoading(false);
+      });
+  }, [boardId, parsed]);
+
   if (!parsed) {
     return <Navigate to="/" replace />;
   }
 
   const { deal, vulnerability } = parsed;
   const southHand = handForPosition(deal, "S");
-  const hcp = highCardPoints(southHand);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavBar />
       {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
-        {/* User's hand */}
-        <div className="flex flex-col items-center gap-1">
-          <HandDisplay hand={southHand} position="S" />
-          <div className="text-sm text-gray-500 font-medium">
-            {hcp} HCP &middot; {vulnerabilityLabel(vulnerability)}
-          </div>
-        </div>
-
         {/* Auction table */}
-        <CallTable callHistory={history} />
+        <CallTable callHistory={history} vulnerability={vulnerability} />
+
+        {/* User's hand */}
+        <div className="flex flex-col items-center">
+          <CardFan hand={southHand} />
+        </div>
 
         {/* Bidding box or results */}
         {loading ? (
@@ -144,12 +155,20 @@ export function PracticePage() {
               <HandDisplay hand={handForPosition(deal, "N")} position="N" />
               <HandDisplay hand={handForPosition(deal, "E")} position="E" />
             </div>
-            <button
-              onClick={handleRedeal}
-              className="w-full py-2 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold text-sm transition-colors"
-            >
-              Next Hand
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRedeal}
+                className="flex-1 py-2 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold text-sm transition-colors"
+              >
+                Next Hand
+              </button>
+              <button
+                onClick={handleRebid}
+                className="flex-1 py-2 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm transition-colors"
+              >
+                Rebid Hand
+              </button>
+            </div>
           </div>
         ) : (
           <BiddingBox onBid={handleBid} callHistory={history} />
@@ -171,6 +190,12 @@ export function PracticePage() {
                 className="flex-1 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm transition-colors"
               >
                 Skip Hand
+              </button>
+              <button
+                onClick={handleRebid}
+                className="flex-1 py-2 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm transition-colors"
+              >
+                Rebid
               </button>
             </div>
             {suggestion && (
