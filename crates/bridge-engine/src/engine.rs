@@ -67,7 +67,7 @@ impl Engine {
     pub fn get_best_bid(&self, hand: &Hand, auction: &Auction) -> Option<(Call, Variant)> {
         let rules = self.rules_for_context(auction);
         if rules.is_empty() {
-             return None;
+            return None;
         }
 
         let mut best_match: Option<(Call, Variant)> = None;
@@ -121,8 +121,10 @@ impl Engine {
         // Simple string matching for now.
         // We assume the pattern is space-separated calls, e.g. "1N P 2C P"
         // We assume auction history renders to the same format.
-        
-        let history_str: String = auction.calls.iter()
+
+        let history_str: String = auction
+            .calls
+            .iter()
             .map(|c| c.render())
             .collect::<Vec<String>>()
             .join(" ");
@@ -145,6 +147,7 @@ impl Engine {
             Constraint::MaxHCP { max } => hand.hcp() <= *max,
             Constraint::MinLength { suit, count } => hand.length(*suit) >= *count,
             Constraint::MaxLength { suit, count } => hand.length(*suit) <= *count,
+            Constraint::ExactLength { suit, count } => hand.length(*suit) == *count,
             Constraint::IsBalanced { balanced } => {
                 let dist = hand.distribution();
                 // Basic check for balanced: 4-3-3-3, 4-4-3-2, 5-3-3-2

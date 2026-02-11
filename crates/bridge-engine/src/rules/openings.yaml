@@ -118,13 +118,13 @@ opening:
     variants:
       - name: "Weak 2D"
         priority: 20
-        description: "6-10 HCP, 6 Diamonds"
+        description: "6-10 HCP, exactly 6 Diamonds"
         constraints:
           - type: MinHCP
             min: 6
           - type: MaxHCP
             max: 10
-          - type: MinLength
+          - type: ExactLength
             suit: Diamonds
             count: 6
 
@@ -132,13 +132,13 @@ opening:
     variants:
       - name: "Weak 2H"
         priority: 20
-        description: "6-10 HCP, 6 Hearts"
+        description: "6-10 HCP, exactly 6 Hearts"
         constraints:
           - type: MinHCP
             min: 6
           - type: MaxHCP
             max: 10
-          - type: MinLength
+          - type: ExactLength
             suit: Hearts
             count: 6
 
@@ -146,7 +146,63 @@ opening:
     variants:
       - name: "Weak 2S"
         priority: 20
-        description: "6-10 HCP, 6 Spades"
+        description: "6-10 HCP, exactly 6 Spades"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: ExactLength
+            suit: Spades
+            count: 6
+
+  - call: "3C"
+    variants:
+      - name: "Preempt 3C"
+        priority: 20
+        description: "6-10 HCP, 7+ Clubs"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Clubs
+            count: 7
+
+  - call: "3D"
+    variants:
+      - name: "Preempt 3D"
+        priority: 20
+        description: "6-10 HCP, 7+ Diamonds"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Diamonds
+            count: 7
+
+  - call: "3H"
+    variants:
+      - name: "Preempt 3H"
+        priority: 20
+        description: "6-10 HCP, 7+ Hearts"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Hearts
+            count: 7
+
+  - call: "3S"
+    variants:
+      - name: "Preempt 3S"
+        priority: 20
+        description: "6-10 HCP, 7+ Spades"
         constraints:
           - type: MinHCP
             min: 6
@@ -154,7 +210,7 @@ opening:
             max: 10
           - type: MinLength
             suit: Spades
-            count: 6
+            count: 7
 
   - call: "2N"
     variants:
