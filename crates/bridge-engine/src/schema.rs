@@ -38,7 +38,14 @@ variants:
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct System {
     pub opening: Vec<BidRule>,
-    // Add other contexts later: response, competitive, etc.
+    #[serde(default)]
+    pub responses: Vec<Situation>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct Situation {
+    pub pattern: String,
+    pub rules: Vec<BidRule>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
