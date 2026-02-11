@@ -159,7 +159,11 @@ export function PracticePage() {
               i.call.strain === clickedCall.strain,
           );
           setCallExplanation(
-            match ?? { call: clickedCall, ruleName: undefined, description: undefined },
+            match ?? {
+              call: clickedCall,
+              ruleName: undefined,
+              description: undefined,
+            },
           );
           setExplanationLoading(false);
         })

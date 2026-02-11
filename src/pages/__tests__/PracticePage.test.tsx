@@ -108,10 +108,7 @@ describe("PracticePage", () => {
   it("shows explanation when a bid in call history is clicked", async () => {
     mockAddRobotBids.mockResolvedValue({
       dealer: "N",
-      calls: [
-        { type: "bid", level: 1, strain: "C" },
-        { type: "pass" },
-      ],
+      calls: [{ type: "bid", level: 1, strain: "C" }, { type: "pass" }],
     });
     mockGetInterpretations.mockResolvedValue([
       {
