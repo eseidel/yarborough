@@ -13,7 +13,7 @@ use std::path::Path;
 fn parse_hand(s: &str) -> Hand {
     let suits: Vec<&str> = s.split('.').collect();
     let mut cards = Vec::new();
-    let suit_order = [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs];
+    let suit_order = [Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades];
     for (i, suit_str) in suits.iter().enumerate() {
         let suit = suit_order[i];
         for c in suit_str.chars() {
