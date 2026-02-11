@@ -511,104 +511,104 @@ responses:
             priority: 25
             description: "10-15 HCP, 6 Hearts"
             constraints:
-               - type: MinHCP
-                 min: 8
-               - type: MinLength
-                 suit: Hearts
-                 count: 6
+              - type: MinHCP
+                min: 8
+              - type: MinLength
+                suit: Hearts
+                count: 6
       - call: "3S"
         variants:
           - name: "Game Force New Suit"
             priority: 20
             description: "5 Hearts, 5 Spades GF"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MinLength
-                 suit: Hearts
-                 count: 5
-               - type: MinLength
-                 suit: Spades
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MinLength
+                suit: Spades
+                count: 5
       - call: "3C"
         variants:
           - name: "Game Force New Suit"
             priority: 20
             description: "5 Hearts, 5 Clubs GF"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MinLength
-                 suit: Hearts
-                 count: 5
-               - type: MinLength
-                 suit: Clubs
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MinLength
+                suit: Clubs
+                count: 5
       - call: "3D"
         variants:
           - name: "Game Force New Suit"
             priority: 20
             description: "5 Hearts, 5 Diamonds GF"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MinLength
-                 suit: Hearts
-                 count: 5
-               - type: MinLength
-                 suit: Diamonds
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MinLength
+                suit: Diamonds
+                count: 5
       - call: "3N"
         variants:
           - name: "Game Force Choice"
             priority: 10
             description: "10-15 HCP, 5 Hearts"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MinLength
-                 suit: Hearts
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
       - call: "3H"
         variants:
           - name: "Invite"
             priority: 10
             description: "8-9 HCP, 6 Hearts"
             constraints:
-               - type: MinHCP
-                 min: 6
-               - type: MaxHCP
-                 max: 9
-               - type: MinLength
-                 suit: Hearts
-                 count: 6
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 9
+              - type: MinLength
+                suit: Hearts
+                count: 6
       - call: "2N"
         variants:
           - name: "Invite Choice"
             priority: 10
             description: "8-9 HCP, 5 Hearts"
             constraints:
-               - type: MinHCP
-                 min: 8
-               - type: MaxHCP
-                 max: 9
-               - type: MinLength
-                 suit: Hearts
-                 count: 5
+              - type: MinHCP
+                min: 8
+              - type: MaxHCP
+                max: 9
+              - type: MinLength
+                suit: Hearts
+                count: 5
       - call: "2S"
         variants:
           - name: "5-5 Majors (Weak/Inv)"
             priority: 20
             description: "5+ Hearts, 5+ Spades"
             constraints:
-               - type: MinHCP
-                 min: 5
-               - type: MinLength
-                 suit: Hearts
-                 count: 5
-               - type: MinLength
-                 suit: Spades
-                 count: 5
+              - type: MinHCP
+                min: 5
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MinLength
+                suit: Spades
+                count: 5
 
   # Responder rebid after Transfer to Spades (Accepted by partner)
   - pattern: "1N P 2H P 2S P"
@@ -619,103 +619,103 @@ responses:
             priority: 25
             description: "10-15 HCP, 6 Spades"
             constraints:
-               - type: MinHCP
-                 min: 8
-               - type: MinLength
-                 suit: Spades
-                 count: 6
+              - type: MinHCP
+                min: 8
+              - type: MinLength
+                suit: Spades
+                count: 6
       - call: "4H"
         variants:
           - name: "Game Force 5-5 Majors (Limit)"
             priority: 25
             description: "5+ Spades, 5+ Hearts, GF Limit"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MaxHCP
-                 max: 12
-               - type: MinLength
-                 suit: Spades
-                 count: 5
-               - type: MinLength
-                 suit: Hearts
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MaxHCP
+                max: 12
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Hearts
+                count: 5
       - call: "3H"
         variants:
           - name: "Game Force New Suit"
             priority: 20
             description: "5 Spades, 5 Hearts GF"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MinLength
-                 suit: Spades
-                 count: 5
-               - type: MinLength
-                 suit: Hearts
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Hearts
+                count: 5
       - call: "3C"
         variants:
           - name: "Game Force New Suit"
             priority: 20
             description: "5 Spades, 5 Clubs GF"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MinLength
-                 suit: Spades
-                 count: 5
-               - type: MinLength
-                 suit: Clubs
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Clubs
+                count: 5
       - call: "3D"
         variants:
           - name: "Game Force New Suit"
             priority: 20
             description: "5 Spades, 5 Diamonds GF"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MinLength
-                 suit: Spades
-                 count: 5
-               - type: MinLength
-                 suit: Diamonds
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Diamonds
+                count: 5
       - call: "3N"
         variants:
           - name: "Game Force Choice"
             priority: 10
             description: "10-15 HCP, 5 Spades"
             constraints:
-               - type: MinHCP
-                 min: 10
-               - type: MinLength
-                 suit: Spades
-                 count: 5
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Spades
+                count: 5
       - call: "3S"
         variants:
           - name: "Invite"
             priority: 10
             description: "8-9 HCP, 6 Spades"
             constraints:
-               - type: MinHCP
-                 min: 6
-               - type: MaxHCP
-                 max: 9
-               - type: MinLength
-                 suit: Spades
-                 count: 6
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 9
+              - type: MinLength
+                suit: Spades
+                count: 6
       - call: "2N"
         variants:
           - name: "Invite Choice"
             priority: 10
             description: "8-9 HCP, 5 Spades"
             constraints:
-               - type: MinHCP
-                 min: 8
-               - type: MaxHCP
-                 max: 9
-               - type: MinLength
-                 suit: Spades
-                 count: 5
+              - type: MinHCP
+                min: 8
+              - type: MaxHCP
+                max: 9
+              - type: MinLength
+                suit: Spades
+                count: 5

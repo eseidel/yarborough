@@ -16,12 +16,14 @@ To build and run this project, you will need:
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/eseidel/yarborough.git
    cd yarborough
    ```
 
 2. Install JavaScript dependencies:
+
    ```bash
    pnpm install
    ```
