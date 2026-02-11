@@ -6,6 +6,7 @@ use bridge_core::io::identifier;
 use bridge_core::rank::Rank;
 use bridge_core::suit::Suit;
 use bridge_engine::get_next_bid;
+use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -13,7 +14,7 @@ use std::path::Path;
 fn parse_hand(s: &str) -> Hand {
     let suits: Vec<&str> = s.split('.').collect();
     let mut cards = Vec::new();
-    let suit_order = [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs];
+    let suit_order = [Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades];
     for (i, suit_str) in suits.iter().enumerate() {
         let suit = suit_order[i];
         for c in suit_str.chars() {
@@ -31,7 +32,7 @@ fn parse_auction(history: &str, dealer: Position) -> Auction {
         return auction;
     }
     for call_str in history.split_whitespace() {
-        if let Some(call) = Call::from_str(call_str) {
+        if let Ok(call) = call_str.parse::<Call>() {
             auction.add_call(call);
         }
     }
@@ -80,24 +81,24 @@ fn create_dummy_full_deal(h: &Hand, pos: Position) -> HashMap<Position, Hand> {
 fn run_sayc_test_vectors() {
     let test_file = "../../tests/bidding/standard_bidding_with_sayc.yaml";
     let file_content = fs::read_to_string(test_file).expect("Failed to read test vectors");
-    let test_suites: HashMap<String, Vec<Vec<serde_yaml::Value>>> =
+    let test_suites: IndexMap<String, Vec<Vec<serde_yaml::Value>>> =
         serde_yaml::from_str(&file_content).expect("Failed to parse YAML");
 
     let expectations_path = "tests/expectations.yaml";
-    let expectations: HashMap<String, HashMap<String, String>> =
+    let expectations: IndexMap<String, IndexMap<String, String>> =
         if Path::new(expectations_path).exists() {
             let content = fs::read_to_string(expectations_path).unwrap();
             serde_yaml::from_str(&content).unwrap_or_default()
         } else {
-            HashMap::new()
+            IndexMap::new()
         };
 
     let update_mode = std::env::var("UPDATE_EXPECTATIONS").is_ok();
-    let mut new_expectations = HashMap::new();
+    let mut new_expectations = IndexMap::new();
     let mut failures = Vec::new();
 
     for (suite_name, cases) in test_suites {
-        let mut suite_results = HashMap::new();
+        let mut suite_results = IndexMap::new();
         for (_i, case) in cases.iter().enumerate() {
             let hand_str = case[0].as_str().unwrap();
             let expected_call = case[1].as_str().unwrap();
@@ -118,7 +119,7 @@ fn run_sayc_test_vectors() {
             let our_position = history_auction.current_player();
 
             let mut full_calls = history_auction.calls.clone();
-            if let Some(c) = Call::from_str(expected_call) {
+            if let Ok(c) = expected_call.parse::<Call>() {
                 full_calls.push(c);
             }
 
@@ -151,7 +152,7 @@ fn run_sayc_test_vectors() {
                         break;
                     }
                 }
-                temp_auction.add_call(call.clone());
+                temp_auction.add_call(*call);
             }
 
             let key = format!("{}:{}:{}", hand_str, history_str, vuln_str);
@@ -182,8 +183,18 @@ fn run_sayc_test_vectors() {
     }
 
     if update_mode {
-        let yaml = serde_yaml::to_string(&new_expectations).unwrap();
-        fs::write(expectations_path, yaml).unwrap();
+        use std::io::Write;
+        let mut file = fs::File::create(expectations_path).expect("Failed to create expectations file");
+        for (suite_name, results) in new_expectations {
+            writeln!(file, "{}:", suite_name).unwrap();
+            for (key, status) in results {
+                if status == "PASS" {
+                    writeln!(file, "  {}: {}", key, status).unwrap();
+                } else {
+                    writeln!(file, "  {}: \"{}\"", key, status).unwrap();
+                }
+            }
+        }
         println!("Updated expectations.yaml");
     } else if !failures.is_empty() {
         for f in failures {

@@ -48,7 +48,7 @@ pub fn import_board(identifier: &str) -> Option<(Board, Option<Auction>)> {
         let mut a = Auction::new(dealer);
         let calls_str = if chs.contains(':') {
             // It might be dealer:vulnerability:calls format from CallHistory.identifier
-            chs.split(':').last()?
+            chs.split(':').next_back()?
         } else {
             chs
         };
@@ -59,7 +59,7 @@ pub fn import_board(identifier: &str) -> Option<(Board, Option<Auction>)> {
             if call_name.is_empty() {
                 continue;
             }
-            let call = Call::from_str(call_name)?;
+            let call: Call = call_name.parse().ok()?;
             a.add_call(call);
         }
         auction = Some(a);

@@ -1,0 +1,192 @@
+responses:
+  - pattern: "1C P"
+    rules:
+      - call: "1D"
+        variants:
+          - name: "Response 1D"
+            priority: 20
+            description: "6+ HCP, 4+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MinLength
+                suit: Diamonds
+                count: 4
+      - call: "1H"
+        variants:
+          - name: "Response 1H"
+            priority: 22
+            description: "6+ HCP, 4+ Hearts"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MinLength
+                suit: Hearts
+                count: 4
+      - call: "1S"
+        variants:
+          - name: "Response 1S"
+            priority: 21
+            description: "6+ HCP, 4+ Spades"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MinLength
+                suit: Spades
+                count: 4
+      - call: "1N"
+        variants:
+          - name: "Response 1NT"
+            priority: 10
+            description: "6-10 HCP"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 10
+      - call: "2N"
+        variants:
+          - name: "Response 2NT"
+            priority: 11
+            description: "13-15 HCP, Balanced"
+            constraints:
+              - type: MinHCP
+                min: 13
+              - type: MaxHCP
+                max: 15
+              - type: IsBalanced
+                balanced: true
+      - call: "3N"
+        variants:
+          - name: "Response 3NT"
+            priority: 12
+            description: "16-18 HCP, Balanced"
+            constraints:
+              - type: MinHCP
+                min: 16
+              - type: MaxHCP
+                max: 18
+              - type: IsBalanced
+                balanced: true
+      - call: "2C"
+        variants:
+          - name: "Response 2C"
+            priority: 15
+            description: "6-10 HCP, 5+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 10
+              - type: MinLength
+                suit: Clubs
+                count: 5
+      - call: "3C"
+        variants:
+          - name: "Response 3C"
+            priority: 16
+            description: "11-12 HCP, 5+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 11
+              - type: MaxHCP
+                max: 12
+              - type: MinLength
+                suit: Clubs
+                count: 5
+
+  - pattern: "1D P"
+    rules:
+      - call: "1H"
+        variants:
+          - name: "Response 1H"
+            priority: 22
+            description: "6+ HCP, 4+ Hearts"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MinLength
+                suit: Hearts
+                count: 4
+      - call: "1S"
+        variants:
+          - name: "Response 1S"
+            priority: 21
+            description: "6+ HCP, 4+ Spades"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MinLength
+                suit: Spades
+                count: 4
+      - call: "2C"
+        variants:
+          - name: "Response 2C"
+            priority: 15
+            description: "10+ HCP, 4+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Clubs
+                count: 4
+      - call: "1N"
+        variants:
+          - name: "Response 1NT"
+            priority: 10
+            description: "6-10 HCP"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 10
+      - call: "2N"
+        variants:
+          - name: "Response 2NT"
+            priority: 11
+            description: "13-15 HCP, Balanced"
+            constraints:
+              - type: MinHCP
+                min: 13
+              - type: MaxHCP
+                max: 15
+              - type: IsBalanced
+                balanced: true
+      - call: "3N"
+        variants:
+          - name: "Response 3NT"
+            priority: 12
+            description: "16-18 HCP, Balanced"
+            constraints:
+              - type: MinHCP
+                min: 16
+              - type: MaxHCP
+                max: 18
+              - type: IsBalanced
+                balanced: true
+      - call: "2D"
+        variants:
+          - name: "Response 2D"
+            priority: 15
+            description: "6-10 HCP, 5+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 10
+              - type: MinLength
+                suit: Diamonds
+                count: 5
+      - call: "3D"
+        variants:
+          - name: "Response 3D"
+            priority: 16
+            description: "11-12 HCP, 5+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 11
+              - type: MaxHCP
+                max: 12
+              - type: MinLength
+                suit: Diamonds
+                count: 5

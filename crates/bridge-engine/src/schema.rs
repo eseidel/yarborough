@@ -37,8 +37,23 @@ variants:
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct System {
+    #[serde(default)]
     pub opening: Vec<BidRule>,
-    // Add other contexts later: response, competitive, etc.
+    #[serde(default)]
+    pub responses: Vec<Situation>,
+}
+
+impl System {
+    pub fn merge(&mut self, other: System) {
+        self.opening.extend(other.opening);
+        self.responses.extend(other.responses);
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct Situation {
+    pub pattern: String,
+    pub rules: Vec<BidRule>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
@@ -63,4 +78,5 @@ pub enum Constraint {
     MinLength { suit: Suit, count: u8 },
     MaxLength { suit: Suit, count: u8 },
     IsBalanced { balanced: bool },
+    RuleOfTwenty { met: bool },
 }

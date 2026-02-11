@@ -28,7 +28,9 @@ impl Engine {
         legal_calls
             .into_iter()
             .map(|call| {
-                let rule_match = rules.iter().find(|r| Call::from_str(&r.call) == Some(call));
+                let rule_match = rules
+                    .iter()
+                    .find(|r| r.call.parse::<Call>().ok() == Some(call));
 
                 match rule_match {
                     Some(rule) => {
@@ -63,20 +65,17 @@ impl Engine {
     }
 
     pub fn get_best_bid(&self, hand: &Hand, auction: &Auction) -> Option<(Call, Variant)> {
-        let rules = if self.is_opening(auction) {
-            &self.system.opening
-        } else {
-            // Placeholder: for now we only know how to open.
-            // If not opening, we currently return None, triggering fallback.
-            return None;
-        };
+        let rules = self.rules_for_context(auction);
+        if rules.is_empty() {
+             return None;
+        }
 
         let mut best_match: Option<(Call, Variant)> = None;
 
         for rule in rules {
-            let call = match Call::from_str(&rule.call) {
-                Some(c) => c,
-                None => continue,
+            let call = match rule.call.parse::<Call>() {
+                Ok(c) => c,
+                Err(_) => continue,
             };
 
             for variant in &rule.variants {
@@ -100,17 +99,35 @@ impl Engine {
     /// Return the rules for the current auction context.
     fn rules_for_context(&self, auction: &Auction) -> &[BidRule] {
         if self.is_opening(auction) {
-            &self.system.opening
-        } else {
-            // No response/competitive rules yet
-            &[]
+            return &self.system.opening;
         }
+
+        for situation in &self.system.responses {
+            if self.matches_pattern(auction, &situation.pattern) {
+                return &situation.rules;
+            }
+        }
+
+        &[]
     }
 
     fn is_opening(&self, auction: &Auction) -> bool {
         // It's an opening bid if there are no existing bids in the auction history.
         // Passes are ignored.
         !auction.calls.iter().any(|c| matches!(c, Call::Bid { .. }))
+    }
+
+    fn matches_pattern(&self, auction: &Auction, pattern: &str) -> bool {
+        // Simple string matching for now.
+        // We assume the pattern is space-separated calls, e.g. "1N P 2C P"
+        // We assume auction history renders to the same format.
+        
+        let history_str: String = auction.calls.iter()
+            .map(|c| c.render())
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        history_str == pattern
     }
 
     fn check_constraints(&self, hand: &Hand, constraints: &[Constraint]) -> bool {
@@ -139,6 +156,12 @@ impl Engine {
                 let is_balanced = !has_singleton_or_void && doubleton_count <= 1;
 
                 is_balanced == *balanced
+            }
+            Constraint::RuleOfTwenty { met } => {
+                let mut dist = hand.distribution();
+                dist.sort_by(|a, b| b.cmp(a));
+                let rule_of_twenty = (hand.hcp() + dist[0] + dist[1]) >= 20;
+                rule_of_twenty == *met
             }
         }
     }
