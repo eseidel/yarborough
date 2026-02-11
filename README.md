@@ -11,7 +11,8 @@ To build and run this project, you will need:
 - [Node.js](https://nodejs.org/) (Latest LTS recommended)
 - [pnpm](https://pnpm.io/)
 - [Rust](https://www.rust-lang.org/)
-- [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
+
+Note: `wasm-pack` is handled automatically as a development dependency via `pnpm install`.
 
 ### Installation
 
@@ -26,20 +27,15 @@ To build and run this project, you will need:
    pnpm install
    ```
 
-3. Build the WASM bridge engine:
-   ```bash
-   pnpm wasm:dev
-   ```
-
 ### Running Locally
 
-To start the development server:
+To start the development server (this will also build and watch the WASM engine):
 
 ```bash
 pnpm dev
 ```
 
-The application will be available at `http://localhost:5173`.
+The application will be available at `http://localhost:5173`. Rust and YAML files in the `crates` directory will automatically trigger a WASM rebuild on change.
 
 ### Building for Production
 
