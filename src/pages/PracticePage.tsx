@@ -3,15 +3,10 @@ import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
 import { HandDisplay } from "../components/HandDisplay";
+import { CardFan } from "../components/CardFan";
 import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
-import {
-  type Call,
-  type CallInterpretation,
-  handForPosition,
-  highCardPoints,
-  vulnerabilityLabel,
-} from "../bridge";
+import { type Call, type CallInterpretation, handForPosition } from "../bridge";
 import { CallDisplay } from "../components/CallDisplay";
 import { parseBoardId, generateBoardId } from "../bridge/identifier";
 import {
@@ -133,23 +128,19 @@ export function PracticePage() {
 
   const { deal, vulnerability } = parsed;
   const southHand = handForPosition(deal, "S");
-  const hcp = highCardPoints(southHand);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavBar />
       {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
-        {/* User's hand */}
-        <div className="flex flex-col items-center gap-1">
-          <HandDisplay hand={southHand} position="S" />
-          <div className="text-sm text-gray-500 font-medium">
-            {hcp} HCP &middot; {vulnerabilityLabel(vulnerability)}
-          </div>
-        </div>
-
         {/* Auction table */}
-        <CallTable callHistory={history} />
+        <CallTable callHistory={history} vulnerability={vulnerability} />
+
+        {/* User's hand */}
+        <div className="flex flex-col items-center">
+          <CardFan hand={southHand} />
+        </div>
 
         {/* Bidding box or results */}
         {loading ? (
