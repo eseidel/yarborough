@@ -1,3 +1,4 @@
+use bridge_core::rank::Rank;
 use bridge_core::suit::Suit;
 use serde::{Deserialize, Serialize};
 
@@ -84,4 +85,5 @@ pub enum Constraint {
     RuleOfFifteen { met: bool },
     MinPoints { suit: Option<Suit>, min: u8 },
     MaxPoints { suit: Option<Suit>, max: u8 },
+    HasHonor { suit: Suit, rank: Rank },
 }

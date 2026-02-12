@@ -197,6 +197,10 @@ impl Engine {
             }
             Constraint::MinPoints { suit, min } => hand.points(*suit) >= *min,
             Constraint::MaxPoints { suit, max } => hand.points(*suit) <= *max,
+            Constraint::HasHonor { suit, rank } => hand
+                .cards
+                .iter()
+                .any(|c| c.suit == *suit && c.rank == *rank),
         }
     }
 }
