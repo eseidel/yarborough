@@ -171,10 +171,12 @@ impl Engine {
                 // Basic check for balanced: 4-3-3-3, 4-4-3-2, 5-3-3-2
                 // No voids, no singletons.
                 let has_singleton_or_void = dist.iter().any(|&count| count <= 1);
-                // Also 5-4-2-2 is sometimes treated as semi-balanced, but strict balanced usually means no more than one doubleton.
                 let doubleton_count = dist.iter().filter(|&&count| count == 2).count();
+                let max_suit = dist.iter().max().unwrap_or(&0);
 
-                let is_balanced = !has_singleton_or_void && doubleton_count <= 1;
+                // Allow 4-3-3-3, 4-4-3-2, 5-3-3-2 (standard)
+                // and 5-4-2-2 (semi-balanced)
+                let is_balanced = !has_singleton_or_void && doubleton_count <= 2 && *max_suit <= 5;
 
                 is_balanced == *balanced
             }
