@@ -39,7 +39,7 @@ fn load_engine() -> Engine {
         include_str!("rules/openings.yaml"),
         include_str!("rules/notrump/stayman.yaml"),
         include_str!("rules/notrump/jacoby.yaml"),
-        include_str!("rules/notrump/notrump_responses.yaml"),
+        include_str!("rules/notrump/responses.yaml"),
         include_str!("rules/majors/raises.yaml"),
         include_str!("rules/majors/responses.yaml"),
         include_str!("rules/minors/raises.yaml"),
