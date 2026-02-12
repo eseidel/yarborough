@@ -45,6 +45,7 @@ fn load_engine() -> Engine {
         include_str!("rules/minors/raises.yaml"),
         include_str!("rules/minors/responses.yaml"),
         include_str!("rules/preemptive/responses.yaml"),
+        include_str!("rules/strong/responses.yaml"),
     ];
 
     for shard in shards {
