@@ -1,0 +1,96 @@
+responses:
+  - pattern: "1H P"
+    rules:
+      - call: "1S"
+        variants:
+          - name: "Response 1S"
+            priority: 20
+            description: "6+ HCP, 4+ Spades"
+            constraints:
+              - type: MinPoints
+                suit: null
+                min: 6
+              - type: MinLength
+                suit: Spades
+                count: 4
+      - call: "1N"
+        variants:
+          - name: "Response 1NT"
+            priority: 10
+            description: "6-10 HCP"
+            constraints:
+              - type: MinPoints
+                suit: null
+                min: 6
+              - type: MaxHCP
+                max: 10
+      - call: "2C"
+        variants:
+          - name: "Response 2C"
+            priority: 15
+            description: "10+ HCP, 4+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Clubs
+                count: 4
+      - call: "2D"
+        variants:
+          - name: "Response 2D"
+            priority: 15
+            description: "10+ HCP, 4+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Diamonds
+                count: 4
+
+  - pattern: "1S P"
+    rules:
+      - call: "1N"
+        variants:
+          - name: "Response 1NT"
+            priority: 10
+            description: "6-10 HCP"
+            constraints:
+              - type: MinPoints
+                suit: null
+                min: 6
+              - type: MaxHCP
+                max: 10
+      - call: "2C"
+        variants:
+          - name: "Response 2C"
+            priority: 15
+            description: "10+ HCP, 4+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Clubs
+                count: 4
+      - call: "2D"
+        variants:
+          - name: "Response 2D"
+            priority: 15
+            description: "10+ HCP, 4+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Diamonds
+                count: 4
+      - call: "2H"
+        variants:
+          - name: "Response 2H"
+            priority: 16
+            description: "10+ HCP, 5+ Hearts"
+            constraints:
+              - type: MinPoints
+                suit: null
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5

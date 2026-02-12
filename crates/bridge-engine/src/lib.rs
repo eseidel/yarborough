@@ -37,9 +37,14 @@ fn load_engine() -> Engine {
 
     let shards = [
         include_str!("rules/openings.yaml"),
-        include_str!("rules/notrump.yaml"),
-        include_str!("rules/majors.yaml"),
-        include_str!("rules/minors.yaml"),
+        include_str!("rules/notrump/stayman.yaml"),
+        include_str!("rules/notrump/jacoby.yaml"),
+        include_str!("rules/notrump/notrump_responses.yaml"),
+        include_str!("rules/majors/raises.yaml"),
+        include_str!("rules/majors/responses.yaml"),
+        include_str!("rules/minors/raises.yaml"),
+        include_str!("rules/minors/responses.yaml"),
+        include_str!("rules/preemptive/responses.yaml"),
     ];
 
     for shard in shards {

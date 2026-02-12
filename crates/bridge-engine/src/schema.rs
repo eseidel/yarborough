@@ -47,7 +47,17 @@ pub struct System {
 impl System {
     pub fn merge(&mut self, other: System) {
         self.opening.extend(other.opening);
-        self.responses.extend(other.responses);
+        for other_situation in other.responses {
+            if let Some(existing) = self
+                .responses
+                .iter_mut()
+                .find(|s| s.pattern == other_situation.pattern)
+            {
+                existing.rules.extend(other_situation.rules);
+            } else {
+                self.responses.push(other_situation);
+            }
+        }
     }
 }
 

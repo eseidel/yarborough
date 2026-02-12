@@ -1,0 +1,337 @@
+responses:
+  - pattern: "1N P"
+    rules:
+      - call: "2D"
+        variants:
+          - name: "Jacoby Transfer to Hearts"
+            priority: 20
+            description: "5+ Hearts"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 5
+
+      - call: "2H"
+        variants:
+          - name: "Jacoby Transfer to Spades"
+            priority: 20
+            description: "5+ Spades"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 5
+          - name: "Jacoby Transfer to Spades (5-5 Majors)"
+            priority: 25
+            description: "5 Spades, 5 Hearts, Inv+"
+            constraints:
+              - type: MinHCP
+                min: 8
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MaxLength
+                suit: Hearts
+                count: 5
+
+  # Opener's rebid after Jacoby Transfer to Hearts
+  - pattern: "1N P 2D P"
+    rules:
+      - call: "2H"
+        variants:
+          - name: "Accept Jacoby to Hearts"
+            priority: 10
+            description: "Normal completion of Jacoby transfer"
+            constraints: []
+      - call: "3H"
+        variants:
+          - name: "Super-accept Jacoby to Hearts"
+            priority: 20
+            description: "17 HCP and 4-card support"
+            constraints:
+              - type: MinHCP
+                min: 17
+              - type: MinLength
+                suit: Hearts
+                count: 4
+
+  # Opener's rebid after Jacoby Transfer to Spades
+  - pattern: "1N P 2H P"
+    rules:
+      - call: "2S"
+        variants:
+          - name: "Accept Jacoby to Spades"
+            priority: 10
+            description: "Normal completion of Jacoby transfer"
+            constraints: []
+      - call: "3S"
+        variants:
+          - name: "Super-accept Jacoby to Spades"
+            priority: 20
+            description: "17 HCP and 4-card support"
+            constraints:
+              - type: MinHCP
+                min: 17
+              - type: MinLength
+                suit: Spades
+                count: 4
+
+  # Responder rebid after Transfer to Hearts (Accepted by partner)
+  - pattern: "1N P 2D P 2H P"
+    rules:
+      - call: "4H"
+        variants:
+          - name: "Sign-off Game"
+            priority: 25
+            description: "10-15 HCP, 6 Hearts"
+            constraints:
+              - type: MinHCP
+                min: 8
+              - type: MinLength
+                suit: Hearts
+                count: 6
+      - call: "3S"
+        variants:
+          - name: "Game Force New Suit"
+            priority: 20
+            description: "5 Hearts, 5 Spades GF"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MinLength
+                suit: Spades
+                count: 5
+      - call: "3C"
+        variants:
+          - name: "Game Force New Suit"
+            priority: 20
+            description: "5 Hearts, 5 Clubs GF"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MinLength
+                suit: Clubs
+                count: 5
+      - call: "3D"
+        variants:
+          - name: "Game Force New Suit"
+            priority: 20
+            description: "5 Hearts, 5 Diamonds GF"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MinLength
+                suit: Diamonds
+                count: 5
+      - call: "3N"
+        variants:
+          - name: "Game Force Choice"
+            priority: 10
+            description: "10-15 HCP, 5 Hearts"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
+      - call: "3H"
+        variants:
+          - name: "Invite"
+            priority: 10
+            description: "8-9 HCP, 6 Hearts"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 9
+              - type: MinLength
+                suit: Hearts
+                count: 6
+      - call: "2N"
+        variants:
+          - name: "Invite Choice"
+            priority: 10
+            description: "8-9 HCP, 5 Hearts"
+            constraints:
+              - type: MinHCP
+                min: 8
+              - type: MaxHCP
+                max: 9
+              - type: MinLength
+                suit: Hearts
+                count: 5
+      - call: "2S"
+        variants:
+          - name: "5-5 Majors (Weak/Inv)"
+            priority: 20
+            description: "5+ Hearts, 5+ Spades"
+            constraints:
+              - type: MinHCP
+                min: 5
+              - type: MinLength
+                suit: Hearts
+                count: 5
+              - type: MinLength
+                suit: Spades
+                count: 5
+
+  # Responder rebid after Transfer to Spades (Accepted by partner)
+  - pattern: "1N P 2H P 2S P"
+    rules:
+      - call: "4S"
+        variants:
+          - name: "Sign-off Game"
+            priority: 25
+            description: "10-15 HCP, 6 Spades"
+            constraints:
+              - type: MinHCP
+                min: 8
+              - type: MinLength
+                suit: Spades
+                count: 6
+      - call: "4H"
+        variants:
+          - name: "Game Force 5-5 Majors (Limit)"
+            priority: 25
+            description: "5+ Spades, 5+ Hearts, GF Limit"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MaxHCP
+                max: 12
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Hearts
+                count: 5
+      - call: "3H"
+        variants:
+          - name: "Game Force New Suit"
+            priority: 20
+            description: "5 Spades, 5 Hearts GF"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Hearts
+                count: 5
+      - call: "3C"
+        variants:
+          - name: "Game Force New Suit"
+            priority: 20
+            description: "5 Spades, 5 Clubs GF"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Clubs
+                count: 5
+      - call: "3D"
+        variants:
+          - name: "Game Force New Suit"
+            priority: 20
+            description: "5 Spades, 5 Diamonds GF"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Spades
+                count: 5
+              - type: MinLength
+                suit: Diamonds
+                count: 5
+      - call: "3N"
+        variants:
+          - name: "Game Force Choice"
+            priority: 10
+            description: "10-15 HCP, 5 Spades"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MinLength
+                suit: Spades
+                count: 5
+      - call: "3S"
+        variants:
+          - name: "Invite"
+            priority: 10
+            description: "8-9 HCP, 6 Spades"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 9
+              - type: MinLength
+                suit: Spades
+                count: 6
+      - call: "2N"
+        variants:
+          - name: "Invite Choice"
+            priority: 10
+            description: "8-9 HCP, 5 Spades"
+            constraints:
+              - type: MinHCP
+                min: 8
+              - type: MaxHCP
+                max: 9
+              - type: MinLength
+                suit: Spades
+                count: 5
+
+  - pattern: "2N P"
+    rules:
+      - call: "3D"
+        variants:
+          - name: "Jacoby Transfer to Hearts"
+            priority: 40
+            description: "5+ Hearts over 2NT"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 5
+      - call: "3H"
+        variants:
+          - name: "Jacoby Transfer to Spades"
+            priority: 40
+            description: "5+ Spades over 2NT"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 5
+
+  # Opener's rebid after Jacoby Transfer over 2NT
+  - pattern: "2N P 3D P"
+    rules:
+      - call: "3H"
+        variants:
+          - name: "Accept Jacoby to Hearts"
+            priority: 10
+            description: "Normal completion of Jacoby transfer over 2NT"
+            constraints: []
+
+  - pattern: "2N P 3H P"
+    rules:
+      - call: "3S"
+        variants:
+          - name: "Accept Jacoby to Spades"
+            priority: 10
+            description: "Normal completion of Jacoby transfer over 2NT"
+            constraints: []

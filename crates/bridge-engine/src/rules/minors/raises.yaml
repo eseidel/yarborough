@@ -1,0 +1,58 @@
+responses:
+  - pattern: "1C P"
+    rules:
+      - call: "2C"
+        variants:
+          - name: "Response 2C"
+            priority: 15
+            description: "6-10 HCP, 5+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 10
+              - type: MinLength
+                suit: Clubs
+                count: 5
+      - call: "3C"
+        variants:
+          - name: "Response 3C"
+            priority: 16
+            description: "11-12 HCP, 5+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 11
+              - type: MaxHCP
+                max: 12
+              - type: MinLength
+                suit: Clubs
+                count: 5
+
+  - pattern: "1D P"
+    rules:
+      - call: "2D"
+        variants:
+          - name: "Response 2D"
+            priority: 15
+            description: "6-10 HCP, 5+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 6
+              - type: MaxHCP
+                max: 10
+              - type: MinLength
+                suit: Diamonds
+                count: 5
+      - call: "3D"
+        variants:
+          - name: "Response 3D"
+            priority: 16
+            description: "11-12 HCP, 5+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 11
+              - type: MaxHCP
+                max: 12
+              - type: MinLength
+                suit: Diamonds
+                count: 5
