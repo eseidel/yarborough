@@ -252,6 +252,82 @@ responses:
                 suit: Hearts
                 count: 6
 
+  # Opener's rebid after Stayman
+  - pattern: "1N P 2C P"
+    rules:
+      - call: "2D"
+        variants:
+          - name: "No 4-card Major"
+            priority: 10
+            description: "Denied 4-card major after Stayman"
+            constraints:
+              - type: MaxLength
+                suit: Hearts
+                count: 3
+              - type: MaxLength
+                suit: Spades
+                count: 3
+      - call: "2H"
+        variants:
+          - name: "4-card Heart Suit"
+            priority: 21
+            description: "Shows 4 hearts after Stayman"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 4
+      - call: "2S"
+        variants:
+          - name: "4-card Spade Suit"
+            priority: 20
+            description: "Shows 4 spades after Stayman"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 4
+
+  # Opener's rebid after Jacoby Transfer to Hearts
+  - pattern: "1N P 2D P"
+    rules:
+      - call: "2H"
+        variants:
+          - name: "Accept Jacoby to Hearts"
+            priority: 10
+            description: "Normal completion of Jacoby transfer"
+            constraints: []
+      - call: "3H"
+        variants:
+          - name: "Super-accept Jacoby to Hearts"
+            priority: 20
+            description: "17 HCP and 4-card support"
+            constraints:
+              - type: MinHCP
+                min: 17
+              - type: MinLength
+                suit: Hearts
+                count: 4
+
+  # Opener's rebid after Jacoby Transfer to Spades
+  - pattern: "1N P 2H P"
+    rules:
+      - call: "2S"
+        variants:
+          - name: "Accept Jacoby to Spades"
+            priority: 10
+            description: "Normal completion of Jacoby transfer"
+            constraints: []
+      - call: "3S"
+        variants:
+          - name: "Super-accept Jacoby to Spades"
+            priority: 20
+            description: "17 HCP and 4-card support"
+            constraints:
+              - type: MinHCP
+                min: 17
+              - type: MinLength
+                suit: Spades
+                count: 4
+
   # Responder rebid after Stayman (Partner denied major)
   - pattern: "1N P 2C P 2D P"
     rules:
@@ -719,3 +795,116 @@ responses:
               - type: MinLength
                 suit: Spades
                 count: 5
+
+  # Responder's response to 2NT opening
+  - pattern: "2N P"
+    rules:
+      - call: "3C"
+        variants:
+          - name: "Stayman (Hearts)"
+            priority: 25
+            description: "Interest in Hearts over 2NT"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 4
+          - name: "Stayman (Spades)"
+            priority: 25
+            description: "Interest in Spades over 2NT"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 4
+      - call: "3D"
+        variants:
+          - name: "Jacoby Transfer to Hearts"
+            priority: 40
+            description: "5+ Hearts over 2NT"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 5
+      - call: "3H"
+        variants:
+          - name: "Jacoby Transfer to Spades"
+            priority: 40
+            description: "5+ Spades over 2NT"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 5
+      - call: "3N"
+        variants:
+          - name: "Sign-off"
+            priority: 10
+            description: "Sign-off in game over 2NT"
+            constraints: []
+      - call: "4C"
+        variants:
+          - name: "Gerber"
+            priority: 15
+            description: "Ace-asking Gerber over 2NT"
+            constraints: []
+      - call: "4N"
+        variants:
+          - name: "Quantitative Invite"
+            priority: 15
+            description: "Inviting slam over 2NT"
+            constraints:
+              - type: MinHCP
+                min: 10
+              - type: MaxHCP
+                max: 12
+
+  # Opener's rebid after Stayman over 2NT
+  - pattern: "2N P 3C P"
+    rules:
+      - call: "3D"
+        variants:
+          - name: "No 4-card Major"
+            priority: 10
+            description: "Denied 4-card major after Stayman over 2NT"
+            constraints:
+              - type: MaxLength
+                suit: Hearts
+                count: 3
+              - type: MaxLength
+                suit: Spades
+                count: 3
+      - call: "3H"
+        variants:
+          - name: "4-card Heart Suit"
+            priority: 21
+            description: "Shows 4 hearts after Stayman over 2NT"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 4
+      - call: "3S"
+        variants:
+          - name: "4-card Spade Suit"
+            priority: 20
+            description: "Shows 4 spades after Stayman over 2NT"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 4
+
+  # Opener's rebid after Jacoby Transfer over 2NT
+  - pattern: "2N P 3D P"
+    rules:
+      - call: "3H"
+        variants:
+          - name: "Accept Jacoby to Hearts"
+            priority: 10
+            description: "Normal completion of Jacoby transfer over 2NT"
+            constraints: []
+
+  - pattern: "2N P 3H P"
+    rules:
+      - call: "3S"
+        variants:
+          - name: "Accept Jacoby to Spades"
+            priority: 10
+            description: "Normal completion of Jacoby transfer over 2NT"
+            constraints: []
