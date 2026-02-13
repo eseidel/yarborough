@@ -34,15 +34,22 @@ export function CallTable({
   const { dealer, calls } = callHistory;
   const dealerIndex = CALL_TABLE_ORDER.indexOf(dealer);
 
+  // Create a combined list of actual calls and the "?" marker if the auction is not complete.
+  const displayCalls = [...calls];
+  const auctionDone = isAuctionComplete(callHistory);
+  if (!auctionDone) {
+    displayCalls.push(null as any);
+  }
+
   // Determine which call index ends the row containing the selected call.
   // After that cell we insert the explanation as a full-width grid row.
   let insertAfterIndex: number | null = null;
-  if (selectedCallIndex != null && selectedCallIndex < calls.length) {
+  if (selectedCallIndex != null && selectedCallIndex < displayCalls.length) {
     const selectedGridPos = dealerIndex + selectedCallIndex;
     const selectedRow = Math.floor(selectedGridPos / 4);
     const lastGridPosOnRow = (selectedRow + 1) * 4 - 1;
     const lastCallIndexOnRow = lastGridPosOnRow - dealerIndex;
-    insertAfterIndex = Math.min(lastCallIndexOnRow, calls.length - 1);
+    insertAfterIndex = Math.min(lastCallIndexOnRow, displayCalls.length - 1);
   }
 
   const showExplanation =
@@ -65,16 +72,16 @@ export function CallTable({
         {Array.from({ length: dealerIndex }, (_, i) => (
           <div key={`empty-${i}`} />
         ))}
-        {calls.map((call, i) => {
+        {displayCalls.map((call, i) => {
           const isSelected = selectedCallIndex === i;
-          const clickable = onCallClick != null;
+          const clickable = onCallClick != null && call !== null;
           return (
             <Fragment key={i}>
               <div
                 className={`py-1 ${clickable ? "cursor-pointer hover:bg-amber-100 rounded" : ""} ${isSelected ? "bg-amber-200 rounded" : ""}`}
                 onClick={clickable ? () => onCallClick(i) : undefined}
               >
-                <CallDisplay call={call} />
+                {call ? <CallDisplay call={call} /> : <span className="text-gray-400">?</span>}
               </div>
               {i === insertAfterIndex && showExplanation && (
                 <div
@@ -104,9 +111,6 @@ export function CallTable({
             </Fragment>
           );
         })}
-        {!isAuctionComplete(callHistory) && (
-          <div className="py-1 text-gray-400">?</div>
-        )}
       </div>
     </div>
   );

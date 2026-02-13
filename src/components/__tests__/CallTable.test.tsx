@@ -50,7 +50,7 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => {}}
+        onCallClick={() => { }}
         selectedCallIndex={0}
       />,
     );
@@ -67,7 +67,7 @@ describe("CallTable", () => {
   it("applies cursor-pointer when onCallClick is provided", () => {
     const history = makeHistory([{ type: "pass" }]);
 
-    render(<CallTable callHistory={history} onCallClick={() => {}} />);
+    render(<CallTable callHistory={history} onCallClick={() => { }} />);
 
     const passDiv = screen.getByText("Pass").closest("div");
     expect(passDiv?.className).toContain("cursor-pointer");
@@ -91,7 +91,7 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => {}}
+        onCallClick={() => { }}
         selectedCallIndex={0}
         callExplanation={{
           call: { type: "bid", level: 1, strain: "C" },
@@ -114,7 +114,7 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => {}}
+        onCallClick={() => { }}
         selectedCallIndex={0}
         callExplanation={{
           call: { type: "pass" },
@@ -131,12 +131,45 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => {}}
+        onCallClick={() => { }}
         selectedCallIndex={0}
         explanationLoading={true}
       />,
     );
 
     expect(screen.getByText("Loading...")).toBeInTheDocument();
+  });
+
+  it("renders '?' before explanation when auction is incomplete and call on same row is selected", () => {
+    // 1C (index 0)
+    // ?  (index 1) - virtual
+    const history = makeHistory([{ type: "bid", level: 1, strain: "C" }]);
+
+    render(
+      <CallTable
+        callHistory={history}
+        onCallClick={() => { }}
+        selectedCallIndex={0}
+        callExplanation={{
+          call: { type: "bid", level: 1, strain: "C" },
+          ruleName: "Opening 1C",
+        }}
+      />,
+    );
+
+    const table = screen.getByTestId("call-table");
+    const container = table.querySelector(".grid")!;
+
+    // Find all children that are either the "?" or the explanation
+    const children = Array.from(container.children);
+    const questionIndex = children.findIndex((c) => c.textContent === "?");
+    const explanationIndex = children.findIndex(
+      (c) => c.getAttribute("data-testid") === "call-explanation",
+    );
+
+    expect(questionIndex).not.toBe(-1);
+    expect(explanationIndex).not.toBe(-1);
+    // "?" should come before the explanation in the DOM order (to be in its grid cell)
+    expect(questionIndex).toBeLessThan(explanationIndex);
   });
 });
