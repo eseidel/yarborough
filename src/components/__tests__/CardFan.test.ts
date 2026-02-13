@@ -4,12 +4,12 @@ import type { Hand } from "../../bridge/types";
 
 describe("FAN_SUIT_ORDER", () => {
   it("is D, C, H, S", () => {
-    expect(FAN_SUIT_ORDER).toEqual(["D", "C", "H", "S"]);
+    expect(FAN_SUIT_ORDER).toEqual(["S", "H", "D", "C"]);
   });
 });
 
 describe("fanOrderCards", () => {
-  it("returns cards in DCHS suit order, high-to-low within each suit", () => {
+  it("returns cards in SHDC suit order, high-to-low within each suit", () => {
     const hand: Hand = {
       cards: [
         { suit: "S", rank: "A" },
@@ -33,19 +33,19 @@ describe("fanOrderCards", () => {
 
     // Diamonds first (high to low), then Clubs, Hearts, Spades
     expect(labels).toEqual([
+      "AS",
+      "TS",
+      "6S",
+      "2S",
+      "KH",
+      "9H",
+      "5H",
       "QD",
       "8D",
       "4D",
       "JC",
       "7C",
       "3C",
-      "KH",
-      "9H",
-      "5H",
-      "AS",
-      "TS",
-      "6S",
-      "2S",
     ]);
   });
 
@@ -64,7 +64,7 @@ describe("fanOrderCards", () => {
 
     // No D or C cards, only H then S
     expect(suits).toEqual(
-      ["Q", "J", "A", "K"].map((_, i) => (i < 2 ? "H" : "S")),
+      ["A", "K", "Q", "J"].map((_, i) => (i < 2 ? "S" : "H")),
     );
     expect(ordered).toHaveLength(4);
   });
