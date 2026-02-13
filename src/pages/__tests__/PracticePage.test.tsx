@@ -196,4 +196,24 @@ describe("PracticePage", () => {
       );
     });
   });
+  it("renders hand fans for all players when auction is complete", async () => {
+    mockIsAuctionComplete.mockReturnValue(true);
+
+    renderPage();
+
+    // Wait for initial robot bids and loading to finish
+    await waitFor(() =>
+      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
+    );
+
+    // Verify we are in the completed auction state
+    expect(screen.getByText(/auction complete/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /next hand/i })).toBeInTheDocument();
+
+    // Should see labels for all four positions
+    expect(screen.getByTestId("position-label-S")).toBeInTheDocument();
+    expect(screen.getByTestId("position-label-N")).toBeInTheDocument();
+    expect(screen.getByTestId("position-label-E")).toBeInTheDocument();
+    expect(screen.getByTestId("position-label-W")).toBeInTheDocument();
+  });
 });

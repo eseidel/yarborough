@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
-import { HandDisplay } from "../components/HandDisplay";
 import { CardFan } from "../components/CardFan";
 import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
@@ -198,22 +197,22 @@ export function PracticePage() {
         />
 
         {/* User's hand */}
-        <div className="flex flex-col items-center">
-          <CardFan hand={southHand} />
-        </div>
+        <CardFan hand={southHand} position="S" />
 
         {/* Bidding box or results */}
         {loading ? (
           <div className="text-center text-sm text-gray-400">Thinking...</div>
         ) : auctionDone ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="text-center text-sm font-semibold text-gray-600">
               Auction Complete
             </div>
-            <div className="grid grid-cols-3 gap-2 justify-items-center">
-              <HandDisplay hand={handForPosition(deal, "W")} position="W" />
-              <HandDisplay hand={handForPosition(deal, "N")} position="N" />
-              <HandDisplay hand={handForPosition(deal, "E")} position="E" />
+            <div className="flex flex-col gap-4">
+              <CardFan hand={handForPosition(deal, "N")} position="N" />
+              <div className="grid grid-cols-2 gap-4">
+                <CardFan hand={handForPosition(deal, "W")} position="W" />
+                <CardFan hand={handForPosition(deal, "E")} position="E" />
+              </div>
             </div>
             <div className="flex gap-2">
               <button

@@ -1,11 +1,13 @@
 import {
   type Hand,
   type Card,
+  type Position,
   SUITS,
   FAN_SUIT_ORDER,
+  POSITION_NAMES,
   cardsBySuit,
   displayRank,
-} from "../bridge";
+} from "../bridge/types";
 
 function MiniCard({ card, overlap }: { card: Card; overlap: boolean }) {
   const suit = SUITS[card.suit];
@@ -27,26 +29,36 @@ function MiniCard({ card, overlap }: { card: Card; overlap: boolean }) {
   );
 }
 
-export function CardFan({ hand }: { hand: Hand }) {
+export function CardFan({ hand, position }: { hand: Hand; position?: Position }) {
   const bySuit = cardsBySuit(hand);
 
   return (
-    <div className="inline-flex items-end gap-1.5">
-      {FAN_SUIT_ORDER.map((suit) => {
-        const cards = bySuit[suit];
-        if (cards.length === 0) return null;
-        return (
-          <div key={suit} className="flex">
-            {cards.map((card, i) => (
-              <MiniCard
-                key={`${card.suit}${card.rank}`}
-                card={card}
-                overlap={i > 0}
-              />
-            ))}
-          </div>
-        );
-      })}
+    <div className="bg-white rounded-lg shadow p-3">
+      {position && (
+        <div
+          data-testid={`position-label-${position}`}
+          className="font-bold text-xs text-gray-500 mb-2 uppercase tracking-wider text-center"
+        >
+          {POSITION_NAMES[position]}
+        </div>
+      )}
+      <div className="flex justify-center flex-wrap gap-1.5 min-h-[60px] items-end">
+        {FAN_SUIT_ORDER.map((suit) => {
+          const cards = bySuit[suit];
+          if (cards.length === 0) return null;
+          return (
+            <div key={suit} className="flex">
+              {cards.map((card, i) => (
+                <MiniCard
+                  key={`${card.suit}${card.rank}`}
+                  card={card}
+                  overlap={i > 0}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
