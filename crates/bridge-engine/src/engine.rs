@@ -25,41 +25,33 @@ impl Engine {
     /// Return interpretations for all legal next calls given the current auction.
     /// Each legal call is paired with its rule name/description if one exists.
     pub fn get_interpretations(&self, auction: &Auction) -> Vec<Interpretation> {
-        let rules = self.rules_for_context(auction);
+        let sayc_rules = self.rules_for_context(auction);
+        let natural_rules = &self.system.natural;
         let legal_calls = auction.legal_calls();
 
         legal_calls
             .into_iter()
             .map(|call| {
-                let rule_match = rules
-                    .iter()
-                    .find(|r| r.call.parse::<Call>().ok() == Some(call));
+                let mut best_variant: Option<&Variant> = None;
 
-                // Also check natural rules
-                let natural_match = self
-                    .system
-                    .natural
-                    .iter()
-                    .find(|r| r.call.parse::<Call>().ok() == Some(call));
-
-                let best_rule = rule_match.or(natural_match);
-
-                match best_rule {
-                    Some(rule) => {
-                        let best_variant = rule.variants.iter().max_by_key(|v| v.priority);
-                        match best_variant {
-                            Some(v) => Interpretation {
-                                call,
-                                rule_name: v.name.clone(),
-                                description: v.description.clone(),
-                            },
-                            None => Interpretation {
-                                call,
-                                rule_name: String::new(),
-                                description: String::new(),
-                            },
+                for rule in sayc_rules.iter().chain(natural_rules.iter()) {
+                    if rule.call.parse::<Call>().ok() == Some(call) {
+                        for variant in &rule.variants {
+                            if best_variant.is_none()
+                                || variant.priority > best_variant.unwrap().priority
+                            {
+                                best_variant = Some(variant);
+                            }
                         }
                     }
+                }
+
+                match best_variant {
+                    Some(v) => Interpretation {
+                        call,
+                        rule_name: v.name.clone(),
+                        description: v.description.clone(),
+                    },
                     None if call == Call::Pass => Interpretation {
                         call,
                         rule_name: "Pass".into(),
@@ -78,47 +70,36 @@ impl Engine {
     pub fn get_best_bid(&self, hand: &Hand, auction: &Auction) -> Option<(Call, Variant)> {
         let profile = infer_partner(auction, &self.system, hand);
 
-        // Try SAYC rules first
         let sayc_rules = self.rules_for_context(auction);
-        if !sayc_rules.is_empty() {
-            // SAYC has rules for this context; use them exclusively.
-            // If no SAYC rule matches, the implied default is Pass (return None).
-            return self.find_best_in_rules(hand, auction, sayc_rules, &profile);
-        }
+        let natural_rules = &self.system.natural;
 
-        // Natural rules are a fallback: only used when no SAYC context exists
-        // and the opponents haven't bid (to avoid interfering in competitive auctions)
-        if opponents_have_acted(auction) {
-            return None;
-        }
-
-        let natural_best = self.find_best_in_rules(hand, auction, &self.system.natural, &profile);
-
-        // Filter natural bids: must be legal in the current auction
-        natural_best.and_then(|(call, variant)| {
-            let legal = auction.legal_calls();
-            if legal.contains(&call) {
-                Some((call, variant))
-            } else {
-                None
-            }
-        })
+        self.find_best_in_rules(
+            hand,
+            auction,
+            sayc_rules.iter().chain(natural_rules.iter()),
+            &profile,
+        )
     }
 
-    fn find_best_in_rules(
+    fn find_best_in_rules<'a>(
         &self,
         hand: &Hand,
         auction: &Auction,
-        rules: &[BidRule],
+        rules: impl Iterator<Item = &'a BidRule>,
         profile: &PartnerProfile,
     ) -> Option<(Call, Variant)> {
         let mut best_match: Option<(Call, Variant)> = None;
+        let legal_calls = auction.legal_calls();
 
         for rule in rules {
             let call = match rule.call.parse::<Call>() {
                 Ok(c) => c,
                 Err(_) => continue,
             };
+
+            if !legal_calls.contains(&call) {
+                continue;
+            }
 
             for variant in &rule.variants {
                 if self.check_constraints(hand, auction, &variant.constraints, profile) {
@@ -263,55 +244,12 @@ impl Engine {
     }
 }
 
-/// Check if the opponents (odd-parity positions relative to current player) have
-/// made a non-pass call (bid, double, or redouble).
-fn opponents_have_acted(auction: &Auction) -> bool {
-    let num_calls = auction.calls.len();
-    for (i, call) in auction.calls.iter().enumerate() {
-        let is_opponent = (i % 2) != (num_calls % 2);
-        if is_opponent && *call != Call::Pass {
-            return true;
-        }
-    }
-    false
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use bridge_core::board::Position;
 
-    #[test]
-    fn test_opponents_have_acted_empty() {
-        let auction = Auction::new(Position::North);
-        assert!(!opponents_have_acted(&auction));
-    }
-
-    #[test]
-    fn test_opponents_have_acted_our_bids_only() {
-        let mut auction = Auction::new(Position::North);
-        auction.add_call("1H".parse().unwrap()); // North bids
-        auction.add_call(Call::Pass); // East passes
-                                      // Current player is South (our side). Opponents (East, West) only passed.
-        assert!(!opponents_have_acted(&auction));
-    }
-
-    #[test]
-    fn test_opponents_have_acted_opponent_bid() {
-        let mut auction = Auction::new(Position::North);
-        auction.add_call("1H".parse().unwrap()); // North
-        auction.add_call("2C".parse().unwrap()); // East overcalls
-                                                 // Current player is South. East (opponent) bid.
-        assert!(opponents_have_acted(&auction));
-    }
-
-    #[test]
-    fn test_opponents_have_acted_opponent_doubled() {
-        let mut auction = Auction::new(Position::North);
-        auction.add_call("1H".parse().unwrap()); // North
-        auction.add_call(Call::Double); // East doubles
-        assert!(opponents_have_acted(&auction));
-    }
 
     #[test]
     fn test_our_side_has_game_no_bids() {
