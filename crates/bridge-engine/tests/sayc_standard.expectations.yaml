@@ -378,7 +378,7 @@ test_preemption:
   Q83.K9.Q8.AQJ874:P P P:None: "FAIL: step 3, expected 2S, got 1S"
   Q3.AQ7632.82.J93:P:None: PASS
   Q3.AQ97632.82.J3:P:None: PASS
-  Q3.AQ987632.8.J2:P:None: "FAIL: step 1, expected 4D, got 3D"
+  Q3.AQ987632.8.J2:P:None: PASS
   .Q765.843.KQT932::None: "FAIL: step 0, expected P, got 2S"
   3.76.Q843.KQT932::None: "FAIL: step 0, expected P, got 2S"
   QT96.AQT962.T.83:2D P 3D P:Both: PASS
@@ -431,10 +431,10 @@ test_preemption:
   Q.A652.AQ962.AK9:P 3C P:Both: "FAIL: step 3, expected 3N, got 4N"
   AK.JT962.A4.AT97:P 3C P:N-S: "FAIL: step 3, expected 3N, got 4N"
   AKQJ852.KT2.Q96.:P 2H P:None: PASS
-  KT3..74.AJT87432::None: "FAIL: step 0, expected 4S, got 3S"
-  KT3..74.AJT87432:P:None: "FAIL: step 1, expected 4S, got 3S"
-  KT3..74.AJT87432:P P:None: "FAIL: step 2, expected 4S, got 3S"
-  KT3..74.AJT87432:P P P:None: PASS
+  KT3..74.AJT87432::None: PASS
+  KT3..74.AJT87432:P:None: PASS
+  KT3..74.AJT87432:P P:None: PASS
+  KT3..74.AJT87432:P P P:None: "FAIL: step 3, expected 1S, got 4S"
   3.KT5.A.KQT98642::None: PASS
   8.9873.AKQT864.4::None: "FAIL: step 0, expected 4H, got 1H"
   8.9873.AKQT864.4:P:None: "FAIL: step 1, expected 4H, got 1H"

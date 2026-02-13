@@ -250,10 +250,23 @@ opening:
             suit: Spades
             count: 6
 
+  - call: "2N"
+    variants:
+      - name: "Opening 2NT"
+        priority: 40
+        description: "20-21 HCP, Balanced"
+        constraints:
+          - type: MinHCP
+            min: 20
+          - type: MaxHCP
+            max: 21
+          - type: IsBalanced
+            balanced: true
+
   - call: "3C"
     variants:
       - name: "Preempt 3C"
-        priority: 20
+        priority: 22
         description: "6-10 HCP, 7+ Clubs"
         constraints:
           - type: MinHCP
@@ -267,7 +280,7 @@ opening:
   - call: "3D"
     variants:
       - name: "Preempt 3D"
-        priority: 20
+        priority: 22
         description: "6-10 HCP, 7+ Diamonds"
         constraints:
           - type: MinHCP
@@ -281,7 +294,7 @@ opening:
   - call: "3H"
     variants:
       - name: "Preempt 3H"
-        priority: 20
+        priority: 22
         description: "6-10 HCP, 7+ Hearts"
         constraints:
           - type: MinHCP
@@ -295,7 +308,7 @@ opening:
   - call: "3S"
     variants:
       - name: "Preempt 3S"
-        priority: 20
+        priority: 22
         description: "6-10 HCP, 7+ Spades"
         constraints:
           - type: MinHCP
@@ -306,15 +319,99 @@ opening:
             suit: Spades
             count: 7
 
-  - call: "2N"
+  - call: "3N"
     variants:
-      - name: "Opening 2NT"
-        priority: 40
-        description: "20-21 HCP, Balanced"
+      - name: "Opening 3NT"
+        priority: 60
+        description: "25-27 HCP, Balanced"
         constraints:
           - type: MinHCP
-            min: 20
+            min: 25
           - type: MaxHCP
-            max: 21
+            max: 27
           - type: IsBalanced
             balanced: true
+
+  - call: "4C"
+    variants:
+      - name: "Preempt 4C"
+        priority: 24
+        description: "6-10 HCP, 8+ Clubs"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Clubs
+            count: 8
+
+  - call: "4D"
+    variants:
+      - name: "Preempt 4D"
+        priority: 24
+        description: "6-10 HCP, 8+ Diamonds"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Diamonds
+            count: 8
+
+  - call: "4H"
+    variants:
+      - name: "Preempt 4H"
+        priority: 24
+        description: "6-10 HCP, 8+ Hearts"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Hearts
+            count: 8
+
+  - call: "4S"
+    variants:
+      - name: "Preempt 4S"
+        priority: 24
+        description: "6-10 HCP, 8+ Spades"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Spades
+            count: 8
+
+  - call: "5C"
+    variants:
+      - name: "Preempt 5C"
+        priority: 26
+        description: "6-10 HCP, 9+ Clubs"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Clubs
+            count: 9
+
+  - call: "5D"
+    variants:
+      - name: "Preempt 5D"
+        priority: 26
+        description: "6-10 HCP, 9+ Diamonds"
+        constraints:
+          - type: MinHCP
+            min: 6
+          - type: MaxHCP
+            max: 10
+          - type: MinLength
+            suit: Diamonds
+            count: 9

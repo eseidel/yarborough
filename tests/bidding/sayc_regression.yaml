@@ -9,3 +9,9 @@ test_rebids_after_minor_response:
   - ["52.A6.KQJ92.A983", "2S", "1H P 2D P"] # 1H - 2D - 2S (4+ Spades, 12-18 pts)
   - ["A65.K92.KQ.QT972", "2N", "1S P 2C P"] # 1S - 2C - 2NT (Balanced, 12-14 pts)
   - ["22.KJ83.A4.AQJ95", "3D", "1S P 2D P"] # 1S - 2D - 3D (4+ Diamonds, 12-15 pts)
+
+test_preemptive_openings:
+  - ["QJ987652.432.2.2", "4C"] # 8 Clubs, 3 HCP. C, D, H, S order.
+  - ["432.2.2.AQJ98762", "4S"] # 8 Spades, 7 HCP
+  - ["2.AQJ987652.2.2", "5D"] # 9 Diamonds, 7 HCP
+  - ["AKJ.AKQ.A82.AQ43", "3N"] # 26 HCP, Balanced. C, D, H, S order. 13 cards.
