@@ -2,3 +2,10 @@ test_opening_response_generalization:
   - ["Q73.K652.T9.AJ72", "1S", "P 1H P"] # 2nd seat response
   - ["Q73.K652.T9.AJ72", "1S", "P P 1H P"] # 3rd seat response
   - ["Q73.K652.T9.AJ72", "1S", "P P P 1H P"] # 4th seat response
+
+test_rebids_after_minor_response:
+  - ["2.345.AKJ954.AQ3", "3H", "1H P 2C P"] # 1H - 2C - 3H (6+ Hearts, 16-18 pts)
+  - ["2.345.AQJ954.AQ3", "2H", "1H P 2C P"] # 1H - 2C - 2H (6+ Hearts, 13-15 pts)
+  - ["52.A6.KQJ92.A983", "2S", "1H P 2D P"] # 1H - 2D - 2S (4+ Spades, 12-18 pts)
+  - ["A65.K92.KQ.QT972", "2N", "1S P 2C P"] # 1S - 2C - 2NT (Balanced, 12-14 pts)
+  - ["22.KJ83.A4.AQJ95", "3D", "1S P 2D P"] # 1S - 2D - 3D (4+ Diamonds, 12-15 pts)

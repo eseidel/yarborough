@@ -2,3 +2,9 @@ test_opening_response_generalization:
   Q73.K652.T9.AJ72:P 1H P:None: PASS
   Q73.K652.T9.AJ72:P P 1H P:None: PASS
   Q73.K652.T9.AJ72:P P P 1H P:None: PASS
+test_rebids_after_minor_response:
+  2.345.AKJ954.AQ3:1H P 2C P:None: PASS
+  2.345.AQJ954.AQ3:1H P 2C P:None: PASS
+  52.A6.KQJ92.A983:1H P 2D P:None: PASS
+  A65.K92.KQ.QT972:1S P 2C P:None: PASS
+  22.KJ83.A4.AQJ95:1S P 2D P:None: PASS

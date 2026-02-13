@@ -228,7 +228,7 @@ test_minimum_rebid_by_opener:
   86.T4.AKJ753.A98:1H P 1S P:None: PASS
   QJ87.J6.AKJ75.K8:1H P 1S P:None: "FAIL: step 0, expected 1H, got 1N"
   K92.34.K4.AKQT87:1S P 1N P:None: PASS
-  95.85.K6.AKQ8764:P 1S P 2C P:None: "FAIL: step 5, expected 2S, got P"
+  95.85.K6.AKQ8764:P 1S P 2C P:None: PASS
   A4.Q2.J864.AJT63:P 1S P 3N P:Both: PASS
   AT86.J.AT74.AJ84:P 1C P 1D X:N-S: PASS
   K.A9763.6.AJT752:1S P 2D P:None: PASS
@@ -248,7 +248,7 @@ test_invitational_rebid_by_opener:
   A532.AK52.J4.AQ9:P 1D P 1H P:None: PASS
   AKJ43.AKJ4.432.4:1C P 2C P:None: "FAIL: step 4, expected 2D, got 3C"
   AK86.AJT8..AQ653:1S P 2S P:N-S: "FAIL: step 4, expected 3C, got 4S"
-  2.7643.AKQ986.AK:1H P 2C P:E-W: "FAIL: step 4, expected 3H, got P"
+  2.7643.AKQ986.AK:1H P 2C P:E-W: PASS
   AKJT.AQJ652.3.Q3:P 1D P 1N P:Both: "FAIL: step 5, expected 2C, got P"
 test_game_forcing_rebid_by_opener:
   KQ9.AJ98.A4.A987:1D P 1S P:None: PASS
@@ -321,7 +321,7 @@ test_subsequent_bidding_by_responder:
   J3.A7.AKJ986.976:P 1D P 1H P 1N P:None: "FAIL: step 7, expected 4H, got P"
   KJ643.9863.A9.K9:1S P 2C P 2H P:None: "FAIL: step 6, expected 2S, got P"
   KJT432.K74.KT8.7:1S P 2C P 2H P:None: "FAIL: step 6, expected 3C, got P"
-  AQ643.KQ75.763.5:1S P 2C P 2D P:None: "FAIL: step 6, expected 3D, got P"
+  AQ643.KQ75.763.5:1S P 2C P 2D P:None: PASS
   KJ643.A874.T.K97:1S P 2C P 2H P:None: "FAIL: step 6, expected 3S, got 2S"
   KJ643.A874.T.K97:1S P 2C P 3C P:None: "FAIL: step 6, expected 4S, got 3S"
   AJ432.J85.QT7.AQ:1S P 2C P 2H P:None: "FAIL: step 6, expected 3D, got P"
