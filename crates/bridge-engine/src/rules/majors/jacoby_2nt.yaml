@@ -1,0 +1,233 @@
+responses:
+  - pattern: "1H P"
+    rules:
+      - call: "2N"
+        variants:
+          - name: "Jacoby 2NT (4+ support)"
+            priority: 30
+            description: "13+ points, 4+ Hearts"
+            constraints:
+              - type: MinPoints
+                suit: Hearts
+                min: 13
+              - type: MinLength
+                suit: Hearts
+                count: 4
+          - name: "Jacoby 2NT (3 support lie)"
+            priority: 14
+            description: "13+ points, 3 Hearts"
+            constraints:
+              - type: MinPoints
+                suit: Hearts
+                min: 13
+              - type: ExactLength
+                suit: Hearts
+                count: 3
+          - name: "Jacoby 2NT (3 support lie strong)"
+            priority: 16
+            description: "19+ points, 3 Hearts"
+            constraints:
+              - type: MinPoints
+                suit: Hearts
+                min: 19
+              - type: ExactLength
+                suit: Hearts
+                count: 3
+
+  - pattern: "1S P"
+    rules:
+      - call: "2N"
+        variants:
+          - name: "Jacoby 2NT (4+ support)"
+            priority: 30
+            description: "13+ points, 4+ Spades"
+            constraints:
+              - type: MinPoints
+                suit: Spades
+                min: 13
+              - type: MinLength
+                suit: Spades
+                count: 4
+          - name: "Jacoby 2NT (3 support lie)"
+            priority: 14
+            description: "13+ points, 3 Spades"
+            constraints:
+              - type: MinPoints
+                suit: Spades
+                min: 13
+              - type: ExactLength
+                suit: Spades
+                count: 3
+          - name: "Jacoby 2NT (3 support lie strong)"
+            priority: 16
+            description: "19+ points, 3 Spades"
+            constraints:
+              - type: MinPoints
+                suit: Spades
+                min: 19
+              - type: ExactLength
+                suit: Spades
+                count: 3
+
+  - pattern: "1H P 2N P"
+    rules:
+      - call: "3C"
+        variants:
+          - name: "Shortness (Clubs)"
+            priority: 35
+            description: "Singleton or Void in Clubs"
+            constraints:
+              - type: MaxLength
+                suit: Clubs
+                count: 1
+      - call: "3D"
+        variants:
+          - name: "Shortness (Diamonds)"
+            priority: 35
+            description: "Singleton or Void in Diamonds"
+            constraints:
+              - type: MaxLength
+                suit: Diamonds
+                count: 1
+      - call: "3S"
+        variants:
+          - name: "Shortness (Spades)"
+            priority: 35
+            description: "Singleton or Void in Spades"
+            constraints:
+              - type: MaxLength
+                suit: Spades
+                count: 1
+      - call: "4C"
+        variants:
+          - name: "Quality Second Suit (Clubs)"
+            priority: 36
+            description: "Good 5-card Club suit"
+            constraints:
+              - type: MinLength
+                suit: Clubs
+                count: 5
+      - call: "4D"
+        variants:
+          - name: "Quality Second Suit (Diamonds)"
+            priority: 36
+            description: "Good 5-card Diamond suit"
+            constraints:
+              - type: MinLength
+                suit: Diamonds
+                count: 5
+      - call: "3H"
+        variants:
+          - name: "Strong Hand"
+            priority: 33
+            description: "18+ points"
+            constraints:
+              - type: MinPoints
+                suit: Hearts
+                min: 18
+      - call: "3N"
+        variants:
+          - name: "Medium Hand"
+            priority: 32
+            description: "15-17 HCP, Balanced"
+            constraints:
+              - type: MinHCP
+                min: 15
+              - type: MaxHCP
+                max: 17
+              - type: IsBalanced
+                balanced: true
+      - call: "4H"
+        variants:
+          - name: "Minimum Hand"
+            priority: 31
+            description: "12-14 HCP, Balanced"
+            constraints:
+              - type: MaxHCP
+                max: 14
+
+  - pattern: "1S P 2N P"
+    rules:
+      - call: "3C"
+        variants:
+          - name: "Shortness (Clubs)"
+            priority: 35
+            description: "Singleton or Void in Clubs"
+            constraints:
+              - type: MaxLength
+                suit: Clubs
+                count: 1
+      - call: "3D"
+        variants:
+          - name: "Shortness (Diamonds)"
+            priority: 35
+            description: "Singleton or Void in Diamonds"
+            constraints:
+              - type: MaxLength
+                suit: Diamonds
+                count: 1
+      - call: "3H"
+        variants:
+          - name: "Shortness (Hearts)"
+            priority: 35
+            description: "Singleton or Void in Hearts"
+            constraints:
+              - type: MaxLength
+                suit: Hearts
+                count: 1
+      - call: "4C"
+        variants:
+          - name: "Quality Second Suit (Clubs)"
+            priority: 36
+            description: "Good 5-card Club suit"
+            constraints:
+              - type: MinLength
+                suit: Clubs
+                count: 5
+      - call: "4D"
+        variants:
+          - name: "Quality Second Suit (Diamonds)"
+            priority: 36
+            description: "Good 5-card Diamond suit"
+            constraints:
+              - type: MinLength
+                suit: Diamonds
+                count: 5
+      - call: "4H"
+        variants:
+          - name: "Quality Second Suit (Hearts)"
+            priority: 36
+            description: "Good 5-card Heart suit"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 5
+      - call: "3S"
+        variants:
+          - name: "Strong Hand"
+            priority: 33
+            description: "18+ points"
+            constraints:
+              - type: MinPoints
+                suit: Spades
+                min: 18
+      - call: "3N"
+        variants:
+          - name: "Medium Hand"
+            priority: 32
+            description: "15-17 HCP, Balanced"
+            constraints:
+              - type: MinHCP
+                min: 15
+              - type: MaxHCP
+                max: 17
+              - type: IsBalanced
+                balanced: true
+      - call: "4S"
+        variants:
+          - name: "Minimum Hand"
+            priority: 31
+            description: "12-14 HCP, Balanced"
+            constraints:
+              - type: MaxHCP
+                max: 14

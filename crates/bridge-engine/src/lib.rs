@@ -44,10 +44,15 @@ fn load_engine() -> &'static Engine {
             include_str!("rules/notrump/jacoby.yaml"),
             include_str!("rules/notrump/responses.yaml"),
             include_str!("rules/majors/raises.yaml"),
+            include_str!("rules/majors/jacoby_2nt.yaml"),
             include_str!("rules/majors/responses.yaml"),
+
+            include_str!("rules/majors/rebids.yaml"),
             include_str!("rules/minors/raises.yaml"),
             include_str!("rules/minors/responses.yaml"),
+            include_str!("rules/minors/rebids.yaml"),
             include_str!("rules/preemptive/responses.yaml"),
+
             include_str!("rules/strong/responses.yaml"),
         ];
 
