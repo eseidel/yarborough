@@ -208,11 +208,15 @@ describe("PracticePage", () => {
 
     // Verify we are in the completed auction state
     expect(screen.getByText(/auction complete/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /next hand/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /next hand/i }),
+    ).toBeInTheDocument();
 
     // Verify relative order in the DOM
     const labels = screen.getAllByTestId(/position-label-/);
-    const labelPositions = labels.map(l => l.getAttribute("data-testid")?.replace("position-label-", ""));
+    const labelPositions = labels.map((l) =>
+      l.getAttribute("data-testid")?.replace("position-label-", ""),
+    );
 
     // We expect N, then W and E (order of W/E depends on grid), then S
     const nIndex = labelPositions.indexOf("N");

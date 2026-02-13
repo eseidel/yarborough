@@ -13,7 +13,7 @@ describe("CardFan", () => {
 
   it("renders as a list when variant is 'list'", () => {
     render(<CardFan hand={dummyHand} position="W" variant="list" />);
-    // Check for list-specific classes or structures if possible, 
+    // Check for list-specific classes or structures if possible,
     // but at least ensure it still renders.
     expect(screen.getByTestId("position-label-W")).toBeInTheDocument();
   });

@@ -50,7 +50,7 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => { }}
+        onCallClick={() => {}}
         selectedCallIndex={0}
       />,
     );
@@ -67,7 +67,7 @@ describe("CallTable", () => {
   it("applies cursor-pointer when onCallClick is provided", () => {
     const history = makeHistory([{ type: "pass" }]);
 
-    render(<CallTable callHistory={history} onCallClick={() => { }} />);
+    render(<CallTable callHistory={history} onCallClick={() => {}} />);
 
     const passDiv = screen.getByText("Pass").closest("div");
     expect(passDiv?.className).toContain("cursor-pointer");
@@ -91,7 +91,7 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => { }}
+        onCallClick={() => {}}
         selectedCallIndex={0}
         callExplanation={{
           call: { type: "bid", level: 1, strain: "C" },
@@ -114,7 +114,7 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => { }}
+        onCallClick={() => {}}
         selectedCallIndex={0}
         callExplanation={{
           call: { type: "pass" },
@@ -131,7 +131,7 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => { }}
+        onCallClick={() => {}}
         selectedCallIndex={0}
         explanationLoading={true}
       />,
@@ -148,7 +148,7 @@ describe("CallTable", () => {
     render(
       <CallTable
         callHistory={history}
-        onCallClick={() => { }}
+        onCallClick={() => {}}
         selectedCallIndex={0}
         callExplanation={{
           call: { type: "bid", level: 1, strain: "C" },

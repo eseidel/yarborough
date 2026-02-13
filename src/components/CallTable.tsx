@@ -81,7 +81,11 @@ export function CallTable({
                 className={`py-1 ${clickable ? "cursor-pointer hover:bg-amber-100 rounded" : ""} ${isSelected ? "bg-amber-200 rounded" : ""}`}
                 onClick={clickable ? () => onCallClick(i) : undefined}
               >
-                {call ? <CallDisplay call={call} /> : <span className="text-gray-400">?</span>}
+                {call ? (
+                  <CallDisplay call={call} />
+                ) : (
+                  <span className="text-gray-400">?</span>
+                )}
               </div>
               {i === insertAfterIndex && showExplanation && (
                 <div

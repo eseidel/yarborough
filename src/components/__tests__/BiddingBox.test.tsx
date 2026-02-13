@@ -7,7 +7,7 @@ describe("BiddingBox", () => {
   const emptyHistory: CallHistory = { dealer: "N", calls: [] };
 
   it("renders buttons in the correct order: Redouble, Pass, Double", () => {
-    render(<BiddingBox onBid={() => { }} callHistory={emptyHistory} />);
+    render(<BiddingBox onBid={() => {}} callHistory={emptyHistory} />);
 
     const buttons = screen.getAllByRole("button");
     // The first three buttons should be Double (X), Pass, Redouble (XX)
@@ -17,7 +17,7 @@ describe("BiddingBox", () => {
     // Double and Redouble are always rendered but might be disabled.
 
     const topRowButtons = buttons.slice(0, 3);
-    const buttonTexts = topRowButtons.map(b => b.textContent?.trim());
+    const buttonTexts = topRowButtons.map((b) => b.textContent?.trim());
 
     expect(buttonTexts[0]).toBe("XX");
     expect(buttonTexts[1]).toBe("Pass");
