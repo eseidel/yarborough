@@ -29,7 +29,15 @@ function MiniCard({ card, overlap }: { card: Card; overlap: boolean }) {
   );
 }
 
-export function CardFan({ hand, position }: { hand: Hand; position?: Position }) {
+export function CardFan({
+  hand,
+  position,
+  variant = "fan",
+}: {
+  hand: Hand;
+  position?: Position;
+  variant?: "fan" | "list";
+}) {
   const bySuit = cardsBySuit(hand);
 
   return (
@@ -42,19 +50,23 @@ export function CardFan({ hand, position }: { hand: Hand; position?: Position })
           {POSITION_NAMES[position]}
         </div>
       )}
-      <div className="flex justify-center flex-wrap gap-1.5 min-h-[60px] items-end">
+      <div
+        className={`flex ${variant === "fan" ? "justify-center flex-wrap gap-1.5 items-end min-h-[60px]" : "flex-col gap-1"}`}
+      >
         {FAN_SUIT_ORDER.map((suit) => {
           const cards = bySuit[suit];
           if (cards.length === 0) return null;
           return (
-            <div key={suit} className="flex">
-              {cards.map((card, i) => (
-                <MiniCard
-                  key={`${card.suit}${card.rank}`}
-                  card={card}
-                  overlap={i > 0}
-                />
-              ))}
+            <div key={suit} className="flex items-center gap-2">
+              <div className="flex">
+                {cards.map((card, i) => (
+                  <MiniCard
+                    key={`${card.suit}${card.rank}`}
+                    card={card}
+                    overlap={i > 0}
+                  />
+                ))}
+              </div>
             </div>
           );
         })}

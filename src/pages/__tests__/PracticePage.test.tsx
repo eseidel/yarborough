@@ -210,10 +210,19 @@ describe("PracticePage", () => {
     expect(screen.getByText(/auction complete/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /next hand/i })).toBeInTheDocument();
 
-    // Should see labels for all four positions
-    expect(screen.getByTestId("position-label-S")).toBeInTheDocument();
-    expect(screen.getByTestId("position-label-N")).toBeInTheDocument();
-    expect(screen.getByTestId("position-label-E")).toBeInTheDocument();
-    expect(screen.getByTestId("position-label-W")).toBeInTheDocument();
+    // Verify relative order in the DOM
+    const labels = screen.getAllByTestId(/position-label-/);
+    const labelPositions = labels.map(l => l.getAttribute("data-testid")?.replace("position-label-", ""));
+
+    // We expect N, then W and E (order of W/E depends on grid), then S
+    const nIndex = labelPositions.indexOf("N");
+    const wIndex = labelPositions.indexOf("W");
+    const eIndex = labelPositions.indexOf("E");
+    const sIndex = labelPositions.indexOf("S");
+
+    expect(nIndex).toBeLessThan(wIndex);
+    expect(nIndex).toBeLessThan(eIndex);
+    expect(wIndex).toBeLessThan(sIndex);
+    expect(eIndex).toBeLessThan(sIndex);
   });
 });

@@ -196,8 +196,8 @@ export function PracticePage() {
           explanationLoading={explanationLoading}
         />
 
-        {/* User's hand */}
-        <CardFan hand={southHand} position="S" />
+        {/* User's hand - only show during auction */}
+        {!auctionDone && <CardFan hand={southHand} position="S" />}
 
         {/* Bidding box or results */}
         {loading ? (
@@ -210,9 +210,18 @@ export function PracticePage() {
             <div className="flex flex-col gap-4">
               <CardFan hand={handForPosition(deal, "N")} position="N" />
               <div className="grid grid-cols-2 gap-4">
-                <CardFan hand={handForPosition(deal, "W")} position="W" />
-                <CardFan hand={handForPosition(deal, "E")} position="E" />
+                <CardFan
+                  hand={handForPosition(deal, "W")}
+                  position="W"
+                  variant="list"
+                />
+                <CardFan
+                  hand={handForPosition(deal, "E")}
+                  position="E"
+                  variant="list"
+                />
               </div>
+              <CardFan hand={southHand} position="S" />
             </div>
             <div className="flex gap-2">
               <button
