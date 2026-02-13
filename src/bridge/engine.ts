@@ -5,6 +5,7 @@ import init, {
   get_interpretations,
   get_next_bid,
   get_suggested_bid,
+  generate_filtered_board,
 } from "../../crates/bridge-engine/pkg/bridge_engine";
 
 let initialized = false;
@@ -86,4 +87,13 @@ export async function getSuggestedBid(
     ruleName: raw.rule_name,
     description: raw.description,
   };
+}
+
+/**
+ * Call the WASM engine to generate a board matching the given type.
+ * @param type - DealType string
+ */
+export async function generateFilteredBoard(type: string): Promise<string> {
+  await ensureInit();
+  return generate_filtered_board(type);
 }

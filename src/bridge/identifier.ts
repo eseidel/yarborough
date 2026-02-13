@@ -152,3 +152,27 @@ export function parseBoardId(id: string): {
     vulnerability: vulnerabilityFromBoardNumber(boardNumber),
   };
 }
+
+import { generateFilteredBoard } from "./engine";
+
+export type DealType = "Random" | "Notrump" | "Preempt" | "Strong2C";
+
+export async function generateFilteredBoardId(type: DealType): Promise<{
+  boardNumber: number;
+  deal: Deal;
+  vulnerability: Vulnerability;
+  id: string;
+}> {
+  const id = await generateFilteredBoard(type);
+  const parsed = parseBoardId(id);
+  if (!parsed) {
+    // Should not happen if engine is correct
+    return generateBoardId();
+  }
+  return {
+    boardNumber: parsed.boardNumber,
+    deal: parsed.deal,
+    vulnerability: parsed.vulnerability,
+    id,
+  };
+}

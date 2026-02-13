@@ -171,6 +171,107 @@ pub fn get_suggested_bid(identifier: &str) -> JsValue {
     serde_wasm_bindgen::to_value(&interp).unwrap()
 }
 
+#[wasm_bindgen]
+pub fn generate_filtered_board(deal_type: &str) -> String {
+    let engine = load_engine();
+    let mut rng = rand::thread_rng();
+
+    for _ in 0..1000 {
+        let board_number = rand::Rng::gen_range(&mut rng, 1..=16);
+        let board = generate_random_board(board_number, &mut rng);
+
+        if deal_type == "Random" {
+            return identifier::export_board(&board, board_number, None);
+        }
+
+        if matches_deal_type(&board, deal_type, engine) {
+            return identifier::export_board(&board, board_number, None);
+        }
+    }
+
+    // Fallback to random if no match found
+    let board_number = rand::Rng::gen_range(&mut rng, 1..=16);
+    let board = generate_random_board(board_number, &mut rng);
+    identifier::export_board(&board, board_number, None)
+}
+
+fn generate_random_board(board_number: u32, rng: &mut impl rand::Rng) -> bridge_core::board::Board {
+    use bridge_core::card::Card;
+    use bridge_core::hand::Hand;
+    use bridge_core::rank::Rank;
+    use bridge_core::suit::Suit;
+    use rand::seq::SliceRandom;
+    use std::collections::HashMap;
+
+    let mut deck = Vec::with_capacity(52);
+    for suit in Suit::ALL {
+        for rank in Rank::ALL {
+            deck.push(Card::new(suit, rank));
+        }
+    }
+    deck.shuffle(rng);
+
+    let mut hands = HashMap::new();
+    let positions = [
+        Position::North,
+        Position::East,
+        Position::South,
+        Position::West,
+    ];
+    for (i, chunk) in deck.chunks(13).enumerate() {
+        hands.insert(positions[i], Hand::new(chunk.to_vec()));
+    }
+
+    bridge_core::board::Board {
+        dealer: Position::dealer_from_board_number(board_number),
+        vulnerability: bridge_core::board::Vulnerability::from_board_number(board_number),
+        hands,
+    }
+}
+
+fn matches_deal_type(board: &bridge_core::board::Board, deal_type: &str, engine: &Engine) -> bool {
+    let mut auction = Auction::new(board.dealer);
+
+    for _ in 0..4 {
+        let current_player = auction.current_player();
+        let hand = board.hands.get(&current_player).unwrap();
+        let (call, _) = match engine.get_best_bid(hand, &auction) {
+            Some((c, v)) => (c, v),
+            None => (
+                Call::Pass,
+                schema::Variant {
+                    name: "Pass".into(),
+                    description: "".into(),
+                    priority: 0,
+                    constraints: vec![],
+                },
+            ),
+        };
+
+        if let Call::Bid { .. } = call {
+            if current_player == Position::North || current_player == Position::South {
+                let call_str = call.render();
+                return match deal_type {
+                    "Notrump" => call_str == "1N" || call_str == "2N",
+                    "Strong2C" => call_str == "2C",
+                    "Preempt" => {
+                        (call_str.starts_with('2') && call_str != "2C" && call_str != "2N")
+                            || (call_str.starts_with('3') && call_str != "3N")
+                            || call_str.starts_with('4')
+                            || call_str.starts_with('5')
+                    }
+                    _ => false,
+                };
+            } else {
+                return false;
+            }
+        }
+
+        auction.add_call(call);
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

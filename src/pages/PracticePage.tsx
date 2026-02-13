@@ -8,7 +8,12 @@ import { BiddingBox } from "../components/BiddingBox";
 import { type Call, type CallInterpretation, handForPosition } from "../bridge";
 import { CallDisplay } from "../components/CallDisplay";
 import { AboutFooter } from "../components/AboutFooter";
-import { parseBoardId, generateBoardId } from "../bridge/identifier";
+import {
+  parseBoardId,
+  generateFilteredBoardId,
+  type DealType,
+} from "../bridge/identifier";
+import { DealSelector } from "../components/DealSelector";
 import {
   isAuctionComplete,
   addRobotBids,
@@ -37,6 +42,10 @@ export function PracticePage() {
   const [callExplanation, setCallExplanation] =
     useState<CallInterpretation | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
+  const [dealType, setDealType] = useState<DealType>(() => {
+    const saved = sessionStorage.getItem("yarborough_deal_type");
+    return (saved as DealType) || "Random";
+  });
 
   // On mount, run robot bids for the opening
   useEffect(() => {
@@ -106,9 +115,22 @@ export function PracticePage() {
   );
 
   const handleRedeal = useCallback(() => {
-    const { id } = generateBoardId();
-    navigate(`/bid/${id}`);
-  }, [navigate]);
+    generateFilteredBoardId(dealType).then(({ id }) => {
+      navigate(`/bid/${id}`);
+    });
+  }, [navigate, dealType]);
+
+  const handleDealTypeChange = useCallback(
+    (newType: DealType) => {
+      setLoading(true);
+      setDealType(newType);
+      sessionStorage.setItem("yarborough_deal_type", newType);
+      generateFilteredBoardId(newType).then(({ id }) => {
+        navigate(`/bid/${id}`);
+      });
+    },
+    [navigate],
+  );
 
   const handleRebid = useCallback(() => {
     if (!boardId || !parsed) return;
@@ -285,6 +307,10 @@ export function PracticePage() {
             )}
           </div>
         )}
+
+        <div className="border-t border-gray-100 pt-4 mt-2">
+          <DealSelector value={dealType} onChange={handleDealTypeChange} />
+        </div>
         <AboutFooter />
       </div>
     </div>
