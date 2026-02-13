@@ -243,8 +243,6 @@ impl Engine {
     }
 }
 
-
-
 fn suit_index(suit: Suit) -> usize {
     match suit {
         Suit::Clubs => 0,
@@ -272,7 +270,6 @@ mod tests {
     use super::*;
     use bridge_core::board::Position;
 
-
     #[test]
     fn test_our_side_has_game_no_bids() {
         let auction = Auction::new(Position::North);
@@ -286,7 +283,7 @@ mod tests {
         auction.add_call(Call::Pass); // East
         auction.add_call("3N".parse().unwrap()); // South
         auction.add_call(Call::Pass); // West
-        // Current player is North. Our side (North/South) bid 3NT at game.
+                                      // Current player is North. Our side (North/South) bid 3NT at game.
         assert!(our_side_has_game(&auction));
     }
 
@@ -309,4 +306,3 @@ mod tests {
         assert!(!our_side_has_game(&auction));
     }
 }
-

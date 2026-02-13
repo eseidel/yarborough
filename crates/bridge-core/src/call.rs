@@ -23,11 +23,26 @@ impl Call {
 
     pub fn is_game_bid(self) -> bool {
         match self {
-            Call::Bid { level, strain: Strain::NoTrump } => level >= 3,
-            Call::Bid { level, strain: Strain::Spades } => level >= 4,
-            Call::Bid { level, strain: Strain::Hearts } => level >= 4,
-            Call::Bid { level, strain: Strain::Diamonds } => level >= 5,
-            Call::Bid { level, strain: Strain::Clubs } => level >= 5,
+            Call::Bid {
+                level,
+                strain: Strain::NoTrump,
+            } => level >= 3,
+            Call::Bid {
+                level,
+                strain: Strain::Spades,
+            } => level >= 4,
+            Call::Bid {
+                level,
+                strain: Strain::Hearts,
+            } => level >= 4,
+            Call::Bid {
+                level,
+                strain: Strain::Diamonds,
+            } => level >= 5,
+            Call::Bid {
+                level,
+                strain: Strain::Clubs,
+            } => level >= 5,
             _ => false,
         }
     }
