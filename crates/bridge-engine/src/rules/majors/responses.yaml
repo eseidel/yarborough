@@ -160,3 +160,247 @@ responses:
               - type: MinLength
                 suit: Hearts
                 count: 5
+
+  - pattern: "1H P 1S P"
+    rules:
+      - call: "2H"
+        variants:
+          - name: "Opener Rebid 2H"
+            priority: 29
+            description: "6+ Hearts, 12-15 points"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 6
+      - call: "2C"
+        variants:
+          - name: "Opener Rebid 2C"
+            priority: 28
+            description: "4+ Clubs, 12-18 points"
+            constraints:
+              - type: MinLength
+                suit: Clubs
+                count: 4
+      - call: "2D"
+        variants:
+          - name: "Opener Rebid 2D"
+            priority: 28
+            description: "4+ Diamonds, 12-18 points"
+            constraints:
+              - type: MinLength
+                suit: Diamonds
+                count: 4
+      - call: "1N"
+        variants:
+          - name: "Opener Rebid 1NT"
+            priority: 27
+            description: "Balanced, 12-14 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+      - call: "2N"
+        variants:
+          - name: "Opener Jump Rebid 2NT"
+            priority: 35
+            description: "Balanced, 18-19 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+              - type: MinHCP
+                min: 18
+              - type: MaxHCP
+                max: 19
+      - call: "3N"
+        variants:
+          - name: "Opener Jump Rebid 3NT"
+            priority: 36
+            description: "Balanced, 20-21 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+              - type: MinHCP
+                min: 20
+              - type: MaxHCP
+                max: 21
+
+  - pattern: "1H P 1N P"
+    rules:
+      - call: "2H"
+        variants:
+          - name: "Opener Rebid 2H"
+            priority: 29
+            description: "6+ Hearts, 12-15 points"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 6
+      - call: "2C"
+        variants:
+          - name: "Opener Rebid 2C"
+            priority: 28
+            description: "4+ Clubs, 12-18 points"
+            constraints:
+              - type: MinLength
+                suit: Clubs
+                count: 4
+      - call: "2D"
+        variants:
+          - name: "Opener Rebid 2D"
+            priority: 28
+            description: "4+ Diamonds, 12-18 points"
+            constraints:
+              - type: MinLength
+                suit: Diamonds
+                count: 4
+      - call: "2N"
+        variants:
+          - name: "Opener Jump Rebid 2NT"
+            priority: 35
+            description: "Balanced, 18-19 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+              - type: MinHCP
+                min: 18
+              - type: MaxHCP
+                max: 19
+      - call: "3N"
+        variants:
+          - name: "Opener Jump Rebid 3NT"
+            priority: 36
+            description: "Balanced, 20-21 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+              - type: MinHCP
+                min: 20
+              - type: MaxHCP
+                max: 21
+      - call: "4H"
+        variants:
+          - name: "Opener Rebid 4H (Game Force)"
+            priority: 38
+            description: "6+ Hearts, 19+ points"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 6
+              - type: MinPoints
+                suit: Hearts
+                min: 19
+
+  - pattern: "1S P 1N P"
+    rules:
+      - call: "2S"
+        variants:
+          - name: "Opener Rebid 2S"
+            priority: 29
+            description: "6+ Spades, 12-15 points"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 6
+      - call: "2C"
+        variants:
+          - name: "Opener Rebid 2C"
+            priority: 28
+            description: "4+ Clubs, 12-18 points"
+            constraints:
+              - type: MinLength
+                suit: Clubs
+                count: 4
+      - call: "2D"
+        variants:
+          - name: "Opener Rebid 2D"
+            priority: 28
+            description: "4+ Diamonds, 12-18 points"
+            constraints:
+              - type: MinLength
+                suit: Diamonds
+                count: 4
+      - call: "2H"
+        variants:
+          - name: "Opener Rebid 2H"
+            priority: 28
+            description: "4+ Hearts, 12-18 points"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 4
+      - call: "2N"
+        variants:
+          - name: "Opener Jump Rebid 2NT"
+            priority: 35
+            description: "Balanced, 18-19 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+              - type: MinHCP
+                min: 18
+              - type: MaxHCP
+                max: 19
+      - call: "3N"
+        variants:
+          - name: "Opener Jump Rebid 3NT"
+            priority: 36
+            description: "Balanced, 20-21 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+              - type: MinHCP
+                min: 20
+              - type: MaxHCP
+                max: 21
+      - call: "4S"
+        variants:
+          - name: "Opener Rebid 4S (Game Force)"
+            priority: 38
+            description: "6+ Spades, 19+ points"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 6
+              - type: MinPoints
+                suit: Spades
+                min: 19
+
+  - pattern: "1S P 2H P"
+    rules:
+      - call: "2S"
+        variants:
+          - name: "Opener Rebid 2S"
+            priority: 29
+            description: "5+ Spades, 12-15 points"
+            constraints:
+              - type: MinLength
+                suit: Spades
+                count: 5
+      - call: "2N"
+        variants:
+          - name: "Opener Rebid 2NT"
+            priority: 32
+            description: "Balanced, 12-14 or 18-19 points (ambiguous, check hcp)"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+      - call: "3H"
+        variants:
+          - name: "Opener Rebid 3H (Inv)"
+            priority: 35
+            description: "3+ Heart support, 12-15 points"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 3
+      - call: "4H"
+        variants:
+          - name: "Opener Rebid 4H (Game Force)"
+            priority: 38
+            description: "3+ Heart support, 16+ points"
+            constraints:
+              - type: MinLength
+                suit: Hearts
+                count: 3
+              - type: MinPoints
+                suit: Hearts
+                min: 16

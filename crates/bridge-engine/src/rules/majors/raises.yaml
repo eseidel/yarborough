@@ -153,6 +153,126 @@ responses:
                 suit: Spades
                 count: 3
 
+  - pattern: "1H P 2H P"
+    rules:
+      - call: "2N"
+        variants:
+          - name: "Opener Rebid 2NT (Inv)"
+            priority: 25
+            description: "Balanced, 15-17 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+              - type: MinHCP
+                min: 15
+              - type: MaxHCP
+                max: 17
+      - call: "3H"
+        variants:
+          - name: "Opener Rebid 3H (Inv)"
+            priority: 24
+            description: "15-17 points, long Hearts"
+            constraints:
+              - type: MinPoints
+                suit: Hearts
+                min: 15
+              - type: MaxPoints
+                suit: Hearts
+                max: 17
+      - call: "4H"
+        variants:
+          - name: "Opener Rebid 4H"
+            priority: 23
+            description: "18+ points"
+            constraints:
+              - type: MinPoints
+                suit: Hearts
+                min: 18
+      - call: "3C"
+        variants:
+          - name: "HSGT (Clubs)"
+            priority: 26
+            description: "Help Suit Game Try in Clubs"
+            constraints:
+              - type: MinLength
+                suit: Clubs
+                count: 3
+              - type: MinPoints
+                suit: Hearts
+                min: 15
+      - call: "3D"
+        variants:
+          - name: "HSGT (Diamonds)"
+            priority: 26
+            description: "Help Suit Game Try in Diamonds"
+            constraints:
+              - type: MinLength
+                suit: Diamonds
+                count: 3
+              - type: MinPoints
+                suit: Hearts
+                min: 15
+
+  - pattern: "1S P 2S P"
+    rules:
+      - call: "2N"
+        variants:
+          - name: "Opener Rebid 2NT (Inv)"
+            priority: 25
+            description: "Balanced, 15-17 points"
+            constraints:
+              - type: IsBalanced
+                balanced: true
+              - type: MinHCP
+                min: 15
+              - type: MaxHCP
+                max: 17
+      - call: "3S"
+        variants:
+          - name: "Opener Rebid 3S (Inv)"
+            priority: 24
+            description: "15-17 points, long Spades"
+            constraints:
+              - type: MinPoints
+                suit: Spades
+                min: 15
+              - type: MaxPoints
+                suit: Spades
+                max: 17
+      - call: "4S"
+        variants:
+          - name: "Opener Rebid 4S"
+            priority: 23
+            description: "18+ points"
+            constraints:
+              - type: MinPoints
+                suit: Spades
+                min: 18
+
+  - pattern: "1H P 3H P"
+    rules:
+      - call: "4H"
+        variants:
+          - name: "Accept Limit Raise"
+            priority: 25
+            description: "14+ points"
+            constraints:
+              - type: MinPoints
+                suit: Hearts
+                min: 14
+
+  - pattern: "1S P 3S P"
+    rules:
+      - call: "4S"
+        variants:
+          - name: "Accept Limit Raise"
+            priority: 25
+            description: "14+ points"
+            constraints:
+              - type: MinPoints
+                suit: Spades
+                min: 14
+
   - pattern: "1H P 2N P"
     rules:
       - call: "3C"
