@@ -10,6 +10,7 @@ mod schema;
 
 use engine::Engine;
 use schema::System;
+use std::sync::OnceLock;
 
 #[derive(Serialize)]
 pub struct CallInterpretation {
@@ -29,32 +30,35 @@ fn parse_calls(calls_string: &str) -> Vec<Call> {
         .collect()
 }
 
-fn load_engine() -> Engine {
-    let mut system = System {
-        opening: Vec::new(),
-        responses: Vec::new(),
-    };
+fn load_engine() -> &'static Engine {
+    static ENGINE: OnceLock<Engine> = OnceLock::new();
+    ENGINE.get_or_init(|| {
+        let mut system = System {
+            opening: Vec::new(),
+            responses: Vec::new(),
+        };
 
-    let shards = [
-        include_str!("rules/openings.yaml"),
-        include_str!("rules/notrump/stayman.yaml"),
-        include_str!("rules/notrump/jacoby.yaml"),
-        include_str!("rules/notrump/responses.yaml"),
-        include_str!("rules/majors/raises.yaml"),
-        include_str!("rules/majors/responses.yaml"),
-        include_str!("rules/minors/raises.yaml"),
-        include_str!("rules/minors/responses.yaml"),
-        include_str!("rules/preemptive/responses.yaml"),
-        include_str!("rules/strong/responses.yaml"),
-    ];
+        let shards = [
+            include_str!("rules/openings.yaml"),
+            include_str!("rules/notrump/stayman.yaml"),
+            include_str!("rules/notrump/jacoby.yaml"),
+            include_str!("rules/notrump/responses.yaml"),
+            include_str!("rules/majors/raises.yaml"),
+            include_str!("rules/majors/responses.yaml"),
+            include_str!("rules/minors/raises.yaml"),
+            include_str!("rules/minors/responses.yaml"),
+            include_str!("rules/preemptive/responses.yaml"),
+            include_str!("rules/strong/responses.yaml"),
+        ];
 
-    for shard in shards {
-        let partial_system: System =
-            serde_yaml::from_str(shard).expect("Failed to parse rule shard");
-        system.merge(partial_system);
-    }
+        for shard in shards {
+            let partial_system: System =
+                serde_yaml::from_str(shard).expect("Failed to parse rule shard");
+            system.merge(partial_system);
+        }
 
-    Engine::new(system)
+        Engine::new(system)
+    })
 }
 
 /// Given a call history string, dealer position, and vulnerability, return
