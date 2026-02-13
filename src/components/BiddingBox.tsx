@@ -39,17 +39,17 @@ export function BiddingBox({
       {/* Pass / Double / Redouble row */}
       <div className="flex gap-1">
         {(() => {
-          const dblLegal = isCallLegal({ type: "double" }, callHistory);
+          const rdblLegal = isCallLegal({ type: "redouble" }, callHistory);
           return (
             <button
-              disabled={!dblLegal}
-              onClick={() => onBid({ type: "double" })}
-              className={`flex-1 py-2 rounded font-semibold transition-colors ${dblLegal
-                  ? "bg-red-100 hover:bg-red-200 text-red-700"
-                  : "bg-gray-50 text-gray-300 cursor-not-allowed"
+              disabled={!rdblLegal}
+              onClick={() => onBid({ type: "redouble" })}
+              className={`flex-1 py-2 rounded font-semibold transition-colors ${rdblLegal
+                ? "bg-blue-100 hover:bg-blue-200 text-blue-700"
+                : "bg-gray-50 text-gray-300 cursor-not-allowed"
                 }`}
             >
-              X
+              XX
             </button>
           );
         })()}
@@ -60,17 +60,17 @@ export function BiddingBox({
           Pass
         </button>
         {(() => {
-          const rdblLegal = isCallLegal({ type: "redouble" }, callHistory);
+          const dblLegal = isCallLegal({ type: "double" }, callHistory);
           return (
             <button
-              disabled={!rdblLegal}
-              onClick={() => onBid({ type: "redouble" })}
-              className={`flex-1 py-2 rounded font-semibold transition-colors ${rdblLegal
-                  ? "bg-blue-100 hover:bg-blue-200 text-blue-700"
-                  : "bg-gray-50 text-gray-300 cursor-not-allowed"
+              disabled={!dblLegal}
+              onClick={() => onBid({ type: "double" })}
+              className={`flex-1 py-2 rounded font-semibold transition-colors ${dblLegal
+                ? "bg-red-100 hover:bg-red-200 text-red-700"
+                : "bg-gray-50 text-gray-300 cursor-not-allowed"
                 }`}
             >
-              XX
+              X
             </button>
           );
         })()}
@@ -88,8 +88,8 @@ export function BiddingBox({
                 disabled={!legal}
                 onClick={() => onBid(call)}
                 className={`py-1.5 rounded text-sm font-semibold transition-colors ${legal
-                    ? "bg-gray-100 hover:bg-emerald-100"
-                    : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                  ? "bg-gray-100 hover:bg-emerald-100"
+                  : "bg-gray-50 text-gray-300 cursor-not-allowed"
                   }`}
               >
                 {level}

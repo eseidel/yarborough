@@ -6,7 +6,7 @@ import { type CallHistory } from "../../bridge";
 describe("BiddingBox", () => {
   const emptyHistory: CallHistory = { dealer: "N", calls: [] };
 
-  it("renders buttons in the correct order: Double, Pass, Redouble", () => {
+  it("renders buttons in the correct order: Redouble, Pass, Double", () => {
     render(<BiddingBox onBid={() => { }} callHistory={emptyHistory} />);
 
     const buttons = screen.getAllByRole("button");
@@ -19,8 +19,8 @@ describe("BiddingBox", () => {
     const topRowButtons = buttons.slice(0, 3);
     const buttonTexts = topRowButtons.map(b => b.textContent?.trim());
 
-    expect(buttonTexts[0]).toBe("X");
+    expect(buttonTexts[0]).toBe("XX");
     expect(buttonTexts[1]).toBe("Pass");
-    expect(buttonTexts[2]).toBe("XX");
+    expect(buttonTexts[2]).toBe("X");
   });
 });
