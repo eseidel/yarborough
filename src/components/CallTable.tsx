@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import {
+  type Call,
   type CallHistory,
   type CallInterpretation,
   type Vulnerability,
@@ -35,10 +36,10 @@ export function CallTable({
   const dealerIndex = CALL_TABLE_ORDER.indexOf(dealer);
 
   // Create a combined list of actual calls and the "?" marker if the auction is not complete.
-  const displayCalls = [...calls];
+  const displayCalls: (Call | null)[] = [...calls];
   const auctionDone = isAuctionComplete(callHistory);
   if (!auctionDone) {
-    displayCalls.push(null as any);
+    displayCalls.push(null);
   }
 
   // Determine which call index ends the row containing the selected call.
