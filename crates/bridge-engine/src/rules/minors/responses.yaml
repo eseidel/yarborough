@@ -4,10 +4,11 @@ responses:
       - call: "1D"
         variants:
           - name: "Response 1D"
-            priority: 20
-            description: "6+ HCP, 4+ Diamonds"
+            priority: 22
+            description: "6+ points, 4+ Diamonds"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MinLength
                 suit: Diamonds
@@ -15,10 +16,11 @@ responses:
       - call: "1H"
         variants:
           - name: "Response 1H"
-            priority: 22
-            description: "6+ HCP, 4+ Hearts"
+            priority: 21
+            description: "6+ points, 4+ Hearts"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MinLength
                 suit: Hearts
@@ -26,10 +28,11 @@ responses:
       - call: "1S"
         variants:
           - name: "Response 1S"
-            priority: 21
-            description: "6+ HCP, 4+ Spades"
+            priority: 20
+            description: "6+ points, 4+ Spades"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MinLength
                 suit: Spades
@@ -40,7 +43,8 @@ responses:
             priority: 10
             description: "6-10 HCP"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MaxHCP
                 max: 10
@@ -75,9 +79,10 @@ responses:
         variants:
           - name: "Response 1H"
             priority: 22
-            description: "6+ HCP, 4+ Hearts"
+            description: "6+ points, 4+ Hearts"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MinLength
                 suit: Hearts
@@ -86,9 +91,10 @@ responses:
         variants:
           - name: "Response 1S"
             priority: 21
-            description: "6+ HCP, 4+ Spades"
+            description: "6+ points, 4+ Spades"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MinLength
                 suit: Spades
@@ -110,7 +116,8 @@ responses:
             priority: 10
             description: "6-10 HCP"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: null
                 min: 6
               - type: MaxHCP
                 max: 10
@@ -138,3 +145,22 @@ responses:
                 max: 18
               - type: IsBalanced
                 balanced: true
+
+  - pattern: "1C P 1H P"
+    rules:
+      - call: "1S"
+        variants:
+          - name: "Opener Rebid 1S"
+            priority: 31
+            description: "4+ Spades, 12-18 points"
+            constraints:
+              - type: MinPoints
+                suit: null
+                min: 12
+              - type: MaxPoints
+                suit: null
+                max: 18
+              - type: MinLength
+                suit: Spades
+                count: 4
+

@@ -27,6 +27,18 @@ responses:
               - type: MinLength
                 suit: Clubs
                 count: 5
+      - call: "5C"
+        variants:
+          - name: "Response 5C"
+            priority: 30
+            description: "Slam Interest, 6+ HCP, long Club support"
+            constraints:
+              - type: MinPoints
+                suit: Clubs
+                min: 15
+              - type: MinLength
+                suit: Clubs
+                count: 6
 
   - pattern: "1D P"
     rules:
