@@ -55,7 +55,7 @@ fn load_engine() -> &'static Engine {
             include_str!("rules/preemptive/responses.yaml"),
             include_str!("rules/strong/responses.yaml"),
             include_str!("rules/natural/sound.yaml"),
-            include_str!("rules/natural/lott.yaml"),
+            include_str!("rules/natural/law_of_total_tricks.yaml"),
         ];
 
         for shard in shards {

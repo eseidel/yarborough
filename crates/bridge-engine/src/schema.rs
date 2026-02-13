@@ -1,5 +1,4 @@
 use bridge_core::rank::Rank;
-use bridge_core::strain::Strain;
 use bridge_core::suit::Suit;
 use serde::{Deserialize, Serialize};
 
@@ -41,14 +40,9 @@ min: 12
         let c: Constraint = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(c, Constraint::HasStopper { suit: Suit::Hearts });
 
-        let yaml = "type: NotAlreadyGame\nstrain: NoTrump\n";
+        let yaml = "type: NotAlreadyGame\n";
         let c: Constraint = serde_yaml::from_str(yaml).unwrap();
-        assert_eq!(
-            c,
-            Constraint::NotAlreadyGame {
-                strain: Strain::NoTrump
-            }
-        );
+        assert_eq!(c, Constraint::NotAlreadyGame);
     }
 
     #[test]
@@ -181,5 +175,5 @@ pub enum Constraint {
     MinCombinedLength { suit: Suit, count: u8 },
     HasStopper { suit: Suit },
     AllStopped,
-    NotAlreadyGame { strain: Strain },
+    NotAlreadyGame,
 }

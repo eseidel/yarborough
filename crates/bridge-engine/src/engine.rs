@@ -3,7 +3,6 @@ use crate::schema::{BidRule, Constraint, System, Variant};
 use bridge_core::auction::Auction;
 use bridge_core::call::Call;
 use bridge_core::hand::Hand;
-use bridge_core::strain::Strain;
 use bridge_core::suit::Suit;
 
 /// A call paired with the rule name and description from the bidding system.
@@ -239,7 +238,7 @@ impl Engine {
                 profile.stoppers[si]
             }
             Constraint::AllStopped => profile.stoppers.iter().all(|&s| s),
-            Constraint::NotAlreadyGame { strain } => !our_side_has_game(auction, *strain),
+            Constraint::NotAlreadyGame => !our_side_has_game(auction),
         }
     }
 }
@@ -256,28 +255,15 @@ fn suit_index(suit: Suit) -> usize {
 }
 
 /// Check if our side (the current player's partnership) already has the highest
-/// bid at game level or higher in the given strain.
-fn our_side_has_game(auction: &Auction, strain: Strain) -> bool {
-    let game_level = match strain {
-        Strain::Clubs | Strain::Diamonds => 5,
-        Strain::Hearts | Strain::Spades => 4,
-        Strain::NoTrump => 3,
-    };
-
-    // Find the last bid in the auction
+/// bid at game level or higher in any strain.
+fn our_side_has_game(auction: &Auction) -> bool {
     let num_calls = auction.calls.len();
     for (i, call) in auction.calls.iter().enumerate().rev() {
-        if let Call::Bid { level, strain: s } = call {
-            // Check if this bid is by our side (same parity as current player)
+        if let Call::Bid { .. } = call {
             let is_our_side = (i % 2) == (num_calls % 2);
-            if is_our_side && *s == strain && *level >= game_level {
-                return true;
-            }
-            // Only check the last bid in the auction
-            break;
+            return is_our_side && call.is_game_bid();
         }
     }
-
     false
 }
 
@@ -290,7 +276,7 @@ mod tests {
     #[test]
     fn test_our_side_has_game_no_bids() {
         let auction = Auction::new(Position::North);
-        assert!(!our_side_has_game(&auction, Strain::NoTrump));
+        assert!(!our_side_has_game(&auction));
     }
 
     #[test]
@@ -300,9 +286,8 @@ mod tests {
         auction.add_call(Call::Pass); // East
         auction.add_call("3N".parse().unwrap()); // South
         auction.add_call(Call::Pass); // West
-                                      // Current player is North. Our side (North/South) bid 3NT at game.
-        assert!(our_side_has_game(&auction, Strain::NoTrump));
-        assert!(!our_side_has_game(&auction, Strain::Spades));
+        // Current player is North. Our side (North/South) bid 3NT at game.
+        assert!(our_side_has_game(&auction));
     }
 
     #[test]
@@ -312,8 +297,7 @@ mod tests {
         auction.add_call(Call::Pass);
         auction.add_call("4S".parse().unwrap()); // South
         auction.add_call(Call::Pass);
-        assert!(our_side_has_game(&auction, Strain::Spades));
-        assert!(!our_side_has_game(&auction, Strain::Hearts));
+        assert!(our_side_has_game(&auction));
     }
 
     #[test]
@@ -322,7 +306,7 @@ mod tests {
         auction.add_call("1S".parse().unwrap()); // North
         auction.add_call("4H".parse().unwrap()); // East bids 4H (game in Hearts)
                                                  // Current player is South. Last bid is by opponent (East), not our side.
-        assert!(!our_side_has_game(&auction, Strain::Hearts));
+        assert!(!our_side_has_game(&auction));
     }
 }
 

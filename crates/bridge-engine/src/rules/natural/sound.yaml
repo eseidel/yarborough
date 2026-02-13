@@ -130,7 +130,6 @@ natural:
             suit: Spades
             count: 8
           - type: NotAlreadyGame
-            strain: Spades
 
   - call: "4H"
     variants:
@@ -144,7 +143,6 @@ natural:
             suit: Hearts
             count: 8
           - type: NotAlreadyGame
-            strain: Hearts
 
   # NT game (25+ HCP) - priority 5 with stoppers, priority 6 without major fit
   - call: "3N"
@@ -156,8 +154,6 @@ natural:
           - type: MinCombinedHCP
             min: 25
           - type: AllStopped
-          - type: NotAlreadyGame
-            strain: NoTrump
 
   # Minor games (28+ HCP) - priority 4
   - call: "5D"
@@ -172,7 +168,6 @@ natural:
             suit: Diamonds
             count: 8
           - type: NotAlreadyGame
-            strain: Diamonds
 
   - call: "5C"
     variants:
@@ -186,7 +181,6 @@ natural:
             suit: Clubs
             count: 8
           - type: NotAlreadyGame
-            strain: Clubs
 
   # Part scores - suited (priority 3)
   - call: "1S"
@@ -296,8 +290,6 @@ natural:
           - type: MinCombinedLength
             suit: Spades
             count: 8
-          - type: NotAlreadyGame
-            strain: Spades
 
   - call: "3H"
     variants:
@@ -310,8 +302,6 @@ natural:
           - type: MinCombinedLength
             suit: Hearts
             count: 8
-          - type: NotAlreadyGame
-            strain: Hearts
 
   - call: "3D"
     variants:
@@ -324,8 +314,6 @@ natural:
           - type: MinCombinedLength
             suit: Diamonds
             count: 8
-          - type: NotAlreadyGame
-            strain: Diamonds
 
   - call: "3C"
     variants:
@@ -338,8 +326,6 @@ natural:
           - type: MinCombinedLength
             suit: Clubs
             count: 8
-          - type: NotAlreadyGame
-            strain: Clubs
 
   - call: "4D"
     variants:
@@ -353,7 +339,6 @@ natural:
             suit: Diamonds
             count: 8
           - type: NotAlreadyGame
-            strain: Diamonds
 
   - call: "4C"
     variants:
@@ -367,7 +352,6 @@ natural:
             suit: Clubs
             count: 8
           - type: NotAlreadyGame
-            strain: Clubs
 
   # Part scores - NT (priority 3)
   - call: "1N"
@@ -389,8 +373,6 @@ natural:
           - type: MinCombinedHCP
             min: 22
           - type: AllStopped
-          - type: NotAlreadyGame
-            strain: NoTrump
 
   # 5-level NT (30+ HCP) - priority 3
   - call: "5N"
@@ -403,7 +385,6 @@ natural:
             min: 30
           - type: AllStopped
           - type: NotAlreadyGame
-            strain: NoTrump
 
   - call: "4N"
     variants:
@@ -415,7 +396,6 @@ natural:
             min: 28
           - type: AllStopped
           - type: NotAlreadyGame
-            strain: NoTrump
 
   # 5-level suited part scores (28+ HCP)
   - call: "5S"
@@ -430,4 +410,3 @@ natural:
             suit: Spades
             count: 8
           - type: NotAlreadyGame
-            strain: Spades
