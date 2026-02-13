@@ -62,4 +62,4 @@ Once the code behaves correctly, update the expectation files.
 UPDATE_EXPECTATIONS=1 cargo test -p bridge-engine --test harness run_sayc_test_vectors -- --nocapture
 ```
 
-- Review the `git diff` of the expectations file to ensure no unintended regressions were introduced.
+- Review the `git diff` of the expectations file to ensure no unintended regressions were introduced. If there were any regression, repeat this process to fix them.

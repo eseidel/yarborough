@@ -55,10 +55,22 @@ responses:
               - type: ExactLength
                 suit: Clubs
                 count: 4
+      - call: "4C"
+        variants:
+          - name: "Response 4C"
+            priority: 19
+            description: "Strong Raise/Slam Interest, 13+ points, 6+ Clubs"
+            constraints:
+              - type: MinPoints
+                suit: Clubs
+                min: 13
+              - type: MinLength
+                suit: Clubs
+                count: 6
       - call: "5C"
         variants:
           - name: "Response 5C"
-            priority: 30
+            priority: 18
             description: "Slam Interest, 6+ HCP, long Club support"
             constraints:
               - type: MinPoints
@@ -137,6 +149,36 @@ responses:
               - type: ExactLength
                 suit: Diamonds
                 count: 4
+      - call: "4D"
+        variants:
+          - name: "Response 4D"
+            priority: 19
+            description: "Strong Raise/Slam Interest, 13+ points, 6+ Diamonds"
+            constraints:
+              - type: MinPoints
+                suit: Diamonds
+                min: 13
+              - type: MinLength
+                suit: Diamonds
+                count: 6
+      - call: "5D"
+        variants:
+          - name: "Response 5D"
+            priority: 20
+            description: "Solid Suit Game Jump, 15+ points, A+K in Diamonds, 6+ Diamonds"
+            constraints:
+              - type: MinPoints
+                suit: Diamonds
+                min: 15
+              - type: HasHonor
+                suit: Diamonds
+                rank: Ace
+              - type: HasHonor
+                suit: Diamonds
+                rank: King
+              - type: MinLength
+                suit: Diamonds
+                count: 6
 
 
 

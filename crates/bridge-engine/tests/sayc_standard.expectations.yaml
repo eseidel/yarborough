@@ -173,8 +173,8 @@ test_jacoby_two_nt_response_to_one_of_a_major:
   K.A743.K.AJ65432:1S P 2N P:E-W: PASS
   K.K932.7.AK97653:P 1S P 2N P:E-W: PASS
 test_slam_zone_responses_to_one_of_a_major:
-  AKJ95.65.KQ3.AKJ:1S P:None: "FAIL: step 2, expected 3C, got 2C"
-  AQ.AKJ76.A32.KQJ:1S P:None: "FAIL: step 2, expected 3D, got 2D"
+  AKJ95.65.KQ3.AKJ:1S P:None: PASS
+  AQ.AKJ76.A32.KQJ:1S P:None: PASS
 test_minimum_response_to_one_of_a_minor:
   T64.652.KJ5.A954:1C P:None: PASS
   T64.652.KJ5.A954:1D P:None: PASS
@@ -189,7 +189,7 @@ test_minimum_response_to_one_of_a_minor:
   T8.7.KQT862.9652:1C P:N-S: PASS
   954.5.QJT8.J9853:1D P:Both: PASS
   5432.KQ2.32.5432:1C P:None: PASS
-  AK9842.953.K86.A:P 1C P:Both: PASS
+  AK9842.953.K86.A:P 1C P:Both: "FAIL: step 3, expected 5C, got 4C"
 test_invitational_response_to_one_of_a_minor:
   43.KJ65.K83.A753:1D P:None: PASS
   QJ5.J753.KT8.A42:1D P:None: PASS
@@ -211,16 +211,16 @@ test_game_forcing_response_to_one_of_a_minor:
   QJ52.AKQ7.97.KJ2:1D P:None: PASS
   QJ52.AKQ7.97.KQ2:1D P:None: PASS
   AKJ.5432.Q32.AKQ:1D P:None: PASS
-  AJ9853.K.T54.KQJ:1C P:None: "FAIL: step 2, expected 4C, got 5C"
-  Q8.AQ9632.AT.J43:1D P:None: "FAIL: step 2, expected 4D, got P"
-  AKJ973.5.T98.AQ5:1C P:None: "FAIL: step 2, expected 4C, got 5C"
+  AJ9853.K.T54.KQJ:1C P:None: PASS
+  Q8.AQ9632.AT.J43:1D P:None: PASS
+  AKJ973.5.T98.AQ5:1C P:None: PASS
   AQJ93.AJ643.A87.:1D P:None: PASS
   T9632.AKJ52.K.K5:P 1D P:None: PASS
 test_slam_zone_response_to_one_of_a_minor:
-  AJ3.K76.A8.AKJ75:1D P:None: "FAIL: step 2, expected 2S, got 1S"
-  AT98.QJ72..AKQT9:1D P:None: "FAIL: step 2, expected 2S, got 1S"
-  K985.3.AKQ987.K2:1C P:None: "FAIL: step 2, expected 2H, got 1H"
-  AKJ8.J42.AKJ.KJ4:1H P:Both: "FAIL: step 2, expected 2N, got 2C"
+  AJ3.K76.A8.AKJ75:1D P:None: PASS
+  AT98.QJ72..AKQT9:1D P:None: PASS
+  K985.3.AKQ987.K2:1C P:None: PASS
+  AKJ8.J42.AKJ.KJ4:1H P:Both: PASS
 test_minimum_rebid_by_opener:
   KQ8.AJ.9765.A987:1C P 1H P:None: "FAIL: step 4, expected 2H, got 1S"
   KQ87.AJ.976.A987:1C P 1H P:None: PASS

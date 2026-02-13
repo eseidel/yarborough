@@ -46,6 +46,39 @@ responses:
               - type: MinLength
                 suit: Diamonds
                 count: 4
+      - call: "2S"
+        variants:
+          - name: "SJS 2S"
+            priority: 30
+            description: "19+ points (or 16+ HCP), 5+ Spades"
+            constraints:
+              - type: MinHCP
+                min: 16
+              - type: MinLength
+                suit: Spades
+                count: 5
+      - call: "3C"
+        variants:
+          - name: "SJS 3C"
+            priority: 30
+            description: "19+ points (or 16+ HCP), 5+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 16
+              - type: MinLength
+                suit: Clubs
+                count: 5
+      - call: "3D"
+        variants:
+          - name: "SJS 3D"
+            priority: 30
+            description: "19+ points (or 16+ HCP), 5+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 16
+              - type: MinLength
+                suit: Diamonds
+                count: 5
 
   - pattern: "1S P"
     rules:
@@ -91,6 +124,39 @@ responses:
               - type: MinPoints
                 suit: null
                 min: 10
+              - type: MinLength
+                suit: Hearts
+                count: 5
+      - call: "3C"
+        variants:
+          - name: "SJS 3C"
+            priority: 30
+            description: "19+ points (or 16+ HCP), 5+ Clubs"
+            constraints:
+              - type: MinHCP
+                min: 16
+              - type: MinLength
+                suit: Clubs
+                count: 5
+      - call: "3D"
+        variants:
+          - name: "SJS 3D"
+            priority: 30
+            description: "19+ points (or 16+ HCP), 5+ Diamonds"
+            constraints:
+              - type: MinHCP
+                min: 16
+              - type: MinLength
+                suit: Diamonds
+                count: 5
+      - call: "3H"
+        variants:
+          - name: "SJS 3H"
+            priority: 30
+            description: "19+ points (or 16+ HCP), 5+ Hearts"
+            constraints:
+              - type: MinHCP
+                min: 16
               - type: MinLength
                 suit: Hearts
                 count: 5
