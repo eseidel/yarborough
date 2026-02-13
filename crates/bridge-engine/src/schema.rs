@@ -1,4 +1,5 @@
 use bridge_core::rank::Rank;
+use bridge_core::strain::Strain;
 use bridge_core::suit::Suit;
 use serde::{Deserialize, Serialize};
 
@@ -14,6 +15,83 @@ min: 12
 ";
         let c: Constraint = serde_yaml::from_str(yaml).expect("Failed to parse");
         assert_eq!(c, Constraint::MinHCP { min: 12 });
+    }
+
+    #[test]
+    fn test_deserialize_combined_constraints() {
+        let yaml = "type: MinCombinedHCP\nmin: 25\n";
+        let c: Constraint = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(c, Constraint::MinCombinedHCP { min: 25 });
+
+        let yaml = "type: MinCombinedLength\nsuit: Spades\ncount: 8\n";
+        let c: Constraint = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(
+            c,
+            Constraint::MinCombinedLength {
+                suit: Suit::Spades,
+                count: 8
+            }
+        );
+
+        let yaml = "type: AllStopped\n";
+        let c: Constraint = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(c, Constraint::AllStopped);
+
+        let yaml = "type: HasStopper\nsuit: Hearts\n";
+        let c: Constraint = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(c, Constraint::HasStopper { suit: Suit::Hearts });
+
+        let yaml = "type: NotAlreadyGame\nstrain: NoTrump\n";
+        let c: Constraint = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(
+            c,
+            Constraint::NotAlreadyGame {
+                strain: Strain::NoTrump
+            }
+        );
+    }
+
+    #[test]
+    fn test_deserialize_natural_system() {
+        let yaml = "
+natural:
+  - call: '3N'
+    variants:
+      - name: 'Natural 3NT'
+        priority: 5
+        description: '25+ combined HCP, all stopped'
+        constraints:
+          - type: MinCombinedHCP
+            min: 25
+          - type: AllStopped
+";
+        let sys: System = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(sys.natural.len(), 1);
+        assert_eq!(sys.natural[0].call, "3N");
+        assert_eq!(sys.natural[0].variants[0].constraints.len(), 2);
+    }
+
+    #[test]
+    fn test_merge_natural() {
+        let mut sys = System {
+            opening: Vec::new(),
+            responses: Vec::new(),
+            natural: vec![BidRule {
+                call: "3N".into(),
+                variants: Vec::new(),
+            }],
+        };
+        let other = System {
+            opening: Vec::new(),
+            responses: Vec::new(),
+            natural: vec![BidRule {
+                call: "4S".into(),
+                variants: Vec::new(),
+            }],
+        };
+        sys.merge(other);
+        assert_eq!(sys.natural.len(), 2);
+        assert_eq!(sys.natural[1].call, "4S");
     }
 
     #[test]
@@ -42,6 +120,8 @@ pub struct System {
     pub opening: Vec<BidRule>,
     #[serde(default)]
     pub responses: Vec<Situation>,
+    #[serde(default)]
+    pub natural: Vec<BidRule>,
 }
 
 impl System {
@@ -58,6 +138,7 @@ impl System {
                 self.responses.push(other_situation);
             }
         }
+        self.natural.extend(other.natural);
     }
 }
 
@@ -96,4 +177,9 @@ pub enum Constraint {
     MinPoints { suit: Option<Suit>, min: u8 },
     MaxPoints { suit: Option<Suit>, max: u8 },
     HasHonor { suit: Suit, rank: Rank },
+    MinCombinedHCP { min: u8 },
+    MinCombinedLength { suit: Suit, count: u8 },
+    HasStopper { suit: Suit },
+    AllStopped,
+    NotAlreadyGame { strain: Strain },
 }

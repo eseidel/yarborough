@@ -82,6 +82,7 @@ fn run_sayc_test_vectors() {
     let test_files = [
         "../../tests/bidding/sayc_standard.yaml",
         "../../tests/bidding/sayc_regression.yaml",
+        "../../tests/bidding/natural.yaml",
     ];
 
     let mut all_failures = Vec::new();

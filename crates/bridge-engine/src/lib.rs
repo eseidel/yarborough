@@ -6,7 +6,8 @@ use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
 mod engine;
-mod schema;
+pub mod inference;
+pub mod schema;
 
 use engine::Engine;
 use schema::System;
@@ -36,6 +37,7 @@ fn load_engine() -> &'static Engine {
         let mut system = System {
             opening: Vec::new(),
             responses: Vec::new(),
+            natural: Vec::new(),
         };
 
         let shards = [
@@ -46,14 +48,14 @@ fn load_engine() -> &'static Engine {
             include_str!("rules/majors/raises.yaml"),
             include_str!("rules/majors/jacoby_2nt.yaml"),
             include_str!("rules/majors/responses.yaml"),
-
             include_str!("rules/majors/rebids.yaml"),
             include_str!("rules/minors/raises.yaml"),
             include_str!("rules/minors/responses.yaml"),
             include_str!("rules/minors/rebids.yaml"),
             include_str!("rules/preemptive/responses.yaml"),
-
             include_str!("rules/strong/responses.yaml"),
+            include_str!("rules/natural/sound.yaml"),
+            include_str!("rules/natural/lott.yaml"),
         ];
 
         for shard in shards {
