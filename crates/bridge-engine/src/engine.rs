@@ -245,6 +245,42 @@ impl Engine {
 }
 
 
+
+fn suit_index(suit: Suit) -> usize {
+    match suit {
+        Suit::Clubs => 0,
+        Suit::Diamonds => 1,
+        Suit::Hearts => 2,
+        Suit::Spades => 3,
+    }
+}
+
+/// Check if our side (the current player's partnership) already has the highest
+/// bid at game level or higher in the given strain.
+fn our_side_has_game(auction: &Auction, strain: Strain) -> bool {
+    let game_level = match strain {
+        Strain::Clubs | Strain::Diamonds => 5,
+        Strain::Hearts | Strain::Spades => 4,
+        Strain::NoTrump => 3,
+    };
+
+    // Find the last bid in the auction
+    let num_calls = auction.calls.len();
+    for (i, call) in auction.calls.iter().enumerate().rev() {
+        if let Call::Bid { level, strain: s } = call {
+            // Check if this bid is by our side (same parity as current player)
+            let is_our_side = (i % 2) == (num_calls % 2);
+            if is_our_side && *s == strain && *level >= game_level {
+                return true;
+            }
+            // Only check the last bid in the auction
+            break;
+        }
+    }
+
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -290,37 +326,3 @@ mod tests {
     }
 }
 
-fn suit_index(suit: Suit) -> usize {
-    match suit {
-        Suit::Clubs => 0,
-        Suit::Diamonds => 1,
-        Suit::Hearts => 2,
-        Suit::Spades => 3,
-    }
-}
-
-/// Check if our side (the current player's partnership) already has the highest
-/// bid at game level or higher in the given strain.
-fn our_side_has_game(auction: &Auction, strain: Strain) -> bool {
-    let game_level = match strain {
-        Strain::Clubs | Strain::Diamonds => 5,
-        Strain::Hearts | Strain::Spades => 4,
-        Strain::NoTrump => 3,
-    };
-
-    // Find the last bid in the auction
-    let num_calls = auction.calls.len();
-    for (i, call) in auction.calls.iter().enumerate().rev() {
-        if let Call::Bid { level, strain: s } = call {
-            // Check if this bid is by our side (same parity as current player)
-            let is_our_side = (i % 2) == (num_calls % 2);
-            if is_our_side && *s == strain && *level >= game_level {
-                return true;
-            }
-            // Only check the last bid in the auction
-            break;
-        }
-    }
-
-    false
-}

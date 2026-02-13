@@ -130,9 +130,9 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
         if let Some(max) = call_max_hcp {
             profile.max_hcp = profile.max_hcp.min(max);
         }
-        for si in 0..4 {
-            if let Some(len) = call_min_length[si] {
-                profile.min_length[si] = profile.min_length[si].max(len);
+        for (si, min_length) in call_min_length.iter().enumerate() {
+            if let Some(len) = min_length {
+                profile.min_length[si] = profile.min_length[si].max(*len);
             }
         }
 
