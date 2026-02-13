@@ -3,30 +3,58 @@ responses:
     rules:
       - call: "2C"
         variants:
-          - name: "Response 2C"
+          - name: "Response 2C (5+)"
+            priority: 21
+            description: "6-10 points, 5+ Clubs"
+            constraints:
+              - type: MinPoints
+                suit: Clubs
+                min: 6
+              - type: MaxPoints
+                suit: Clubs
+                max: 10
+              - type: MinLength
+                suit: Clubs
+                count: 5
+          - name: "Response 2C (4)"
             priority: 15
-            description: "6-10 HCP, 5+ Clubs"
+            description: "6-10 HCP, 4 Clubs"
             constraints:
               - type: MinHCP
                 min: 6
               - type: MaxHCP
                 max: 10
-              - type: MinLength
+              - type: ExactLength
                 suit: Clubs
-                count: 5
+                count: 4
       - call: "3C"
         variants:
-          - name: "Response 3C"
-            priority: 16
-            description: "11-12 HCP, 5+ Clubs"
+          - name: "Response 3C (5+)"
+            priority: 26
+            description: "11-12 points, 5+ Clubs"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: Clubs
                 min: 11
-              - type: MaxHCP
+              - type: MaxPoints
+                suit: Clubs
                 max: 12
               - type: MinLength
                 suit: Clubs
                 count: 5
+          - name: "Response 3C (4)"
+            priority: 15
+            description: "11-12 points, 4 Clubs"
+            constraints:
+              - type: MinPoints
+                suit: Clubs
+                min: 11
+              - type: MaxPoints
+                suit: Clubs
+                max: 12
+              - type: ExactLength
+                suit: Clubs
+                count: 4
       - call: "5C"
         variants:
           - name: "Response 5C"
@@ -44,27 +72,73 @@ responses:
     rules:
       - call: "2D"
         variants:
-          - name: "Response 2D"
-            priority: 15
-            description: "6-10 HCP, 5+ Diamonds"
+          - name: "Response 2D (5+)"
+            priority: 23
+            description: "6-10 points, 5+ Diamonds"
+            constraints:
+              - type: MinPoints
+                suit: Diamonds
+                min: 6
+              - type: MaxPoints
+                suit: Diamonds
+                max: 10
+              - type: MinLength
+                suit: Diamonds
+                count: 5
+          - name: "Response 2D (4)"
+            priority: 19
+            description: "6-10 HCP, 4 Diamonds"
             constraints:
               - type: MinHCP
                 min: 6
               - type: MaxHCP
                 max: 10
-              - type: MinLength
+              - type: ExactLength
                 suit: Diamonds
-                count: 5
+                count: 4
       - call: "3D"
         variants:
-          - name: "Response 3D"
-            priority: 16
-            description: "11-12 HCP, 5+ Diamonds"
+          - name: "Response 3D (5+)"
+            priority: 26
+            description: "11-12 points, 5+ Diamonds"
             constraints:
-              - type: MinHCP
+              - type: MinPoints
+                suit: Diamonds
                 min: 11
-              - type: MaxHCP
+              - type: MaxPoints
+                suit: Diamonds
                 max: 12
               - type: MinLength
                 suit: Diamonds
                 count: 5
+          - name: "Response 3D (4 - 12pt)"
+            priority: 19
+            description: "12 points, 4 Diamonds"
+            constraints:
+              - type: MinPoints
+                suit: Diamonds
+                min: 12
+              - type: MaxPoints
+                suit: Diamonds
+                max: 12
+              - type: ExactLength
+                suit: Diamonds
+                count: 4
+          - name: "Response 3D (4 - 11pt)"
+            priority: 15
+            description: "11 points, 4 Diamonds"
+            constraints:
+              - type: MinPoints
+                suit: Diamonds
+                min: 11
+              - type: MaxPoints
+                suit: Diamonds
+                max: 11
+              - type: ExactLength
+                suit: Diamonds
+                count: 4
+
+
+
+
+
