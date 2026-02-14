@@ -1,6 +1,6 @@
 //! Discovery Protocol: Show new 4+ card suits (forcing)
 
-use crate::nbk::{point_ranges::PointRanges, HandConstraint, PartnerModel};
+use crate::nbk::{CallPurpose, CallSemantics, HandConstraint, PartnerModel};
 use bridge_core::Call;
 
 /// Discovery Protocol implementation
@@ -11,10 +11,7 @@ impl DiscoveryProtocol {
     ///
     /// Discovery bids show a new 4+ card suit that partner hasn't shown.
     /// Returns the constraints expressed by the bid if it's a valid discovery candidate.
-    pub fn get_constraints(
-        partner_model: &PartnerModel,
-        call: &Call,
-    ) -> Option<Vec<HandConstraint>> {
+    pub fn get_semantics(partner_model: &PartnerModel, call: &Call) -> Option<CallSemantics> {
         let (level, strain) = match call {
             Call::Bid { level, strain } => (*level, *strain),
             _ => return None,
@@ -28,14 +25,17 @@ impl DiscoveryProtocol {
         }
 
         // Calculate HCP requirement
-        let min_combined_points = PointRanges::min_points_for_suited_bid(level);
+        let min_combined_points = crate::nbk::PointRanges::min_points_for_suited_bid(level);
         let needed_hcp = min_combined_points.saturating_sub(partner_model.min_hcp.unwrap_or(0));
 
         // It's a match! Returns the constraints required for this discovery bid.
-        Some(vec![
-            HandConstraint::MinLength(suit, 4),
-            HandConstraint::MinHcp(needed_hcp),
-        ])
+        Some(CallSemantics {
+            purpose: CallPurpose::Discovery,
+            shows: vec![
+                HandConstraint::MinLength(suit, 4),
+                HandConstraint::MinHcp(needed_hcp),
+            ],
+        })
     }
 }
 
@@ -73,18 +73,18 @@ mod tests {
             strain: Strain::Clubs,
         };
 
-        let diamond_constraints = DiscoveryProtocol::get_constraints(&partner_model, &diamonds);
+        let diamond_constraints = DiscoveryProtocol::get_semantics(&partner_model, &diamonds);
         assert!(
             diamond_constraints
-                .map(|cs| hand_model.satisfies_all(cs))
+                .map(|s| hand_model.satisfies_all(s.shows))
                 .unwrap_or(false)
                 == false
         );
 
-        let club_constraints = DiscoveryProtocol::get_constraints(&partner_model, &clubs);
+        let club_constraints = DiscoveryProtocol::get_semantics(&partner_model, &clubs);
         assert!(
             club_constraints
-                .map(|cs| hand_model.satisfies_all(cs))
+                .map(|s| hand_model.satisfies_all(s.shows))
                 .unwrap_or(false)
                 == true
         );
@@ -118,16 +118,16 @@ mod tests {
         };
 
         // Should match both 1H and 1S (23 combined HCP > 16)
-        let h_constraints = DiscoveryProtocol::get_constraints(&partner_model, &h_bid).unwrap();
-        assert!(hand_model.satisfies_all(h_constraints));
-        assert!(DiscoveryProtocol::get_constraints(&partner_model, &h_bid)
-            .unwrap()
+        let h_semantics = DiscoveryProtocol::get_semantics(&partner_model, &h_bid).unwrap();
+        assert!(hand_model.satisfies_all(h_semantics.shows.clone()));
+        assert!(h_semantics
+            .shows
             .contains(&HandConstraint::MinLength(Suit::Hearts, 4)));
 
-        let s_constraints = DiscoveryProtocol::get_constraints(&partner_model, &s_bid).unwrap();
-        assert!(hand_model.satisfies_all(s_constraints));
-        assert!(DiscoveryProtocol::get_constraints(&partner_model, &s_bid)
-            .unwrap()
+        let s_semantics = DiscoveryProtocol::get_semantics(&partner_model, &s_bid).unwrap();
+        assert!(hand_model.satisfies_all(s_semantics.shows.clone()));
+        assert!(s_semantics
+            .shows
             .contains(&HandConstraint::MinLength(Suit::Spades, 4)));
     }
 
@@ -163,9 +163,9 @@ mod tests {
             strain: Strain::Spades,
         };
 
-        assert!(DiscoveryProtocol::get_constraints(&partner_model, &h_bid).is_none());
-        let s_constraints = DiscoveryProtocol::get_constraints(&partner_model, &s_bid).unwrap();
-        assert!(hand_model.satisfies_all(s_constraints));
+        assert!(DiscoveryProtocol::get_semantics(&partner_model, &h_bid).is_none());
+        let s_semantics = DiscoveryProtocol::get_semantics(&partner_model, &s_bid).unwrap();
+        assert!(hand_model.satisfies_all(s_semantics.shows));
     }
 
     #[test]
@@ -193,7 +193,7 @@ mod tests {
         };
 
         // Should return constraints, but hand should not satisfy them
-        let s_constraints = DiscoveryProtocol::get_constraints(&partner_model, &s_bid).unwrap();
-        assert!(!hand_model.satisfies_all(s_constraints));
+        let s_semantics = DiscoveryProtocol::get_semantics(&partner_model, &s_bid).unwrap();
+        assert!(!hand_model.satisfies_all(s_semantics.shows));
     }
 }

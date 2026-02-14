@@ -12,11 +12,14 @@ pub mod hand_model;
 pub mod limit;
 pub mod partner_model;
 pub mod point_ranges;
+pub mod semantics;
 
 pub use auction_model::AuctionModel;
 pub use constraints::HandConstraint;
 pub use hand_model::HandModel;
 pub use partner_model::PartnerModel;
+pub use point_ranges::PointRanges;
+pub use semantics::{CallPurpose, CallSemantics};
 
 use bridge_core::{Auction, Call, Hand, Position};
 

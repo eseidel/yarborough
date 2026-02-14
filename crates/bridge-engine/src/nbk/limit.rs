@@ -1,6 +1,6 @@
 //! Limit Protocol: Define hand strength in known fits or NT (non-forcing)
 
-use crate::nbk::{point_ranges::PointRanges, HandConstraint, PartnerModel};
+use crate::nbk::{CallPurpose, CallSemantics, HandConstraint, PartnerModel, PointRanges};
 use bridge_core::{Call, Shape, Strain, Suit};
 
 /// Limit Protocol implementation
@@ -8,32 +8,32 @@ pub struct LimitProtocol;
 
 impl LimitProtocol {
     /// Get the hand constraints required for a call to be a valid limit bid
-    pub fn get_constraints(
-        partner_model: &PartnerModel,
-        call: &Call,
-    ) -> Option<Vec<HandConstraint>> {
+    pub fn get_semantics(partner_model: &PartnerModel, call: &Call) -> Option<CallSemantics> {
         let (level, strain) = match call {
             Call::Bid { level, strain } => (*level, *strain),
             _ => return None,
         };
 
-        if strain == Strain::NoTrump {
-            return get_notrump_constraints(partner_model, level);
-        }
+        let constraints = if strain == Strain::NoTrump {
+            get_notrump_constraints(partner_model, level)?
+        } else {
+            let suit = strain.to_suit()?;
 
-        let suit = strain.to_suit()?;
+            // Try support raise
+            if let Some(constraints) = get_support_constraints(partner_model, level, suit) {
+                constraints
+            } else if let Some(constraints) = get_rebid_constraints(partner_model, level, suit) {
+                // Try rebid
+                constraints
+            } else {
+                return None;
+            }
+        };
 
-        // Try support raise
-        if let Some(constraints) = get_support_constraints(partner_model, level, suit) {
-            return Some(constraints);
-        }
-
-        // Try rebid
-        if let Some(constraints) = get_rebid_constraints(partner_model, level, suit) {
-            return Some(constraints);
-        }
-
-        None
+        Some(CallSemantics {
+            purpose: CallPurpose::Limit,
+            shows: constraints,
+        })
     }
 }
 
@@ -106,10 +106,10 @@ mod tests {
             strain: Strain::Hearts,
         };
 
-        let constraints = LimitProtocol::get_constraints(&partner_model, &call).unwrap();
+        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
 
         // Should find 2H (21 HCP, < 22 for level 3, >= 19 for level 2, with 13 from partner)
-        assert!(hand_model.satisfies_all(constraints));
+        assert!(hand_model.satisfies_all(semantics.shows));
     }
 
     #[test]
@@ -139,10 +139,10 @@ mod tests {
             strain: Strain::Spades,
         };
 
-        let constraints = LimitProtocol::get_constraints(&partner_model, &call).unwrap();
+        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
 
         // Should find 4S (26 HCP >= 25 for game)
-        assert!(hand_model.satisfies_all(constraints));
+        assert!(hand_model.satisfies_all(semantics.shows));
     }
 
     #[test]
@@ -169,10 +169,10 @@ mod tests {
             strain: Strain::NoTrump,
         };
 
-        let constraints = LimitProtocol::get_constraints(&partner_model, &call).unwrap();
+        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
 
         // Should find 2NT (22 HCP)
-        assert!(hand_model.satisfies_all(constraints));
+        assert!(hand_model.satisfies_all(semantics.shows));
     }
 
     #[test]
@@ -199,10 +199,10 @@ mod tests {
             strain: Strain::NoTrump,
         };
 
-        let constraints = LimitProtocol::get_constraints(&partner_model, &call).unwrap();
+        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
 
         // Should find 3NT (26 HCP >= 25 for game)
-        assert!(hand_model.satisfies_all(constraints));
+        assert!(hand_model.satisfies_all(semantics.shows));
     }
 
     #[test]
@@ -228,10 +228,10 @@ mod tests {
             strain: Strain::Spades,
         };
 
-        let constraints = LimitProtocol::get_constraints(&partner_model, &call).unwrap();
+        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
 
         // Should find 2S (20 HCP >= 19 for level 2)
-        assert!(hand_model.satisfies_all(constraints));
+        assert!(hand_model.satisfies_all(semantics.shows));
     }
 
     #[test]
@@ -261,9 +261,9 @@ mod tests {
             strain: Strain::NoTrump,
         };
 
-        let constraints = LimitProtocol::get_constraints(&partner_model, &nt_call).unwrap();
+        let semantics = LimitProtocol::get_semantics(&partner_model, &nt_call).unwrap();
 
         // Should be found but NOT satisfied
-        assert!(!hand_model.satisfies_all(constraints));
+        assert!(!hand_model.satisfies_all(semantics.shows));
     }
 }

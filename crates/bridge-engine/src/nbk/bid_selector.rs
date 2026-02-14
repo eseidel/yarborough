@@ -26,8 +26,8 @@ impl BidSelector {
         let discovery_bids: Vec<Call> = legal_calls
             .iter()
             .filter(|call| {
-                DiscoveryProtocol::get_constraints(partner_model, call)
-                    .map(|cs| hand_model.satisfies_all(cs))
+                DiscoveryProtocol::get_semantics(partner_model, call)
+                    .map(|semantics| hand_model.satisfies_all(semantics.shows))
                     .unwrap_or(false)
             })
             .copied()
@@ -36,8 +36,8 @@ impl BidSelector {
         let limit_bids: Vec<Call> = legal_calls
             .iter()
             .filter(|call| {
-                LimitProtocol::get_constraints(partner_model, call)
-                    .map(|cs| hand_model.satisfies_all(cs))
+                LimitProtocol::get_semantics(partner_model, call)
+                    .map(|semantics| hand_model.satisfies_all(semantics.shows))
                     .unwrap_or(false)
             })
             .copied()
