@@ -91,12 +91,7 @@ mod tests {
 
     #[test]
     fn test_hand_model_creation() {
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),     // 4
-            Card::new(Suit::Hearts, Rank::King),    // 3
-            Card::new(Suit::Diamonds, Rank::Queen), // 2
-            Card::new(Suit::Clubs, Rank::Jack),     // 1
-        ]);
+        let hand = bridge_core::io::pbn::import_hand("A.K.Q.J").unwrap();
 
         let model = HandModel::from_hand(&hand);
         assert_eq!(model.hcp, 10);

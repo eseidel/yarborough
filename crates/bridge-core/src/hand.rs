@@ -23,6 +23,12 @@ impl Hand {
         Self { cards }
     }
 
+    /// Parse a hand from PBN notation (e.g., "AKQJT.AKQJ.AK.AK" for S.H.D.C)
+    #[cfg(test)]
+    pub fn parse(s: &str) -> Self {
+        crate::io::pbn::import_hand(s).expect("Invalid hand string")
+    }
+
     pub fn hcp(&self) -> u8 {
         self.cards
             .iter()
@@ -170,33 +176,20 @@ mod tests {
 
     #[test]
     fn test_hcp_calculation() {
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Diamonds, Rank::Queen),
-            Card::new(Suit::Clubs, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Two),
-        ]);
+        let hand = Hand::parse("A2.K.Q.J");
         assert_eq!(hand.hcp(), 10);
     }
 
     #[test]
     fn test_distribution() {
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-        ]);
+        let hand = Hand::parse("AK.Q..");
         let dist = hand.distribution();
         assert_eq!(dist, [2, 1, 0, 0]);
     }
 
     #[test]
     fn test_hand_sorting() {
-        let mut hand = Hand::new(vec![
-            Card::new(Suit::Clubs, Rank::Ace),
-            Card::new(Suit::Spades, Rank::Two),
-        ]);
+        let mut hand = Hand::parse("2...A");
         hand.sort();
         assert_eq!(hand.cards[0].suit, Suit::Spades);
         assert_eq!(hand.cards[1].suit, Suit::Clubs);
@@ -205,21 +198,7 @@ mod tests {
     #[test]
     fn test_balanced_4333() {
         // 4-3-3-3 distribution
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Diamonds, Rank::Queen),
-            Card::new(Suit::Clubs, Rank::Ace),
-            Card::new(Suit::Clubs, Rank::King),
-            Card::new(Suit::Clubs, Rank::Queen),
-        ]);
+        let hand = Hand::parse("AKQJ.AKQ.AKQ.AKQ");
         assert_eq!(hand.shape(), Shape::Balanced);
         assert!(hand.is_balanced());
         assert!(!hand.is_semi_balanced());
@@ -228,21 +207,7 @@ mod tests {
     #[test]
     fn test_balanced_4432() {
         // 4-4-3-2 distribution
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Hearts, Rank::Jack),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Diamonds, Rank::Queen),
-            Card::new(Suit::Clubs, Rank::Ace),
-            Card::new(Suit::Clubs, Rank::King),
-        ]);
+        let hand = Hand::parse("AKQJ.AKQJ.AKQ.AK");
         assert_eq!(hand.shape(), Shape::Balanced);
         assert!(hand.is_balanced());
     }
@@ -250,21 +215,7 @@ mod tests {
     #[test]
     fn test_balanced_5332() {
         // 5-3-3-2 distribution
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Diamonds, Rank::Queen),
-            Card::new(Suit::Clubs, Rank::Ace),
-            Card::new(Suit::Clubs, Rank::King),
-        ]);
+        let hand = Hand::parse("AKQJT.AKQ.AKQ.AK");
         assert_eq!(hand.shape(), Shape::Balanced);
         assert!(hand.is_balanced());
     }
@@ -272,21 +223,7 @@ mod tests {
     #[test]
     fn test_semi_balanced_5422() {
         // 5-4-2-2 distribution (two doubletons)
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Hearts, Rank::Jack),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Clubs, Rank::Ace),
-            Card::new(Suit::Clubs, Rank::King),
-        ]);
+        let hand = Hand::parse("AKQJT.AKQJ.AK.AK");
         assert_eq!(hand.shape(), Shape::SemiBalanced);
         assert!(hand.is_semi_balanced());
         assert!(!hand.is_balanced());
@@ -295,21 +232,7 @@ mod tests {
     #[test]
     fn test_semi_balanced_6322() {
         // 6-3-2-2 distribution (two doubletons)
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Spades, Rank::Nine),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Clubs, Rank::Ace),
-            Card::new(Suit::Clubs, Rank::King),
-        ]);
+        let hand = Hand::parse("AKQJT9.AKQ.AK.AK");
         assert_eq!(hand.shape(), Shape::SemiBalanced);
         assert!(hand.is_semi_balanced());
     }
@@ -317,21 +240,7 @@ mod tests {
     #[test]
     fn test_semi_balanced_5431() {
         // 5-4-3-1 distribution (one singleton)
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Hearts, Rank::Jack),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Diamonds, Rank::Queen),
-            Card::new(Suit::Clubs, Rank::Ace),
-        ]);
+        let hand = Hand::parse("AKQJT.AKQJ.AKQ.A");
         assert_eq!(hand.shape(), Shape::SemiBalanced);
         assert!(hand.is_semi_balanced());
     }
@@ -339,21 +248,7 @@ mod tests {
     #[test]
     fn test_unbalanced_5440() {
         // 5-4-4-0 distribution (void)
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Hearts, Rank::Jack),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Diamonds, Rank::Queen),
-            Card::new(Suit::Diamonds, Rank::Jack),
-        ]);
+        let hand = Hand::parse("AKQJT.AKQJ.AKQJ.");
         assert_eq!(hand.shape(), Shape::Unbalanced);
         assert!(!hand.is_balanced());
         assert!(!hand.is_semi_balanced());
@@ -362,51 +257,19 @@ mod tests {
     #[test]
     fn test_unbalanced_7321() {
         // 7-3-2-1 distribution
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Spades, Rank::Nine),
-            Card::new(Suit::Spades, Rank::Eight),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Clubs, Rank::Ace),
-        ]);
+        let hand = Hand::parse("AKQJT98.AKQ.AK.A");
         assert_eq!(hand.shape(), Shape::Unbalanced);
     }
 
     #[test]
     fn test_longest_suit() {
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Diamonds, Rank::Ace),
-        ]);
+        let hand = Hand::parse("AKQJT.AK.A.");
         assert_eq!(hand.longest_suit(), Suit::Spades);
     }
 
     #[test]
     fn test_longest_suits_single() {
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Diamonds, Rank::Ace),
-        ]);
+        let hand = Hand::parse("AKQJT.AK.A.");
         let longest = hand.longest_suits();
         assert_eq!(longest.len(), 1);
         assert_eq!(longest[0], Suit::Spades);
@@ -415,21 +278,7 @@ mod tests {
     #[test]
     fn test_longest_suits_tied() {
         // 5-5-2-1 distribution
-        let hand = Hand::new(vec![
-            Card::new(Suit::Spades, Rank::Ace),
-            Card::new(Suit::Spades, Rank::King),
-            Card::new(Suit::Spades, Rank::Queen),
-            Card::new(Suit::Spades, Rank::Jack),
-            Card::new(Suit::Spades, Rank::Ten),
-            Card::new(Suit::Hearts, Rank::Ace),
-            Card::new(Suit::Hearts, Rank::King),
-            Card::new(Suit::Hearts, Rank::Queen),
-            Card::new(Suit::Hearts, Rank::Jack),
-            Card::new(Suit::Hearts, Rank::Ten),
-            Card::new(Suit::Diamonds, Rank::Ace),
-            Card::new(Suit::Diamonds, Rank::King),
-            Card::new(Suit::Clubs, Rank::Ace),
-        ]);
+        let hand = Hand::parse("AKQJT.AKQJT.AK.A");
         let longest = hand.longest_suits();
         assert_eq!(longest.len(), 2);
         assert!(longest.contains(&Suit::Spades));
