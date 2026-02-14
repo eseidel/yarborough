@@ -51,6 +51,49 @@ pnpm build
 
 ## Development Tools
 
+### Bidding Debugger
+
+The `bidding-debug` tool shows the complete bidding sequence for any board with detailed information about which rules fired and why. This is essential for:
+
+- Understanding why the engine makes specific bids
+- Debugging bidding logic and rule priorities
+- Seeing which constraints are satisfied or failed
+- Learning how the bidding system works
+
+**Usage:**
+
+```bash
+# Show complete bidding sequence for a board
+cargo run --bin bidding-debug -- "1-decde22e0d283f55b36244ab45"
+
+# Show detailed trace for a specific bid (e.g., bid #3)
+cargo run --bin bidding-debug -- "1-decde22e0d283f55b36244ab45" --bid 3
+```
+
+**Basic output includes:**
+
+- Board details (dealer, vulnerability)
+- All four hands displayed in a table
+- Complete auction with rule names and descriptions
+
+**Example:**
+
+```
+Idx | Pos | Call  | Rule Name                 | Description
+----+-----+-------+---------------------------+---------------------------
+1   | N   | 1N    | Opening 1NT               | 15-17 HCP, Balanced
+2   | E   | Pass  | No rule matched           |
+3   | S   | 2C    | Stayman (4S)              | 8+ HCP, 4 Spades
+```
+
+**Detailed trace (--bid flag) shows:**
+
+- Partner profile (HCP range, suit lengths, stoppers inferred from prior bids)
+- All rules considered, sorted by priority
+- For each rule: which constraints passed (✓) or failed (✗)
+
+This helps you understand exactly why a specific bid was chosen over alternatives.
+
 ### Bidder Comparison Tool
 
 The `bidder_fight` tool compares the yarborough bidder against previous bidders (z3b or kbb) to find differences. This is useful for:
