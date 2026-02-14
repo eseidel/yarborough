@@ -1,4 +1,4 @@
-use crate::inference::{infer_partner, PartnerProfile};
+use crate::inference::{has_stopper_in_hand, infer_partner, PartnerProfile};
 use crate::schema::{BidRule, Constraint, System, Variant};
 use bridge_core::auction::Auction;
 use bridge_core::call::Call;
@@ -308,9 +308,13 @@ impl Engine {
             }
             Constraint::HasStopper { suit } => {
                 let si = suit_index(*suit);
-                profile.stoppers[si]
+                profile.stoppers[si] || has_stopper_in_hand(hand, *suit)
             }
-            Constraint::AllStopped => profile.stoppers.iter().all(|&s| s),
+            Constraint::AllStopped => {
+                Suit::ALL.iter().all(|&suit| {
+                    profile.stoppers[suit_index(suit)] || has_stopper_in_hand(hand, suit)
+                })
+            }
             Constraint::NotAlreadyGame => !our_side_has_game(auction),
         }
     }
@@ -431,5 +435,43 @@ mod tests {
             .expect("Stayman (4S) rule not considered");
 
         assert!(rule_trace.satisfied);
+    }
+
+    #[test]
+    fn test_combine_stoppers() {
+        use bridge_core::card::Card;
+        use bridge_core::rank::Rank;
+
+        let system = crate::inference::load_system();
+        let engine = Engine::new(system);
+
+        // Partner opened 1H, promising a stopper in Hearts (genuine bid).
+        let mut auction = Auction::new(Position::North);
+        auction.add_call("1H".parse().unwrap());
+        auction.add_call(Call::Pass);
+
+        // We have Ace of Spades (stopper) but nothing else.
+        let hand = Hand {
+            cards: vec![
+                Card { suit: Suit::Spades, rank: Rank::Ace },
+                Card { suit: Suit::Clubs, rank: Rank::Two },
+                Card { suit: Suit::Diamonds, rank: Rank::Two },
+            ]
+        };
+
+        let profile = infer_partner(&auction, &engine.system, &hand);
+        
+        // Partner has Heart stopper.
+        assert!(profile.stoppers[2]); // Hearts
+        assert!(!profile.stoppers[3]); // Spades (Partner didn't show one)
+
+        // Check constraint: HasStopper Hearts (satisfied by partner)
+        assert!(engine.check_constraint(&hand, &auction, &Constraint::HasStopper { suit: Suit::Hearts }, &profile));
+        
+        // Check constraint: HasStopper Spades (satisfied by us)
+        assert!(engine.check_constraint(&hand, &auction, &Constraint::HasStopper { suit: Suit::Spades }, &profile));
+
+        // Check constraint: AllStopped (not satisfied, missing Diamonds and Clubs)
+        assert!(!engine.check_constraint(&hand, &auction, &Constraint::AllStopped, &profile));
     }
 }

@@ -60,13 +60,11 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
     }
 
     // Partner's calls are at positions: num_calls - 2, num_calls - 4, etc.
-    // (partner bid 2 calls before the current turn)
-    // We walk backward through partner's calls.
     let mut partner_call_indices: Vec<usize> = Vec::new();
     let mut idx = num_calls as isize - 2;
     while idx >= 0 {
         partner_call_indices.push(idx as usize);
-        idx -= 4; // Each full round is 4 calls
+        idx -= 4;
     }
     partner_call_indices.reverse();
 
@@ -76,83 +74,82 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
         // Find the rules that could apply to this call
         let applicable_rules = find_rules_for_call(auction, call_idx, system);
 
-        // Extract constraints from all matching variants
-        let mut call_min_hcp: Option<u8> = None;
-        let mut call_max_hcp: Option<u8> = None;
-        let mut call_min_length = [None::<u8>; 4];
+        if applicable_rules.is_empty() {
+            continue;
+        }
+
+        // To correctly infer information from a call that could match multiple variants,
+        // we must find the MINIMUM requirement across ALL matching variants.
+        // If a variant doesn't mention HCP, its minimum is 0 and its maximum is 40.
+        // If a variant doesn't mention a suit's length, its minimum is 0.
+        
+        let mut min_hcp = 40;
+        let mut max_hcp = 0;
+        let mut min_lengths = [40u8; 4]; // Start with high value so min() works
         let mut has_genuine_length = false;
 
         for constraints in &applicable_rules {
+            let mut variant_min_hcp = 0;
+            let mut variant_max_hcp = 40;
+            let mut variant_min_lengths = [0u8; 4];
+            let mut variant_has_genuine_length = false;
+
             for constraint in *constraints {
                 match constraint {
-                    Constraint::MinHCP { min } => {
-                        call_min_hcp = Some(match call_min_hcp {
-                            Some(existing) => existing.min(*min),
-                            None => *min,
-                        });
-                    }
-                    Constraint::MaxHCP { max } => {
-                        call_max_hcp = Some(match call_max_hcp {
-                            Some(existing) => existing.max(*max),
-                            None => *max,
-                        });
-                    }
+                    Constraint::MinHCP { min } => variant_min_hcp = variant_min_hcp.max(*min),
+                    Constraint::MaxHCP { max } => variant_max_hcp = variant_max_hcp.min(*max),
                     Constraint::MinLength { suit, count } => {
                         let si = suit_index(*suit);
-                        call_min_length[si] = Some(match call_min_length[si] {
-                            Some(existing) => existing.min(*count),
-                            None => *count,
-                        });
-                        // Check if this length is in the bid's strain
+                        variant_min_lengths[si] = variant_min_lengths[si].max(*count);
                         if bid_suit(partner_call) == Some(*suit) {
-                            has_genuine_length = true;
+                            variant_has_genuine_length = true;
                         }
                     }
                     Constraint::ExactLength { suit, count } => {
                         let si = suit_index(*suit);
-                        call_min_length[si] = Some(match call_min_length[si] {
-                            Some(existing) => existing.min(*count),
-                            None => *count,
-                        });
+                        variant_min_lengths[si] = variant_min_lengths[si].max(*count);
                         if bid_suit(partner_call) == Some(*suit) {
-                            has_genuine_length = true;
+                            variant_has_genuine_length = true;
+                        }
+                    }
+                    Constraint::MinCombinedLength { suit, count } => {
+                        let si = suit_index(*suit);
+                        let hand_len = hand.length(*suit);
+                        let partner_min = count.saturating_sub(hand_len);
+                        variant_min_lengths[si] = variant_min_lengths[si].max(partner_min);
+                        if bid_suit(partner_call) == Some(*suit) {
+                            variant_has_genuine_length = true;
                         }
                     }
                     _ => {}
                 }
             }
-        }
 
-        // Apply extracted ranges to profile
-        if let Some(min) = call_min_hcp {
-            profile.min_hcp = profile.min_hcp.max(min);
-        }
-        if let Some(max) = call_max_hcp {
-            profile.max_hcp = profile.max_hcp.min(max);
-        }
-        for (si, min_length) in call_min_length.iter().enumerate() {
-            if let Some(len) = min_length {
-                profile.min_length[si] = profile.min_length[si].max(*len);
+            min_hcp = min_hcp.min(variant_min_hcp);
+            max_hcp = max_hcp.max(variant_max_hcp);
+            for i in 0..4 {
+                min_lengths[i] = min_lengths[i].min(variant_min_lengths[i]);
+            }
+            if variant_has_genuine_length {
+                has_genuine_length = true;
             }
         }
 
-        // If partner bid a suit and rules show genuine length, mark stopper
+        profile.min_hcp = profile.min_hcp.max(min_hcp);
+        profile.max_hcp = profile.max_hcp.min(max_hcp);
+        for i in 0..4 {
+            profile.min_length[i] = profile.min_length[i].max(min_lengths[i]);
+        }
+
         if has_genuine_length {
             if let Some(suit) = bid_suit(partner_call) {
                 profile.stoppers[suit_index(suit)] = true;
             }
         }
 
-        // If partner passed as first call, cap HCP at 11 (didn't open)
+        // If partner passed as first call, cap HCP at 11
         if *partner_call == Call::Pass && call_idx <= 3 && is_opening_position(auction, call_idx) {
             profile.max_hcp = profile.max_hcp.min(11);
-        }
-    }
-
-    // Add stoppers from our own hand (A, K, or Q+J in a suit)
-    for suit in Suit::ALL {
-        if has_stopper_in_hand(hand, suit) {
-            profile.stoppers[suit_index(suit)] = true;
         }
     }
 
@@ -243,6 +240,38 @@ fn find_rules_for_call<'a>(
 }
 
 #[cfg(test)]
+pub(crate) fn load_system() -> System {
+    let shards = [
+        include_str!("rules/openings.yaml"),
+        include_str!("rules/notrump/stayman.yaml"),
+        include_str!("rules/notrump/jacoby.yaml"),
+        include_str!("rules/notrump/responses.yaml"),
+        include_str!("rules/majors/raises.yaml"),
+        include_str!("rules/majors/jacoby_2nt.yaml"),
+        include_str!("rules/majors/responses.yaml"),
+        include_str!("rules/majors/rebids.yaml"),
+        include_str!("rules/minors/raises.yaml"),
+        include_str!("rules/minors/responses.yaml"),
+        include_str!("rules/minors/rebids.yaml"),
+        include_str!("rules/preemptive/responses.yaml"),
+        include_str!("rules/strong/responses.yaml"),
+    ];
+
+    let mut system = System {
+        opening: Vec::new(),
+        responses: Vec::new(),
+        natural: Vec::new(),
+    };
+
+    for shard in shards {
+        let partial: System = serde_yaml::from_str(shard).expect("Failed to parse");
+        system.merge(partial);
+    }
+
+    system
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use bridge_core::board::Position;
@@ -263,37 +292,6 @@ mod tests {
             }
         }
         Hand { cards }
-    }
-
-    fn load_system() -> System {
-        let shards = [
-            include_str!("rules/openings.yaml"),
-            include_str!("rules/notrump/stayman.yaml"),
-            include_str!("rules/notrump/jacoby.yaml"),
-            include_str!("rules/notrump/responses.yaml"),
-            include_str!("rules/majors/raises.yaml"),
-            include_str!("rules/majors/jacoby_2nt.yaml"),
-            include_str!("rules/majors/responses.yaml"),
-            include_str!("rules/majors/rebids.yaml"),
-            include_str!("rules/minors/raises.yaml"),
-            include_str!("rules/minors/responses.yaml"),
-            include_str!("rules/minors/rebids.yaml"),
-            include_str!("rules/preemptive/responses.yaml"),
-            include_str!("rules/strong/responses.yaml"),
-        ];
-
-        let mut system = System {
-            opening: Vec::new(),
-            responses: Vec::new(),
-            natural: Vec::new(),
-        };
-
-        for shard in shards {
-            let partial: System = serde_yaml::from_str(shard).expect("Failed to parse");
-            system.merge(partial);
-        }
-
-        system
     }
 
     #[test]
@@ -372,5 +370,34 @@ mod tests {
         // Partner responded 1S to 1H: 6+ points, 4+ Spades
         assert!(profile.min_length[3] >= 4); // Spades index = 3
         assert!(profile.stoppers[3]); // Spades is genuine
+    }
+    #[test]
+    fn test_repro_stayman_bug() {
+        let system = load_system();
+        // P - P - 1N - P - 2C - P - 2D - P - 2N - P - ?
+        let mut auction = Auction::new(Position::South);
+        auction.add_call(Call::Pass); // South
+        auction.add_call(Call::Pass); // West
+        auction.add_call("1N".parse().unwrap()); // North
+        auction.add_call(Call::Pass); // East
+        auction.add_call("2C".parse().unwrap()); // South
+        auction.add_call(Call::Pass); // West
+        auction.add_call("2D".parse().unwrap()); // North
+        auction.add_call(Call::Pass); // East
+        auction.add_call("2N".parse().unwrap()); // South
+        auction.add_call(Call::Pass); // West
+
+        // We are North, evaluating South's profile.
+        let hand = make_hand("Q64", "AT", "KQ965", "AQ7");
+        let profile = infer_partner(&auction, &system, &hand);
+
+        // South bid 2C (Stayman) and then 2N (Invitation).
+        // South should NOT be inferred to have 6 Clubs or 5 Diamonds.
+        assert!(profile.min_length[0] < 6, "Should not infer 6+ Clubs from Stayman");
+        assert!(profile.min_length[1] < 5, "Should not infer 5+ Diamonds from Stayman");
+        
+        // South's HCP should be around 8-9 based on 2N invitation.
+        assert_eq!(profile.min_hcp, 8);
+        assert_eq!(profile.max_hcp, 9);
     }
 }
