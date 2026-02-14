@@ -3,7 +3,7 @@
 use crate::nbk::{
     discovery::DiscoveryProtocol, limit::LimitProtocol, AuctionModel, HandModel, PartnerModel,
 };
-use bridge_core::{Call, Strain, Suit};
+use bridge_core::{Call, Strain};
 
 /// Bid selector implementing the NBK priority stack
 pub struct BidSelector;
@@ -23,9 +23,25 @@ impl BidSelector {
         legal_calls: &[Call],
     ) -> Call {
         // Get all valid bids from protocols
-        let discovery_bids =
-            DiscoveryProtocol::valid_discovery_bids(hand_model, partner_model, legal_calls);
-        let limit_bids = LimitProtocol::valid_limit_bids(hand_model, partner_model, legal_calls);
+        let discovery_bids: Vec<Call> = legal_calls
+            .iter()
+            .filter(|call| {
+                DiscoveryProtocol::get_constraints(partner_model, call)
+                    .map(|cs| hand_model.satisfies_all(cs))
+                    .unwrap_or(false)
+            })
+            .copied()
+            .collect();
+
+        let limit_bids: Vec<Call> = legal_calls
+            .iter()
+            .filter(|call| {
+                LimitProtocol::get_constraints(partner_model, call)
+                    .map(|cs| hand_model.satisfies_all(cs))
+                    .unwrap_or(false)
+            })
+            .copied()
+            .collect();
 
         // 1. PRIMARY: Support majors (Limit Protocol)
         if let Some(bid) = find_major_support(&limit_bids) {
@@ -77,18 +93,7 @@ impl BidSelector {
 
 /// Find major suit support bids (hearts or spades)
 fn find_major_support(limit_bids: &[Call]) -> Option<Call> {
-    limit_bids
-        .iter()
-        .find(|call| {
-            matches!(
-                call,
-                Call::Bid {
-                    strain: Strain::Hearts | Strain::Spades,
-                    ..
-                }
-            )
-        })
-        .copied()
+    limit_bids.iter().find(|call| call.is_major()).copied()
 }
 
 /// Find NT bids
@@ -108,19 +113,9 @@ fn find_nt_bid(limit_bids: &[Call]) -> Option<Call> {
 }
 
 /// Find suit rebid bids (non-major, non-NT)
+#[allow(dead_code)]
 fn find_suit_rebid(limit_bids: &[Call]) -> Option<Call> {
-    limit_bids
-        .iter()
-        .find(|call| {
-            matches!(
-                call,
-                Call::Bid {
-                    strain: Strain::Clubs | Strain::Diamonds,
-                    ..
-                }
-            )
-        })
-        .copied()
+    limit_bids.iter().find(|call| call.is_minor()).copied()
 }
 
 /// Select the best discovery bid using NBK priority rules
@@ -140,21 +135,9 @@ fn select_best_discovery_bid(
         .iter()
         .filter(|call| {
             if majors_only {
-                matches!(
-                    call,
-                    Call::Bid {
-                        strain: Strain::Hearts | Strain::Spades,
-                        ..
-                    }
-                )
+                call.is_major()
             } else {
-                matches!(
-                    call,
-                    Call::Bid {
-                        strain: Strain::Clubs | Strain::Diamonds,
-                        ..
-                    }
-                )
+                call.is_minor()
             }
         })
         .copied()
@@ -169,7 +152,7 @@ fn select_best_discovery_bid(
         .iter()
         .map(|call| {
             if let Call::Bid { strain, .. } = call {
-                let suit = strain_to_suit(*strain);
+                let suit = strain.to_suit().unwrap();
                 let length = hand_model.length(suit);
                 (length, *call)
             } else {
@@ -216,17 +199,6 @@ fn select_best_discovery_bid(
     }
 }
 
-/// Convert Strain to Suit (panics for NoTrump)
-fn strain_to_suit(strain: Strain) -> Suit {
-    match strain {
-        Strain::Clubs => Suit::Clubs,
-        Strain::Diamonds => Suit::Diamonds,
-        Strain::Hearts => Suit::Hearts,
-        Strain::Spades => Suit::Spades,
-        Strain::NoTrump => panic!("Cannot convert NoTrump to Suit"),
-    }
-}
-
 /// Get suit rank (Clubs=0, Diamonds=1, Hearts=2, Spades=3)
 fn suit_rank(strain: Strain) -> u8 {
     match strain {
@@ -248,7 +220,7 @@ mod tests {
     fn test_major_support_priority() {
         // Partner opened 1H, we have support
         let hand_model = HandModel {
-            hcp: 10,
+            hcp: 8,
             distribution: Distribution {
                 clubs: 2,
                 diamonds: 3,
@@ -263,7 +235,7 @@ mod tests {
                 ..Distribution::default()
             }, // Partner has 4+ hearts
             min_hcp: Some(13),
-            max_hcp: None,
+            ..Default::default()
         };
         let auction_model = AuctionModel { is_forcing: false };
         let legal_calls = vec![
@@ -305,9 +277,8 @@ mod tests {
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_distribution: Distribution::default(),
             min_hcp: Some(10),
-            max_hcp: None,
+            ..Default::default()
         };
         let auction_model = AuctionModel { is_forcing: false };
         let legal_calls = vec![
@@ -349,9 +320,8 @@ mod tests {
             shape: Shape::SemiBalanced,
         };
         let partner_model = PartnerModel {
-            min_distribution: Distribution::default(),
             min_hcp: Some(10),
-            max_hcp: None,
+            ..Default::default()
         };
         let auction_model = AuctionModel { is_forcing: false };
         let legal_calls = vec![
@@ -398,7 +368,7 @@ mod tests {
                 ..Distribution::default()
             }, // Partner opened 1C
             min_hcp: Some(13),
-            max_hcp: None,
+            ..Default::default()
         };
         let auction_model = AuctionModel { is_forcing: false };
         let legal_calls = vec![
@@ -445,7 +415,7 @@ mod tests {
                 ..Distribution::default()
             }, // Partner opened 1C
             min_hcp: Some(13),
-            max_hcp: None,
+            ..Default::default()
         };
         let auction_model = AuctionModel { is_forcing: false };
         let legal_calls = vec![

@@ -1,5 +1,6 @@
 //! Hand model for NBK bidding analysis
 
+use crate::nbk::HandConstraint;
 use bridge_core::{Distribution, Hand, Shape, Suit};
 
 /// Analysis of the current hand for bidding purposes
@@ -14,6 +15,19 @@ pub struct HandModel {
 }
 
 impl HandModel {
+    pub fn satisfies(&self, constraint: HandConstraint) -> bool {
+        match constraint {
+            HandConstraint::MinHcp(hcp) => self.hcp >= hcp,
+            HandConstraint::MaxHcp(hcp) => self.hcp <= hcp,
+            HandConstraint::MinLength(suit, len) => self.length(suit) >= len,
+            HandConstraint::MaxUnbalancedness(max_shape) => self.shape <= max_shape,
+        }
+    }
+
+    pub fn satisfies_all(&self, constraints: impl IntoIterator<Item = HandConstraint>) -> bool {
+        constraints.into_iter().all(|c| self.satisfies(c))
+    }
+
     pub fn from_hand(hand: &Hand) -> Self {
         Self {
             hcp: hand.hcp(),
@@ -118,5 +132,27 @@ mod tests {
         let hand = make_hand(5, 4, 2, 2); // 5-4-2-2
         let model = HandModel::from_hand(&hand);
         assert_eq!(model.shape, Shape::SemiBalanced);
+    }
+
+    #[test]
+    fn test_satisfies_constraints() {
+        let hand = make_hand(5, 4, 2, 2); // 13 cards, 0 HCP if Rank::Two
+        let mut model = HandModel::from_hand(&hand);
+        model.hcp = 12;
+
+        assert!(model.satisfies(HandConstraint::MinHcp(10)));
+        assert!(model.satisfies(HandConstraint::MinHcp(12)));
+        assert!(!model.satisfies(HandConstraint::MinHcp(13)));
+
+        assert!(model.satisfies(HandConstraint::MaxHcp(15)));
+        assert!(model.satisfies(HandConstraint::MaxHcp(12)));
+        assert!(!model.satisfies(HandConstraint::MaxHcp(11)));
+
+        assert!(model.satisfies(HandConstraint::MinLength(Suit::Spades, 5)));
+        assert!(model.satisfies(HandConstraint::MinLength(Suit::Spades, 4)));
+        assert!(!model.satisfies(HandConstraint::MinLength(Suit::Spades, 6)));
+
+        assert!(model.satisfies(HandConstraint::MinLength(Suit::Hearts, 4)));
+        assert!(!model.satisfies(HandConstraint::MinLength(Suit::Hearts, 5)));
     }
 }

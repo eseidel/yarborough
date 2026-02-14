@@ -6,6 +6,7 @@
 
 pub mod auction_model;
 pub mod bid_selector;
+pub mod constraints;
 pub mod discovery;
 pub mod hand_model;
 pub mod limit;
@@ -13,6 +14,7 @@ pub mod partner_model;
 pub mod point_ranges;
 
 pub use auction_model::AuctionModel;
+pub use constraints::HandConstraint;
 pub use hand_model::HandModel;
 pub use partner_model::PartnerModel;
 

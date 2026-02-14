@@ -60,6 +60,20 @@ impl Call {
             _ => false,
         }
     }
+
+    pub fn is_major(self) -> bool {
+        match self {
+            Call::Bid { strain, .. } => strain.is_major(),
+            _ => false,
+        }
+    }
+
+    pub fn is_minor(self) -> bool {
+        match self {
+            Call::Bid { strain, .. } => strain.is_minor(),
+            _ => false,
+        }
+    }
 }
 
 impl FromStr for Call {

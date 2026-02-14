@@ -3,7 +3,7 @@ use crate::rank::Rank;
 use crate::suit::Suit;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Shape {
     /// No singletons, no voids, max one doubleton (4-3-3-3, 4-4-3-2, 5-3-3-2)
     Balanced,

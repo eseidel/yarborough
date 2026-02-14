@@ -49,6 +49,24 @@ impl Strain {
             Suit::Spades => Strain::Spades,
         }
     }
+
+    pub fn to_suit(self) -> Option<Suit> {
+        match self {
+            Strain::Clubs => Some(Suit::Clubs),
+            Strain::Diamonds => Some(Suit::Diamonds),
+            Strain::Hearts => Some(Suit::Hearts),
+            Strain::Spades => Some(Suit::Spades),
+            Strain::NoTrump => None,
+        }
+    }
+
+    pub fn is_major(self) -> bool {
+        matches!(self, Strain::Hearts | Strain::Spades)
+    }
+
+    pub fn is_minor(self) -> bool {
+        matches!(self, Strain::Clubs | Strain::Diamonds)
+    }
 }
 
 impl fmt::Display for Strain {

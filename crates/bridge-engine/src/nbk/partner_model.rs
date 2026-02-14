@@ -1,6 +1,7 @@
 //! Partner profile inference from auction history
 
-use bridge_core::{Auction, Call, Distribution, Position, Strain, Suit};
+use crate::nbk::HandConstraint;
+use bridge_core::{Auction, Call, Distribution, Position, Shape, Strain, Suit};
 
 /// Inferred profile of partner's hand based on auction history
 #[derive(Debug, Clone, Default)]
@@ -11,9 +12,25 @@ pub struct PartnerModel {
     pub min_hcp: Option<u8>,
     /// Maximum HCP partner has shown, if any
     pub max_hcp: Option<u8>,
+    /// Maximum unbalancedness allowed (max shape)
+    pub max_shape: Option<Shape>,
 }
 
 impl PartnerModel {
+    pub fn apply_constraint(&mut self, constraint: HandConstraint) {
+        match constraint {
+            HandConstraint::MinHcp(hcp) => self.min_hcp = Some(update_min(self.min_hcp, hcp)),
+            HandConstraint::MaxHcp(hcp) => self.max_hcp = Some(update_max(self.max_hcp, hcp)),
+            HandConstraint::MinLength(suit, len) => {
+                let current = self.min_distribution.length(suit);
+                self.min_distribution.set_length(suit, current.max(len));
+            }
+            HandConstraint::MaxUnbalancedness(shape) => {
+                self.max_shape = Some(update_shape_max(self.max_shape, shape));
+            }
+        }
+    }
+
     /// Infer partner's profile from the auction
     ///
     /// Analyzes all of partner's calls to build a profile of their hand.
@@ -50,13 +67,12 @@ impl PartnerModel {
             .collect()
     }
 
-    /// Calculate combined minimum points with our hand
-    pub fn combined_min_points(&self, our_hcp: u8) -> u8 {
-        our_hcp + self.min_hcp.unwrap_or(0)
-    }
-
     pub fn min_length(&self, suit: Suit) -> u8 {
         self.min_distribution.length(suit)
+    }
+
+    pub fn length_needed_to_reach_target(&self, suit: Suit, target_len: u8) -> u8 {
+        target_len.saturating_sub(self.min_length(suit))
     }
 }
 
@@ -83,11 +99,13 @@ fn update_model_from_bid(model: &PartnerModel, level: u8, strain: Strain) -> Par
                     // 1NT = 15-17 HCP, balanced
                     new_model.min_hcp = Some(update_min(model.min_hcp, 15));
                     new_model.max_hcp = Some(update_max(model.max_hcp, 17));
+                    new_model.max_shape = Some(update_shape_max(model.max_shape, Shape::Balanced));
                 }
                 2 => {
                     // 2NT = 20-21 HCP, balanced
                     new_model.min_hcp = Some(update_min(model.min_hcp, 20));
                     new_model.max_hcp = Some(update_max(model.max_hcp, 21));
+                    new_model.max_shape = Some(update_shape_max(model.max_shape, Shape::Balanced));
                 }
                 3 => {
                     // 3NT = 25-27 HCP (or game bid based on fit)
@@ -148,6 +166,11 @@ fn update_min(current: Option<u8>, new: u8) -> u8 {
 
 /// Update maximum value, taking the minimum of current and new
 fn update_max(current: Option<u8>, new: u8) -> u8 {
+    current.map(|c| c.min(new)).unwrap_or(new)
+}
+
+/// Update maximum shape, taking the minimum of current and new
+fn update_shape_max(current: Option<Shape>, new: Shape) -> Shape {
     current.map(|c| c.min(new)).unwrap_or(new)
 }
 
@@ -261,5 +284,40 @@ mod tests {
         let model = PartnerModel::from_auction(&auction, Position::North);
         // North's own bid shouldn't appear in their partner model
         assert!(!model.has_shown_suit(Suit::Clubs));
+    }
+
+    #[test]
+    fn test_apply_constraint() {
+        let mut model = PartnerModel::default();
+
+        model.apply_constraint(HandConstraint::MinHcp(10));
+        assert_eq!(model.min_hcp, Some(10));
+
+        model.apply_constraint(HandConstraint::MaxHcp(15));
+        assert_eq!(model.max_hcp, Some(15));
+
+        model.apply_constraint(HandConstraint::MinLength(Suit::Spades, 5));
+        assert_eq!(model.min_length(Suit::Spades), 5);
+
+        // Tighten
+        model.apply_constraint(HandConstraint::MinHcp(12));
+        assert_eq!(model.min_hcp, Some(12));
+
+        model.apply_constraint(HandConstraint::MaxHcp(14));
+        assert_eq!(model.max_hcp, Some(14));
+
+        model.apply_constraint(HandConstraint::MinLength(Suit::Spades, 6));
+        assert_eq!(model.min_length(Suit::Spades), 6);
+
+        model.apply_constraint(HandConstraint::MaxUnbalancedness(Shape::SemiBalanced));
+        assert_eq!(model.max_shape, Some(Shape::SemiBalanced));
+
+        // Tighten shape
+        model.apply_constraint(HandConstraint::MaxUnbalancedness(Shape::Balanced));
+        assert_eq!(model.max_shape, Some(Shape::Balanced));
+
+        // Try to loosen shape (should stay at Balanced)
+        model.apply_constraint(HandConstraint::MaxUnbalancedness(Shape::Unbalanced));
+        assert_eq!(model.max_shape, Some(Shape::Balanced));
     }
 }

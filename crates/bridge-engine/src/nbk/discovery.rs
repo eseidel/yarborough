@@ -1,85 +1,49 @@
 //! Discovery Protocol: Show new 4+ card suits (forcing)
 
-use crate::nbk::{point_ranges::PointRanges, HandModel, PartnerModel};
-use bridge_core::{Call, Strain, Suit};
+use crate::nbk::{point_ranges::PointRanges, HandConstraint, PartnerModel};
+use bridge_core::Call;
 
 /// Discovery Protocol implementation
 pub struct DiscoveryProtocol;
 
 impl DiscoveryProtocol {
-    /// Find all valid discovery bids
+    /// Get the hand constraints required for a call to be a valid discovery bid
     ///
     /// Discovery bids show a new 4+ card suit that partner hasn't shown.
-    /// These bids are forcing.
-    ///
-    /// Returns all valid discovery bids. Priority ordering is handled by BidSelector.
-    pub fn valid_discovery_bids(
-        hand_model: &HandModel,
+    /// Returns the constraints expressed by the bid if it's a valid discovery candidate.
+    pub fn get_constraints(
         partner_model: &PartnerModel,
-        legal_calls: &[Call],
-    ) -> Vec<Call> {
-        let mut discovery_bids = Vec::new();
-        let combined_hcp = partner_model.combined_min_points(hand_model.hcp);
+        call: &Call,
+    ) -> Option<Vec<HandConstraint>> {
+        let (level, strain) = match call {
+            Call::Bid { level, strain } => (*level, *strain),
+            _ => return None,
+        };
 
-        // Check each suit
-        for suit in Suit::ALL {
-            // Must have 4+ cards
-            if hand_model.length(suit) < 4 {
-                continue;
-            }
+        let suit = strain.to_suit()?;
 
-            // Must not be partner's suit
-            if partner_model.has_shown_suit(suit) {
-                continue;
-            }
-
-            // Find the cheapest legal bid in this suit
-            let strain = suit_to_strain(suit);
-            if let Some(call) = find_cheapest_bid_in_strain(legal_calls, strain) {
-                // Check if we have enough points for this level
-                if let Call::Bid { level, .. } = call {
-                    let min_points = PointRanges::min_points_for_suited_bid(level);
-                    if combined_hcp >= min_points {
-                        discovery_bids.push(call);
-                    }
-                }
-            }
+        // Must not be partner's suit
+        if partner_model.has_shown_suit(suit) {
+            return None;
         }
 
-        discovery_bids
-    }
-}
+        // Calculate HCP requirement
+        let min_combined_points = PointRanges::min_points_for_suited_bid(level);
+        let needed_hcp = min_combined_points.saturating_sub(partner_model.min_hcp.unwrap_or(0));
 
-/// Convert Suit to Strain
-fn suit_to_strain(suit: Suit) -> Strain {
-    match suit {
-        Suit::Clubs => Strain::Clubs,
-        Suit::Diamonds => Strain::Diamonds,
-        Suit::Hearts => Strain::Hearts,
-        Suit::Spades => Strain::Spades,
+        // It's a match! Returns the constraints required for this discovery bid.
+        Some(vec![
+            HandConstraint::MinLength(suit, 4),
+            HandConstraint::MinHcp(needed_hcp),
+        ])
     }
-}
-
-/// Find the cheapest legal bid in a given strain
-fn find_cheapest_bid_in_strain(legal_calls: &[Call], strain: Strain) -> Option<Call> {
-    legal_calls
-        .iter()
-        .filter(|call| matches!(call, Call::Bid { strain: s, .. } if *s == strain))
-        .min_by_key(|call| {
-            if let Call::Bid { level, .. } = call {
-                *level
-            } else {
-                u8::MAX
-            }
-        })
-        .copied()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bridge_core::Distribution;
-    use bridge_core::Shape;
+    use crate::nbk::HandModel;
+    use bridge_core::{Distribution, Shape, Strain, Suit};
 
     #[test]
     fn test_no_discovery_without_4_cards() {
@@ -95,33 +59,35 @@ mod tests {
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_distribution: Distribution::default(),
             min_hcp: Some(13),
-            max_hcp: None,
+            ..Default::default()
         };
 
-        // Legal calls at 1-level
-        let legal_calls = vec![
-            Call::Pass,
-            Call::Bid {
-                level: 1,
-                strain: Strain::Diamonds,
-            },
-            Call::Bid {
-                level: 1,
-                strain: Strain::Hearts,
-            },
-            Call::Bid {
-                level: 1,
-                strain: Strain::Spades,
-            },
-        ];
+        // Try some bids
+        let diamonds = Call::Bid {
+            level: 1,
+            strain: Strain::Diamonds,
+        };
+        let clubs = Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        };
 
-        let bids =
-            DiscoveryProtocol::valid_discovery_bids(&hand_model, &partner_model, &legal_calls);
+        let diamond_constraints = DiscoveryProtocol::get_constraints(&partner_model, &diamonds);
+        assert!(
+            diamond_constraints
+                .map(|cs| hand_model.satisfies_all(cs))
+                .unwrap_or(false)
+                == false
+        );
 
-        // Should only find 1C (the only 4+ suit)
-        assert_eq!(bids.len(), 0); // 1C is not in legal_calls
+        let club_constraints = DiscoveryProtocol::get_constraints(&partner_model, &clubs);
+        assert!(
+            club_constraints
+                .map(|cs| hand_model.satisfies_all(cs))
+                .unwrap_or(false)
+                == true
+        );
     }
 
     #[test]
@@ -138,37 +104,31 @@ mod tests {
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_distribution: Distribution::default(),
             min_hcp: Some(13),
-            max_hcp: None,
+            ..Default::default()
         };
 
-        // Legal calls
-        let legal_calls = vec![
-            Call::Pass,
-            Call::Bid {
-                level: 1,
-                strain: Strain::Hearts,
-            },
-            Call::Bid {
-                level: 1,
-                strain: Strain::Spades,
-            },
-        ];
-
-        let bids =
-            DiscoveryProtocol::valid_discovery_bids(&hand_model, &partner_model, &legal_calls);
-
-        // Should find both 1H and 1S (23 combined HCP > 16)
-        assert_eq!(bids.len(), 2);
-        assert!(bids.contains(&Call::Bid {
+        let h_bid = Call::Bid {
             level: 1,
-            strain: Strain::Hearts
-        }));
-        assert!(bids.contains(&Call::Bid {
+            strain: Strain::Hearts,
+        };
+        let s_bid = Call::Bid {
             level: 1,
-            strain: Strain::Spades
-        }));
+            strain: Strain::Spades,
+        };
+
+        // Should match both 1H and 1S (23 combined HCP > 16)
+        let h_constraints = DiscoveryProtocol::get_constraints(&partner_model, &h_bid).unwrap();
+        assert!(hand_model.satisfies_all(h_constraints));
+        assert!(DiscoveryProtocol::get_constraints(&partner_model, &h_bid)
+            .unwrap()
+            .contains(&HandConstraint::MinLength(Suit::Hearts, 4)));
+
+        let s_constraints = DiscoveryProtocol::get_constraints(&partner_model, &s_bid).unwrap();
+        assert!(hand_model.satisfies_all(s_constraints));
+        assert!(DiscoveryProtocol::get_constraints(&partner_model, &s_bid)
+            .unwrap()
+            .contains(&HandConstraint::MinLength(Suit::Spades, 4)));
     }
 
     #[test]
@@ -191,30 +151,21 @@ mod tests {
                 ..Distribution::default()
             }, // Partner has 4+ hearts
             min_hcp: Some(13),
-            max_hcp: None,
+            ..Default::default()
         };
 
-        let legal_calls = vec![
-            Call::Pass,
-            Call::Bid {
-                level: 1,
-                strain: Strain::Hearts,
-            },
-            Call::Bid {
-                level: 1,
-                strain: Strain::Spades,
-            },
-        ];
-
-        let bids =
-            DiscoveryProtocol::valid_discovery_bids(&hand_model, &partner_model, &legal_calls);
-
-        // Should only find 1S (not 1H, since partner showed hearts)
-        assert_eq!(bids.len(), 1);
-        assert!(bids.contains(&Call::Bid {
+        let h_bid = Call::Bid {
             level: 1,
-            strain: Strain::Spades
-        }));
+            strain: Strain::Hearts,
+        };
+        let s_bid = Call::Bid {
+            level: 1,
+            strain: Strain::Spades,
+        };
+
+        assert!(DiscoveryProtocol::get_constraints(&partner_model, &h_bid).is_none());
+        let s_constraints = DiscoveryProtocol::get_constraints(&partner_model, &s_bid).unwrap();
+        assert!(hand_model.satisfies_all(s_constraints));
     }
 
     #[test]
@@ -232,62 +183,17 @@ mod tests {
         };
         // Partner has 10 HCP (total 15, need 16 for 1-level)
         let partner_model = PartnerModel {
-            min_distribution: Distribution::default(),
             min_hcp: Some(10),
-            max_hcp: None,
+            ..Default::default()
         };
 
-        let legal_calls = vec![
-            Call::Pass,
-            Call::Bid {
-                level: 1,
-                strain: Strain::Spades,
-            },
-        ];
-
-        let bids =
-            DiscoveryProtocol::valid_discovery_bids(&hand_model, &partner_model, &legal_calls);
-
-        // Should not find any bids (15 HCP < 16 required)
-        assert_eq!(bids.len(), 0);
-    }
-
-    #[test]
-    fn test_discovery_with_sufficient_points() {
-        // Hand has 4 spades and 7 HCP
-        let hand_model = HandModel {
-            hcp: 7,
-            distribution: Distribution {
-                clubs: 2,
-                diamonds: 3,
-                hearts: 4,
-                spades: 4,
-            }, // 4 hearts, 4 spades
-            shape: Shape::Balanced,
-        };
-        // Partner has 10 HCP (total 17, enough for 1-level)
-        let partner_model = PartnerModel {
-            min_distribution: Distribution::default(),
-            min_hcp: Some(10),
-            max_hcp: None,
+        let s_bid = Call::Bid {
+            level: 1,
+            strain: Strain::Spades,
         };
 
-        let legal_calls = vec![
-            Call::Pass,
-            Call::Bid {
-                level: 1,
-                strain: Strain::Hearts,
-            },
-            Call::Bid {
-                level: 1,
-                strain: Strain::Spades,
-            },
-        ];
-
-        let bids =
-            DiscoveryProtocol::valid_discovery_bids(&hand_model, &partner_model, &legal_calls);
-
-        // Should find both (17 HCP >= 16 required)
-        assert_eq!(bids.len(), 2);
+        // Should return constraints, but hand should not satisfy them
+        let s_constraints = DiscoveryProtocol::get_constraints(&partner_model, &s_bid).unwrap();
+        assert!(!hand_model.satisfies_all(s_constraints));
     }
 }

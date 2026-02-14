@@ -30,6 +30,14 @@ impl Suit {
             _ => None,
         }
     }
+
+    pub fn is_major(self) -> bool {
+        matches!(self, Suit::Hearts | Suit::Spades)
+    }
+
+    pub fn is_minor(self) -> bool {
+        matches!(self, Suit::Clubs | Suit::Diamonds)
+    }
 }
 
 impl fmt::Display for Suit {
