@@ -8,6 +8,7 @@ use wasm_bindgen::prelude::*;
 mod engine;
 pub mod inference;
 pub mod schema;
+pub mod trace;
 
 use engine::Engine;
 use schema::System;
@@ -31,7 +32,7 @@ fn parse_calls(calls_string: &str) -> Vec<Call> {
         .collect()
 }
 
-fn load_engine() -> &'static Engine {
+pub fn load_engine() -> &'static Engine {
     static ENGINE: OnceLock<Engine> = OnceLock::new();
     ENGINE.get_or_init(|| {
         let mut system = System {

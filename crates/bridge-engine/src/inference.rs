@@ -8,7 +8,7 @@ use bridge_core::suit::Suit;
 use crate::schema::{Constraint, System};
 
 /// Inferred information about partner's hand based on their calls in the auction.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct PartnerProfile {
     pub min_hcp: u8,
     pub max_hcp: u8,

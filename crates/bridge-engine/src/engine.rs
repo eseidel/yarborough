@@ -12,6 +12,8 @@ pub struct Interpretation {
     pub description: String,
 }
 
+use crate::trace::{BidTrace, ConstraintTrace, RuleTrace};
+
 pub struct Engine {
     system: System,
 }
@@ -19,6 +21,32 @@ pub struct Engine {
 impl Engine {
     pub fn new(system: System) -> Self {
         Self { system }
+    }
+
+    pub fn get_full_trace(&self, hand: &Hand, auction: &Auction) -> BidTrace {
+        let profile = infer_partner(auction, &self.system, hand);
+        let sayc_rules = self.rules_for_context(auction);
+        let natural_rules = &self.system.natural;
+
+        let rules_considered = self.trace_rules(
+            hand,
+            auction,
+            sayc_rules.iter().chain(natural_rules.iter()),
+            &profile,
+        );
+
+        let selected_call = rules_considered
+            .iter()
+            .filter(|r| r.satisfied)
+            .max_by_key(|r| r.priority)
+            .map(|r| r.call);
+
+        BidTrace {
+            hand: hand.clone(),
+            profile,
+            rules_considered,
+            selected_call,
+        }
     }
 
     /// Return interpretations for all legal next calls given the current auction.
@@ -165,6 +193,51 @@ impl Engine {
         false
     }
 
+    fn trace_rules<'a>(
+        &self,
+        hand: &Hand,
+        auction: &Auction,
+        rules: impl Iterator<Item = &'a BidRule>,
+        profile: &PartnerProfile,
+    ) -> Vec<RuleTrace> {
+        let mut traces = Vec::new();
+        let legal_calls = auction.legal_calls();
+
+        for rule in rules {
+            let call = match rule.call.parse::<Call>() {
+                Ok(c) => c,
+                Err(_) => continue,
+            };
+
+            if !legal_calls.contains(&call) {
+                continue;
+            }
+
+            for variant in &rule.variants {
+                let mut constraints_trace = Vec::new();
+                for constraint in &variant.constraints {
+                    let satisfied = self.check_constraint(hand, auction, constraint, profile);
+                    constraints_trace.push(ConstraintTrace {
+                        constraint: constraint.clone(),
+                        satisfied,
+                    });
+                }
+
+                let satisfied = constraints_trace.iter().all(|c| c.satisfied);
+
+                traces.push(RuleTrace {
+                    rule_name: variant.name.clone(),
+                    description: variant.description.clone(),
+                    call,
+                    priority: variant.priority as i32,
+                    constraints: constraints_trace,
+                    satisfied,
+                });
+            }
+        }
+        traces
+    }
+
     fn check_constraints(
         &self,
         hand: &Hand,
@@ -304,5 +377,55 @@ mod tests {
         auction.add_call("4H".parse().unwrap()); // East bids 4H (game in Hearts)
                                                  // Current player is South. Last bid is by opponent (East), not our side.
         assert!(!our_side_has_game(&auction));
+    }
+
+    #[test]
+    fn test_get_full_trace_opening_1nt() {
+        let engine = crate::load_engine();
+        let identifier = "1-decde22e0d283f55b36244ab45";
+        let (board, _) = bridge_core::io::identifier::import_board(identifier)
+            .expect("Failed to import board");
+        let hand = board.hands.get(&Position::North).unwrap();
+        let auction = Auction::new(Position::North);
+
+        let trace = engine.get_full_trace(hand, &auction);
+
+        // North has 16 HCP, balanced, so Opening 1NT should be satisfied.
+        let rule_trace = trace
+            .rules_considered
+            .iter()
+            .find(|r| r.rule_name == "Opening 1NT")
+            .expect("Opening 1NT rule not considered");
+
+        assert!(rule_trace.satisfied);
+        assert_eq!(rule_trace.call, "1N".parse().unwrap());
+
+        // Check constraints
+        for ct in &rule_trace.constraints {
+            assert!(ct.satisfied, "Constraint {:?} should be satisfied", ct.constraint);
+        }
+    }
+
+    #[test]
+    fn test_get_full_trace_stayman() {
+        let engine = crate::load_engine();
+        // Board 11, deal decde22e0d283f55b36244ab45
+        // South responds after 1NT opening
+        let identifier = "11-decde22e0d283f55b36244ab45:P,P,1N,P";
+        let (board, auction) = bridge_core::io::identifier::import_board(identifier)
+            .expect("Failed to import board");
+        let auction = auction.expect("Failed to import auction");
+        let hand = board.hands.get(&Position::South).unwrap();
+
+        let trace = engine.get_full_trace(hand, &auction);
+
+        // Stayman (4S) should be satisfied for South
+        let rule_trace = trace
+            .rules_considered
+            .iter()
+            .find(|r| r.rule_name == "Stayman (4S)")
+            .expect("Stayman (4S) rule not considered");
+
+        assert!(rule_trace.satisfied);
     }
 }

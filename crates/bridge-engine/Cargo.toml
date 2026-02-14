@@ -14,6 +14,12 @@ bridge-core = { path = "../bridge-core" }
 serde_yaml = "0.9.34"
 rand = "0.8"
 getrandom = { version = "0.2", features = ["js"] }
+clap = { version = "4.5", features = ["derive"] }
+
+[[bin]]
+name = "bidding-debug"
+path = "src/bin/bidding_debug.rs"
+
 [dev-dependencies]
 serde_yaml = "0.9.34"
 indexmap = { version = "2.2.6", features = ["serde"] }
