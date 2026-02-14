@@ -20,7 +20,10 @@ impl HandModel {
             HandConstraint::MinHcp(hcp) => self.hcp >= hcp,
             HandConstraint::MaxHcp(hcp) => self.hcp <= hcp,
             HandConstraint::MinLength(suit, len) => self.length(suit) >= len,
+            HandConstraint::MaxLength(suit, len) => self.length(suit) <= len,
             HandConstraint::MaxUnbalancedness(max_shape) => self.shape <= max_shape,
+            HandConstraint::RuleOfTwenty => self.rule_of_twenty(),
+            HandConstraint::RuleOfFifteen => self.rule_of_fifteen(),
         }
     }
 
@@ -57,10 +60,14 @@ impl HandModel {
         longest
     }
 
-    /// Check if we have an 8+ card fit with partner in the given suit
-    #[allow(dead_code)]
-    pub fn has_fit_with(&self, partner_suit: Suit, partner_min_length: u8) -> bool {
-        self.length(partner_suit) + partner_min_length >= 8
+    pub fn rule_of_twenty(&self) -> bool {
+        let mut lengths: Vec<u8> = Suit::ALL.iter().map(|&s| self.length(s)).collect();
+        lengths.sort_unstable_by(|a, b| b.cmp(a));
+        self.hcp + lengths[0] + lengths[1] >= 20
+    }
+
+    pub fn rule_of_fifteen(&self) -> bool {
+        self.hcp + self.length(Suit::Spades) >= 15
     }
 }
 
@@ -108,21 +115,6 @@ mod tests {
     }
 
     #[test]
-    fn test_has_fit_with() {
-        let hand = make_hand(5, 4, 2, 2);
-        let model = HandModel::from_hand(&hand);
-
-        // 5 + 3 = 8, should have fit
-        assert!(model.has_fit_with(Suit::Spades, 3));
-
-        // 4 + 4 = 8, should have fit
-        assert!(model.has_fit_with(Suit::Hearts, 4));
-
-        // 2 + 5 = 7, no fit
-        assert!(!model.has_fit_with(Suit::Clubs, 5));
-    }
-
-    #[test]
     fn test_shape_balanced() {
         let hand = make_hand(4, 3, 3, 3); // 4-3-3-3
         let model = HandModel::from_hand(&hand);
@@ -156,5 +148,35 @@ mod tests {
 
         assert!(model.satisfies(HandConstraint::MinLength(Suit::Hearts, 4)));
         assert!(!model.satisfies(HandConstraint::MinLength(Suit::Hearts, 5)));
+
+        assert!(model.satisfies(HandConstraint::MaxLength(Suit::Clubs, 2)));
+        assert!(model.satisfies(HandConstraint::MaxLength(Suit::Clubs, 3)));
+        assert!(!model.satisfies(HandConstraint::MaxLength(Suit::Clubs, 1)));
+    }
+
+    #[test]
+    fn test_rule_of_20() {
+        let hand = make_hand(5, 5, 2, 1);
+        let mut model = HandModel::from_hand(&hand);
+        model.hcp = 10;
+        // 10 + 5 + 5 = 20
+        assert!(model.satisfies(HandConstraint::RuleOfTwenty));
+
+        model.hcp = 9;
+        // 9 + 5 + 5 = 19
+        assert!(!model.satisfies(HandConstraint::RuleOfTwenty));
+    }
+
+    #[test]
+    fn test_rule_of_15() {
+        let hand = make_hand(5, 2, 3, 3);
+        let mut model = HandModel::from_hand(&hand);
+        model.hcp = 10;
+        // 10 + 5 = 15
+        assert!(model.satisfies(HandConstraint::RuleOfFifteen));
+
+        model.hcp = 9;
+        // 9 + 5 = 14
+        assert!(!model.satisfies(HandConstraint::RuleOfFifteen));
     }
 }

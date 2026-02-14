@@ -22,6 +22,15 @@ pub struct Distribution {
 }
 
 impl Distribution {
+    pub fn max() -> Self {
+        Self {
+            spades: 13,
+            hearts: 13,
+            diamonds: 13,
+            clubs: 13,
+        }
+    }
+
     pub fn length(&self, suit: Suit) -> u8 {
         match suit {
             Suit::Spades => self.spades,

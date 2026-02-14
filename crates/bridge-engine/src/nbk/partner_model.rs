@@ -4,16 +4,31 @@ use crate::nbk::HandConstraint;
 use bridge_core::{Distribution, Shape, Suit};
 
 /// Inferred profile of partner's hand based on auction history
-#[derive(Debug, Clone, Default)]
+/// Inferred profile of partner's hand based on auction history
+#[derive(Debug, Clone)]
 pub struct PartnerModel {
     /// Minimum distribution partner has shown (minimum length in each suit)
     pub min_distribution: Distribution,
+    /// Maximum distribution partner has shown (maximum length in each suit)
+    pub max_distribution: Distribution,
     /// Minimum HCP partner has shown, if any
     pub min_hcp: Option<u8>,
     /// Maximum HCP partner has shown, if any
     pub max_hcp: Option<u8>,
     /// Maximum unbalancedness allowed (max shape)
     pub max_shape: Option<Shape>,
+}
+
+impl Default for PartnerModel {
+    fn default() -> Self {
+        Self {
+            min_distribution: Distribution::default(),
+            max_distribution: Distribution::max(),
+            min_hcp: None,
+            max_hcp: None,
+            max_shape: None,
+        }
+    }
 }
 
 impl PartnerModel {
@@ -25,8 +40,15 @@ impl PartnerModel {
                 let current = self.min_distribution.length(suit);
                 self.min_distribution.set_length(suit, current.max(len));
             }
+            HandConstraint::MaxLength(suit, len) => {
+                let current = self.max_distribution.length(suit);
+                self.max_distribution.set_length(suit, current.min(len));
+            }
             HandConstraint::MaxUnbalancedness(shape) => {
                 self.max_shape = Some(update_shape_max(self.max_shape, shape));
+            }
+            HandConstraint::RuleOfTwenty | HandConstraint::RuleOfFifteen => {
+                // Complex constraints not currently tracked in partner model
             }
         }
     }
@@ -46,6 +68,10 @@ impl PartnerModel {
 
     pub fn min_length(&self, suit: Suit) -> u8 {
         self.min_distribution.length(suit)
+    }
+
+    pub fn max_length(&self, suit: Suit) -> u8 {
+        self.max_distribution.length(suit)
     }
 
     pub fn length_needed_to_reach_target(&self, suit: Suit, target_len: u8) -> u8 {
@@ -91,6 +117,7 @@ mod tests {
         assert_eq!(model.min_hcp, None);
         assert_eq!(model.max_hcp, None);
         assert_eq!(model.shown_suits().len(), 0);
+        assert_eq!(model.max_length(Suit::Spades), 13);
     }
 
     #[test]
@@ -214,12 +241,19 @@ mod tests {
         model.apply_constraint(HandConstraint::MaxUnbalancedness(Shape::SemiBalanced));
         assert_eq!(model.max_shape, Some(Shape::SemiBalanced));
 
-        // Tighten shape
         model.apply_constraint(HandConstraint::MaxUnbalancedness(Shape::Balanced));
         assert_eq!(model.max_shape, Some(Shape::Balanced));
 
-        // Try to loosen shape (should stay at Balanced)
-        model.apply_constraint(HandConstraint::MaxUnbalancedness(Shape::Unbalanced));
+        model.apply_constraint(HandConstraint::MaxLength(Suit::Hearts, 4));
+        assert_eq!(model.max_length(Suit::Hearts), 4);
+
+        // Tighten max length
+        model.apply_constraint(HandConstraint::MaxLength(Suit::Hearts, 3));
+        assert_eq!(model.max_length(Suit::Hearts), 3);
+
+        // Try to loosen (should stay at 3)
+        model.apply_constraint(HandConstraint::MaxLength(Suit::Hearts, 5));
+        assert_eq!(model.max_length(Suit::Hearts), 3);
         assert_eq!(model.max_shape, Some(Shape::Balanced));
     }
 }

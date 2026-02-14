@@ -14,4 +14,10 @@ pub enum HandConstraint {
     MinLength(Suit, u8),
     /// Maximum unbalancedness allowed
     MaxUnbalancedness(Shape),
+    /// Maximum length in a specific suit
+    MaxLength(Suit, u8),
+    /// Rule of 20: HCP + length of two longest suits >= 20
+    RuleOfTwenty,
+    /// Rule of 15: HCP + length of spades >= 15
+    RuleOfFifteen,
 }

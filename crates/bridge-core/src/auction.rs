@@ -89,6 +89,22 @@ impl Auction {
         Self::is_finished_at(&self.calls, self.calls.len())
     }
 
+    pub fn is_complete(&self) -> bool {
+        self.is_finished()
+    }
+
+    pub fn is_open(&self) -> bool {
+        self.calls.iter().any(|c| matches!(c, Call::Bid { .. }))
+    }
+
+    pub fn final_contract(&self) -> Option<Contract> {
+        if self.is_complete() {
+            self.current_contract()
+        } else {
+            None
+        }
+    }
+
     pub fn is_valid(&self) -> bool {
         Self::validate_calls(&self.calls)
     }
@@ -217,8 +233,45 @@ mod tests {
         auction.add_call(Call::Pass);
         auction.add_call(Call::Pass);
         assert!(!auction.is_finished());
+        assert!(!auction.is_complete());
         auction.add_call(Call::Pass);
         assert!(auction.is_finished());
+        assert!(auction.is_complete());
+    }
+
+    #[test]
+    fn test_is_open() {
+        let mut auction = Auction::new(Position::North);
+        assert!(!auction.is_open());
+        auction.add_call(Call::Pass);
+        assert!(!auction.is_open());
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        assert!(auction.is_open());
+    }
+
+    #[test]
+    fn test_final_contract() {
+        let mut auction = Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        assert_eq!(auction.final_contract(), None);
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Pass);
+        assert_eq!(
+            auction.final_contract(),
+            Some(Contract {
+                level: 1,
+                strain: Strain::Clubs,
+                double_status: DoubleStatus::Undoubled,
+                declarer: Position::North,
+            })
+        );
     }
 
     #[test]

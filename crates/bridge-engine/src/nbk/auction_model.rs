@@ -7,7 +7,6 @@ use bridge_core::{Auction, Position};
 #[derive(Debug, Clone, Default)]
 pub struct AuctionModel {
     /// The auction state
-    #[allow(dead_code)]
     pub auction: Auction,
     /// What our partner has shown
     pub partner_model: PartnerModel,
