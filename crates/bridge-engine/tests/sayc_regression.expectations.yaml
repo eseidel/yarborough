@@ -14,5 +14,5 @@ test_preemptive_openings:
   2.AQJ987652.2.2::None: PASS
   AKJ.AKQ.A82.AQ43::None: PASS
 test_partner_profile_inference:
-  KQ32.J2.A987.543:P 1H P:None: "FAIL: step 3, expected 2N, got 3H"
-  AJ4.K32.QJ65.T87:P 1D P:None: "FAIL: step 3, expected 1N, got 1H"
+  KJ64.JT.KQT9.KJ9:1D P 1H P 1N P:None: PASS
+  .KQJ965.QJT2.A95:1C P 1D P 1H P:None: PASS
