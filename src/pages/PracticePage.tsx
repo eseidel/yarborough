@@ -14,10 +14,7 @@ import {
   type DealType,
 } from "../bridge/identifier";
 import { DealSelector } from "../components/DealSelector";
-import {
-  isAuctionComplete,
-  addRobotBids,
-} from "../bridge/auction";
+import { isAuctionComplete, addRobotBids } from "../bridge/auction";
 import { callToString } from "../bridge/types";
 import { getSuggestedBid, getInterpretations } from "../bridge/engine";
 import type { CallHistory } from "../bridge";
@@ -55,7 +52,11 @@ export function PracticePage() {
       return;
     }
     let cancelled = false;
-    addRobotBids({ dealer: parsed.dealer, calls: [] }, "S", boardId.split(":")[0])
+    addRobotBids(
+      { dealer: parsed.dealer, calls: [] },
+      "S",
+      boardId.split(":")[0],
+    )
       .then((h) => {
         if (!cancelled) {
           setError(null);
