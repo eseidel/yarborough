@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Run all tests (TypeScript + Rust)
+
+set -e
+
+echo "🧪 Running TypeScript tests..."
+pnpm test -- --run
+
+echo "🧪 Running Rust tests..."
+cargo test
+
+echo "✅ All tests passed!"

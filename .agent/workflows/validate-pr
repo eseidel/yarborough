@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Full PR validation - runs all CI checks locally
+
+set -e
+
+echo "========================================="
+echo "Running full PR validation (mirrors CI)"
+echo "========================================="
+echo ""
+
+# Build WASM first
+echo "📦 Building WASM..."
+pnpm wasm:dev
+
+# Run lints
+.agent/workflows/check-lints
+
+# Run tests
+echo ""
+.agent/workflows/run-tests
+
+echo ""
+echo "========================================="
+echo "✅ All PR checks passed!"
+echo "========================================="
