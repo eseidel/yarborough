@@ -324,7 +324,9 @@ describe("PracticePage", () => {
     // For the User bid button, just look for any button with "1" and heart symbol
     await waitFor(() => {
       const bidButtons = screen.getAllByRole("button");
-      const heartButton = bidButtons.find(b => b.textContent?.includes("1") && b.textContent?.includes("♥"));
+      const heartButton = bidButtons.find(
+        (b) => b.textContent?.includes("1") && b.textContent?.includes("♥"),
+      );
       if (!heartButton) {
         throw new Error("Could not find bid button");
       }
@@ -337,10 +339,13 @@ describe("PracticePage", () => {
     );
 
     // Verify URL update after User(1H) and Robot(P)
-    await waitFor(() => {
-      const path = screen.getByTestId("location-path").textContent;
-      expect(path).toContain(`${boardId}:1C,P,1H,P`);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        const path = screen.getByTestId("location-path").textContent;
+        expect(path).toContain(`${boardId}:1C,P,1H,P`);
+      },
+      { timeout: 3000 },
+    );
   });
 });
 

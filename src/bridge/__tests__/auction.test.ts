@@ -3,11 +3,11 @@ import {
   currentPlayer,
   isAuctionComplete,
   lastBidCall,
-  callToString,
   addRobotBids,
   isCallLegal,
 } from "../auction";
 import type { CallHistory, Call } from "../types";
+import { callToString } from "../types";
 
 vi.mock("../engine", () => ({
   getNextBid: vi.fn(),

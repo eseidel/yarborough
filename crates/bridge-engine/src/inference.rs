@@ -82,7 +82,7 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
         // we must find the MINIMUM requirement across ALL matching variants.
         // If a variant doesn't mention HCP, its minimum is 0 and its maximum is 40.
         // If a variant doesn't mention a suit's length, its minimum is 0.
-        
+
         let mut min_hcp = 40;
         let mut max_hcp = 0;
         let mut min_lengths = [40u8; 4]; // Start with high value so min() works
@@ -93,11 +93,15 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
             let mut variant_max_hcp = 40;
             let mut variant_min_lengths = [0u8; 4];
             let mut variant_has_genuine_length = false;
+            let mut has_rule_of_twenty = false;
+            let mut has_rule_of_fifteen = false;
 
             for constraint in *constraints {
                 match constraint {
                     Constraint::MinHCP { min } => variant_min_hcp = variant_min_hcp.max(*min),
                     Constraint::MaxHCP { max } => variant_max_hcp = variant_max_hcp.min(*max),
+                    Constraint::RuleOfTwenty { met: true } => has_rule_of_twenty = true,
+                    Constraint::RuleOfFifteen { met: true } => has_rule_of_fifteen = true,
                     Constraint::MinLength { suit, count } => {
                         let si = suit_index(*suit);
                         variant_min_lengths[si] = variant_min_lengths[si].max(*count);
@@ -125,10 +129,15 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
                 }
             }
 
+            // Rule of Twenty/Fifteen implies opening strength even without explicit MinHCP
+            if has_rule_of_twenty || has_rule_of_fifteen {
+                variant_min_hcp = variant_min_hcp.max(10);
+            }
+
             min_hcp = min_hcp.min(variant_min_hcp);
             max_hcp = max_hcp.max(variant_max_hcp);
-            for i in 0..4 {
-                min_lengths[i] = min_lengths[i].min(variant_min_lengths[i]);
+            for (i, min_len) in min_lengths.iter_mut().enumerate() {
+                *min_len = (*min_len).min(variant_min_lengths[i]);
             }
             if variant_has_genuine_length {
                 has_genuine_length = true;
@@ -137,8 +146,8 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
 
         profile.min_hcp = profile.min_hcp.max(min_hcp);
         profile.max_hcp = profile.max_hcp.min(max_hcp);
-        for i in 0..4 {
-            profile.min_length[i] = profile.min_length[i].max(min_lengths[i]);
+        for (i, &min_len) in min_lengths.iter().enumerate() {
+            profile.min_length[i] = profile.min_length[i].max(min_len);
         }
 
         if has_genuine_length {
@@ -393,9 +402,15 @@ mod tests {
 
         // South bid 2C (Stayman) and then 2N (Invitation).
         // South should NOT be inferred to have 6 Clubs or 5 Diamonds.
-        assert!(profile.min_length[0] < 6, "Should not infer 6+ Clubs from Stayman");
-        assert!(profile.min_length[1] < 5, "Should not infer 5+ Diamonds from Stayman");
-        
+        assert!(
+            profile.min_length[0] < 6,
+            "Should not infer 6+ Clubs from Stayman"
+        );
+        assert!(
+            profile.min_length[1] < 5,
+            "Should not infer 5+ Diamonds from Stayman"
+        );
+
         // South's HCP should be around 8-9 based on 2N invitation.
         assert_eq!(profile.min_hcp, 8);
         assert_eq!(profile.max_hcp, 9);

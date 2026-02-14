@@ -310,11 +310,9 @@ impl Engine {
                 let si = suit_index(*suit);
                 profile.stoppers[si] || has_stopper_in_hand(hand, *suit)
             }
-            Constraint::AllStopped => {
-                Suit::ALL.iter().all(|&suit| {
-                    profile.stoppers[suit_index(suit)] || has_stopper_in_hand(hand, suit)
-                })
-            }
+            Constraint::AllStopped => Suit::ALL
+                .iter()
+                .all(|&suit| profile.stoppers[suit_index(suit)] || has_stopper_in_hand(hand, suit)),
             Constraint::NotAlreadyGame => !our_side_has_game(auction),
         }
     }
@@ -453,23 +451,42 @@ mod tests {
         // We have Ace of Spades (stopper) but nothing else.
         let hand = Hand {
             cards: vec![
-                Card { suit: Suit::Spades, rank: Rank::Ace },
-                Card { suit: Suit::Clubs, rank: Rank::Two },
-                Card { suit: Suit::Diamonds, rank: Rank::Two },
-            ]
+                Card {
+                    suit: Suit::Spades,
+                    rank: Rank::Ace,
+                },
+                Card {
+                    suit: Suit::Clubs,
+                    rank: Rank::Two,
+                },
+                Card {
+                    suit: Suit::Diamonds,
+                    rank: Rank::Two,
+                },
+            ],
         };
 
         let profile = infer_partner(&auction, &engine.system, &hand);
-        
+
         // Partner has Heart stopper.
         assert!(profile.stoppers[2]); // Hearts
         assert!(!profile.stoppers[3]); // Spades (Partner didn't show one)
 
         // Check constraint: HasStopper Hearts (satisfied by partner)
-        assert!(engine.check_constraint(&hand, &auction, &Constraint::HasStopper { suit: Suit::Hearts }, &profile));
-        
+        assert!(engine.check_constraint(
+            &hand,
+            &auction,
+            &Constraint::HasStopper { suit: Suit::Hearts },
+            &profile
+        ));
+
         // Check constraint: HasStopper Spades (satisfied by us)
-        assert!(engine.check_constraint(&hand, &auction, &Constraint::HasStopper { suit: Suit::Spades }, &profile));
+        assert!(engine.check_constraint(
+            &hand,
+            &auction,
+            &Constraint::HasStopper { suit: Suit::Spades },
+            &profile
+        ));
 
         // Check constraint: AllStopped (not satisfied, missing Diamonds and Clubs)
         assert!(!engine.check_constraint(&hand, &auction, &Constraint::AllStopped, &profile));

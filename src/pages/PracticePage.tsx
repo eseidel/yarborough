@@ -14,10 +14,7 @@ import {
   type DealType,
 } from "../bridge/identifier";
 import { DealSelector } from "../components/DealSelector";
-import {
-  isAuctionComplete,
-  addRobotBids,
-} from "../bridge/auction";
+import { isAuctionComplete, addRobotBids } from "../bridge/auction";
 import { callToString } from "../bridge/types";
 import { getSuggestedBid, getInterpretations } from "../bridge/engine";
 import type { CallHistory } from "../bridge";
@@ -32,7 +29,9 @@ export function PracticePage() {
     dealer: parsed?.dealer ?? "N",
     calls: parsed?.initialCalls ?? [],
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(
+    !parsed || parsed.initialCalls.length === 0,
+  );
   const [error, setError] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<CallInterpretation | null>(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
@@ -51,11 +50,14 @@ export function PracticePage() {
   useEffect(() => {
     if (!boardId || !parsed) return;
     if (history.calls.length > 0) {
-      setLoading(false);
       return;
     }
     let cancelled = false;
-    addRobotBids({ dealer: parsed.dealer, calls: [] }, "S", boardId.split(":")[0])
+    addRobotBids(
+      { dealer: parsed.dealer, calls: [] },
+      "S",
+      boardId.split(":")[0],
+    )
       .then((h) => {
         if (!cancelled) {
           setError(null);
@@ -77,7 +79,7 @@ export function PracticePage() {
     return () => {
       cancelled = true;
     };
-  }, [boardId, parsed?.dealer]); // boardId changed means a new hand or a manual URL edit
+  }, [boardId, parsed, history.calls.length, navigate]); // boardId changed means a new hand or a manual URL edit
 
   const auctionDone = isAuctionComplete(history);
 
@@ -236,14 +238,15 @@ export function PracticePage() {
           explanationLoading={explanationLoading}
           exploreLink={
             selectedCallIndex !== null
-              ? `/explore/${parsed.boardNumber}${history.calls.slice(0, selectedCallIndex).length > 0
-                ? ":" +
-                history.calls
-                  .slice(0, selectedCallIndex)
-                  .map(callToString)
-                  .join(",")
-                : ""
-              }`
+              ? `/explore/${parsed.boardNumber}${
+                  history.calls.slice(0, selectedCallIndex).length > 0
+                    ? ":" +
+                      history.calls
+                        .slice(0, selectedCallIndex)
+                        .map(callToString)
+                        .join(",")
+                    : ""
+                }`
               : undefined
           }
         />
