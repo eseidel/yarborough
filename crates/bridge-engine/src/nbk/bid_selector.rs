@@ -180,9 +180,9 @@ fn select_best_discovery_bid(
         // 5-5 or longer: bid higher-ranking suit
         lengths_and_bids.sort_by_key(|(_, call)| {
             if let Call::Bid { strain, .. } = call {
-                suit_rank(*strain)
+                *strain
             } else {
-                0
+                Strain::Clubs
             }
         });
         lengths_and_bids.last().map(|(_, call)| *call)
@@ -190,23 +190,12 @@ fn select_best_discovery_bid(
         // 4-4: bid lower-ranking suit (up-the-line)
         lengths_and_bids.sort_by_key(|(_, call)| {
             if let Call::Bid { strain, .. } = call {
-                suit_rank(*strain)
+                *strain
             } else {
-                u8::MAX
+                Strain::NoTrump
             }
         });
         lengths_and_bids.first().map(|(_, call)| *call)
-    }
-}
-
-/// Get suit rank (Clubs=0, Diamonds=1, Hearts=2, Spades=3)
-fn suit_rank(strain: Strain) -> u8 {
-    match strain {
-        Strain::Clubs => 0,
-        Strain::Diamonds => 1,
-        Strain::Hearts => 2,
-        Strain::Spades => 3,
-        Strain::NoTrump => 4,
     }
 }
 
