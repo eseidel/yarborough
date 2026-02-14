@@ -236,10 +236,14 @@ export function PracticePage() {
           explanationLoading={explanationLoading}
           exploreLink={
             selectedCallIndex !== null
-              ? `/explore?dealer=${history.dealer}&calls=${history.calls
-                .slice(0, selectedCallIndex + 1)
-                .map(callToString)
-                .join(",")}`
+              ? `/explore/${parsed.boardNumber}${history.calls.slice(0, selectedCallIndex).length > 0
+                ? ":" +
+                history.calls
+                  .slice(0, selectedCallIndex)
+                  .map(callToString)
+                  .join(",")
+                : ""
+              }`
               : undefined
           }
         />
@@ -316,19 +320,36 @@ export function PracticePage() {
             </div>
             {suggestion && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
-                <div className="font-semibold text-amber-900">
-                  Autobidder says: <CallDisplay call={suggestion.call} />
+                <div className="flex justify-between items-start gap-2">
+                  <div>
+                    <div className="font-semibold text-amber-900">
+                      Autobidder says: <CallDisplay call={suggestion.call} />
+                    </div>
+                    {suggestion.ruleName && (
+                      <div className="text-amber-800 mt-1">
+                        {suggestion.ruleName}
+                      </div>
+                    )}
+                    {suggestion.description && (
+                      <div className="text-amber-700 text-xs mt-0.5">
+                        {suggestion.description}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      const callsStr = history.calls
+                        .map(callToString)
+                        .join(",");
+                      navigate(
+                        `/explore/${parsed.boardNumber}${callsStr ? `:${callsStr}` : ""}`,
+                      );
+                    }}
+                    className="text-amber-600 hover:underline text-xs whitespace-nowrap mt-0.5"
+                  >
+                    Explore &rarr;
+                  </button>
                 </div>
-                {suggestion.ruleName && (
-                  <div className="text-amber-800 mt-1">
-                    {suggestion.ruleName}
-                  </div>
-                )}
-                {suggestion.description && (
-                  <div className="text-amber-700 text-xs mt-0.5">
-                    {suggestion.description}
-                  </div>
-                )}
               </div>
             )}
           </div>

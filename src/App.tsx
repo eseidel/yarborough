@@ -27,6 +27,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<RedirectToNewBoard />} />
         <Route path="/bid/:boardId" element={<PracticeRoute />} />
+        <Route path="/explore/:exploreId" element={<ExplorePage />} />
         <Route path="/explore" element={<ExplorePage />} />
       </Routes>
     </BrowserRouter>

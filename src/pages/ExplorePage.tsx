@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
 import { CallTable } from "../components/CallTable";
@@ -7,23 +7,32 @@ import { CallMenu } from "../components/CallMenu";
 import type {
   CallHistory,
   CallInterpretation,
-  Vulnerability,
-  Position,
 } from "../bridge";
-import { vulnerabilityLabel } from "../bridge";
+import {
+  vulnerabilityLabel,
+  vulnerabilityFromBoardNumber,
+  callToString,
+  stringToCall,
+} from "../bridge";
 import { getInterpretations } from "../bridge/engine";
-import { callToString, stringToCall } from "../bridge/auction";
+import { dealerFromBoardNumber } from "../bridge/identifier";
 
 export function ExplorePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { exploreId } = useParams<{ exploreId: string }>();
+  const navigate = useNavigate();
 
-  const [vulnerability] = useState<Vulnerability>("None");
   const [history, setHistory] = useState<CallHistory>(() => {
-    const dealer = (searchParams.get("dealer") as Position) || "N";
-    const callsStr = searchParams.get("calls");
+    if (!exploreId) return { dealer: "N", calls: [] };
+    const parts = exploreId.split(":");
+    const boardNum = parseInt(parts[0], 10) || 1;
+    const callsStr = parts[1];
     const calls = callsStr ? callsStr.split(",").map(stringToCall) : [];
-    return { dealer, calls };
+    return { dealer: dealerFromBoardNumber(boardNum), calls };
   });
+
+  const boardNumber = parseInt(exploreId?.split(":")[0] || "1", 10) || 1;
+  const vulnerability = vulnerabilityFromBoardNumber(boardNumber);
+
   const [interpretations, setInterpretations] = useState<CallInterpretation[]>(
     [],
   );
@@ -34,7 +43,7 @@ export function ExplorePage() {
     let cancelled = false;
 
     const callsString = history.calls.map(callToString).join(",");
-    getInterpretations(callsString, history.dealer)
+    getInterpretations(callsString, history.dealer, vulnerability)
       .then((result) => {
         if (!cancelled) {
           setError(null);
@@ -49,30 +58,29 @@ export function ExplorePage() {
         }
       });
 
-    // Update URL
-    const params: Record<string, string> = { dealer: history.dealer };
-    if (history.calls.length > 0) {
-      params.calls = history.calls.map(callToString).join(",");
-    }
-    setSearchParams(params, { replace: true });
-
     return () => {
       cancelled = true;
     };
-  }, [history, setSearchParams]);
+  }, [history, vulnerability]);
 
-  const handleSelect = useCallback((interp: CallInterpretation) => {
-    setLoading(true);
-    setHistory((prev) => ({
-      ...prev,
-      calls: [...prev.calls, interp.call],
-    }));
-  }, []);
+  const handleSelect = useCallback(
+    (interp: CallInterpretation) => {
+      setLoading(true);
+      const newCalls = [...history.calls, interp.call];
+      const callsStr = newCalls.map(callToString).join(",");
+      setHistory({ ...history, calls: newCalls });
+      navigate(`/explore/${boardNumber}${callsStr ? `:${callsStr}` : ""}`, {
+        replace: true,
+      });
+    },
+    [history, boardNumber, navigate],
+  );
 
   const handleClear = useCallback(() => {
     setLoading(true);
     setHistory({ dealer: "N", calls: [] });
-  }, []);
+    navigate("/explore/1", { replace: true });
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
