@@ -43,6 +43,7 @@ pub fn load_engine() -> &'static Engine {
 
         let shards = [
             include_str!("rules/openings.yaml"),
+            include_str!("rules/competitive/doubles.yaml"),
             include_str!("rules/notrump/stayman.yaml"),
             include_str!("rules/notrump/jacoby.yaml"),
             include_str!("rules/notrump/responses.yaml"),

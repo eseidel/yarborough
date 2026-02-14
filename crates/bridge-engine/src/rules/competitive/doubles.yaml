@@ -1,0 +1,112 @@
+responses:
+  # Takeout doubles of minor suit openings
+  - pattern: "1C"
+    rules:
+      - call: "X"
+        variants:
+          - name: "Takeout Double of 1C (4-4 Majors)"
+            priority: 40
+            description: "12+ HCP, 4+ cards in both majors"
+            constraints:
+              - type: MinHCP
+                min: 12
+              - type: MinLength
+                suit: Hearts
+                count: 4
+              - type: MinLength
+                suit: Spades
+                count: 4
+          - name: "Takeout Double of 1C (4-3 Majors)"
+            priority: 39
+            description: "12+ HCP, 4 in one major, 3 in the other"
+            constraints:
+              - type: MinHCP
+                min: 12
+              - type: MinLength
+                suit: Hearts
+                count: 3
+              - type: MinLength
+                suit: Spades
+                count: 3
+          - name: "Takeout Double of 1C (Strong)"
+            priority: 38
+            description: "17+ HCP, any shape, planning to bid again"
+            constraints:
+              - type: MinHCP
+                min: 17
+
+  - pattern: "1D"
+    rules:
+      - call: "X"
+        variants:
+          - name: "Takeout Double of 1D (4-4 Majors)"
+            priority: 40
+            description: "12+ HCP, 4+ cards in both majors"
+            constraints:
+              - type: MinHCP
+                min: 12
+              - type: MinLength
+                suit: Hearts
+                count: 4
+              - type: MinLength
+                suit: Spades
+                count: 4
+          - name: "Takeout Double of 1D (4-3 Majors)"
+            priority: 39
+            description: "12+ HCP, 4 in one major, 3 in the other"
+            constraints:
+              - type: MinHCP
+                min: 12
+              - type: MinLength
+                suit: Hearts
+                count: 3
+              - type: MinLength
+                suit: Spades
+                count: 3
+          - name: "Takeout Double of 1D (Strong)"
+            priority: 38
+            description: "17+ HCP, any shape, planning to bid again"
+            constraints:
+              - type: MinHCP
+                min: 17
+
+  # Takeout doubles of major suit openings
+  - pattern: "1H"
+    rules:
+      - call: "X"
+        variants:
+          - name: "Takeout Double of 1H (4+ Spades)"
+            priority: 40
+            description: "12+ HCP, 4+ Spades, support for minors"
+            constraints:
+              - type: MinHCP
+                min: 12
+              - type: MinLength
+                suit: Spades
+                count: 4
+          - name: "Takeout Double of 1H (Strong)"
+            priority: 38
+            description: "17+ HCP, planning to bid again"
+            constraints:
+              - type: MinHCP
+                min: 17
+
+  - pattern: "1S"
+    rules:
+      - call: "X"
+        variants:
+          - name: "Takeout Double of 1S (4+ Hearts)"
+            priority: 40
+            description: "12+ HCP, 4+ Hearts, support for minors"
+            constraints:
+              - type: MinHCP
+                min: 12
+              - type: MinLength
+                suit: Hearts
+                count: 4
+          - name: "Takeout Double of 1S (Strong)"
+            priority: 38
+            description: "17+ HCP, planning to bid again"
+            constraints:
+              - type: MinHCP
+                min: 17
