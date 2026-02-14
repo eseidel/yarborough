@@ -1,79 +1,73 @@
 //! Auction state analysis for NBK
 
-use bridge_core::{Auction, Call, Position, Strain};
+use crate::nbk::{CallInterpreter, PartnerModel};
+use bridge_core::{Auction, Position};
 
 /// Analysis of the current auction state
 #[derive(Debug, Clone)]
 pub struct AuctionModel {
-    /// Whether the auction is currently forcing (partner's bid demands a response)
-    pub is_forcing: bool,
+    /// What our partner has shown
+    pub partner_model: PartnerModel,
+    /// What we have shown (our own model as seen by partner)
+    pub bidder_model: PartnerModel,
 }
 
 impl AuctionModel {
-    /// Analyze the auction to determine forcing status
-    ///
-    /// In NBK, bids are forcing when:
-    /// - Partner made a new suit bid at 1 or 2 level after we've already bid (discovery)
-    /// - Partner made a jump shift (showing strong hand)
-    /// - We're in a game-forcing sequence
+    /// Analyze the auction to build models of both hands
+    pub fn from_auction(auction: &Auction, our_position: Position) -> Self {
+        let mut partner_model = PartnerModel::default();
+        let mut bidder_model = PartnerModel::default();
+
+        let partner_position = our_position.partner();
+
+        for (pos, call) in auction.iter() {
+            if pos == our_position {
+                // Interpret our call based on what partner has shown
+                let context = AuctionModel {
+                    partner_model: partner_model.clone(),
+                    bidder_model: bidder_model.clone(),
+                };
+                if let Some(semantics) = CallInterpreter::interpret(&context, call) {
+                    for constraint in semantics.shows {
+                        bidder_model.apply_constraint(constraint);
+                    }
+                }
+            } else if pos == partner_position {
+                // Interpret partner's call based on what we have shown
+                let context = AuctionModel {
+                    partner_model: bidder_model.clone(),
+                    bidder_model: partner_model.clone(),
+                };
+                if let Some(semantics) = CallInterpreter::interpret(&context, call) {
+                    for constraint in semantics.shows {
+                        partner_model.apply_constraint(constraint);
+                    }
+                }
+            }
+        }
+
+        Self {
+            partner_model,
+            bidder_model,
+        }
+    }
+
+    /// Whether the auction is currently forcing (partner's bid demands a response)
     ///
     /// Conservative approach: Most opening bids are not forcing unless responder has already shown values
-    pub fn from_auction(auction: &Auction, partner_position: Position) -> Self {
-        // Empty auction or all passes - not forcing
-        if auction.calls.is_empty() || auction.iter().all(|(_, c)| matches!(c, Call::Pass)) {
-            return Self { is_forcing: false };
-        }
-
-        // Find partner's last bid (not Pass/Double/Redouble)
-        let is_forcing = is_auction_forcing(auction, partner_position);
-
-        Self { is_forcing }
-    }
-}
-
-/// Determine if the auction is currently forcing
-fn is_auction_forcing(auction: &Auction, partner_position: Position) -> bool {
-    let mut partner_last_bid: Option<(u8, Strain)> = None;
-    let mut we_have_bid = false;
-    let our_position = partner_position.partner();
-
-    for (current_pos, call) in auction.iter() {
-        if current_pos == partner_position {
-            if let Call::Bid { level, strain } = call {
-                partner_last_bid = Some((*level, *strain));
-            }
-        } else if current_pos == our_position {
-            if matches!(call, Call::Bid { .. }) {
-                we_have_bid = true;
-            }
-        }
-    }
-
-    // If partner hasn't made a bid yet, not forcing
-    let Some((_level, _strain)) = partner_last_bid else {
-        return false;
-    };
-
-    // For now, use simple forcing detection:
-    // - If we haven't bid yet, partner's opening is not forcing (we can pass with weak hand)
-    // - If we have bid, partner's new suit is forcing (discovery protocol)
-    // - NT bids and raises are not forcing (limit protocol)
-
-    // Conservative: only forcing if we've already shown values and partner bid a new suit
-    // This will be refined as we implement the protocols
-    if we_have_bid {
-        // After we've responded, new bids by opener are forcing
-        // (This is a simplification - will be refined in bid selector)
-        true
-    } else {
-        // Opening bids are not forcing - responder can pass
-        false
+    pub fn is_forcing(&self) -> bool {
+        // Simplified for now: it's forcing if we have shown values and partner bid a new suit.
+        // This logic was previously in is_auction_forcing and will be refined.
+        // For now, if partner has bid and we have bid, consider it forcing if it's discovery.
+        // Actually, let's keep it simple for now as we're refactoring.
+        self.bidder_model.min_hcp.is_some()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bridge_core::{Auction, Call, Position, Strain};
 
     fn make_auction_with_bids(dealer: Position, calls: Vec<Call>) -> Auction {
         let mut auction = Auction::new(dealer);
@@ -87,7 +81,7 @@ mod tests {
     fn test_empty_auction_not_forcing() {
         let auction = Auction::new(Position::North);
         let model = AuctionModel::from_auction(&auction, Position::South);
-        assert!(!model.is_forcing);
+        assert!(!model.is_forcing());
     }
 
     #[test]
@@ -101,7 +95,7 @@ mod tests {
             }],
         );
         let model = AuctionModel::from_auction(&auction, Position::South);
-        assert!(!model.is_forcing); // Responder can pass weak hands
+        assert!(!model.is_forcing()); // Responder can pass weak hands
     }
 
     #[test]
@@ -125,7 +119,7 @@ mod tests {
         );
         // From North's perspective (opener), after South responded
         let model = AuctionModel::from_auction(&auction, Position::South);
-        assert!(model.is_forcing); // Opener's rebid after response is forcing
+        assert!(model.is_forcing()); // Opener's rebid after response is forcing
     }
 
     #[test]
@@ -133,6 +127,6 @@ mod tests {
         let auction =
             make_auction_with_bids(Position::North, vec![Call::Pass, Call::Pass, Call::Pass]);
         let model = AuctionModel::from_auction(&auction, Position::South);
-        assert!(!model.is_forcing);
+        assert!(!model.is_forcing());
     }
 }

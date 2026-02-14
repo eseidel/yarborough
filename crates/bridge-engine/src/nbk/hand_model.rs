@@ -41,6 +41,7 @@ impl HandModel {
     }
 
     /// Get the longest suit in the hand
+    #[allow(dead_code)]
     pub fn longest_suit(&self) -> Suit {
         let mut max_len = 0;
         let mut longest = Suit::Clubs;
@@ -57,6 +58,7 @@ impl HandModel {
     }
 
     /// Check if we have an 8+ card fit with partner in the given suit
+    #[allow(dead_code)]
     pub fn has_fit_with(&self, partner_suit: Suit, partner_min_length: u8) -> bool {
         self.length(partner_suit) + partner_min_length >= 8
     }

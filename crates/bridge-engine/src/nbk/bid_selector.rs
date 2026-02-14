@@ -1,8 +1,6 @@
 //! Bid selection with priority resolution
 
-use crate::nbk::{
-    discovery::DiscoveryProtocol, limit::LimitProtocol, AuctionModel, HandModel, PartnerModel,
-};
+use crate::nbk::{discovery::DiscoveryProtocol, limit::LimitProtocol, AuctionModel, HandModel};
 use bridge_core::{Call, Strain};
 
 /// Bid selector implementing the NBK priority stack
@@ -18,7 +16,6 @@ impl BidSelector {
     /// 4. Fallback: Pass (if not forcing)
     pub fn select_best_bid(
         hand_model: &HandModel,
-        partner_model: &PartnerModel,
         auction_model: &AuctionModel,
         legal_calls: &[Call],
     ) -> Call {
@@ -26,7 +23,7 @@ impl BidSelector {
         let discovery_bids: Vec<Call> = legal_calls
             .iter()
             .filter(|call| {
-                DiscoveryProtocol::get_semantics(partner_model, call)
+                DiscoveryProtocol::get_semantics(auction_model, call)
                     .map(|semantics| hand_model.satisfies_all(semantics.shows))
                     .unwrap_or(false)
             })
@@ -36,7 +33,7 @@ impl BidSelector {
         let limit_bids: Vec<Call> = legal_calls
             .iter()
             .filter(|call| {
-                LimitProtocol::get_semantics(partner_model, call)
+                LimitProtocol::get_semantics(auction_model, call)
                     .map(|semantics| hand_model.satisfies_all(semantics.shows))
                     .unwrap_or(false)
             })
@@ -70,7 +67,7 @@ impl BidSelector {
         }
 
         // 4. FALLBACK: Pass (unless forcing)
-        if auction_model.is_forcing {
+        if auction_model.is_forcing() {
             // If forcing, must bid something - pick cheapest legal bid
             // (This is a safety fallback - normally protocols should provide a bid)
             legal_calls
@@ -202,6 +199,7 @@ fn select_best_discovery_bid(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::nbk::PartnerModel;
     use bridge_core::Distribution;
     use bridge_core::Shape;
 
@@ -226,7 +224,10 @@ mod tests {
             min_hcp: Some(13),
             ..Default::default()
         };
-        let auction_model = AuctionModel { is_forcing: false };
+        let auction_model = AuctionModel {
+            partner_model: partner_model.clone(),
+            bidder_model: PartnerModel::default(),
+        };
         let legal_calls = vec![
             Call::Pass,
             Call::Bid {
@@ -239,8 +240,7 @@ mod tests {
             },
         ];
 
-        let bid =
-            BidSelector::select_best_bid(&hand_model, &partner_model, &auction_model, &legal_calls);
+        let bid = BidSelector::select_best_bid(&hand_model, &auction_model, &legal_calls);
 
         // Should prioritize 2H (major support) over 1S (discovery)
         assert_eq!(
@@ -269,7 +269,10 @@ mod tests {
             min_hcp: Some(10),
             ..Default::default()
         };
-        let auction_model = AuctionModel { is_forcing: false };
+        let auction_model = AuctionModel {
+            partner_model: partner_model.clone(),
+            bidder_model: PartnerModel::default(),
+        };
         let legal_calls = vec![
             Call::Pass,
             Call::Bid {
@@ -282,8 +285,7 @@ mod tests {
             },
         ];
 
-        let bid =
-            BidSelector::select_best_bid(&hand_model, &partner_model, &auction_model, &legal_calls);
+        let bid = BidSelector::select_best_bid(&hand_model, &auction_model, &legal_calls);
 
         // Should bid 1H (lower-ranking, up-the-line) not 1S
         assert_eq!(
@@ -312,7 +314,10 @@ mod tests {
             min_hcp: Some(10),
             ..Default::default()
         };
-        let auction_model = AuctionModel { is_forcing: false };
+        let auction_model = AuctionModel {
+            partner_model: partner_model.clone(),
+            bidder_model: PartnerModel::default(),
+        };
         let legal_calls = vec![
             Call::Pass,
             Call::Bid {
@@ -325,8 +330,7 @@ mod tests {
             },
         ];
 
-        let bid =
-            BidSelector::select_best_bid(&hand_model, &partner_model, &auction_model, &legal_calls);
+        let bid = BidSelector::select_best_bid(&hand_model, &auction_model, &legal_calls);
 
         // Should bid 1S (higher-ranking) not 1H
         assert_eq!(
@@ -359,7 +363,10 @@ mod tests {
             min_hcp: Some(13),
             ..Default::default()
         };
-        let auction_model = AuctionModel { is_forcing: false };
+        let auction_model = AuctionModel {
+            partner_model: partner_model.clone(),
+            bidder_model: PartnerModel::default(),
+        };
         let legal_calls = vec![
             Call::Pass,
             Call::Bid {
@@ -372,8 +379,7 @@ mod tests {
             },
         ];
 
-        let bid =
-            BidSelector::select_best_bid(&hand_model, &partner_model, &auction_model, &legal_calls);
+        let bid = BidSelector::select_best_bid(&hand_model, &auction_model, &legal_calls);
 
         // Should bid 3NT (balanced, 25 HCP = game)
         assert_eq!(
@@ -406,7 +412,10 @@ mod tests {
             min_hcp: Some(13),
             ..Default::default()
         };
-        let auction_model = AuctionModel { is_forcing: false };
+        let auction_model = AuctionModel {
+            partner_model: partner_model.clone(),
+            bidder_model: PartnerModel::default(),
+        };
         let legal_calls = vec![
             Call::Pass,
             Call::Bid {
@@ -415,8 +424,7 @@ mod tests {
             },
         ];
 
-        let bid =
-            BidSelector::select_best_bid(&hand_model, &partner_model, &auction_model, &legal_calls);
+        let bid = BidSelector::select_best_bid(&hand_model, &auction_model, &legal_calls);
 
         // Should pass (only 18 HCP combined, not enough for 1-level at 16)
         // Actually wait, 5 + 13 = 18, which is >= 16, so should bid 1D...

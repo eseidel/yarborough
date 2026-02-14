@@ -9,6 +9,7 @@ pub mod bid_selector;
 pub mod constraints;
 pub mod discovery;
 pub mod hand_model;
+pub mod interpreter;
 pub mod limit;
 pub mod partner_model;
 pub mod point_ranges;
@@ -16,7 +17,10 @@ pub mod semantics;
 
 pub use auction_model::AuctionModel;
 pub use constraints::HandConstraint;
+pub use discovery::DiscoveryProtocol;
 pub use hand_model::HandModel;
+pub use interpreter::CallInterpreter;
+pub use limit::LimitProtocol;
 pub use partner_model::PartnerModel;
 pub use point_ranges::PointRanges;
 pub use semantics::{CallPurpose, CallSemantics};
@@ -29,13 +33,11 @@ use bridge_core::{Auction, Call, Hand, Position};
 /// Returns None if no valid bid can be determined (should be rare - will default to Pass).
 pub fn select_bid(hand: &Hand, auction: &Auction, position: Position) -> Option<Call> {
     let hand_model = HandModel::from_hand(hand);
-    let partner_model = PartnerModel::from_auction(auction, position);
-    let auction_model = AuctionModel::from_auction(auction, position.partner());
+    let auction_model = AuctionModel::from_auction(auction, position);
     let legal_calls = auction.legal_calls();
 
     Some(bid_selector::BidSelector::select_best_bid(
         &hand_model,
-        &partner_model,
         &auction_model,
         &legal_calls,
     ))

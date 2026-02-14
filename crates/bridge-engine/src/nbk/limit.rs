@@ -1,6 +1,8 @@
 //! Limit Protocol: Define hand strength in known fits or NT (non-forcing)
 
-use crate::nbk::{CallPurpose, CallSemantics, HandConstraint, PartnerModel, PointRanges};
+use crate::nbk::{
+    AuctionModel, CallPurpose, CallSemantics, HandConstraint, PartnerModel, PointRanges,
+};
 use bridge_core::{Call, Shape, Strain, Suit};
 
 /// Limit Protocol implementation
@@ -8,21 +10,23 @@ pub struct LimitProtocol;
 
 impl LimitProtocol {
     /// Get the hand constraints required for a call to be a valid limit bid
-    pub fn get_semantics(partner_model: &PartnerModel, call: &Call) -> Option<CallSemantics> {
+    pub fn get_semantics(auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
         let (level, strain) = match call {
             Call::Bid { level, strain } => (*level, *strain),
             _ => return None,
         };
 
         let constraints = if strain == Strain::NoTrump {
-            get_notrump_constraints(partner_model, level)?
+            get_notrump_constraints(&auction_model.partner_model, level)?
         } else {
             let suit = strain.to_suit()?;
 
             // Try support raise
-            if let Some(constraints) = get_support_constraints(partner_model, level, suit) {
+            if let Some(constraints) =
+                get_support_constraints(&auction_model.partner_model, level, suit)
+            {
                 constraints
-            } else if let Some(constraints) = get_rebid_constraints(partner_model, level, suit) {
+            } else if let Some(constraints) = get_rebid_constraints(auction_model, level, suit) {
                 // Try rebid
                 constraints
             } else {
@@ -59,24 +63,29 @@ fn get_support_constraints(
 }
 
 fn get_rebid_constraints(
-    partner_model: &PartnerModel,
+    auction_model: &AuctionModel,
     level: u8,
     suit: Suit,
 ) -> Option<Vec<HandConstraint>> {
-    // Rebid own 6+ suit (not partner's)
-    if partner_model.has_shown_suit(suit) {
+    // Rebid own 6+ suit (already shown by us, not partner's)
+    if auction_model.partner_model.has_shown_suit(suit)
+        || !auction_model.bidder_model.has_shown_suit(suit)
+    {
         return None;
     }
 
     let mut constraints = vec![HandConstraint::MinLength(suit, 6)];
-    constraints.extend(PointRanges::for_suited_bid(level, partner_model));
+    constraints.extend(PointRanges::for_suited_bid(
+        level,
+        &auction_model.partner_model,
+    ));
     Some(constraints)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nbk::HandModel;
+    use crate::nbk::{HandModel, PartnerModel};
     use bridge_core::Distribution;
 
     #[test]
@@ -106,7 +115,12 @@ mod tests {
             strain: Strain::Hearts,
         };
 
-        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
+        let auction_model = AuctionModel {
+            partner_model,
+            bidder_model: PartnerModel::default(),
+        };
+
+        let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
 
         // Should find 2H (21 HCP, < 22 for level 3, >= 19 for level 2, with 13 from partner)
         assert!(hand_model.satisfies_all(semantics.shows));
@@ -139,7 +153,12 @@ mod tests {
             strain: Strain::Spades,
         };
 
-        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
+        let auction_model = AuctionModel {
+            partner_model,
+            bidder_model: PartnerModel::default(),
+        };
+
+        let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
 
         // Should find 4S (26 HCP >= 25 for game)
         assert!(hand_model.satisfies_all(semantics.shows));
@@ -169,7 +188,12 @@ mod tests {
             strain: Strain::NoTrump,
         };
 
-        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
+        let auction_model = AuctionModel {
+            partner_model,
+            bidder_model: PartnerModel::default(),
+        };
+
+        let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
 
         // Should find 2NT (22 HCP)
         assert!(hand_model.satisfies_all(semantics.shows));
@@ -199,7 +223,12 @@ mod tests {
             strain: Strain::NoTrump,
         };
 
-        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
+        let auction_model = AuctionModel {
+            partner_model,
+            bidder_model: PartnerModel::default(),
+        };
+
+        let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
 
         // Should find 3NT (26 HCP >= 25 for game)
         assert!(hand_model.satisfies_all(semantics.shows));
@@ -228,7 +257,20 @@ mod tests {
             strain: Strain::Spades,
         };
 
-        let semantics = LimitProtocol::get_semantics(&partner_model, &call).unwrap();
+        let bidder_model = PartnerModel {
+            min_distribution: Distribution {
+                spades: 4,
+                ..Distribution::default()
+            },
+            ..PartnerModel::default()
+        };
+
+        let auction_model = AuctionModel {
+            partner_model,
+            bidder_model: bidder_model.clone(),
+        };
+
+        let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
 
         // Should find 2S (20 HCP >= 19 for level 2)
         assert!(hand_model.satisfies_all(semantics.shows));
@@ -261,7 +303,12 @@ mod tests {
             strain: Strain::NoTrump,
         };
 
-        let semantics = LimitProtocol::get_semantics(&partner_model, &nt_call).unwrap();
+        let auction_model = AuctionModel {
+            partner_model,
+            bidder_model: PartnerModel::default(),
+        };
+
+        let semantics = LimitProtocol::get_semantics(&auction_model, &nt_call).unwrap();
 
         // Should be found but NOT satisfied
         assert!(!hand_model.satisfies_all(semantics.shows));
