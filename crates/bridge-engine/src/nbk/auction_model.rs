@@ -4,8 +4,11 @@ use crate::nbk::{CallInterpreter, PartnerModel};
 use bridge_core::{Auction, Position};
 
 /// Analysis of the current auction state
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AuctionModel {
+    /// The auction state
+    #[allow(dead_code)]
+    pub auction: Auction,
     /// What our partner has shown
     pub partner_model: PartnerModel,
     /// What we have shown (our own model as seen by partner)
@@ -19,11 +22,13 @@ impl AuctionModel {
         let mut bidder_model = PartnerModel::default();
 
         let partner_position = our_position.partner();
+        let mut current_auction = Auction::new(auction.dealer);
 
         for (pos, call) in auction.iter() {
             if pos == our_position {
                 // Interpret our call based on what partner has shown
                 let context = AuctionModel {
+                    auction: current_auction.clone(),
                     partner_model: partner_model.clone(),
                     bidder_model: bidder_model.clone(),
                 };
@@ -35,6 +40,7 @@ impl AuctionModel {
             } else if pos == partner_position {
                 // Interpret partner's call based on what we have shown
                 let context = AuctionModel {
+                    auction: current_auction.clone(),
                     partner_model: bidder_model.clone(),
                     bidder_model: partner_model.clone(),
                 };
@@ -44,9 +50,11 @@ impl AuctionModel {
                     }
                 }
             }
+            current_auction.add_call(*call);
         }
 
         Self {
+            auction: auction.clone(),
             partner_model,
             bidder_model,
         }

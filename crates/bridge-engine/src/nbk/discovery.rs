@@ -78,7 +78,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         let diamond_constraints = DiscoveryProtocol::get_semantics(&auction_model, &diamonds);
@@ -121,7 +121,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         // Should match both 1H and 1S (23 combined HCP > 16)
@@ -172,7 +172,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         assert!(DiscoveryProtocol::get_semantics(&auction_model, &h_bid).is_none());
@@ -206,7 +206,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         // Should return constraints, but hand should not satisfy them

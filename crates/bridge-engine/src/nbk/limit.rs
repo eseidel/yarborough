@@ -117,7 +117,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
@@ -155,7 +155,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
@@ -190,7 +190,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
@@ -225,7 +225,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
@@ -268,6 +268,7 @@ mod tests {
         let auction_model = AuctionModel {
             partner_model,
             bidder_model: bidder_model.clone(),
+            ..AuctionModel::default()
         };
 
         let semantics = LimitProtocol::get_semantics(&auction_model, &call).unwrap();
@@ -305,7 +306,7 @@ mod tests {
 
         let auction_model = AuctionModel {
             partner_model,
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
 
         let semantics = LimitProtocol::get_semantics(&auction_model, &nt_call).unwrap();

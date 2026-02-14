@@ -200,8 +200,7 @@ fn select_best_discovery_bid(
 mod tests {
     use super::*;
     use crate::nbk::PartnerModel;
-    use bridge_core::Distribution;
-    use bridge_core::Shape;
+    use bridge_core::{Distribution, Shape};
 
     #[test]
     fn test_major_support_priority() {
@@ -226,7 +225,7 @@ mod tests {
         };
         let auction_model = AuctionModel {
             partner_model: partner_model.clone(),
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
         let legal_calls = vec![
             Call::Pass,
@@ -271,7 +270,7 @@ mod tests {
         };
         let auction_model = AuctionModel {
             partner_model: partner_model.clone(),
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
         let legal_calls = vec![
             Call::Pass,
@@ -316,7 +315,7 @@ mod tests {
         };
         let auction_model = AuctionModel {
             partner_model: partner_model.clone(),
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
         let legal_calls = vec![
             Call::Pass,
@@ -365,7 +364,7 @@ mod tests {
         };
         let auction_model = AuctionModel {
             partner_model: partner_model.clone(),
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
         let legal_calls = vec![
             Call::Pass,
@@ -414,7 +413,7 @@ mod tests {
         };
         let auction_model = AuctionModel {
             partner_model: partner_model.clone(),
-            bidder_model: PartnerModel::default(),
+            ..AuctionModel::default()
         };
         let legal_calls = vec![
             Call::Pass,
