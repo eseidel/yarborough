@@ -1,16 +1,5 @@
 //! Point requirement tables for NBK bidding
 
-/// Point zones for determining bid level
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Zone {
-    /// Less than 25 combined points
-    Partscore,
-    /// 25-29 combined points
-    Game,
-    /// 30+ combined points
-    Slam,
-}
-
 /// Point range requirements for bidding
 pub struct PointRanges;
 
@@ -60,17 +49,6 @@ impl PointRanges {
             _ => 40, // Safety fallback for invalid levels
         }
     }
-
-    /// Determine the target zone based on combined points
-    pub fn target_zone(combined_points: u8) -> Zone {
-        if combined_points < 25 {
-            Zone::Partscore
-        } else if combined_points < 30 {
-            Zone::Game
-        } else {
-            Zone::Slam
-        }
-    }
 }
 
 #[cfg(test)]
@@ -90,14 +68,5 @@ mod tests {
         assert_eq!(PointRanges::min_points_for_nt_bid(1), 19);
         assert_eq!(PointRanges::min_points_for_nt_bid(3), 25);
         assert_eq!(PointRanges::min_points_for_nt_bid(5), 30);
-    }
-
-    #[test]
-    fn test_zones() {
-        assert_eq!(PointRanges::target_zone(20), Zone::Partscore);
-        assert_eq!(PointRanges::target_zone(25), Zone::Game);
-        assert_eq!(PointRanges::target_zone(29), Zone::Game);
-        assert_eq!(PointRanges::target_zone(30), Zone::Slam);
-        assert_eq!(PointRanges::target_zone(35), Zone::Slam);
     }
 }

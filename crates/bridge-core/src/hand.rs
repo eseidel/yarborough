@@ -13,6 +13,40 @@ pub enum Shape {
     Unbalanced,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct Distribution {
+    pub spades: u8,
+    pub hearts: u8,
+    pub diamonds: u8,
+    pub clubs: u8,
+}
+
+impl Distribution {
+    pub fn length(&self, suit: Suit) -> u8 {
+        match suit {
+            Suit::Spades => self.spades,
+            Suit::Hearts => self.hearts,
+            Suit::Diamonds => self.diamonds,
+            Suit::Clubs => self.clubs,
+        }
+    }
+
+    pub fn set_length(&mut self, suit: Suit, length: u8) {
+        match suit {
+            Suit::Spades => self.spades = length,
+            Suit::Hearts => self.hearts = length,
+            Suit::Diamonds => self.diamonds = length,
+            Suit::Clubs => self.clubs = length,
+        }
+    }
+
+    fn sorted_lengths(&self) -> [u8; 4] {
+        let mut d = [self.spades, self.hearts, self.diamonds, self.clubs];
+        d.sort_by(|a, b| b.cmp(a));
+        d
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Hand {
     pub cards: Vec<Card>,
@@ -46,13 +80,13 @@ impl Hand {
         self.cards.iter().filter(|c| c.suit == suit).count() as u8
     }
 
-    pub fn distribution(&self) -> [u8; 4] {
-        [
-            self.length(Suit::Spades),
-            self.length(Suit::Hearts),
-            self.length(Suit::Diamonds),
-            self.length(Suit::Clubs),
-        ]
+    pub fn distribution(&self) -> Distribution {
+        Distribution {
+            spades: self.length(Suit::Spades),
+            hearts: self.length(Suit::Hearts),
+            diamonds: self.length(Suit::Diamonds),
+            clubs: self.length(Suit::Clubs),
+        }
     }
 
     pub fn sort(&mut self) {
@@ -107,8 +141,7 @@ impl Hand {
     /// Returns the shape classification of this hand
     pub fn shape(&self) -> Shape {
         let dist = self.distribution();
-        let mut sorted_lengths = dist;
-        sorted_lengths.sort_by(|a, b| b.cmp(a)); // Sort descending
+        let sorted_lengths = dist.sorted_lengths();
 
         let longest = sorted_lengths[0];
         let doubleton_count = sorted_lengths.iter().filter(|&&l| l == 2).count();
@@ -184,7 +217,10 @@ mod tests {
     fn test_distribution() {
         let hand = Hand::parse("AK.Q..");
         let dist = hand.distribution();
-        assert_eq!(dist, [2, 1, 0, 0]);
+        assert_eq!(dist.spades, 2);
+        assert_eq!(dist.hearts, 1);
+        assert_eq!(dist.diamonds, 0);
+        assert_eq!(dist.clubs, 0);
     }
 
     #[test]

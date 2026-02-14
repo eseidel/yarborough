@@ -17,6 +17,15 @@ impl Auction {
         }
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = (Position, &Call)> {
+        let mut p = self.dealer;
+        self.calls.iter().map(move |call| {
+            let pos = p;
+            p = p.next();
+            (pos, call)
+        })
+    }
+
     pub fn add_call(&mut self, call: Call) {
         self.calls.push(call);
     }

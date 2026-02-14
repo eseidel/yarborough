@@ -1,12 +1,12 @@
 //! Partner profile inference from auction history
 
-use bridge_core::{Auction, Call, Position, Strain, Suit};
+use bridge_core::{Auction, Call, Distribution, Position, Strain, Suit};
 
 /// Inferred profile of partner's hand based on auction history
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct PartnerModel {
-    /// Minimum length partner has shown in each suit (indexed by Suit::ALL order)
-    pub min_lengths: [u8; 4],
+    /// Minimum distribution partner has shown (minimum length in each suit)
+    pub min_distribution: Distribution,
     /// Minimum HCP partner has shown, if any
     pub min_hcp: Option<u8>,
     /// Maximum HCP partner has shown, if any
@@ -21,11 +21,7 @@ impl PartnerModel {
         let partner_position = our_position.partner();
 
         // Start with no information
-        let mut model = Self {
-            min_lengths: [0, 0, 0, 0],
-            min_hcp: None,
-            max_hcp: None,
-        };
+        let mut model = Self::default();
 
         // Empty auction - partner hasn't bid yet
         if auction.calls.is_empty() {
@@ -33,32 +29,24 @@ impl PartnerModel {
         }
 
         // Determine which calls are partner's
-        let dealer = auction.dealer;
-        let mut current_pos = dealer;
-
-        for call in &auction.calls {
+        for (current_pos, call) in auction.iter() {
             if current_pos == partner_position {
                 model = update_model_from_call(&model, call);
             }
-            current_pos = current_pos.next();
         }
 
         model
     }
 
-    /// Check if partner has shown length in the given suit
     pub fn has_shown_suit(&self, suit: Suit) -> bool {
-        let index = Suit::ALL.iter().position(|&s| s == suit).unwrap();
-        self.min_lengths[index] > 0
+        self.min_distribution.length(suit) > 0
     }
 
-    /// Get all suits partner has shown length in
     pub fn shown_suits(&self) -> Vec<Suit> {
         Suit::ALL
             .iter()
-            .enumerate()
-            .filter(|(i, _)| self.min_lengths[*i] > 0)
-            .map(|(_, &suit)| suit)
+            .filter(|&&suit| self.min_distribution.length(suit) > 0)
+            .copied()
             .collect()
     }
 
@@ -67,10 +55,8 @@ impl PartnerModel {
         our_hcp + self.min_hcp.unwrap_or(0)
     }
 
-    /// Get partner's minimum length in a suit
     pub fn min_length(&self, suit: Suit) -> u8 {
-        let index = Suit::ALL.iter().position(|&s| s == suit).unwrap();
-        self.min_lengths[index]
+        self.min_distribution.length(suit)
     }
 }
 
@@ -125,22 +111,28 @@ fn update_model_from_bid(model: &PartnerModel, level: u8, strain: Strain) -> Par
             };
 
             // Update suit length
-            let suit_index = Suit::ALL.iter().position(|&s| s == suit).unwrap();
+            let current_min = new_model.min_distribution.length(suit);
 
             // Opening bids at 1-level show 4+ cards
             if level == 1 {
-                new_model.min_lengths[suit_index] = new_model.min_lengths[suit_index].max(4);
+                new_model
+                    .min_distribution
+                    .set_length(suit, current_min.max(4));
                 // Opening bids show 13+ HCP
                 new_model.min_hcp = Some(update_min(model.min_hcp, 13));
             }
             // 2-level bids typically show 5+ cards
             else if level == 2 {
-                new_model.min_lengths[suit_index] = new_model.min_lengths[suit_index].max(5);
+                new_model
+                    .min_distribution
+                    .set_length(suit, current_min.max(5));
                 new_model.min_hcp = Some(update_min(model.min_hcp, 13));
             }
             // 3-level and higher typically show 6+ cards
             else {
-                new_model.min_lengths[suit_index] = new_model.min_lengths[suit_index].max(6);
+                new_model
+                    .min_distribution
+                    .set_length(suit, current_min.max(6));
                 new_model.min_hcp = Some(update_min(model.min_hcp, 13));
             }
         }

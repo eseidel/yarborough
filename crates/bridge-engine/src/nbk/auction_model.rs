@@ -20,7 +20,7 @@ impl AuctionModel {
     /// Conservative approach: Most opening bids are not forcing unless responder has already shown values
     pub fn from_auction(auction: &Auction, partner_position: Position) -> Self {
         // Empty auction or all passes - not forcing
-        if auction.calls.is_empty() || auction.calls.iter().all(|c| matches!(c, Call::Pass)) {
+        if auction.calls.is_empty() || auction.iter().all(|(_, c)| matches!(c, Call::Pass)) {
             return Self { is_forcing: false };
         }
 
@@ -33,14 +33,11 @@ impl AuctionModel {
 
 /// Determine if the auction is currently forcing
 fn is_auction_forcing(auction: &Auction, partner_position: Position) -> bool {
-    // Find partner's last non-pass call
-    let dealer = auction.dealer;
-    let mut current_pos = dealer;
     let mut partner_last_bid: Option<(u8, Strain)> = None;
     let mut we_have_bid = false;
     let our_position = partner_position.partner();
 
-    for call in &auction.calls {
+    for (current_pos, call) in auction.iter() {
         if current_pos == partner_position {
             if let Call::Bid { level, strain } = call {
                 partner_last_bid = Some((*level, *strain));
@@ -50,7 +47,6 @@ fn is_auction_forcing(auction: &Auction, partner_position: Position) -> bool {
                 we_have_bid = true;
             }
         }
-        current_pos = current_pos.next();
     }
 
     // If partner hasn't made a bid yet, not forcing

@@ -1,46 +1,29 @@
 //! Hand model for NBK bidding analysis
 
-use bridge_core::{Hand, Shape, Suit};
+use bridge_core::{Distribution, Hand, Shape, Suit};
 
 /// Analysis of the current hand for bidding purposes
 #[derive(Debug, Clone)]
 pub struct HandModel {
     /// High Card Points (A=4, K=3, Q=2, J=1)
     pub hcp: u8,
-    /// Length of each suit (indexed by Suit::ALL order: C, D, H, S)
-    pub lengths: [u8; 4],
+    /// Suit distribution
+    pub distribution: Distribution,
     /// Shape classification
     pub shape: Shape,
 }
 
 impl HandModel {
-    /// Create a HandModel from a Hand
     pub fn from_hand(hand: &Hand) -> Self {
-        let hcp = hand.hcp();
-        let distribution = hand.distribution();
-        let shape = hand.shape();
-
-        // Convert distribution to match Suit::ALL order (C, D, H, S)
-        // distribution() returns [S, H, D, C]
-        let lengths = [
-            distribution[3], // Clubs
-            distribution[2], // Diamonds
-            distribution[1], // Hearts
-            distribution[0], // Spades
-        ];
-
         Self {
-            hcp,
-            lengths,
-            shape,
+            hcp: hand.hcp(),
+            distribution: hand.distribution(),
+            shape: hand.shape(),
         }
     }
 
-    /// Get the length of a specific suit
     pub fn length(&self, suit: Suit) -> u8 {
-        // Suit::ALL is [C, D, H, S], so we can use it as an index
-        let index = Suit::ALL.iter().position(|&s| s == suit).unwrap();
-        self.lengths[index]
+        self.distribution.length(suit)
     }
 
     /// Get the longest suit in the hand

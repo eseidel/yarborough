@@ -241,6 +241,7 @@ fn suit_rank(strain: Strain) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bridge_core::Distribution;
     use bridge_core::Shape;
 
     #[test]
@@ -248,11 +249,19 @@ mod tests {
         // Partner opened 1H, we have support
         let hand_model = HandModel {
             hcp: 10,
-            lengths: [2, 3, 4, 4], // 4 hearts
+            distribution: Distribution {
+                clubs: 2,
+                diamonds: 3,
+                hearts: 4,
+                spades: 4,
+            }, // 4 hearts
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 4, 0], // Partner has 4+ hearts
+            min_distribution: Distribution {
+                hearts: 4,
+                ..Distribution::default()
+            }, // Partner has 4+ hearts
             min_hcp: Some(13),
             max_hcp: None,
         };
@@ -287,11 +296,16 @@ mod tests {
         // 4-4 in majors, no fit
         let hand_model = HandModel {
             hcp: 10,
-            lengths: [2, 3, 4, 4], // 4 hearts, 4 spades
+            distribution: Distribution {
+                clubs: 2,
+                diamonds: 3,
+                hearts: 4,
+                spades: 4,
+            }, // 4 hearts, 4 spades
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(10),
             max_hcp: None,
         };
@@ -326,11 +340,16 @@ mod tests {
         // 5-5 in majors
         let hand_model = HandModel {
             hcp: 10,
-            lengths: [1, 2, 5, 5], // 5 hearts, 5 spades
+            distribution: Distribution {
+                clubs: 1,
+                diamonds: 2,
+                hearts: 5,
+                spades: 5,
+            }, // 5 hearts, 5 spades
             shape: Shape::SemiBalanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(10),
             max_hcp: None,
         };
@@ -365,11 +384,19 @@ mod tests {
         // Balanced, no fit, no 4-card major
         let hand_model = HandModel {
             hcp: 12,
-            lengths: [3, 3, 3, 4], // 4 spades, balanced
+            distribution: Distribution {
+                clubs: 3,
+                diamonds: 3,
+                hearts: 3,
+                spades: 4,
+            }, // 4 spades, balanced
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [4, 0, 0, 0], // Partner opened 1C
+            min_distribution: Distribution {
+                clubs: 4,
+                ..Distribution::default()
+            }, // Partner opened 1C
             min_hcp: Some(13),
             max_hcp: None,
         };
@@ -404,11 +431,19 @@ mod tests {
         // Weak hand, no fit
         let hand_model = HandModel {
             hcp: 5,
-            lengths: [3, 3, 3, 4],
+            distribution: Distribution {
+                clubs: 3,
+                diamonds: 3,
+                hearts: 3,
+                spades: 4,
+            },
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [4, 0, 0, 0], // Partner opened 1C
+            min_distribution: Distribution {
+                clubs: 4,
+                ..Distribution::default()
+            }, // Partner opened 1C
             min_hcp: Some(13),
             max_hcp: None,
         };

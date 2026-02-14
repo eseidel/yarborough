@@ -192,17 +192,26 @@ fn find_bid_at_or_above_level(legal_calls: &[Call], strain: Strain, min_level: u
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bridge_core::Distribution;
 
     #[test]
     fn test_support_limit_with_fit() {
         // Partner opened 1H, we have 4 hearts
         let hand_model = HandModel {
             hcp: 10,
-            lengths: [2, 3, 4, 4], // 4 hearts
+            distribution: Distribution {
+                clubs: 2,
+                diamonds: 3,
+                hearts: 4,
+                spades: 4,
+            }, // 4 hearts
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 4, 0], // Partner has 4+ hearts
+            min_distribution: Distribution {
+                hearts: 4,
+                ..Distribution::default()
+            }, // Partner has 4+ hearts
             min_hcp: Some(13),
             max_hcp: None,
         };
@@ -233,11 +242,19 @@ mod tests {
         // Partner opened 1S, we have 3 spades and 13 HCP
         let hand_model = HandModel {
             hcp: 13,
-            lengths: [3, 3, 3, 4], // 4 spades
+            distribution: Distribution {
+                clubs: 3,
+                diamonds: 3,
+                hearts: 3,
+                spades: 4,
+            },
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 4], // Partner has 4+ spades
+            min_distribution: Distribution {
+                spades: 4,
+                ..Distribution::default()
+            }, // Partner has 4+ spades
             min_hcp: Some(13),
             max_hcp: None,
         };
@@ -268,12 +285,17 @@ mod tests {
         // Balanced hand, 12 HCP
         let hand_model = HandModel {
             hcp: 12,
-            lengths: [3, 3, 3, 4],
+            distribution: Distribution {
+                clubs: 3,
+                diamonds: 3,
+                hearts: 3,
+                spades: 4,
+            },
             shape: Shape::Balanced,
         };
         // Partner has 10 HCP (total 22)
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(10),
             max_hcp: None,
         };
@@ -304,12 +326,17 @@ mod tests {
         // Balanced hand, 13 HCP
         let hand_model = HandModel {
             hcp: 13,
-            lengths: [3, 3, 3, 4],
+            distribution: Distribution {
+                clubs: 3,
+                diamonds: 3,
+                hearts: 3,
+                spades: 4,
+            },
             shape: Shape::Balanced,
         };
         // Partner has 13 HCP (total 26)
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(13),
             max_hcp: None,
         };
@@ -336,11 +363,16 @@ mod tests {
         // 6 card spade suit
         let hand_model = HandModel {
             hcp: 10,
-            lengths: [1, 2, 4, 6], // 6 spades
+            distribution: Distribution {
+                clubs: 1,
+                diamonds: 2,
+                hearts: 4,
+                spades: 6,
+            }, // 6 spades
             shape: Shape::SemiBalanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(10),
             max_hcp: None,
         };
@@ -367,11 +399,19 @@ mod tests {
         // Unbalanced, no 6+ suit, no fit
         let hand_model = HandModel {
             hcp: 10,
-            lengths: [1, 2, 5, 5], // 5-5-2-1
+            distribution: Distribution {
+                clubs: 1,
+                diamonds: 2,
+                hearts: 5,
+                spades: 5,
+            }, // 5-5-2-1
             shape: Shape::Unbalanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [4, 0, 0, 0], // Partner showed clubs, we only have 1
+            min_distribution: Distribution {
+                clubs: 4,
+                ..Distribution::default()
+            }, // Partner showed clubs, we only have 1
             min_hcp: Some(13),
             max_hcp: None,
         };

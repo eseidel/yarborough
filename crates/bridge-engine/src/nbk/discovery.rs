@@ -78,6 +78,7 @@ fn find_cheapest_bid_in_strain(legal_calls: &[Call], strain: Strain) -> Option<C
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bridge_core::Distribution;
     use bridge_core::Shape;
 
     #[test]
@@ -85,11 +86,16 @@ mod tests {
         // Hand has 3-3-3-4 distribution
         let hand_model = HandModel {
             hcp: 12,
-            lengths: [4, 3, 3, 3], // 4 clubs, 3 others
+            distribution: Distribution {
+                clubs: 4,
+                diamonds: 3,
+                hearts: 3,
+                spades: 3,
+            }, // 4 clubs, 3 others
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(13),
             max_hcp: None,
         };
@@ -123,11 +129,16 @@ mod tests {
         // Hand has 4-4-3-2 distribution
         let hand_model = HandModel {
             hcp: 10,
-            lengths: [2, 3, 4, 4], // 4 hearts, 4 spades
+            distribution: Distribution {
+                clubs: 2,
+                diamonds: 3,
+                hearts: 4,
+                spades: 4,
+            }, // 4 hearts, 4 spades
             shape: Shape::Balanced,
         };
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(13),
             max_hcp: None,
         };
@@ -165,12 +176,20 @@ mod tests {
         // Hand has 4 spades
         let hand_model = HandModel {
             hcp: 10,
-            lengths: [2, 3, 4, 4], // 4 hearts, 4 spades
+            distribution: Distribution {
+                clubs: 2,
+                diamonds: 3,
+                hearts: 4,
+                spades: 4,
+            }, // 4 hearts, 4 spades
             shape: Shape::Balanced,
         };
         // Partner opened 1H
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 4, 0], // Partner has 4+ hearts
+            min_distribution: Distribution {
+                hearts: 4,
+                ..Distribution::default()
+            }, // Partner has 4+ hearts
             min_hcp: Some(13),
             max_hcp: None,
         };
@@ -203,12 +222,17 @@ mod tests {
         // Hand has 4 spades but only 5 HCP
         let hand_model = HandModel {
             hcp: 5,
-            lengths: [2, 3, 4, 4], // 4 hearts, 4 spades
+            distribution: Distribution {
+                clubs: 2,
+                diamonds: 3,
+                hearts: 4,
+                spades: 4,
+            }, // 4 hearts, 4 spades
             shape: Shape::Balanced,
         };
         // Partner has 10 HCP (total 15, need 16 for 1-level)
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(10),
             max_hcp: None,
         };
@@ -233,12 +257,17 @@ mod tests {
         // Hand has 4 spades and 7 HCP
         let hand_model = HandModel {
             hcp: 7,
-            lengths: [2, 3, 4, 4], // 4 hearts, 4 spades
+            distribution: Distribution {
+                clubs: 2,
+                diamonds: 3,
+                hearts: 4,
+                spades: 4,
+            }, // 4 hearts, 4 spades
             shape: Shape::Balanced,
         };
         // Partner has 10 HCP (total 17, enough for 1-level)
         let partner_model = PartnerModel {
-            min_lengths: [0, 0, 0, 0],
+            min_distribution: Distribution::default(),
             min_hcp: Some(10),
             max_hcp: None,
         };
