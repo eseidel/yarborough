@@ -239,10 +239,10 @@ export function PracticePage() {
           exploreLink={
             selectedCallIndex !== null
               ? `/explore/${parsed.boardNumber}${
-                  history.calls.slice(0, selectedCallIndex + 1).length > 0
+                  history.calls.slice(0, selectedCallIndex).length > 0
                     ? ":" +
                       history.calls
-                        .slice(0, selectedCallIndex + 1)
+                        .slice(0, selectedCallIndex)
                         .map(callToString)
                         .join(",")
                     : ""
