@@ -1,10 +1,10 @@
-use bridge_core::board::Position;
-use bridge_core::hand::Hand;
-use bridge_core::suit::Suit;
-use bridge_core::io::identifier;
-use bridge_engine::load_engine;
 use bridge_core::auction::Auction;
+use bridge_core::board::Position;
 use bridge_core::call::Call;
+use bridge_core::hand::Hand;
+use bridge_core::io::identifier;
+use bridge_core::suit::Suit;
+use bridge_engine::load_engine;
 use clap::Parser;
 use std::collections::HashMap;
 
@@ -22,14 +22,20 @@ struct Args {
 fn get_hand_suits(hand: &Hand) -> Vec<String> {
     let mut hand = hand.clone();
     hand.sort();
-    
+
     let mut suits = Vec::new();
     for suit in [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs] {
-        let cards: String = hand.cards.iter()
+        let cards: String = hand
+            .cards
+            .iter()
             .filter(|c| c.suit == suit)
             .map(|c| c.rank.to_char())
             .collect();
-        suits.push(format!("{}: {}", suit.to_char(), if cards.is_empty() { "-" } else { &cards }));
+        suits.push(format!(
+            "{}: {}",
+            suit.to_char(),
+            if cards.is_empty() { "-" } else { &cards }
+        ));
     }
     suits
 }
@@ -90,24 +96,33 @@ fn main() {
     println!("Board: {}", args.identifier);
     println!("Dealer: {:?}", dealer);
     println!("Vulnerability: {:?}", board.vulnerability);
-    
+
     println!("\nHands:");
     print_hands_table(&board.hands);
 
-    println!("");
-    println!("{:<3} | {:<3} | {:<5} | {:<25} | {}", "Idx", "Pos", "Call", "Rule Name", "Description");
-    println!("{:-<3}-+-{:-<3}-+-{:-<5}-+-{:-<25}-+---------------------------", "", "", "", "");
+    println!();
+    println!(
+        "{:<3} | {:<3} | {:<5} | {:<25} | Description",
+        "Idx", "Pos", "Call", "Rule Name"
+    );
+    println!(
+        "{:-<3}-+-{:-<3}-+-{:-<5}-+-{:-<25}-+---------------------------",
+        "", "", "", ""
+    );
 
     let mut current_bid_idx = 0;
-    
+
     loop {
         let current_player = auction.current_player();
-        let hand = board.hands.get(&current_player).expect("Missing hand for player");
-        
+        let hand = board
+            .hands
+            .get(&current_player)
+            .expect("Missing hand for player");
+
         let trace = engine.get_full_trace(hand, &auction);
-        
+
         current_bid_idx += 1;
-        
+
         if let Some(bid_num) = args.bid {
             if bid_num == current_bid_idx {
                 print_full_trace(current_bid_idx, &trace);
@@ -117,7 +132,9 @@ fn main() {
         match trace.selected_call {
             Some(call) => {
                 let call: Call = call;
-                let rule_trace = trace.rules_considered.iter()
+                let rule_trace = trace
+                    .rules_considered
+                    .iter()
                     .find(|r| r.satisfied && r.call == call)
                     .expect("No satisfied rule found for selected call");
 
@@ -137,12 +154,11 @@ fn main() {
             }
             None => {
                 println!(
-                    "{:<3} | {:<3} | {:<5} | {:25} | {}",
+                    "{:<3} | {:<3} | {:<5} | {:25} | ",
                     current_bid_idx,
                     pos_char(current_player),
                     "Pass",
-                    "No rule matched",
-                    ""
+                    "No rule matched"
                 );
                 auction.add_call(Call::Pass);
                 if auction.is_finished() {
@@ -158,7 +174,7 @@ fn print_full_trace(bid_num: usize, trace: &bridge_engine::trace::BidTrace) {
     println!("=======================");
     println!("Partner Profile: {:?}", trace.profile);
     println!("\nRules Considered:");
-    
+
     let mut sorted_rules = trace.rules_considered.clone();
     sorted_rules.sort_by_key(|r| std::cmp::Reverse(r.priority));
 

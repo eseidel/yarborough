@@ -1,7 +1,7 @@
+use crate::inference::PartnerProfile;
+use crate::schema::Constraint;
 use bridge_core::call::Call;
 use bridge_core::hand::Hand;
-use crate::schema::Constraint;
-use crate::inference::PartnerProfile;
 use serde::Serialize;
 
 #[derive(Debug, Serialize, Clone)]
