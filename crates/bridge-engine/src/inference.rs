@@ -93,11 +93,15 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
             let mut variant_max_hcp = 40;
             let mut variant_min_lengths = [0u8; 4];
             let mut variant_has_genuine_length = false;
+            let mut has_rule_of_twenty = false;
+            let mut has_rule_of_fifteen = false;
 
             for constraint in *constraints {
                 match constraint {
                     Constraint::MinHCP { min } => variant_min_hcp = variant_min_hcp.max(*min),
                     Constraint::MaxHCP { max } => variant_max_hcp = variant_max_hcp.min(*max),
+                    Constraint::RuleOfTwenty { met: true } => has_rule_of_twenty = true,
+                    Constraint::RuleOfFifteen { met: true } => has_rule_of_fifteen = true,
                     Constraint::MinLength { suit, count } => {
                         let si = suit_index(*suit);
                         variant_min_lengths[si] = variant_min_lengths[si].max(*count);
@@ -123,6 +127,11 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
                     }
                     _ => {}
                 }
+            }
+
+            // Rule of Twenty/Fifteen implies opening strength even without explicit MinHCP
+            if has_rule_of_twenty || has_rule_of_fifteen {
+                variant_min_hcp = variant_min_hcp.max(10);
             }
 
             min_hcp = min_hcp.min(variant_min_hcp);
