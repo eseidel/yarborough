@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { Link } from "react-router-dom";
 import {
   type Call,
   type CallHistory,
@@ -24,6 +25,7 @@ export function CallTable({
   selectedCallIndex,
   callExplanation,
   explanationLoading,
+  exploreLink,
 }: {
   callHistory: CallHistory;
   vulnerability?: Vulnerability;
@@ -31,6 +33,7 @@ export function CallTable({
   selectedCallIndex?: number | null;
   callExplanation?: CallInterpretation | null;
   explanationLoading?: boolean;
+  exploreLink?: string;
 }) {
   const { dealer, calls } = callHistory;
   const dealerIndex = CALL_TABLE_ORDER.indexOf(dealer);
@@ -96,16 +99,26 @@ export function CallTable({
                   {explanationLoading ? (
                     <span className="text-blue-600">Loading...</span>
                   ) : callExplanation?.ruleName ? (
-                    <>
-                      <span className="font-semibold text-blue-900">
-                        {callExplanation.ruleName}
-                      </span>
-                      {callExplanation.description && (
-                        <span className="text-blue-700 text-xs ml-1">
-                          {callExplanation.description}
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <span className="font-semibold text-blue-900">
+                          {callExplanation.ruleName}
                         </span>
+                        {callExplanation.description && (
+                          <span className="text-blue-700 text-xs ml-1">
+                            {callExplanation.description}
+                          </span>
+                        )}
+                      </div>
+                      {exploreLink && (
+                        <Link
+                          to={exploreLink}
+                          className="text-blue-600 hover:underline text-xs whitespace-nowrap mt-0.5"
+                        >
+                          Explore &rarr;
+                        </Link>
                       )}
-                    </>
+                    </div>
                   ) : (
                     <span className="text-blue-600">
                       No interpretation available

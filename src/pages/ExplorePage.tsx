@@ -1,18 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
 import { CallTable } from "../components/CallTable";
 import { CallMenu } from "../components/CallMenu";
-import type { CallHistory, CallInterpretation, Vulnerability } from "../bridge";
+import type {
+  CallHistory,
+  CallInterpretation,
+  Vulnerability,
+  Position,
+} from "../bridge";
 import { vulnerabilityLabel } from "../bridge";
 import { getInterpretations } from "../bridge/engine";
-import { callToString } from "../bridge/auction";
+import { callToString, stringToCall } from "../bridge/auction";
 
 export function ExplorePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [vulnerability] = useState<Vulnerability>("None");
-  const [history, setHistory] = useState<CallHistory>({
-    dealer: "N",
-    calls: [],
+  const [history, setHistory] = useState<CallHistory>(() => {
+    const dealer = (searchParams.get("dealer") as Position) || "N";
+    const callsStr = searchParams.get("calls");
+    const calls = callsStr ? callsStr.split(",").map(stringToCall) : [];
+    return { dealer, calls };
   });
   const [interpretations, setInterpretations] = useState<CallInterpretation[]>(
     [],
@@ -39,23 +49,30 @@ export function ExplorePage() {
         }
       });
 
+    // Update URL
+    const params: Record<string, string> = { dealer: history.dealer };
+    if (history.calls.length > 0) {
+      params.calls = history.calls.map(callToString).join(",");
+    }
+    setSearchParams(params, { replace: true });
+
     return () => {
       cancelled = true;
     };
-  }, [history]);
+  }, [history, setSearchParams]);
 
-  function handleSelect(interp: CallInterpretation) {
+  const handleSelect = useCallback((interp: CallInterpretation) => {
     setLoading(true);
     setHistory((prev) => ({
       ...prev,
       calls: [...prev.calls, interp.call],
     }));
-  }
+  }, []);
 
-  function handleClear() {
+  const handleClear = useCallback(() => {
     setLoading(true);
     setHistory({ dealer: "N", calls: [] });
-  }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

@@ -87,6 +87,16 @@ export function callToString(call: Call): string {
   return `${call.level}${call.strain}`;
 }
 
+/** Parse a short string bid (e.g. "P", "1H") into a Call. */
+export function stringToCall(s: string): Call {
+  if (s === "P") return { type: "pass" };
+  if (s === "X") return { type: "double" };
+  if (s === "XX") return { type: "redouble" };
+  const level = parseInt(s[0], 10);
+  const strain = s.substring(1) as StrainName;
+  return { type: "bid", level, strain };
+}
+
 /** Build the identifier string for the Rust engine: "<board>-<hex>:<calls>". */
 function buildIdentifier(boardId: string, calls: Call[]): string {
   if (calls.length === 0) return boardId;

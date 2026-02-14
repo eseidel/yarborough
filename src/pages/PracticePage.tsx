@@ -216,6 +216,14 @@ export function PracticePage() {
           selectedCallIndex={selectedCallIndex}
           callExplanation={callExplanation}
           explanationLoading={explanationLoading}
+          exploreLink={
+            selectedCallIndex !== null
+              ? `/explore?dealer=${history.dealer}&calls=${history.calls
+                .slice(0, selectedCallIndex + 1)
+                .map(callToString)
+                .join(",")}`
+              : undefined
+          }
         />
 
         {/* User's hand - only show during auction */}
