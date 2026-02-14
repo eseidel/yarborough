@@ -136,8 +136,8 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
 
             min_hcp = min_hcp.min(variant_min_hcp);
             max_hcp = max_hcp.max(variant_max_hcp);
-            for i in 0..4 {
-                min_lengths[i] = min_lengths[i].min(variant_min_lengths[i]);
+            for (i, min_len) in min_lengths.iter_mut().enumerate() {
+                *min_len = (*min_len).min(variant_min_lengths[i]);
             }
             if variant_has_genuine_length {
                 has_genuine_length = true;
@@ -146,8 +146,8 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
 
         profile.min_hcp = profile.min_hcp.max(min_hcp);
         profile.max_hcp = profile.max_hcp.min(max_hcp);
-        for i in 0..4 {
-            profile.min_length[i] = profile.min_length[i].max(min_lengths[i]);
+        for (i, &min_len) in min_lengths.iter().enumerate() {
+            profile.min_length[i] = profile.min_length[i].max(min_len);
         }
 
         if has_genuine_length {
