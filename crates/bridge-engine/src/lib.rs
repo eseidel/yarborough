@@ -5,12 +5,12 @@ use bridge_core::io::identifier;
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
-mod engine;
+pub mod engine;
 pub mod inference;
 pub mod schema;
 pub mod trace;
 
-use engine::Engine;
+pub use engine::Engine;
 use schema::System;
 use std::sync::OnceLock;
 
