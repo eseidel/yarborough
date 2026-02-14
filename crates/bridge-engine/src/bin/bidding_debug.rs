@@ -100,10 +100,10 @@ fn main() {
     println!("\nHands:");
     print_hands_table(&board.hands);
 
-    println!("");
+    println!();
     println!(
-        "{:<3} | {:<3} | {:<5} | {:<25} | {}",
-        "Idx", "Pos", "Call", "Rule Name", "Description"
+        "{:<3} | {:<3} | {:<5} | {:<25} | Description",
+        "Idx", "Pos", "Call", "Rule Name"
     );
     println!(
         "{:-<3}-+-{:-<3}-+-{:-<5}-+-{:-<25}-+---------------------------",
@@ -154,12 +154,11 @@ fn main() {
             }
             None => {
                 println!(
-                    "{:<3} | {:<3} | {:<5} | {:25} | {}",
+                    "{:<3} | {:<3} | {:<5} | {:25} | ",
                     current_bid_idx,
                     pos_char(current_player),
                     "Pass",
-                    "No rule matched",
-                    ""
+                    "No rule matched"
                 );
                 auction.add_call(Call::Pass);
                 if auction.is_finished() {
