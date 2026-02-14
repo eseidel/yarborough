@@ -261,7 +261,7 @@ test_game_forcing_rebid_by_opener:
   KQ.QT96.AKJT5.A9:P P 1H P 2H P:N-S: "FAIL: step 6, expected 4D, got 3D"
   AKQT54.J.AK54.A5:1C 1D P 2D:N-S: "FAIL: step 4, expected 3H, got P"
   Q742.AK9.KT3.AK7:P 1C P 2C P:Both: "FAIL: step 5, expected 3N, got P"
-  AKJT62.AKQJ.7.Q7:P P P 1C P 1S P:E-W: "FAIL: step 7, expected 3D, got 2C"
+  AKJT62.AKQJ.7.Q7:P P P 1C P 1S P:E-W: "FAIL: step 3, expected 1C, got 1D"
   9.K95.AKQ6.AKJ75:P P P 1S P 2S P:Both: "FAIL: step 7, expected 4H, got 4S"
 test_opener_rebid_after_a_limit_raise:
   Q6.Q86.KT5.AQ982:1S P 3S P:None: "FAIL: step 4, expected P, got 4S"
@@ -439,7 +439,7 @@ test_preemption:
   8.9873.AKQT864.4::None: "FAIL: step 0, expected 4H, got 1H"
   8.9873.AKQT864.4:P:None: "FAIL: step 1, expected 4H, got 1H"
   8.9873.AKQT864.4:P P:None: "FAIL: step 2, expected 4H, got 1H"
-  8.9873.AKQT864.4:P P P:None: "FAIL: step 3, expected 4H, got 1H"
+  8.9873.AKQT864.4:P P P:None: "FAIL: step 3, expected 4H, got 3H"
   A4.AK87652.A.J42:4C P:Both: "FAIL: step 2, expected 5C, got P"
   AK92..K32.QT8754:1S 3D 3S 5D:None: "FAIL: step 4, expected X, got P"
   Q842..Q42.AK9753:P P 1D:Both: "FAIL: step 3, expected 2S, got P"

@@ -12,6 +12,9 @@ opening:
         priority: 29
         description: "Rule of 20, 5+ Diamonds"
         constraints:
+          - type: Seat
+            min: 1
+            max: 3
           - type: RuleOfTwenty
             met: true
           - type: MinLength
@@ -21,6 +24,9 @@ opening:
         priority: 27
         description: "Rule of 20, 4 Diamonds"
         constraints:
+          - type: Seat
+            min: 1
+            max: 3
           - type: RuleOfTwenty
             met: true
           - type: MinLength
@@ -30,6 +36,9 @@ opening:
         priority: 24
         description: "Rule of 20, 3 Diamonds"
         constraints:
+          - type: Seat
+            min: 1
+            max: 3
           - type: RuleOfTwenty
             met: true
           - type: MinLength
@@ -66,6 +75,9 @@ opening:
         priority: 29
         description: "Rule of 20, 5+ Clubs"
         constraints:
+          - type: Seat
+            min: 1
+            max: 3
           - type: RuleOfTwenty
             met: true
           - type: MinLength
@@ -75,6 +87,9 @@ opening:
         priority: 26
         description: "Rule of 20, 4 Clubs"
         constraints:
+          - type: Seat
+            min: 1
+            max: 3
           - type: RuleOfTwenty
             met: true
           - type: MinLength
@@ -84,6 +99,9 @@ opening:
         priority: 25
         description: "Rule of 20, 3+ Clubs"
         constraints:
+          - type: Seat
+            min: 1
+            max: 3
           - type: RuleOfTwenty
             met: true
           - type: MinLength
@@ -120,6 +138,9 @@ opening:
         priority: 31
         description: "Rule of 20, 5+ Spades"
         constraints:
+          - type: Seat
+            min: 1
+            max: 3
           - type: RuleOfTwenty
             met: true
           - type: MinLength
@@ -156,6 +177,9 @@ opening:
         priority: 30
         description: "Rule of 20, 5+ Hearts"
         constraints:
+          - type: Seat
+            min: 1
+            max: 3
           - type: RuleOfTwenty
             met: true
           - type: MinLength
