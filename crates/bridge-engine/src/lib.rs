@@ -196,6 +196,17 @@ pub fn generate_filtered_board(deal_type: &str) -> String {
     identifier::export_board(&board, board_number, None)
 }
 
+#[wasm_bindgen]
+pub fn get_double_dummy_solution(identifier: &str) -> JsValue {
+    let (board, _auction) = match identifier::import_board(identifier) {
+        Some(val) => val,
+        None => return JsValue::NULL,
+    };
+
+    let solution = bridge_solver::solve(&board);
+    serde_wasm_bindgen::to_value(&solution).unwrap()
+}
+
 fn generate_random_board(board_number: u32, rng: &mut impl rand::Rng) -> bridge_core::board::Board {
     use bridge_core::card::Card;
     use bridge_core::hand::Hand;

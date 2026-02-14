@@ -11,9 +11,11 @@ wasm-bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde-wasm-bindgen = "0.6"
 bridge-core = { path = "../bridge-core" }
+bridge-solver = { path = "../bridge-solver" }
 serde_yaml = "0.9.34"
 rand = "0.8"
 getrandom = { version = "0.2", features = ["js"] }
+getrandom_03 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
 clap = { version = "4.5", features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

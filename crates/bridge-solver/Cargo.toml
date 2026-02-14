@@ -1,0 +1,11 @@
+[package]
+name = "bridge-solver"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bridge-core = { path = "../bridge-core" }
+dds-bridge = "0.11"
+dds-bridge-sys = "2"
+serde = { version = "1", features = ["derive"] }
+once_cell = "1"
