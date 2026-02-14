@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { PracticePage } from "../pages/PracticePage";
@@ -44,11 +50,13 @@ describe("Explore Link Integration", () => {
           <Route path="/bid/:boardId" element={<PracticePage />} />
           <Route path="/explore" element={<div>Explore Page</div>} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // Wait for initial robot bids
-    await waitFor(() => expect(screen.getAllByText(/1/)[0]).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getAllByText(/1/)[0]).toBeInTheDocument(),
+    );
 
     // Click the bid to see explanation (it contains a '1' and a '♥')
     const hearts = screen.getAllByText("♥")[0];
@@ -73,7 +81,7 @@ describe("Explore Link Integration", () => {
         <Routes>
           <Route path="/explore/:exploreId" element={<ExplorePage />} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // Should call getInterpretations with the calls from the URL
@@ -81,7 +89,7 @@ describe("Explore Link Integration", () => {
       expect(engine.getInterpretations).toHaveBeenCalledWith(
         "1H,1S",
         "N",
-        "None"
+        "None",
       );
     });
 
