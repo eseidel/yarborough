@@ -13,6 +13,7 @@ impl LimitProtocol {
     pub fn get_semantics(auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
         let (level, strain) = match call {
             Call::Bid { level, strain } => (*level, *strain),
+            Call::Pass => return get_pass_semantics(auction_model),
             _ => return None,
         };
 
@@ -39,6 +40,40 @@ impl LimitProtocol {
             shows: constraints,
         })
     }
+}
+
+fn get_pass_semantics(auction_model: &AuctionModel) -> Option<CallSemantics> {
+    // Only applies if we have some information about partner's maximum.
+    let partner_max_hcp = auction_model.partner_model.max_hcp?;
+
+    let our_partnership = auction_model.auction.current_partnership();
+    let contract = auction_model
+        .auction
+        .current_contract()
+        .filter(|c| c.belongs_to(our_partnership))?;
+
+    // TODO: What are the pass semantics when contract belongs to the other partnership?
+
+    if contract.is_grand_slam() {
+        return None;
+    }
+
+    let goal = if contract.is_slam() {
+        PointRanges::GRAND_SLAM_THRESHOLD
+    } else if contract.is_game() {
+        PointRanges::SLAM_THRESHOLD
+    } else {
+        PointRanges::GAME_THRESHOLD
+    };
+
+    // Impossibility threshold: our_hcp + partner_max < goal
+    // our_hcp <= (goal - 1) - partner_max
+    let threshold = (goal - 1).saturating_sub(partner_max_hcp);
+
+    Some(CallSemantics {
+        purpose: CallPurpose::Limit,
+        shows: vec![HandConstraint::MaxHcp(threshold)],
+    })
 }
 
 fn get_notrump_constraints(partner_model: &PartnerModel, level: u8) -> Option<Vec<HandConstraint>> {
@@ -86,7 +121,7 @@ fn get_rebid_constraints(
 mod tests {
     use super::*;
     use crate::nbk::{HandModel, PartnerModel};
-    use bridge_core::Distribution;
+    use bridge_core::{Auction, Distribution, Position};
 
     #[test]
     fn test_support_limit_with_fit() {
@@ -313,5 +348,55 @@ mod tests {
 
         // Should be found but NOT satisfied
         assert!(!hand_model.satisfies_all(semantics.shows));
+    }
+
+    #[test]
+    fn test_pass_limit_shows_remote_game() {
+        // Partner has max 15 HCP. Game (25) is remote if we have <= 9.
+        let partner_model = PartnerModel {
+            max_hcp: Some(15),
+            ..Default::default()
+        };
+        let mut auction = Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Spades,
+        });
+        auction.add_call(Call::Pass);
+        let auction_model = AuctionModel {
+            auction,
+            partner_model,
+            ..AuctionModel::default()
+        };
+
+        let semantics = LimitProtocol::get_semantics(&auction_model, &Call::Pass).unwrap();
+        // Threshold = 24 - 15 = 9.
+        assert_eq!(semantics.shows, vec![HandConstraint::MaxHcp(9)]);
+    }
+
+    #[test]
+    fn test_pass_limit_shows_remote_slam() {
+        // We are already in game (4S)
+        let mut auction = Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 4,
+            strain: Strain::Spades,
+        });
+        auction.add_call(Call::Pass); // East
+
+        // Partner (North) has max 21 HCP. Slam (33) is remote if we have <= 11.
+        let partner_model = PartnerModel {
+            max_hcp: Some(21),
+            ..Default::default()
+        };
+        let auction_model = AuctionModel {
+            auction,
+            partner_model,
+            ..AuctionModel::default()
+        };
+
+        let semantics = LimitProtocol::get_semantics(&auction_model, &Call::Pass).unwrap();
+        // Threshold = 32 - 21 = 11.
+        assert_eq!(semantics.shows, vec![HandConstraint::MaxHcp(11)]);
     }
 }

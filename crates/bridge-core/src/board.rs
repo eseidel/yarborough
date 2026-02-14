@@ -10,6 +10,28 @@ pub enum Position {
     West,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Partnership {
+    NS,
+    EW,
+}
+
+impl Partnership {
+    pub fn contains(self, pos: Position) -> bool {
+        match self {
+            Partnership::NS => pos == Position::North || pos == Position::South,
+            Partnership::EW => pos == Position::East || pos == Position::West,
+        }
+    }
+
+    pub fn idx(self) -> usize {
+        match self {
+            Partnership::NS => 0,
+            Partnership::EW => 1,
+        }
+    }
+}
+
 impl Position {
     pub const ALL: [Position; 4] = [
         Position::North,
@@ -17,6 +39,13 @@ impl Position {
         Position::South,
         Position::West,
     ];
+
+    pub fn partnership(self) -> Partnership {
+        match self {
+            Position::North | Position::South => Partnership::NS,
+            Position::East | Position::West => Partnership::EW,
+        }
+    }
 
     pub fn next(self) -> Self {
         match self {
@@ -149,5 +178,20 @@ mod tests {
         assert_eq!(Position::North.to_char(), 'N');
         assert_eq!(Position::from_char('W'), Some(Position::West));
         assert_eq!(Position::from_char('X'), None);
+    }
+
+    #[test]
+    fn test_partnership() {
+        assert_eq!(Position::North.partnership(), Partnership::NS);
+        assert_eq!(Position::South.partnership(), Partnership::NS);
+        assert_eq!(Position::East.partnership(), Partnership::EW);
+        assert_eq!(Position::West.partnership(), Partnership::EW);
+
+        assert!(Partnership::NS.contains(Position::North));
+        assert!(Partnership::NS.contains(Position::South));
+        assert!(!Partnership::NS.contains(Position::East));
+
+        assert_eq!(Partnership::NS.idx(), 0);
+        assert_eq!(Partnership::EW.idx(), 1);
     }
 }

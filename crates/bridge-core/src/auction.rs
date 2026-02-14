@@ -1,5 +1,6 @@
-use crate::board::Position;
+use crate::board::{Partnership, Position};
 use crate::call::Call;
+use crate::contract::{Contract, DoubleStatus};
 use crate::strain::Strain;
 use serde::{Deserialize, Serialize};
 
@@ -30,12 +31,58 @@ impl Auction {
         self.calls.push(call);
     }
 
+    pub fn current_partnership(&self) -> Partnership {
+        self.current_player().partnership()
+    }
+
     pub fn current_player(&self) -> Position {
         let mut p = self.dealer;
         for _ in 0..self.calls.len() {
             p = p.next();
         }
         p
+    }
+
+    pub fn current_contract(&self) -> Option<Contract> {
+        let mut last_bid = None;
+        let mut double_status = DoubleStatus::Undoubled;
+
+        // Tracks the first player to have bid each strain for each side.
+        // Index: 0 for North-South, 1 for East-West.
+        // Strain index matches Strain::ALL order.
+        let mut first_bidders = [[None; 5]; 2];
+
+        for (position, call) in self.iter() {
+            match call {
+                Call::Bid { level, strain } => {
+                    let partnership = position.partnership();
+                    let side_index = partnership.idx();
+                    let strain_index = strain.idx();
+
+                    if first_bidders[side_index][strain_index].is_none() {
+                        first_bidders[side_index][strain_index] = Some(position);
+                    }
+
+                    let declarer = first_bidders[side_index][strain_index].unwrap();
+                    last_bid = Some((*level, *strain, declarer));
+                    double_status = DoubleStatus::Undoubled;
+                }
+                Call::Double => {
+                    double_status = DoubleStatus::Doubled;
+                }
+                Call::Redouble => {
+                    double_status = DoubleStatus::Redoubled;
+                }
+                Call::Pass => {}
+            }
+        }
+
+        last_bid.map(|(level, strain, declarer)| Contract {
+            level,
+            strain,
+            double_status,
+            declarer,
+        })
     }
 
     pub fn is_finished(&self) -> bool {
@@ -175,11 +222,123 @@ mod tests {
     }
 
     #[test]
+    fn test_current_partnership() {
+        let mut auction = Auction::new(Position::North);
+        assert_eq!(auction.current_partnership(), Partnership::NS);
+        auction.add_call(Call::Pass);
+        assert_eq!(auction.current_partnership(), Partnership::EW);
+    }
+
+    #[test]
     fn test_current_player() {
         let mut auction = Auction::new(Position::North);
         assert_eq!(auction.current_player(), Position::North);
         auction.add_call(Call::Pass);
         assert_eq!(auction.current_player(), Position::East);
+    }
+
+    #[test]
+    fn test_current_contract() {
+        let mut auction = Auction::new(Position::North);
+        assert_eq!(auction.current_contract(), None);
+
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        assert_eq!(
+            auction.current_contract(),
+            Some(Contract {
+                level: 1,
+                strain: Strain::Clubs,
+                double_status: DoubleStatus::Undoubled,
+                declarer: Position::North,
+            })
+        );
+
+        auction.add_call(Call::Double);
+        assert_eq!(
+            auction.current_contract(),
+            Some(Contract {
+                level: 1,
+                strain: Strain::Clubs,
+                double_status: DoubleStatus::Doubled,
+                declarer: Position::North,
+            })
+        );
+
+        auction.add_call(Call::Redouble);
+        assert_eq!(
+            auction.current_contract(),
+            Some(Contract {
+                level: 1,
+                strain: Strain::Clubs,
+                double_status: DoubleStatus::Redoubled,
+                declarer: Position::North,
+            })
+        );
+
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Diamonds,
+        });
+        assert_eq!(
+            auction.current_contract(),
+            Some(Contract {
+                level: 1,
+                strain: Strain::Diamonds,
+                double_status: DoubleStatus::Undoubled,
+                declarer: Position::West,
+            })
+        );
+    }
+
+    #[test]
+    fn test_declarer_logic() {
+        let mut auction = Auction::new(Position::North);
+        // N: Pass, E: 1C, S: Pass, W: 2C
+        // East was the first to bid Clubs for EW.
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Bid {
+            level: 2,
+            strain: Strain::Clubs,
+        });
+
+        assert_eq!(
+            auction.current_contract(),
+            Some(Contract {
+                level: 2,
+                strain: Strain::Clubs,
+                double_status: DoubleStatus::Undoubled,
+                declarer: Position::East,
+            })
+        );
+
+        // N: 2D. North is first to bid Diamonds for NS.
+        auction.add_call(Call::Bid {
+            level: 2,
+            strain: Strain::Diamonds,
+        });
+        assert_eq!(
+            auction.current_contract().unwrap().declarer,
+            Position::North
+        );
+
+        // E: Pass, S: 3D. North is still the first to bid Diamonds for NS.
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Bid {
+            level: 3,
+            strain: Strain::Diamonds,
+        });
+        assert_eq!(
+            auction.current_contract().unwrap().declarer,
+            Position::North
+        );
     }
 
     #[test]

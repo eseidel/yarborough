@@ -24,8 +24,8 @@ impl AuctionModel {
         let partner_position = our_position.partner();
         let mut current_auction = Auction::new(auction.dealer);
 
-        for (pos, call) in auction.iter() {
-            if pos == our_position {
+        for (position, call) in auction.iter() {
+            if position == our_position {
                 // Interpret our call based on what partner has shown
                 let context = AuctionModel {
                     auction: current_auction.clone(),
@@ -37,7 +37,7 @@ impl AuctionModel {
                         bidder_model.apply_constraint(constraint);
                     }
                 }
-            } else if pos == partner_position {
+            } else if position == partner_position {
                 // Interpret partner's call based on what we have shown
                 let context = AuctionModel {
                     auction: current_auction.clone(),

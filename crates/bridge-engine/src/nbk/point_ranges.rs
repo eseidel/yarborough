@@ -6,6 +6,10 @@ use crate::nbk::{HandConstraint, PartnerModel};
 pub struct PointRanges;
 
 impl PointRanges {
+    pub const GAME_THRESHOLD: u8 = 25;
+    pub const SLAM_THRESHOLD: u8 = 33;
+    pub const GRAND_SLAM_THRESHOLD: u8 = 37;
+
     /// Minimum combined points required for a suited bid at the given level
     ///
     /// Based on NBK spec Section 3.1:

@@ -20,6 +20,16 @@ impl Strain {
         Strain::NoTrump,
     ];
 
+    pub fn idx(self) -> usize {
+        match self {
+            Strain::Clubs => 0,
+            Strain::Diamonds => 1,
+            Strain::Hearts => 2,
+            Strain::Spades => 3,
+            Strain::NoTrump => 4,
+        }
+    }
+
     pub fn to_char(self) -> char {
         match self {
             Strain::Clubs => 'C',
