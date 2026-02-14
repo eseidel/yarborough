@@ -17,5 +17,7 @@ test_preemptive_openings:
   - ["AKJ.AKQ.A82.AQ43", "3N"] # 26 HCP, Balanced. C, D, H, S order. 13 cards.
 
 test_partner_profile_inference:
-  - ["KQ32.J2.A987.543", "2N", "P 1H P"] # Partner opened 1H, we have 11 HCP → invite to game
-  - ["AJ4.K32.QJ65.T87", "1N", "P 1D P"] # Partner opened 1D, we have 10 HCP balanced → 1NT response
+  # Before fix: passed (thought partner could have 0 HCP). After fix: bid 2N (know partner has 10+ HCP)
+  - ["KJ64.JT.KQT9.KJ9", "2N", "1D P 1H P 1N P"]
+  # Before fix: passed. After fix: bid 1N (know partner has opening strength)
+  - [".KQJ965.QJT2.A95", "1N", "1C P 1D P 1H P"]
