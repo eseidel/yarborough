@@ -43,6 +43,10 @@ impl Auction {
         p
     }
 
+    pub fn current_seat(&self) -> u8 {
+        (self.calls.len() as u8 + 1) % 4
+    }
+
     pub fn current_contract(&self) -> Option<Contract> {
         let mut last_bid = None;
         let mut double_status = DoubleStatus::Undoubled;

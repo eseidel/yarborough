@@ -142,6 +142,31 @@ impl CallMenu {
                             }
                         }
                     }
+                    CallPurpose::Opening => {
+                        for constraint in &semantics.shows {
+                            match *constraint {
+                                HandConstraint::MinLength(suit, _) => {
+                                    if suit.is_major() {
+                                        best_group =
+                                            best_group.min(CallMenuGroupType::MajorDiscovery);
+                                    } else if suit.is_minor() {
+                                        best_group =
+                                            best_group.min(CallMenuGroupType::MinorDiscovery);
+                                    }
+                                }
+                                HandConstraint::MaxUnbalancedness(_)
+                                | HandConstraint::MinHcp(_) => {
+                                    // Likely NT or Strong 2C
+                                    best_group = best_group.min(CallMenuGroupType::LimitStrength);
+                                }
+                                _ => {}
+                            }
+                        }
+                        // Default for Pass (which might only have MaxHcp)
+                        if best_group == CallMenuGroupType::Miscellaneous {
+                            best_group = CallMenuGroupType::LimitStrength;
+                        }
+                    }
                 }
 
                 group_items[best_group as usize].push(CallMenuItem { call, semantics });

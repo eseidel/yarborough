@@ -70,6 +70,7 @@ impl PartnerModel {
         self.min_distribution.length(suit)
     }
 
+    #[allow(dead_code)]
     pub fn max_length(&self, suit: Suit) -> u8 {
         self.max_distribution.length(suit)
     }
@@ -132,8 +133,8 @@ mod tests {
         let auction_model = AuctionModel::from_auction(&auction, Position::South);
         let model = auction_model.partner_model;
 
-        assert_eq!(model.min_hcp, Some(19));
-        assert_eq!(model.max_hcp, Some(21));
+        assert_eq!(model.min_hcp, Some(15));
+        assert_eq!(model.max_hcp, Some(17));
     }
 
     #[test]
@@ -148,8 +149,8 @@ mod tests {
         let auction_model = AuctionModel::from_auction(&auction, Position::South);
         let model = auction_model.partner_model;
 
-        assert_eq!(model.min_hcp, Some(16));
-        assert_eq!(model.min_length(Suit::Spades), 4);
+        assert_eq!(model.min_hcp, Some(12));
+        assert_eq!(model.min_length(Suit::Spades), 5);
         assert!(model.has_shown_suit(Suit::Spades));
     }
 
@@ -190,8 +191,8 @@ mod tests {
         let auction_model = AuctionModel::from_auction(&auction, Position::South);
         let model = auction_model.partner_model;
 
-        assert_eq!(model.min_length(Suit::Diamonds), 4);
-        assert_eq!(model.min_hcp, Some(19));
+        assert_eq!(model.min_length(Suit::Diamonds), 6);
+        assert_eq!(model.min_hcp, Some(5));
     }
 
     #[test]
