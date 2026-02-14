@@ -82,7 +82,7 @@ pub fn infer_partner(auction: &Auction, system: &System, hand: &Hand) -> Partner
         // we must find the MINIMUM requirement across ALL matching variants.
         // If a variant doesn't mention HCP, its minimum is 0 and its maximum is 40.
         // If a variant doesn't mention a suit's length, its minimum is 0.
-        
+
         let mut min_hcp = 40;
         let mut max_hcp = 0;
         let mut min_lengths = [40u8; 4]; // Start with high value so min() works
@@ -402,9 +402,15 @@ mod tests {
 
         // South bid 2C (Stayman) and then 2N (Invitation).
         // South should NOT be inferred to have 6 Clubs or 5 Diamonds.
-        assert!(profile.min_length[0] < 6, "Should not infer 6+ Clubs from Stayman");
-        assert!(profile.min_length[1] < 5, "Should not infer 5+ Diamonds from Stayman");
-        
+        assert!(
+            profile.min_length[0] < 6,
+            "Should not infer 6+ Clubs from Stayman"
+        );
+        assert!(
+            profile.min_length[1] < 5,
+            "Should not infer 5+ Diamonds from Stayman"
+        );
+
         // South's HCP should be around 8-9 based on 2N invitation.
         assert_eq!(profile.min_hcp, 8);
         assert_eq!(profile.max_hcp, 9);
