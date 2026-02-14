@@ -383,8 +383,8 @@ mod tests {
     fn test_get_full_trace_opening_1nt() {
         let engine = crate::load_engine();
         let identifier = "1-decde22e0d283f55b36244ab45";
-        let (board, _) = bridge_core::io::identifier::import_board(identifier)
-            .expect("Failed to import board");
+        let (board, _) =
+            bridge_core::io::identifier::import_board(identifier).expect("Failed to import board");
         let hand = board.hands.get(&Position::North).unwrap();
         let auction = Auction::new(Position::North);
 
@@ -402,7 +402,11 @@ mod tests {
 
         // Check constraints
         for ct in &rule_trace.constraints {
-            assert!(ct.satisfied, "Constraint {:?} should be satisfied", ct.constraint);
+            assert!(
+                ct.satisfied,
+                "Constraint {:?} should be satisfied",
+                ct.constraint
+            );
         }
     }
 
@@ -412,8 +416,8 @@ mod tests {
         // Board 11, deal decde22e0d283f55b36244ab45
         // South responds after 1NT opening
         let identifier = "11-decde22e0d283f55b36244ab45:P,P,1N,P";
-        let (board, auction) = bridge_core::io::identifier::import_board(identifier)
-            .expect("Failed to import board");
+        let (board, auction) =
+            bridge_core::io::identifier::import_board(identifier).expect("Failed to import board");
         let auction = auction.expect("Failed to import auction");
         let hand = board.hands.get(&Position::South).unwrap();
 

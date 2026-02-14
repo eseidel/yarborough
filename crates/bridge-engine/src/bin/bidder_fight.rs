@@ -148,7 +148,10 @@ impl BidderFight {
 
             if local_call != remote_call {
                 println!("Difference found!");
-                println!("Board: {}", identifier::export_board(board, board_number, None));
+                println!(
+                    "Board: {}",
+                    identifier::export_board(board, board_number, None)
+                );
                 println!("Position: {:?}", current_player);
                 println!("Hand: {}", format_hand_cdhs(hand));
                 println!("Auction so far: {}", render_auction(&local_auction));

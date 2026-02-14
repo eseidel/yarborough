@@ -73,6 +73,7 @@ cargo run --bin bidder_fight 15-e46a3ab1d0b8664c5f053639cf
 ```
 
 The tool will continuously generate random boards and report the first difference found on each board, including:
+
 - Board identifier (for reproducing the scenario)
 - Position and hand where the difference occurred
 - Auction history up to that point
