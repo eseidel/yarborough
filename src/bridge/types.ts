@@ -222,3 +222,21 @@ export function highCardPoints(hand: Hand): number {
     0,
   );
 }
+
+/** Serialize a Call to the short string format the Rust engine uses. */
+export function callToString(call: Call): string {
+  if (call.type === "pass") return "P";
+  if (call.type === "double") return "X";
+  if (call.type === "redouble") return "XX";
+  return `${call.level}${call.strain}`;
+}
+
+/** Parse a short string bid (e.g. "P", "1H") into a Call. */
+export function stringToCall(s: string): Call {
+  if (s === "P") return { type: "pass" };
+  if (s === "X") return { type: "double" };
+  if (s === "XX") return { type: "redouble" };
+  const level = parseInt(s[0], 10);
+  const strain = s.substring(1) as StrainName;
+  return { type: "bid", level, strain };
+}

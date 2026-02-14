@@ -17,8 +17,8 @@ import { DealSelector } from "../components/DealSelector";
 import {
   isAuctionComplete,
   addRobotBids,
-  callToString,
 } from "../bridge/auction";
+import { callToString } from "../bridge/types";
 import { getSuggestedBid, getInterpretations } from "../bridge/engine";
 import type { CallHistory } from "../bridge";
 
@@ -30,7 +30,7 @@ export function PracticePage() {
 
   const [history, setHistory] = useState<CallHistory>({
     dealer: parsed?.dealer ?? "N",
-    calls: [],
+    calls: parsed?.initialCalls ?? [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,16 +47,25 @@ export function PracticePage() {
     return (saved as DealType) || "Random";
   });
 
-  // On mount, run robot bids for the opening
+  // On mount, run robot bids for the opening if calls are empty
   useEffect(() => {
-    if (!boardId) return;
+    if (!boardId || !parsed) return;
+    if (history.calls.length > 0) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
-    addRobotBids({ dealer: parsed?.dealer ?? "N", calls: [] }, "S", boardId)
+    addRobotBids({ dealer: parsed.dealer, calls: [] }, "S", boardId.split(":")[0])
       .then((h) => {
         if (!cancelled) {
           setError(null);
           setHistory(h);
           setLoading(false);
+          const baseId = boardId.split(":")[0];
+          const callsStr = h.calls.map(callToString).join(",");
+          if (callsStr) {
+            navigate(`/bid/${baseId}:${callsStr}`, { replace: true });
+          }
         }
       })
       .catch((err) => {
@@ -68,15 +77,16 @@ export function PracticePage() {
     return () => {
       cancelled = true;
     };
-  }, [boardId, parsed?.dealer]);
+  }, [boardId, parsed?.dealer]); // boardId changed means a new hand or a manual URL edit
 
   const auctionDone = isAuctionComplete(history);
 
   const handleSuggest = useCallback(() => {
     if (!boardId) return;
     setSuggestLoading(true);
+    const baseId = boardId.split(":")[0];
     const callsStr = history.calls.map(callToString).join(",");
-    const identifier = callsStr.length > 0 ? `${boardId}:${callsStr}` : boardId;
+    const identifier = callsStr.length > 0 ? `${baseId}:${callsStr}` : baseId;
     getSuggestedBid(identifier)
       .then((interp) => {
         setSuggestion(interp);
@@ -95,23 +105,26 @@ export function PracticePage() {
       setSuggestion(null);
       setSelectedCallIndex(null);
       setCallExplanation(null);
+      const baseId = boardId.split(":")[0];
       const afterUser: CallHistory = {
         ...history,
         calls: [...history.calls, call],
       };
       setHistory(afterUser);
-      addRobotBids(afterUser, "S", boardId)
+      addRobotBids(afterUser, "S", baseId)
         .then((h) => {
           setError(null);
           setHistory(h);
           setLoading(false);
+          const callsStr = h.calls.map(callToString).join(",");
+          navigate(`/bid/${baseId}:${callsStr}`, { replace: true });
         })
         .catch((err) => {
           setError(String(err));
           setLoading(false);
         });
     },
-    [boardId, history],
+    [boardId, history, navigate],
   );
 
   const handleRedeal = useCallback(() => {
@@ -143,16 +156,21 @@ export function PracticePage() {
       dealer: parsed.dealer,
       calls: [],
     };
-    addRobotBids(initialHistory, "S", boardId)
+    const baseId = boardId.split(":")[0];
+    addRobotBids(initialHistory, "S", baseId)
       .then((h) => {
         setHistory(h);
         setLoading(false);
+        const callsStr = h.calls.map(callToString).join(",");
+        navigate(`/bid/${baseId}${callsStr ? `:${callsStr}` : ""}`, {
+          replace: true,
+        });
       })
       .catch((err) => {
         setError(String(err));
         setLoading(false);
       });
-  }, [boardId, parsed]);
+  }, [boardId, parsed, navigate]);
 
   const handleCallClick = useCallback(
     (callIndex: number) => {

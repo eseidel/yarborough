@@ -17,7 +17,8 @@ function RedirectToNewBoard() {
 /** Wrapper that forces PracticePage to remount when boardId changes. */
 function PracticeRoute() {
   const { boardId } = useParams<{ boardId: string }>();
-  return <PracticePage key={boardId} />;
+  const baseBoardId = boardId?.split(":")[0];
+  return <PracticePage key={baseBoardId} />;
 }
 
 export default function App() {

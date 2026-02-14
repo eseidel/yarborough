@@ -6,8 +6,9 @@ import type {
   SuitName,
   RankName,
   Vulnerability,
+  Call,
 } from "./types";
-import { vulnerabilityFromBoardNumber } from "./types";
+import { vulnerabilityFromBoardNumber, stringToCall } from "./types";
 import { randomDeal } from "./mock";
 
 const SUIT_INDEX: Record<SuitName, number> = { C: 0, D: 1, H: 2, S: 3 };
@@ -135,21 +136,37 @@ export function parseBoardId(id: string): {
   deal: Deal;
   dealer: Position;
   vulnerability: Vulnerability;
+  initialCalls: Call[];
 } | null {
-  const dashIdx = id.indexOf("-");
+  const parts = id.split(":");
+  const boardPart = parts[0];
+  const callsPart = parts[1];
+
+  const dashIdx = boardPart.indexOf("-");
   if (dashIdx < 1) return null;
 
-  const boardNumber = parseInt(id.substring(0, dashIdx), 10);
+  const boardNumber = parseInt(boardPart.substring(0, dashIdx), 10);
   if (isNaN(boardNumber) || boardNumber < 1 || boardNumber > 16) return null;
 
-  const deal = decodeDeal(id.substring(dashIdx + 1));
+  const deal = decodeDeal(boardPart.substring(dashIdx + 1));
   if (!deal) return null;
+
+  const initialCalls: Call[] = [];
+  if (callsPart) {
+    const callStrings = callsPart.split(",");
+    for (const s of callStrings) {
+      if (s) {
+        initialCalls.push(stringToCall(s));
+      }
+    }
+  }
 
   return {
     boardNumber,
     deal,
     dealer: dealerFromBoardNumber(boardNumber),
     vulnerability: vulnerabilityFromBoardNumber(boardNumber),
+    initialCalls,
   };
 }
 

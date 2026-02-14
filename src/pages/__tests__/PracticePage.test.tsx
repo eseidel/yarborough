@@ -57,6 +57,7 @@ describe("PracticePage", () => {
     },
     dealer: "N" as const,
     vulnerability: "None" as const,
+    initialCalls: [],
   };
 
   beforeEach(() => {
@@ -229,4 +230,123 @@ describe("PracticePage", () => {
     expect(wIndex).toBeLessThan(sIndex);
     expect(eIndex).toBeLessThan(sIndex);
   });
+
+  it("loads initial calls from URL", async () => {
+    const boardIdWithCalls = `${boardId}:1C,P,1S`;
+    mockParseBoardId.mockReturnValue({
+      ...dummyParsed,
+      initialCalls: [
+        { type: "bid", level: 1, strain: "C" },
+        { type: "pass" },
+        { type: "bid", level: 1, strain: "S" },
+      ],
+    });
+
+    render(
+      <MemoryRouter initialEntries={[`/bid/${boardIdWithCalls}`]}>
+        <Routes>
+          <Route path="/bid/:boardId" element={<PracticePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    // Wait for loading to finish
+    await waitFor(() =>
+      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
+    );
+
+    // Wait for loading to finish
+    await waitFor(
+      () => expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
+      { timeout: 2000 },
+    );
+
+    // Verify calls are in the table
+    const callTable = screen.getByTestId("call-table");
+    expect(within(callTable).getByText("♣")).toBeInTheDocument();
+    expect(within(callTable).getByText("♠")).toBeInTheDocument();
+    expect(within(callTable).getByText("Pass")).toBeInTheDocument();
+    // Check that one of them has level 1
+    expect(within(callTable).getAllByText(/1/)).toHaveLength(2);
+  });
+
+  it("updates URL when a bid is made", async () => {
+    // 1. Initial State: Dealer N, E and W are robots.
+    // Robot bids: N bids 1C, E passes.
+    mockAddRobotBids.mockResolvedValue({
+      dealer: "N",
+      calls: [
+        { type: "bid", level: 1, strain: "C" }, // N
+        { type: "pass" }, // E
+      ],
+    });
+
+    render(
+      <MemoryRouter initialEntries={[`/bid/${boardId}`]}>
+        <Routes>
+          <Route
+            path="/bid/:boardId"
+            element={
+              <>
+                <PracticePage />
+                <LocationDisplay />
+              </>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    // Wait for robot bids to finish
+    await waitFor(() =>
+      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
+    );
+
+    // Verify initial URL update (N: 1C, E: P)
+    await waitFor(() => {
+      expect(screen.getByTestId("location-path")).toHaveTextContent(
+        `/bid/${boardId}:1C,P`,
+      );
+    });
+
+    // 2. User Bids: S (User) bids 1H.
+    // Mock robot response (W passes)
+    mockAddRobotBids.mockResolvedValue({
+      dealer: "N",
+      calls: [
+        { type: "bid", level: 1, strain: "C" }, // N
+        { type: "pass" }, // E
+        { type: "bid", level: 1, strain: "H" }, // S (User)
+        { type: "pass" }, // W
+      ],
+    });
+
+    // For the User bid button, just look for any button with "1" and heart symbol
+    await waitFor(() => {
+      const bidButtons = screen.getAllByRole("button");
+      const heartButton = bidButtons.find(b => b.textContent?.includes("1") && b.textContent?.includes("♥"));
+      if (!heartButton) {
+        throw new Error("Could not find bid button");
+      }
+      fireEvent.click(heartButton);
+    });
+
+    // Wait for loading and robot response
+    await waitFor(() =>
+      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
+    );
+
+    // Verify URL update after User(1H) and Robot(P)
+    await waitFor(() => {
+      const path = screen.getByTestId("location-path").textContent;
+      expect(path).toContain(`${boardId}:1C,P,1H,P`);
+    }, { timeout: 3000 });
+  });
 });
+
+/** Helper component to verify URL in tests */
+import { useLocation } from "react-router-dom";
+function LocationDisplay() {
+  const location = useLocation();
+  return <div data-testid="location-path">{location.pathname}</div>;
+}
