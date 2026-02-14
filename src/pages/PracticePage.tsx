@@ -29,7 +29,9 @@ export function PracticePage() {
     dealer: parsed?.dealer ?? "N",
     calls: parsed?.initialCalls ?? [],
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(
+    !parsed || parsed.initialCalls.length === 0,
+  );
   const [error, setError] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<CallInterpretation | null>(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
@@ -48,7 +50,6 @@ export function PracticePage() {
   useEffect(() => {
     if (!boardId || !parsed) return;
     if (history.calls.length > 0) {
-      setLoading(false);
       return;
     }
     let cancelled = false;
@@ -78,7 +79,7 @@ export function PracticePage() {
     return () => {
       cancelled = true;
     };
-  }, [boardId, parsed?.dealer]); // boardId changed means a new hand or a manual URL edit
+  }, [boardId, parsed, history.calls.length, navigate]); // boardId changed means a new hand or a manual URL edit
 
   const auctionDone = isAuctionComplete(history);
 
