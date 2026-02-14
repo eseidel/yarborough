@@ -5,7 +5,8 @@
 //! - Limit Protocol: Define hand strength in known fits or NT (non-forcing)
 
 pub mod auction_model;
-pub mod bid_selector;
+pub mod call_menu;
+pub mod call_selector;
 pub mod constraints;
 pub mod discovery;
 pub mod hand_model;
@@ -16,6 +17,7 @@ pub mod point_ranges;
 pub mod semantics;
 
 pub use auction_model::AuctionModel;
+pub use call_selector::CallSelector;
 pub use constraints::HandConstraint;
 pub use discovery::DiscoveryProtocol;
 pub use hand_model::HandModel;
@@ -34,11 +36,5 @@ use bridge_core::{Auction, Call, Hand, Position};
 pub fn select_bid(hand: &Hand, auction: &Auction, position: Position) -> Option<Call> {
     let hand_model = HandModel::from_hand(hand);
     let auction_model = AuctionModel::from_auction(auction, position);
-    let legal_calls = auction.legal_calls();
-
-    Some(bid_selector::BidSelector::select_best_bid(
-        &hand_model,
-        &auction_model,
-        &legal_calls,
-    ))
+    CallSelector::select_best_call(&hand_model, &auction_model)
 }

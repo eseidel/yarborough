@@ -1,9 +1,10 @@
 //! Semantic meaning of calls in the NBK model
 
 use crate::nbk::HandConstraint;
+use serde::{Deserialize, Serialize};
 
 /// Purpose of a call in the NBK model
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CallPurpose {
     /// Discovery: Show length in a new suit (forcing)
     Discovery,
@@ -12,7 +13,7 @@ pub enum CallPurpose {
 }
 
 /// Semantic meaning of a call
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CallSemantics {
     /// Why we are making this call
     pub purpose: CallPurpose,
