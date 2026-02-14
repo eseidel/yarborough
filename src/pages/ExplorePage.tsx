@@ -4,10 +4,7 @@ import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
 import { CallTable } from "../components/CallTable";
 import { CallMenu } from "../components/CallMenu";
-import type {
-  CallHistory,
-  CallInterpretation,
-} from "../bridge";
+import type { CallHistory, CallInterpretation } from "../bridge";
 import {
   vulnerabilityLabel,
   vulnerabilityFromBoardNumber,

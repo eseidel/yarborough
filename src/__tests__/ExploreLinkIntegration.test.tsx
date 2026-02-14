@@ -112,11 +112,13 @@ describe("Explore Link Integration", () => {
           <Route path="/bid/:boardId" element={<PracticePage />} />
           <Route path="/explore/:exploreId" element={<div>Explore Page</div>} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // Click Suggest Bid
-    const suggestBtn = await screen.findByRole("button", { name: /suggest bid/i });
+    const suggestBtn = await screen.findByRole("button", {
+      name: /suggest bid/i,
+    });
     fireEvent.click(suggestBtn);
 
     // Wait for suggestion and check for Explore link
