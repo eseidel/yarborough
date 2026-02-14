@@ -27,6 +27,15 @@ impl Position {
         }
     }
 
+    pub fn partner(self) -> Self {
+        match self {
+            Position::North => Position::South,
+            Position::South => Position::North,
+            Position::East => Position::West,
+            Position::West => Position::East,
+        }
+    }
+
     pub fn to_char(self) -> char {
         match self {
             Position::North => 'N',

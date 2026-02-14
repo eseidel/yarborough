@@ -1,7 +1,7 @@
 test_opening_response_generalization:
-  Q73.K652.T9.AJ72:P 1H P:None: "FAIL: step 3, expected 1S, got P"
-  Q73.K652.T9.AJ72:P P 1H P:None: "FAIL: step 4, expected 1S, got P"
-  Q73.K652.T9.AJ72:P P P 1H P:None: "FAIL: step 5, expected 1S, got P"
+  Q73.K652.T9.AJ72:P 1H P:None: PASS
+  Q73.K652.T9.AJ72:P P 1H P:None: PASS
+  Q73.K652.T9.AJ72:P P P 1H P:None: PASS
 test_rebids_after_minor_response:
   2.345.AKJ954.AQ3:1H P 2C P:None: "FAIL: step 0, expected 1H, got P"
   2.345.AQJ954.AQ3:1H P 2C P:None: "FAIL: step 0, expected 1H, got P"
@@ -12,7 +12,7 @@ test_preemptive_openings:
   QJ987652.432.2.2::None: "FAIL: step 0, expected 4C, got P"
   432.2.2.AQJ98762::None: "FAIL: step 0, expected 4S, got P"
   2.AQJ987652.2.2::None: "FAIL: step 0, expected 5D, got P"
-  AKJ.AKQ.A82.AQ43::None: "FAIL: step 0, expected 3N, got P"
+  AKJ.AKQ.A82.AQ43::None: "FAIL: step 0, expected 3N, got 1S"
 test_partner_profile_inference:
-  KJ64.JT.KQT9.KJ9:1D P 1H P 1N P:None: "FAIL: step 2, expected 1H, got P"
-  .KQJ965.QJT2.A95:1C P 1D P 1H P:None: "FAIL: step 2, expected 1D, got P"
+  KJ64.JT.KQT9.KJ9:1D P 1H P 1N P:None: "FAIL: step 6, expected 2N, got 2H"
+  .KQJ965.QJT2.A95:1C P 1D P 1H P:None: "FAIL: step 2, expected 1D, got 1H"

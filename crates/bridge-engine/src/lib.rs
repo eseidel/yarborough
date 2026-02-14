@@ -1,3 +1,5 @@
+mod nbk;
+
 use bridge_core::auction::Auction;
 use bridge_core::board::Position;
 use bridge_core::call::Call;
@@ -52,13 +54,16 @@ pub fn get_next_bid(identifier: &str) -> String {
     });
 
     let current_player = auction.current_player();
-    let _hand = match board.hands.get(&current_player) {
+    let hand = match board.hands.get(&current_player) {
         Some(h) => h,
         None => return "P".to_string(), // Should not happen if board is valid
     };
 
-    // TODO: Implement bidding logic
-    "P".to_string()
+    // Use NBK bidding logic
+    match nbk::select_bid(hand, &auction, current_player) {
+        Some(call) => call.render(),
+        None => "P".to_string(),
+    }
 }
 
 /// Like get_next_bid, but returns the bid along with its rule name and description.
@@ -79,7 +84,7 @@ pub fn get_suggested_bid(identifier: &str) -> JsValue {
     let auction = auction.unwrap_or_else(|| Auction::new(board.dealer));
 
     let current_player = auction.current_player();
-    let _hand = match board.hands.get(&current_player) {
+    let hand = match board.hands.get(&current_player) {
         Some(h) => h,
         None => {
             return serde_wasm_bindgen::to_value(&CallInterpretation {
@@ -91,10 +96,12 @@ pub fn get_suggested_bid(identifier: &str) -> JsValue {
         }
     };
 
+    // Use NBK bidding logic
+    let call = nbk::select_bid(hand, &auction, current_player).unwrap_or(Call::Pass);
     let interpretation = CallInterpretation {
-        call_name: "P".into(),
-        rule_name: String::new(),
-        description: String::new(),
+        call_name: call.render(),
+        rule_name: "NBK".into(), // TODO: Add specific rule names in later phases
+        description: "Natural Bidding Kernel".into(),
     };
 
     serde_wasm_bindgen::to_value(&interpretation).unwrap()
