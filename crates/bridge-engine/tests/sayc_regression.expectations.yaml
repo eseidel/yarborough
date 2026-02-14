@@ -16,3 +16,5 @@ test_preemptive_openings:
 test_partner_profile_inference:
   KJ64.JT.KQT9.KJ9:1D P 1H P 1N P:None: PASS
   .KQJ965.QJT2.A95:1C P 1D P 1H P:None: PASS
+test_fourth_seat_rule_of_15:
+  T2.A5.AJT42.KT96:P P P:None: PASS
