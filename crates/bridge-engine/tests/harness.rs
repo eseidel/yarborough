@@ -11,20 +11,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-fn parse_hand(s: &str) -> Hand {
-    let suits: Vec<&str> = s.split('.').collect();
-    let mut cards = Vec::new();
-    let suit_order = [Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades];
-    for (i, suit_str) in suits.iter().enumerate() {
-        let suit = suit_order[i];
-        for c in suit_str.chars() {
-            if let Some(rank) = Rank::from_char(c) {
-                cards.push(bridge_core::card::Card { suit, rank });
-            }
-        }
-    }
-    Hand { cards }
-}
+use bridge_core::io::hand_parser::parse_hand;
 
 fn parse_auction(history: &str, dealer: Position) -> Auction {
     let mut auction = Auction::new(dealer);

@@ -113,7 +113,7 @@ fn main() {
         let history_str = parts.get(2).map(|s| s.as_str()).unwrap_or("");
         let vuln_str = parts.get(3).map(|s| s.as_str()).unwrap_or("None");
 
-        let hand = bridge_core::io::pbn::import_hand(hand_str).expect("Invalid hand string");
+        let hand = bridge_core::io::hand_parser::parse_hand(hand_str);
         let vulnerability = match vuln_str {
             "N-S" | "NS" => Vulnerability::NS,
             "E-W" | "EW" => Vulnerability::EW,
