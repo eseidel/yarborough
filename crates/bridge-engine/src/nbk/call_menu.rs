@@ -2,7 +2,7 @@
 //!
 //! Provides a way to group legal calls by their semantic meaning.
 
-use crate::nbk::{AuctionModel, CallInterpreter, CallPurpose, CallSemantics, HandConstraint};
+use crate::nbk::{AuctionModel, CallInterpreter, CallSemantics, HandConstraint};
 use bridge_core::Call;
 use serde::{Deserialize, Serialize};
 
@@ -34,19 +34,12 @@ pub struct CallMenu {
 /// Types of predefined call groups in the NBK model
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CallMenuGroupType {
-    /// Support major suits with limit purpose
     SupportMajors = 0,
-    /// Show major length using discovery purpose
     MajorDiscovery = 1,
-    /// Limit the strength of the hand (includes Pass and No Trump)
-    LimitStrength = 2,
-    /// Support minor suits with limit purpose
+    CharacterizeStrength = 2,
     SupportMinors = 3,
-    /// Show minor length with discovery purpose
     MinorDiscovery = 4,
-    /// Show length with a rebid in limit purpose
-    Rebids = 5,
-    /// Bids that don't fit into other categories
+    RebidSuit = 5,
     Miscellaneous = 6,
 }
 
@@ -56,10 +49,10 @@ impl CallMenuGroupType {
         match self {
             Self::SupportMajors => "Support Majors",
             Self::MajorDiscovery => "Major Discovery",
-            Self::LimitStrength => "Limit Strength",
+            Self::CharacterizeStrength => "Characterize Strength",
             Self::SupportMinors => "Support Minors",
             Self::MinorDiscovery => "Minor Discovery",
-            Self::Rebids => "Rebids",
+            Self::RebidSuit => "Rebid Suit",
             Self::Miscellaneous => "Miscellaneous",
         }
     }
@@ -68,10 +61,10 @@ impl CallMenuGroupType {
     pub const ALL: [Self; 7] = [
         Self::SupportMajors,
         Self::MajorDiscovery,
-        Self::LimitStrength,
+        Self::CharacterizeStrength,
         Self::SupportMinors,
         Self::MinorDiscovery,
-        Self::Rebids,
+        Self::RebidSuit,
         Self::Miscellaneous,
     ];
 }
@@ -95,78 +88,54 @@ impl CallMenu {
             if let Some(semantics) = CallInterpreter::interpret(auction_model, &call) {
                 let mut best_group = CallMenuGroupType::Miscellaneous;
 
-                match semantics.purpose {
-                    CallPurpose::Limit => {
-                        let mut did_show_length = false;
-                        let mut did_limit_strength = false;
-                        for constraint in &semantics.shows {
-                            if let HandConstraint::MinLength(suit, now_shown) = *constraint {
-                                if auction_model.partner_model.has_shown_suit(suit) {
-                                    if suit.is_major() {
-                                        best_group =
-                                            best_group.min(CallMenuGroupType::SupportMajors);
-                                    } else if suit.is_minor() {
-                                        best_group =
-                                            best_group.min(CallMenuGroupType::SupportMinors);
-                                    }
-                                } else {
-                                    let already_known = auction_model.bidder_model.min_length(suit);
-                                    if now_shown > already_known {
-                                        best_group = best_group.min(CallMenuGroupType::Rebids);
-                                    }
+                let mut did_show_length = false;
+                let mut did_characterize_strength = false;
+                for constraint in &semantics.shows {
+                    match *constraint {
+                        HandConstraint::MinLength(suit, now_shown) => {
+                            if auction_model.partner_model.has_shown_suit(suit) {
+                                if suit.is_major() {
+                                    best_group = best_group.min(CallMenuGroupType::SupportMajors);
+                                } else if suit.is_minor() {
+                                    best_group = best_group.min(CallMenuGroupType::SupportMinors);
                                 }
-                                did_show_length = true;
-                            } else if let HandConstraint::MinHcp(now_shown) = *constraint {
-                                if now_shown < auction_model.bidder_model.max_hcp.unwrap_or(40) {
-                                    did_limit_strength = true;
-                                }
-                            }
-                        }
-                        if !did_show_length && did_limit_strength {
-                            best_group = best_group.min(CallMenuGroupType::LimitStrength);
-                        }
-                    }
-                    CallPurpose::Discovery => {
-                        for constraint in &semantics.shows {
-                            if let HandConstraint::MinLength(suit, now_shown) = *constraint {
+                            } else {
                                 let already_known = auction_model.bidder_model.min_length(suit);
                                 if now_shown > already_known {
-                                    if suit.is_major() {
-                                        best_group =
-                                            best_group.min(CallMenuGroupType::MajorDiscovery);
-                                    } else if suit.is_minor() {
-                                        best_group =
-                                            best_group.min(CallMenuGroupType::MinorDiscovery);
+                                    if already_known >= 4 {
+                                        best_group = best_group.min(CallMenuGroupType::RebidSuit);
+                                    } else {
+                                        if suit.is_major() {
+                                            best_group =
+                                                best_group.min(CallMenuGroupType::MajorDiscovery);
+                                        } else if suit.is_minor() {
+                                            best_group =
+                                                best_group.min(CallMenuGroupType::MinorDiscovery);
+                                        }
                                     }
                                 }
                             }
+                            did_show_length = true;
                         }
-                    }
-                    CallPurpose::Opening => {
-                        for constraint in &semantics.shows {
-                            match *constraint {
-                                HandConstraint::MinLength(suit, _) => {
-                                    if suit.is_major() {
-                                        best_group =
-                                            best_group.min(CallMenuGroupType::MajorDiscovery);
-                                    } else if suit.is_minor() {
-                                        best_group =
-                                            best_group.min(CallMenuGroupType::MinorDiscovery);
-                                    }
-                                }
-                                HandConstraint::MaxUnbalancedness(_)
-                                | HandConstraint::MinHcp(_) => {
-                                    // Likely NT or Strong 2C
-                                    best_group = best_group.min(CallMenuGroupType::LimitStrength);
-                                }
-                                _ => {}
+                        HandConstraint::MinHcp(now_shown) => {
+                            if now_shown > auction_model.bidder_model.min_hcp.unwrap_or(0) {
+                                did_characterize_strength = true;
                             }
                         }
-                        // Default for Pass (which might only have MaxHcp)
-                        if best_group == CallMenuGroupType::Miscellaneous {
-                            best_group = CallMenuGroupType::LimitStrength;
+                        HandConstraint::MaxHcp(now_shown) => {
+                            if now_shown < auction_model.bidder_model.max_hcp.unwrap_or(40) {
+                                did_characterize_strength = true;
+                            }
+                        }
+                        _ => {
+                            // This is a constraint that doesn't fit into any of the above categories.
+                            // We'll ignore it for now.
                         }
                     }
+                }
+
+                if !did_show_length && did_characterize_strength {
+                    best_group = best_group.min(CallMenuGroupType::CharacterizeStrength);
                 }
 
                 group_items[best_group as usize].push(CallMenuItem { call, semantics });
@@ -205,12 +174,15 @@ mod tests {
         let menu = CallMenu::from_auction_model(&auction_model);
 
         // At the start, only Discovery bids (and maybe some NT limit bids if configured)
-        // Group: Limit Strength (includes Pass)
+        // Group: Characterize Strength (includes Pass)
         // Group: Major Discovery (1H, 1S)
         // Group: Minor Discovery (1C, 1D)
 
-        let limit_strength = menu.groups.iter().find(|g| g.name == "Limit Strength");
-        assert!(limit_strength.is_some());
+        let characterize_strength = menu
+            .groups
+            .iter()
+            .find(|g| g.name == "Characterize Strength");
+        assert!(characterize_strength.is_some());
 
         let discovery_majors = menu.groups.iter().find(|g| g.name == "Major Discovery");
         assert!(discovery_majors.is_some());
@@ -235,12 +207,15 @@ mod tests {
         // South should see:
         // Group: Support Majors (2H, 3H, 4H)
         // Group: Major Discovery (1S)
-        // Group: Limit Strength (Pass, NT bids)
+        // Group: Characterize Strength (Pass, NT bids)
         // Group: Minor Discovery (2C, 2D)
 
         assert!(menu.groups.iter().any(|g| g.name == "Support Majors"));
         assert!(menu.groups.iter().any(|g| g.name == "Major Discovery"));
-        assert!(menu.groups.iter().any(|g| g.name == "Limit Strength"));
+        assert!(menu
+            .groups
+            .iter()
+            .any(|g| g.name == "Characterize Strength"));
         assert!(menu.groups.iter().any(|g| g.name == "Minor Discovery"));
     }
 }

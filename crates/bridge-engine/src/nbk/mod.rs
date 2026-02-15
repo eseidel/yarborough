@@ -22,7 +22,7 @@ pub use hand_model::HandModel;
 pub use interpreter::CallInterpreter;
 pub use partner_model::PartnerModel;
 pub use point_ranges::PointRanges;
-pub use semantics::{CallPurpose, CallSemantics};
+pub use semantics::CallSemantics;
 pub use trace::BidTrace;
 
 use bridge_core::{Auction, Call, Hand, Position};

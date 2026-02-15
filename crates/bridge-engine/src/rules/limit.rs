@@ -1,6 +1,6 @@
 //! Limit Rules for the NBK DSL
 
-use crate::nbk::{AuctionModel, CallPurpose, CallSemantics, HandConstraint, PointRanges};
+use crate::nbk::{AuctionModel, CallSemantics, HandConstraint, PointRanges};
 use crate::rules::BiddingRule;
 use bridge_core::{Call, Shape, Strain};
 
@@ -29,7 +29,6 @@ impl BiddingRule for NoTrumpLimit {
                 &auction_model.partner_model,
             ));
             Some(CallSemantics {
-                purpose: CallPurpose::Limit,
                 shows: constraints,
                 rule_name: self.name(call),
                 description: "Limit bid in No Trump".to_string(),
@@ -68,7 +67,6 @@ impl BiddingRule for SupportLimit {
                 &auction_model.partner_model,
             ));
             Some(CallSemantics {
-                purpose: CallPurpose::Limit,
                 shows: constraints,
                 rule_name: self.name(call),
                 description: format!("Limit support for partner's {:?}", suit),
@@ -106,7 +104,6 @@ impl BiddingRule for RebidLimit {
                 &auction_model.partner_model,
             ));
             Some(CallSemantics {
-                purpose: CallPurpose::Limit,
                 shows: constraints,
                 rule_name: self.name(call),
                 description: format!("Limit rebid in own {:?}", suit),
@@ -150,7 +147,6 @@ impl BiddingRule for PassLimit {
 
             let threshold = (goal - 1).saturating_sub(partner_max_hcp);
             Some(CallSemantics {
-                purpose: CallPurpose::Limit,
                 shows: vec![HandConstraint::MaxHcp(threshold)],
                 rule_name: self.name(call),
                 description: format!(

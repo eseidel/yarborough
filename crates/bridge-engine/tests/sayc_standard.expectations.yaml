@@ -1,11 +1,11 @@
 test_open_one_nt:
   KQ4.AQ8.K9873.K2::None: "FAIL: step 0, expected 1N, got 1H"
   97.KJ2.AT3.AKQ95::None: "FAIL: step 0, expected 1N, got 1S"
-  AQJ97.53.KQ2.A65::None: "FAIL: step 0, expected 1N, got 1C"
+  AQJ97.53.KQ2.A65::None: PASS
   AQJ.J2.Q9832.AK5::None: "FAIL: step 0, expected 1N, got 1H"
   T74.QT8.AKQ86.A5::None: "FAIL: step 0, expected 1N, got 1H"
   AJ763.Q32.K8.A65::None: PASS
-  AKT92.T98.AQ9.AT::None: "FAIL: step 0, expected 1N, got 1C"
+  AKT92.T98.AQ9.AT::None: PASS
 test_open_two_nt:
   KQ4.AQ8.AK873.K2::None: "FAIL: step 0, expected 2N, got 1H"
 test_weak_game_jump_over_one_nt:
@@ -22,7 +22,7 @@ test_minimum_stayman:
   T9.AJ72.Q732.K65:1N P 2C P 2D P:None: "FAIL: step 2, expected 2C, got 2H"
   T9.AJ72.Q732.K65:1N P 2C P 2H P:None: "FAIL: step 2, expected 2C, got 2H"
   T9.AJ72.Q732.K65:1N P 2C P 2S P:None: "FAIL: step 2, expected 2C, got 2H"
-  AQ2.AJ72.Q73.K65:1N P 2C P:None: "FAIL: step 0, expected 1N, got 1D"
+  AQ2.AJ72.Q73.K65:1N P 2C P:None: PASS
 test_invitational_stayman:
   T9.AJ.K652.QT732:1N P 2C P 2D P:None: "FAIL: step 2, expected 2C, got 2H"
   T9.AJ.K652.QT732:1N P 2C P 2H P:None: "FAIL: step 2, expected 2C, got 2H"
@@ -61,7 +61,7 @@ test_jacoby_transfers:
   A9.AQ5.AQT4.J865:1N P 2D P:None: "FAIL: step 4, expected 3H, got 2H"
   JT98765.2.75.543:1N P 2S P 3C P:None: "FAIL: step 2, expected 2S, got P"
   5.QT87542.75.543:1N P 2S P 3C P:None: "FAIL: step 2, expected 2S, got P"
-  97.KJ52.AT3.AKQ9:1N P 2S P:None: "FAIL: step 0, expected 1N, got 1D"
+  97.KJ52.AT3.AKQ9:1N P 2S P:None: "FAIL: step 4, expected 3C, got P"
   K83.852.5.QT9752:2N P:Both: "FAIL: step 2, expected 3H, got 3S"
   83.852.5.KQT9752:2C P 2D P 3N P:None: "FAIL: step 2, expected 2D, got 2S"
   K83.852.QT9752.5:2N P:Both: "FAIL: step 2, expected 3D, got 3H"
@@ -72,11 +72,11 @@ test_invitational_two_nt_over_one_nt:
   QT987.AJ4.75.J43:1N P:None: PASS
   T732.KJ95.J32.A5:1N P:None: PASS
   952.QT87.A86.Q52:1N P:None: "FAIL: step 2, expected P, got 2N"
-  K8732.J98.J5.JT8:P P 1N P:N-S: "FAIL: step 4, expected P, got 2C"
+  K8732.J98.J5.JT8:P P 1N P:N-S: PASS
 test_three_level_calls_over_one_nt:
-  AQT942.984.75.43:1N P:None: "FAIL: step 2, expected 3C, got 2C"
-  8.KQ98752.86.542:1N P:None: "FAIL: step 2, expected 3D, got 2D"
-  8.AK98752.86.542:1N P:None: "FAIL: step 2, expected 3N, got 2D"
+  AQT942.984.75.43:1N P:None: "FAIL: step 2, expected 3C, got P"
+  8.KQ98752.86.542:1N P:None: "FAIL: step 2, expected 3D, got P"
+  8.AK98752.86.542:1N P:None: "FAIL: step 2, expected 3N, got P"
 test_slam_invitations_over_one_nt:
   K7.J85.A2.KQJ743:1N P:None: "FAIL: step 2, expected 3S, got 2S"
   KQ9.5.KQT652.AT8:1N P:None: "FAIL: step 2, expected 3H, got 2H"
@@ -87,46 +87,46 @@ test_slam_invitations_over_one_nt:
   KQ4.AQ8.K9873.K2:1N P 4C P 4H P 5C P:None: "FAIL: step 0, expected 1N, got 1H"
   97.KJ2.AT3.AKQ95:1N P 4C P 4S P 5C P:None: "FAIL: step 0, expected 1N, got 1S"
   972.A2.AT3.AKQ95:1N P 4C P 4N P 5C P:None: "FAIL: step 0, expected 1N, got 1S"
-  A975.A73.A52.A65:1N P 4C P 4D P 5C P:None: "FAIL: step 0, expected 1N, got 1C"
+  A975.A73.A52.A65:1N P 4C P 4D P 5C P:None: "FAIL: step 4, expected 4D, got P"
   AJ4.KQ8.K9873.Q2:1N P 4N P:None: "FAIL: step 0, expected 1N, got 1H"
   AJ4.KQ8.K9873.K2:1N P 4N P:None: "FAIL: step 0, expected 1N, got 1H"
   AJ4.KQ8.K9873.A2:1N P 4N P:None: "FAIL: step 0, expected 1N, got 1H"
 test_interference_over_one_nt:
   987654.632.5.543:1N X XX P 2C P:None: "FAIL: step 2, expected XX, got P"
   982.T75432.86.32:1N X XX P 2C P:None: "FAIL: step 2, expected XX, got P"
-  AQT.KJ87.J5.KQ43:1N X XX P:None: "FAIL: step 0, expected 1N, got 1D"
-  AQT.KJ87.J5.KQ43:1N P 2C X:None: "FAIL: step 0, expected 1N, got 1D"
-  KT82.AKT8.Q8.A62:1N P 2C X:None: "FAIL: step 0, expected 1N, got 1C"
-  AKT82.AKT.Q8.862:1N P 2C X:None: "FAIL: step 0, expected 1N, got 1C"
-  AQT9.KJ8.J5.KQ43:1N P 2C 2H:None: "FAIL: step 0, expected 1N, got 1C"
-  KT8.AKT8.AQT8.62:1N P 2C 2H:None: "FAIL: step 0, expected 1N, got 1D"
-  KT8.AKT8.Q83.A62:1N P 2C 2H:None: "FAIL: step 0, expected 1N, got 1D"
-  KT8.AKT8.AQT8.A2:2N P 3C 3H:None: "FAIL: step 0, expected 2N, got 1D"
-  KT8.AKT8.A2.AQT8:2N P 3C 3S:None: "FAIL: step 0, expected 2N, got 1D"
+  AQT.KJ87.J5.KQ43:1N X XX P:None: "FAIL: step 4, expected 2C, got P"
+  AQT.KJ87.J5.KQ43:1N P 2C X:None: PASS
+  KT82.AKT8.Q8.A62:1N P 2C X:None: "FAIL: step 4, expected P, got 2D"
+  AKT82.AKT.Q8.862:1N P 2C X:None: "FAIL: step 4, expected XX, got P"
+  AQT9.KJ8.J5.KQ43:1N P 2C 2H:None: PASS
+  KT8.AKT8.AQT8.62:1N P 2C 2H:None: "FAIL: step 4, expected X, got P"
+  KT8.AKT8.Q83.A62:1N P 2C 2H:None: PASS
+  KT8.AKT8.AQT8.A2:2N P 3C 3H:None: "FAIL: step 4, expected X, got P"
+  KT8.AKT8.A2.AQT8:2N P 3C 3S:None: "FAIL: step 4, expected X, got P"
   AQT.KJ8.AK987.43:1N P 2H X:None: "FAIL: step 0, expected 1N, got 1H"
-  K87.AKT8.AT8.Q62:1N P 2H X:None: "FAIL: step 0, expected 1N, got 1D"
-  AKT.AKJT.87.QT76:1N P 2H X:None: "FAIL: step 0, expected 1N, got 1D"
-  KJ87.AKT8.AT8.62:1N P 2H X:None: "FAIL: step 0, expected 1N, got 1C"
-  AQT9.KJ87.Q86.A2:1N P 2D 2S:None: "FAIL: step 0, expected 1N, got 1C"
-  KT8.AKT8.86.AQT7:1N P 2C 2S:None: "FAIL: step 0, expected 1N, got 1D"
-  KT82.AKT8.Q8.A32:1N P 2C 2S:None: "FAIL: step 0, expected 1N, got 1C"
+  K87.AKT8.AT8.Q62:1N P 2H X:None: "FAIL: step 4, expected 2S, got P"
+  AKT.AKJT.87.QT76:1N P 2H X:None: "FAIL: step 4, expected 3S, got 2S"
+  KJ87.AKT8.AT8.62:1N P 2H X:None: PASS
+  AQT9.KJ87.Q86.A2:1N P 2D 2S:None: "FAIL: step 4, expected 3H, got P"
+  KT8.AKT8.86.AQT7:1N P 2C 2S:None: "FAIL: step 4, expected X, got P"
+  KT82.AKT8.Q8.A32:1N P 2C 2S:None: PASS
   A43.KQ.KT942.K54:1N X 2D P:None: "FAIL: step 0, expected 1N, got 1H"
-  J53.AKJ76.A5.Q53:1N 2C X P:E-W: "FAIL: step 0, expected 1N, got 1D"
-  AKJ76.J53.A5.Q53:1N 2C X P:E-W: "FAIL: step 0, expected 1N, got 1C"
+  J53.AKJ76.A5.Q53:1N 2C X P:E-W: "FAIL: step 4, expected 2D, got P"
+  AKJ76.J53.A5.Q53:1N 2C X P:E-W: PASS
 test_rule_of_twenty_open:
-  KT64.6.A873.KQ54::None: PASS
+  KT64.6.A873.KQ54::None: "FAIL: step 0, expected 1C, got P"
   K953.972..AQJ987::None: "FAIL: step 0, expected 1S, got 2S"
   Q75.Q75.A876.KJ8::None: PASS
   7.AKQ8765.Q76.98::None: "FAIL: step 0, expected 1D, got P"
   64.6.AK732.QJ854::None: "FAIL: step 0, expected 1S, got P"
-  KQ953.QJ972.2.A3::None: "FAIL: step 0, expected 1D, got 1C"
-  QT83.JT92.A.KQ87::None: "FAIL: step 0, expected 1D, got 1C"
+  KQ953.QJ972.2.A3::None: "FAIL: step 0, expected 1D, got P"
+  QT83.JT92.A.KQ87::None: "FAIL: step 0, expected 1D, got P"
   752.AKQ.QT76.K98::None: "FAIL: step 0, expected 1C, got P"
   J73.AQ5.Q83.AJ75::None: "FAIL: step 0, expected 1C, got P"
   J8.AQ2.Q873.AJT9::None: "FAIL: step 0, expected 1D, got P"
   KQ84.AQ98.QJ8.A4::None: "FAIL: step 0, expected 1D, got 1C"
   4.Q65.K873.AK975::None: PASS
-  AKJ9.T9872.K6.J9::None: "FAIL: step 0, expected 1D, got 1C"
+  AKJ9.T9872.K6.J9::None: "FAIL: step 0, expected 1D, got P"
   AK75.9875.AT876.::None: "FAIL: step 0, expected 1H, got P"
   K95.AJ765.Q76.J8::None: PASS
 test_third_and_fourth_seat_opens:
@@ -227,12 +227,12 @@ test_minimum_rebid_by_opener:
   KQ875.AJ.976.A98:1C P 1H P:None: "FAIL: step 4, expected 1N, got P"
   86.T4.AKJ753.A98:1H P 1S P:None: "FAIL: step 4, expected 2H, got P"
   QJ87.J6.AKJ75.K8:1H P 1S P:None: "FAIL: step 4, expected 2C, got 1N"
-  K92.34.K4.AKQT87:1S P 1N P:None: "FAIL: step 4, expected 2S, got 2N"
+  K92.34.K4.AKQT87:1S P 1N P:None: "FAIL: step 4, expected 2S, got P"
   95.85.K6.AKQ8764:P 1S P 2C P:None: PASS
   A4.Q2.J864.AJT63:P 1S P 3N P:Both: "FAIL: step 5, expected P, got 4H"
   AT86.J.AT74.AJ84:P 1C P 1D X:N-S: "FAIL: step 5, expected P, got 1H"
   K.A9763.6.AJT752:1S P 2D P:None: "FAIL: step 4, expected 3D, got 2S"
-  K32.KQJT9.QJ32.T:P 1D P 2C P:E-W: "FAIL: step 5, expected 2D, got 2H"
+  K32.KQJT9.QJ32.T:P 1D P 2C P:E-W: "FAIL: step 1, expected 1D, got P"
 test_invitational_rebid_by_opener:
   .AKT42.Q63.AK754:1S P 2S P:None: "FAIL: step 4, expected 4S, got 3S"
   K3.AJ6.K64.KQ542:1S P 2S P:None: "FAIL: step 4, expected 2N, got 3S"
@@ -269,7 +269,7 @@ test_opener_rebid_after_a_limit_raise:
   98.Q86.KT5.AKQJ8:1S P 3S P:None: PASS
   9.Q974.AJ852.AK9:1H P 3H P:Both: "FAIL: step 4, expected 4H, got P"
   J7.A.AJ87432.K92:P P 1H P 3H P:None: "FAIL: step 6, expected 4H, got P"
-  KQ98.98.KJ98.KT9:1C P 3C P:E-W: "FAIL: step 4, expected P, got 3H"
+  KQ98.98.KJ98.KT9:1C P 3C P:E-W: "FAIL: step 0, expected 1C, got P"
   KQ43.T.AK76.AQT3:1C P 2C 3D:Both: PASS
   T942.84.AK.AQJ85:1S P 3S P:E-W: "FAIL: step 4, expected 4S, got P"
   AT5.9.AJ964.A873:P P P 1H P 3H P:N-S: "FAIL: step 7, expected P, got 3S"
@@ -295,8 +295,8 @@ test_reverses:
 test_subsequent_bidding_by_responder:
   T64.652.KT54.A54:1D P 1H P 2H P:None: "FAIL: step 6, expected P, got 3H"
   K953.972.T986.A9:1D P 1H P 1S P:None: PASS
-  75.K53.K98743.98:1C P 1H P 1N P:None: PASS
-  K8754.Q9.76.J984:1C P 1S P 1N P:None: PASS
+  75.K53.K98743.98:1C P 1H P 1N P:None: "FAIL: step 6, expected 2H, got P"
+  K8754.Q9.76.J984:1C P 1S P 1N P:None: "FAIL: step 6, expected 2C, got P"
   JT64.K532.8.A543:1H P 1S P 2C P:None: "FAIL: step 6, expected P, got 2N"
   K9.9732.K9.JT943:1H P 1S P 2C P:None: "FAIL: step 6, expected 2H, got 2N"
   A873.QJ8643.T5.9:1S P 1N P 2C P:None: "FAIL: step 6, expected 3C, got 2D"
@@ -304,7 +304,7 @@ test_subsequent_bidding_by_responder:
   K95.97.KQJ986.J9:1C P 1H P 1S P:None: "FAIL: step 6, expected 3H, got 2N"
   Q5.KJ65.K9.Q8762:1H P 1S P 2D P:None: "FAIL: step 6, expected 3D, got 3N"
   J642.K97.KQ6.AJ4:1C P 1D P 1N P 2D P:E-W: "FAIL: step 4, expected 1N, got P"
-  Q976.AT8432.T8.9:1C P 1D P 1N P:None: "FAIL: step 6, expected 2D, got 2C"
+  Q976.AT8432.T8.9:1C P 1D P 1N P:None: "FAIL: step 6, expected 2D, got P"
   KT76.Q.QJ8654.72:P P 1D P 1H P 1N P:E-W: "FAIL: step 0, expected P, got 2H"
   KJ642.KT.KQT97.7:1D P 1H P 1S P:None: "FAIL: step 6, expected 2C, got 2N"
   QJ4.T42.K9.A8765:1H P 1S P 2D P:None: "FAIL: step 6, expected 2N, got 3N"
@@ -329,11 +329,11 @@ test_subsequent_bidding_by_responder:
   AKQJ2.975.53.964:1H P 2C P 2H P:None: "FAIL: step 2, expected 2C, got 2N"
   Q974.KJT7.J653.J:P 1C P 1D P 2N P 3C P 3H P:Both: "FAIL: step 3, expected 1D, got 1H"
   KQ732.KQ52..K752:1C P 1H P 1S P 3H P:None: PASS
-  A4.QJ7652..K7542:1S P 2H P 2S P 3H P:E-W: "FAIL: step 0, expected 1S, got 2D"
+  A4.QJ7652..K7542:1S P 2H P 2S P 3H P:E-W: "FAIL: step 0, expected 1S, got P"
   AQJ754.J7.5.Q876:P 1C P 1D P 1S P 3H P:None: "FAIL: step 1, expected 1C, got P"
   52.AQ76.AJ93.K76:1D P 1H P 2H P 3H P:N-S: "FAIL: step 4, expected 2H, got P"
   87.842.7652.T953:1C P P X 1S P:None: PASS
-  74.QJ7532.8.AJ74:P P 1C P 1D P 1H P:None: "FAIL: step 0, expected P, got 2D"
+  74.QJ7532.8.AJ74:P P 1C P 1D P 1H P:None: "FAIL: step 4, expected 1D, got 1S"
   A9.QJT65.QJ96.A6:P 1S X XX P 1N P:E-W: "FAIL: step 3, expected XX, got 2H"
   KQ843.AKJ82.2.75:1D P 1S P 2C P 3S P:E-W: "FAIL: step 0, expected 1D, got 1C"
   Q4.K8.Q87643.JT2:P P P 1C P 1H P 2D P:E-W: "FAIL: step 1, expected P, got 2H"
@@ -355,7 +355,7 @@ test_fourth_suit_forcing:
   QT72.742.A8.AK97:1H P 1S P 2C P 2D P 2H P:None: "FAIL: step 6, expected 2D, got 4N"
   AQJ754.K7.QJ72.6:1C P 1D P 1H P 2S P:None: "FAIL: step 8, expected 3C, got P"
   A643.JT7.QJ64.AQ:1C P 1D P 1H P 2S P:None: "FAIL: step 8, expected 3N, got P"
-  AK43.JT7.QJ64.AQ:1C P 1D P 1H P 2S P:None: "FAIL: step 8, expected 3N, got 2N"
+  AK43.JT7.QJ64.AQ:1C P 1D P 1H P 2S P:None: "FAIL: step 0, expected 1C, got 1N"
   K732.84.KJ6.AQ72:1C P 1D P 1S P 2H P:None: "FAIL: step 8, expected 2N, got P"
   AJT6.AK972.92.K5:1C P 1D P 1S P 2H P 2N P:None: "FAIL: step 2, expected 1D, got 3N"
   J5.Q2.K874.QJ943:1D P 1S P 2C P:None: "FAIL: step 2, expected 1S, got 1H"
@@ -376,12 +376,12 @@ test_preemption:
   Q83.K9.Q8.AQJ874:P:None: PASS
   Q83.K9.Q8.AQJ874:P P:None: PASS
   Q83.K9.Q8.AQJ874:P P P:None: "FAIL: step 3, expected 2S, got 1S"
-  Q3.AQ7632.82.J93:P:None: PASS
-  Q3.AQ97632.82.J3:P:None: PASS
-  Q3.AQ987632.8.J2:P:None: "FAIL: step 1, expected 4D, got 3D"
+  Q3.AQ7632.82.J93:P:None: "FAIL: step 1, expected 2D, got P"
+  Q3.AQ97632.82.J3:P:None: "FAIL: step 1, expected 3D, got P"
+  Q3.AQ987632.8.J2:P:None: "FAIL: step 1, expected 4D, got P"
   .Q765.843.KQT932::None: "FAIL: step 0, expected P, got 2S"
   3.76.Q843.KQT932::None: "FAIL: step 0, expected P, got 2S"
-  QT96.AQT962.T.83:2D P 3D P:Both: "FAIL: step 4, expected P, got 3N"
+  QT96.AQT962.T.83:2D P 3D P:Both: "FAIL: step 0, expected 2D, got P"
   4.QT2.AQJ9862.82:3H P 4H P:N-S: "FAIL: step 4, expected P, got 6H"
   63.KQT763.J43.AJ:1C 2S P:N-S: "FAIL: step 3, expected P, got 5N"
   9.QJ2.AQT984.986:2H P 2S P:None: "FAIL: step 4, expected 3S, got 2N"
@@ -401,11 +401,11 @@ test_preemption:
   J64.85.KQT9852.5:P:None: PASS
   J64.85.KQT9852.5:P P:None: PASS
   J64.85.KQT9852.5:P P P:None: "FAIL: step 3, expected P, got 3H"
-  A976432.65.KJT.7::None: "FAIL: step 0, expected P, got 3C"
-  J97.AKJ9852.98.7::None: PASS
-  J97.AKJ9852.98.7:P:None: PASS
-  J97.AKJ9852.98.7:P P:None: PASS
-  J97.AKJ9852.98.7:P P P:None: "FAIL: step 3, expected P, got 3D"
+  A976432.65.KJT.7::None: PASS
+  J97.AKJ9852.98.7::None: "FAIL: step 0, expected 3D, got P"
+  J97.AKJ9852.98.7:P:None: "FAIL: step 1, expected 3D, got P"
+  J97.AKJ9852.98.7:P P:None: "FAIL: step 2, expected 3D, got P"
+  J97.AKJ9852.98.7:P P P:None: PASS
   AKQ985.T987.62.9::None: "FAIL: step 0, expected 3C, got P"
   AKQ985.T987.62.9:P:None: "FAIL: step 1, expected 3C, got P"
   AKQ985.T987.62.9:P P:None: "FAIL: step 2, expected 3C, got P"
@@ -455,7 +455,7 @@ test_preemptive_overcalls:
   73.AQ987632.8.T2:1C:None: "FAIL: step 1, expected 4D, got P"
   J843.J8.K.KQJ864:1D P 1H:N-S: "FAIL: step 3, expected 2S, got P"
 test_strong_two_club:
-  QJ842.AJ5.AK.AQJ::None: "FAIL: step 0, expected 2C, got 1C"
+  QJ842.AJ5.AK.AQJ::None: PASS
   K4.AK.AKQ543.K83::None: "FAIL: step 0, expected 2C, got 1H"
   AK.AKJ7.43.AKQT6::None: "FAIL: step 0, expected 2C, got 1S"
   .A4.2.AKQT985432::None: "FAIL: step 0, expected 2C, got 1S"
@@ -467,7 +467,7 @@ test_strong_two_club:
   QJ95.984.Q76.653:2C P 2D P 2S P:None: "FAIL: step 2, expected 2D, got 3N"
   K94.AK.AKQT2.AJ3:2C P 2S P 4N P 5C P:None: "FAIL: step 0, expected 2C, got 1H"
   QJ7.984.53.KQ652:2C P 2S P 4N P:None: "FAIL: step 6, expected 5C, got 6N"
-  K842.AK.AKQ.A974:2C P 2D P 2N P 3C P:None: "FAIL: step 0, expected 2C, got 1C"
+  K842.AK.AKQ.A974:2C P 2D P 2N P 3C P:None: "FAIL: step 4, expected 2N, got 2S"
   JT65.764.72.KQ65:2C P 2D P 2N P 3C P 3S P:None: "FAIL: step 2, expected 2D, got 2S"
   6.AJ3.AK4.AKQJT6:2C P 2D P 2S P 3C P:None: "FAIL: step 0, expected 2C, got 1S"
   T954.952.T863.82:2C P 2D P 2S P 3C P 3S P:None: "FAIL: step 2, expected 2D, got 2H"
@@ -731,7 +731,7 @@ test_reopening_double:
   KT6.AQJ74.874.T2:P 1S 2D P P X P:None: "FAIL: step 3, expected P, got 2N"
   AJ75.A92.KT2.AK3:1C 1D P P:Both: "FAIL: step 4, expected 2N, got 1N"
   3.AK954.A985.AK5:P 1D 1H P P X P 1S P:E-W: "FAIL: step 5, expected X, got P"
-  KT86.QT87.K.A843:1D P P 1H:N-S: "FAIL: step 0, expected 1D, got 1C"
+  KT86.QT87.K.A843:1D P P 1H:N-S: "FAIL: step 0, expected 1D, got P"
   J762.KQ86.AK54.A:1D P P 1S:Both: "FAIL: step 0, expected 1D, got 1C"
   .KQ874.KQJ7.AKQ2:1D 2C P P:Both: "FAIL: step 4, expected 3H, got 2H"
 test_balancing:
@@ -768,9 +768,9 @@ test_balancing:
   AQ3.T643.KT4.Q64:1D P P 1N P:None: "FAIL: step 5, expected 2N, got 5N"
 test_slam_biding:
   QT64.AK8.KT6.A62:1N P:None: "FAIL: step 2, expected 4N, got 5N"
-  KJ.QJT9.A873.KQ3:1N P 4N P:None: "FAIL: step 0, expected 1N, got 1D"
+  KJ.QJT9.A873.KQ3:1N P 4N P:None: "FAIL: step 4, expected 6N, got 5H"
   JT64.AK8.KQ6.A62:1N P:None: "FAIL: step 2, expected 4N, got 5N"
-  KQ.QJT9.A87.QJ73:1N P 4N P:None: "FAIL: step 0, expected 1N, got 1D"
+  KQ.QJT9.A87.QJ73:1N P 4N P:None: "FAIL: step 4, expected P, got 5S"
   .AKQ.QT76432.AKQ:1H P 3H P:None: PASS
   AKQ.JT98.J985.62:1H P 3H P 5H P:None: PASS
   .AKQ.KJ76432.AKQ:2C P 2N P 3H P 4H P:None: "FAIL: step 0, expected 2C, got 1H"

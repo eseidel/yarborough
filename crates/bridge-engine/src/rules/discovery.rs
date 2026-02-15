@@ -1,6 +1,6 @@
 //! Discovery Rules for the NBK DSL
 
-use crate::nbk::{AuctionModel, CallPurpose, CallSemantics, HandConstraint, PointRanges};
+use crate::nbk::{AuctionModel, CallSemantics, HandConstraint, PointRanges};
 use crate::rules::BiddingRule;
 use bridge_core::Call;
 
@@ -38,7 +38,6 @@ impl BiddingRule for NewSuitDiscovery {
             min_combined_points.saturating_sub(auction_model.partner_model.min_hcp.unwrap_or(0));
 
         Some(CallSemantics {
-            purpose: CallPurpose::Discovery,
             shows: vec![
                 HandConstraint::MinLength(suit, 4),
                 HandConstraint::MinHcp(needed_hcp),
@@ -53,7 +52,7 @@ impl BiddingRule for NewSuitDiscovery {
 mod tests {
     use super::*;
     use crate::nbk::{HandModel, PartnerModel};
-    use bridge_core::{Distribution, Shape, Strain, Suit};
+    use bridge_core::{Distribution, Shape, Strain};
 
     #[test]
     fn test_no_discovery_without_4_cards() {

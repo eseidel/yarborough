@@ -1,6 +1,6 @@
 //! Opening Rules for the NBK DSL
 
-use crate::nbk::{AuctionModel, CallPurpose, CallSemantics, HandConstraint};
+use crate::nbk::{AuctionModel, CallSemantics, HandConstraint};
 use crate::rules::BiddingRule;
 use bridge_core::{Call, Shape, Strain};
 
@@ -21,7 +21,6 @@ impl BiddingRule for Strong2C {
         } = call
         {
             Some(CallSemantics {
-                purpose: CallPurpose::Opening,
                 shows: vec![HandConstraint::MinHcp(22)],
                 rule_name: self.name(call),
                 description: "Very strong hand (22+ HCP)".to_string(),
@@ -51,7 +50,6 @@ impl BiddingRule for NoTrumpOpening {
                 level: 1,
                 strain: Strain::NoTrump,
             } => Some(CallSemantics {
-                purpose: CallPurpose::Opening,
                 shows: vec![
                     HandConstraint::MinHcp(15),
                     HandConstraint::MaxHcp(17),
@@ -64,7 +62,6 @@ impl BiddingRule for NoTrumpOpening {
                 level: 2,
                 strain: Strain::NoTrump,
             } => Some(CallSemantics {
-                purpose: CallPurpose::Opening,
                 shows: vec![
                     HandConstraint::MinHcp(20),
                     HandConstraint::MaxHcp(21),
@@ -108,7 +105,6 @@ impl BiddingRule for SuitOpening {
                 shows.push(HandConstraint::MinHcp(12));
             }
             Some(CallSemantics {
-                purpose: CallPurpose::Opening,
                 shows,
                 rule_name: self.name(call),
                 description: format!("Opening bid showing 4+ cards in {:?}", suit),
@@ -139,7 +135,6 @@ impl BiddingRule for WeakTwo {
                 return None;
             } // 2C is Strong
             Some(CallSemantics {
-                purpose: CallPurpose::Opening,
                 shows: vec![
                     HandConstraint::MinLength(suit, 6),
                     HandConstraint::MaxLength(suit, 6),
@@ -172,7 +167,6 @@ impl BiddingRule for Preempt {
             }
             let suit = strain.to_suit()?;
             Some(CallSemantics {
-                purpose: CallPurpose::Opening,
                 shows: vec![
                     HandConstraint::MinLength(suit, level + 4),
                     HandConstraint::MaxHcp(10),
@@ -203,7 +197,6 @@ impl BiddingRule for PassOpening {
     fn get_semantics(&self, _auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
         if let Call::Pass = call {
             Some(CallSemantics {
-                purpose: CallPurpose::Limit,
                 shows: vec![HandConstraint::MaxHcp(12)],
                 rule_name: self.name(call),
                 description: "Hand does not meet requirements for an opening bid".to_string(),
@@ -236,7 +229,6 @@ mod tests {
         };
         let sem = SuitOpening.get_semantics(&model, &call).unwrap();
 
-        assert_eq!(sem.purpose, CallPurpose::Opening);
         assert!(sem
             .shows
             .contains(&HandConstraint::MinLength(Suit::Spades, 5)));
