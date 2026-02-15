@@ -1,6 +1,6 @@
-use crate::nbk::{AuctionModel, CallSemantics};
 use crate::dsl::bidding_rule::BiddingRule;
-use crate::rules::{discovery, limit, opening};
+use crate::nbk::{AuctionModel, CallSemantics};
+use crate::rules::{natural, opening};
 use bridge_core::Call;
 
 /// Registry of all bidding rules
@@ -12,8 +12,12 @@ impl RuleRegistry {
     pub fn new_natural() -> Self {
         let mut rules: Vec<Box<dyn BiddingRule>> = Vec::new();
 
-        // Discovery
-        rules.push(Box::new(discovery::NewSuitDiscovery));
+        // Natural (Discovery, Responses)
+        rules.push(Box::new(natural::NewSuitDiscovery));
+        rules.push(Box::new(natural::NoTrumpResponse));
+        rules.push(Box::new(natural::SupportResponse));
+        rules.push(Box::new(natural::RebidResponse));
+        rules.push(Box::new(natural::PassBetterContractIsRemote));
 
         // Opening
         rules.push(Box::new(opening::Strong2C));
@@ -24,12 +28,6 @@ impl RuleRegistry {
         rules.push(Box::new(opening::WeakTwo));
         rules.push(Box::new(opening::Preempt));
         rules.push(Box::new(opening::PassOpening));
-
-        // Limit (Responses)
-        rules.push(Box::new(limit::NoTrumpResponse));
-        rules.push(Box::new(limit::SupportResponse));
-        rules.push(Box::new(limit::RebidResponse));
-        rules.push(Box::new(limit::PassBetterContractIsRemote));
         Self { rules }
     }
 
