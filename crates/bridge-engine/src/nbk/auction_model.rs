@@ -3,8 +3,10 @@
 use crate::nbk::{CallInterpreter, PartnerModel};
 use bridge_core::{Auction, Position};
 
+use serde::{Deserialize, Serialize};
+
 /// Analysis of the current auction state
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AuctionModel {
     /// The auction state
     pub auction: Auction,

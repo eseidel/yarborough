@@ -296,6 +296,13 @@ fn main() {
 fn print_full_trace(bid_num: usize, trace: &nbk::BidTrace) {
     println!("\nFull Trace for Bid {}:", bid_num);
     println!("=======================");
+
+    println!("\nBidder Model (What partner thinks we have):");
+    print_partner_model(&trace.auction_model.bidder_model);
+
+    println!("\nPartner Model (What we think partner has):");
+    print_partner_model(&trace.auction_model.partner_model);
+
     println!("\nSelection Process:");
 
     let mut current_group = String::new();
@@ -319,4 +326,40 @@ fn print_full_trace(bid_num: usize, trace: &nbk::BidTrace) {
         }
     }
     println!("=======================\n");
+}
+
+fn print_partner_model(model: &nbk::PartnerModel) {
+    if let Some(max_hcp) = model.max_hcp {
+        println!("  HCP: {} - {}", model.min_hcp.unwrap_or(0), max_hcp);
+    } else {
+        let min_hcp = model.min_hcp.unwrap_or(0);
+        if min_hcp == 0 {
+            println!("  HCP: ?");
+        } else {
+            println!("  HCP: {}+", min_hcp);
+        }
+    }
+    if let Some(shape) = model.max_shape {
+        println!("  Shape: {:?}", shape);
+    }
+    print!("  Length: ");
+    let mut known_length = false;
+    for suit in bridge_core::Suit::ALL {
+        let min_length = model.min_length(suit);
+        let max_length = model.max_length(suit);
+        if max_length == 13 {
+            if min_length > 0 {
+                print!("{}:{}+ ", suit.to_char(), min_length);
+                known_length = true;
+            }
+        } else {
+            print!("{}:{}-{} ", suit.to_char(), min_length, max_length);
+            known_length = true;
+        }
+    }
+    if !known_length {
+        println!("?");
+    } else {
+        println!();
+    }
 }

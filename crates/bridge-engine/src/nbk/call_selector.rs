@@ -54,6 +54,7 @@ impl CallSelector {
 
         BidTrace {
             hand_model: hand_model.clone(),
+            auction_model: auction_model.clone(),
             menu,
             selection_steps,
             selected_call,

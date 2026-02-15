@@ -2,10 +2,10 @@
 
 use crate::nbk::HandConstraint;
 use bridge_core::{Distribution, Shape, Suit};
+use serde::{Deserialize, Serialize};
 
 /// Inferred profile of partner's hand based on auction history
-/// Inferred profile of partner's hand based on auction history
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartnerModel {
     /// Minimum distribution partner has shown (minimum length in each suit)
     pub min_distribution: Distribution,
