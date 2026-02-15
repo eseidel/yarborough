@@ -43,23 +43,25 @@ pub fn get_interpretations(calls_string: &str, dealer: &str, _vulnerability: &st
     }
 
     let auction_model = nbk::AuctionModel::from_auction(&auction, auction.current_player());
-    let menu = nbk::call_menu::CallMenu::from_auction_model(&auction_model);
 
-    let mut items = Vec::new();
-    for group in menu.groups {
-        for item in group.items {
-            items.push(item);
-        }
-    }
+    let mut legal_calls = auction.legal_calls();
+    legal_calls.sort();
 
-    items.sort_by_key(|item| item.call);
-
-    let interpretations: Vec<CallInterpretation> = items
+    let interpretations: Vec<CallInterpretation> = legal_calls
         .into_iter()
-        .map(|item| CallInterpretation {
-            call_name: item.call.render(),
-            rule_name: item.semantics.rule_name,
-            description: item.semantics.description,
+        .map(|call| {
+            let semantics = nbk::CallInterpreter::interpret(&auction_model, &call);
+            CallInterpretation {
+                call_name: call.render(),
+                rule_name: semantics
+                    .as_ref()
+                    .map(|s| s.rule_name.clone())
+                    .unwrap_or_default(),
+                description: semantics
+                    .as_ref()
+                    .map(|s| s.description.clone())
+                    .unwrap_or_default(),
+            }
         })
         .collect();
 

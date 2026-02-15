@@ -6,9 +6,9 @@ use std::str::FromStr;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Call {
     Pass,
-    Bid { level: u8, strain: Strain },
     Double,
     Redouble,
+    Bid { level: u8, strain: Strain },
 }
 
 impl Call {
