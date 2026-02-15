@@ -1,7 +1,7 @@
 use crate::dsl::planner::GenuinePlanner;
 use crate::nbk::call_menu::{CallMenu, CallMenuItem};
 use crate::nbk::trace::{BidTrace, SelectionStep};
-use crate::nbk::{AuctionModel, HandModel};
+use crate::nbk::AuctionModel;
 use bridge_core::{Call, Hand};
 
 /// Call selector implementing the NBK priority stack
@@ -15,7 +15,6 @@ impl CallSelector {
 
     /// Select the best call and return a detailed trace of the selection process
     pub fn select_best_call_with_trace(hand: &Hand, auction_model: &AuctionModel) -> BidTrace {
-        let hand_model = HandModel::from_hand(hand);
         let menu = CallMenu::from_auction_model(auction_model);
         let mut selection_steps = Vec::new();
         let mut selected_call = None;
@@ -38,10 +37,8 @@ impl CallSelector {
 
                 let mut failed_constraints = Vec::new();
                 if !satisfied {
-                    // For the trace, we still want to show which constraints failed
-                    // if it was a "Genuine" check or similar.
                     for constraint in &item.semantics.shows {
-                        if !hand_model.satisfies(*constraint) {
+                        if !constraint.check(hand) {
                             failed_constraints.push(*constraint);
                         }
                     }
@@ -60,14 +57,13 @@ impl CallSelector {
                 }
             }
 
-            if let Some(call) = select_best_from_group(&satisfied_in_group, &hand_model) {
+            if let Some(call) = select_best_from_group(&satisfied_in_group, hand) {
                 selected_call = Some(call);
                 break;
             }
         }
 
         BidTrace {
-            hand_model,
             auction_model: auction_model.clone(),
             menu,
             selection_steps,
@@ -77,7 +73,7 @@ impl CallSelector {
 }
 
 /// Select the best item from a group of satisfied items
-fn select_best_from_group(items: &[CallMenuItem], _hand_model: &HandModel) -> Option<Call> {
+fn select_best_from_group(items: &[CallMenuItem], _hand: &Hand) -> Option<Call> {
     // TODO: Decide which call best satisfies the hand.
     items.first().map(|item| item.call)
 }
