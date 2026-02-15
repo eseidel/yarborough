@@ -1,0 +1,22 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+    patch:
+      default:
+        target: auto
+
+flags:
+  typescript:
+    paths:
+      - src/
+    carryforward: true
+  bridge-core:
+    paths:
+      - crates/bridge-core/
+    carryforward: true
+  bridge-engine:
+    paths:
+      - crates/bridge-engine/
+    carryforward: true
