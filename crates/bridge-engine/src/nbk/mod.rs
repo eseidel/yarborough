@@ -16,6 +16,7 @@ pub mod opening;
 pub mod partner_model;
 pub mod point_ranges;
 pub mod semantics;
+pub mod trace;
 
 pub use auction_model::AuctionModel;
 pub use call_selector::CallSelector;
@@ -28,6 +29,7 @@ pub use opening::OpeningProtocol;
 pub use partner_model::PartnerModel;
 pub use point_ranges::PointRanges;
 pub use semantics::{CallPurpose, CallSemantics};
+pub use trace::BidTrace;
 
 use bridge_core::{Auction, Call, Hand, Position};
 
@@ -39,4 +41,11 @@ pub fn select_bid(hand: &Hand, auction: &Auction, position: Position) -> Option<
     let hand_model = HandModel::from_hand(hand);
     let auction_model = AuctionModel::from_auction(auction, position);
     CallSelector::select_best_call(&hand_model, &auction_model)
+}
+
+/// Like select_bid but returns a detailed trace
+pub fn select_bid_with_trace(hand: &Hand, auction: &Auction, position: Position) -> BidTrace {
+    let hand_model = HandModel::from_hand(hand);
+    let auction_model = AuctionModel::from_auction(auction, position);
+    CallSelector::select_best_call_with_trace(&hand_model, &auction_model)
 }

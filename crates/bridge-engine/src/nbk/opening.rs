@@ -25,7 +25,7 @@ impl OpeningProtocol {
 
         match call {
             Call::Pass => Self::get_pass_semantics(seat),
-            Call::Bid { level, strain } => Self::get_bid_semantics(*level, *strain, seat),
+            Call::Bid { level, strain } => Self::get_bid_semantics(*level, *strain, seat, call),
             _ => None,
         }
     }
@@ -41,15 +41,24 @@ impl OpeningProtocol {
         Some(CallSemantics {
             purpose: CallPurpose::Limit,
             shows: vec![HandConstraint::MaxHcp(12)],
+            rule_name: "Pass (Opening)".to_string(),
+            description: "Hand does not meet requirements for an opening bid".to_string(),
         })
     }
 
-    fn get_bid_semantics(level: u8, strain: Strain, seat: u8) -> Option<CallSemantics> {
+    fn get_bid_semantics(
+        level: u8,
+        strain: Strain,
+        seat: u8,
+        call: &Call,
+    ) -> Option<CallSemantics> {
         match (level, strain) {
             // 2C Strong
             (2, Strain::Clubs) => Some(CallSemantics {
                 purpose: CallPurpose::Opening,
                 shows: vec![HandConstraint::MinHcp(22)],
+                rule_name: "Strong 2C Opening".to_string(),
+                description: "Very strong hand (22+ HCP)".to_string(),
             }),
 
             // 1NT (15-17)
@@ -60,6 +69,8 @@ impl OpeningProtocol {
                     HandConstraint::MaxHcp(17),
                     HandConstraint::MaxUnbalancedness(Shape::Balanced),
                 ],
+                rule_name: "1NT Opening".to_string(),
+                description: "Balanced hand with 15-17 HCP".to_string(),
             }),
 
             // 2NT (20-21)
@@ -70,6 +81,8 @@ impl OpeningProtocol {
                     HandConstraint::MaxHcp(21),
                     HandConstraint::MaxUnbalancedness(Shape::Balanced),
                 ],
+                rule_name: "2NT Opening".to_string(),
+                description: "Balanced hand with 20-21 HCP".to_string(),
             }),
 
             // 1-level Suit Openings
@@ -96,6 +109,8 @@ impl OpeningProtocol {
                 Some(CallSemantics {
                     purpose: CallPurpose::Opening,
                     shows,
+                    rule_name: format!("1{} Opening", suit.to_char()),
+                    description: format!("Opening bid showing 4+ cards in {:?}", suit),
                 })
             }
 
@@ -114,9 +129,9 @@ impl OpeningProtocol {
                         HandConstraint::MaxLength(suit, 6),
                         HandConstraint::MinHcp(5),
                         HandConstraint::MaxHcp(10),
-                        // Quality matters, but this is the range
-                        // Often requires good suit texture, check not handled here
                     ],
+                    rule_name: format!("Weak 2{}", suit.to_char()),
+                    description: format!("Weak opening bid showing 6 cards in {:?}", suit),
                 })
             }
 
@@ -137,6 +152,12 @@ impl OpeningProtocol {
                         HandConstraint::MinLength(suit, l + 4),
                         HandConstraint::MaxHcp(10),
                     ],
+                    rule_name: format!("Preemptive {} Opening", call.render()),
+                    description: format!(
+                        "Preemptive opening bid showing {} cards in {:?}",
+                        l + 4,
+                        suit
+                    ),
                 })
             }
 

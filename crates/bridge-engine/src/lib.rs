@@ -1,4 +1,4 @@
-mod nbk;
+pub mod nbk;
 
 use bridge_core::auction::Auction;
 use bridge_core::board::Position;
@@ -27,15 +27,34 @@ fn parse_calls(calls_string: &str) -> Vec<Call> {
 }
 
 /// Given a call history string, dealer position, and vulnerability, return
-/// possible next calls with their interpretations from the SAYC bidding system.
+/// possible next calls with their interpretations from the NBK bidding system.
 #[wasm_bindgen]
-pub fn get_interpretations(_calls_string: &str, _dealer: &str, _vulnerability: &str) -> JsValue {
-    let interpretation = CallInterpretation {
-        call_name: "P".to_string(),
-        rule_name: String::new(),
-        description: String::new(),
-    };
-    serde_wasm_bindgen::to_value(&interpretation).unwrap()
+pub fn get_interpretations(calls_string: &str, dealer: &str, _vulnerability: &str) -> JsValue {
+    let dealer_pos = dealer
+        .chars()
+        .next()
+        .and_then(Position::from_char)
+        .unwrap_or(Position::North);
+    let mut auction = Auction::new(dealer_pos);
+    for call in parse_calls(calls_string) {
+        auction.add_call(call);
+    }
+
+    let auction_model = nbk::AuctionModel::from_auction(&auction, auction.current_player());
+    let menu = nbk::call_menu::CallMenu::from_auction_model(&auction_model);
+
+    let mut interpretations = Vec::new();
+    for group in menu.groups {
+        for item in group.items {
+            interpretations.push(CallInterpretation {
+                call_name: item.call.render(),
+                rule_name: item.semantics.rule_name,
+                description: item.semantics.description,
+            });
+        }
+    }
+
+    serde_wasm_bindgen::to_value(&interpretations).unwrap()
 }
 
 /// Receives a board and auction state in the "identifier" format
@@ -96,12 +115,26 @@ pub fn get_suggested_bid(identifier: &str) -> JsValue {
         }
     };
 
-    // Use NBK bidding logic
-    let call = nbk::select_bid(hand, &auction, current_player).unwrap_or(Call::Pass);
-    let interpretation = CallInterpretation {
-        call_name: call.render(),
-        rule_name: "NBK".into(), // TODO: Add specific rule names in later phases
-        description: "Natural Bidding Kernel".into(),
+    // Use NBK bidding logic with trace
+    let trace = nbk::select_bid_with_trace(hand, &auction, current_player);
+    let interpretation = match trace.selected_call {
+        Some(call) => {
+            let step = trace
+                .selection_steps
+                .iter()
+                .find(|s| s.satisfied && Some(s.call) == trace.selected_call)
+                .expect("No satisfied step found for selected call");
+            CallInterpretation {
+                call_name: call.render(),
+                rule_name: step.semantics.rule_name.clone(),
+                description: step.semantics.description.clone(),
+            }
+        }
+        None => CallInterpretation {
+            call_name: "P".into(),
+            rule_name: "Pass (Limit)".into(),
+            description: "No better bid found; passing as a limit bid".into(),
+        },
     };
 
     serde_wasm_bindgen::to_value(&interpretation).unwrap()

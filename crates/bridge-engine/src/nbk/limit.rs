@@ -11,34 +11,19 @@ pub struct LimitProtocol;
 impl LimitProtocol {
     /// Get the hand constraints required for a call to be a valid limit bid
     pub fn get_semantics(auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
-        let (level, strain) = match call {
-            Call::Bid { level, strain } => (*level, *strain),
-            Call::Pass => return get_pass_semantics(auction_model),
-            _ => return None,
-        };
-
-        let constraints = if strain == Strain::NoTrump {
-            get_notrump_constraints(&auction_model.partner_model, level)?
-        } else {
-            let suit = strain.to_suit()?;
-
-            // Try support raise
-            if let Some(constraints) =
-                get_support_constraints(&auction_model.partner_model, level, suit)
-            {
-                constraints
-            } else if let Some(constraints) = get_rebid_constraints(auction_model, level, suit) {
-                // Try rebid
-                constraints
-            } else {
-                return None;
+        match call {
+            Call::Bid { level, strain } => {
+                if *strain == Strain::NoTrump {
+                    get_notrump_semantics(&auction_model.partner_model, *level)
+                } else {
+                    let suit = strain.to_suit()?;
+                    get_support_semantics(&auction_model.partner_model, *level, suit)
+                        .or_else(|| get_rebid_semantics(auction_model, *level, suit))
+                }
             }
-        };
-
-        Some(CallSemantics {
-            purpose: CallPurpose::Limit,
-            shows: constraints,
-        })
+            Call::Pass => get_pass_semantics(auction_model),
+            _ => None,
+        }
     }
 }
 
@@ -73,20 +58,30 @@ fn get_pass_semantics(auction_model: &AuctionModel) -> Option<CallSemantics> {
     Some(CallSemantics {
         purpose: CallPurpose::Limit,
         shows: vec![HandConstraint::MaxHcp(threshold)],
+        rule_name: "Pass (Limit)".to_string(),
+        description: format!(
+            "Pass showing no interest in competing further (max {} HCP)",
+            threshold
+        ),
     })
 }
 
-fn get_notrump_constraints(partner_model: &PartnerModel, level: u8) -> Option<Vec<HandConstraint>> {
+fn get_notrump_semantics(partner_model: &PartnerModel, level: u8) -> Option<CallSemantics> {
     let mut constraints = vec![HandConstraint::MaxUnbalancedness(Shape::SemiBalanced)];
     constraints.extend(PointRanges::for_nt_bid(level, partner_model));
-    Some(constraints)
+    Some(CallSemantics {
+        purpose: CallPurpose::Limit,
+        shows: constraints,
+        rule_name: format!("{}NT Limit", level),
+        description: "Limit bid in No Trump".to_string(),
+    })
 }
 
-fn get_support_constraints(
+fn get_support_semantics(
     partner_model: &PartnerModel,
     level: u8,
     suit: Suit,
-) -> Option<Vec<HandConstraint>> {
+) -> Option<CallSemantics> {
     if !partner_model.has_shown_suit(suit) {
         return None;
     }
@@ -94,14 +89,20 @@ fn get_support_constraints(
     let needed_len = partner_model.length_needed_to_reach_target(suit, 8);
     let mut constraints = vec![HandConstraint::MinLength(suit, needed_len)];
     constraints.extend(PointRanges::for_suited_bid(level, partner_model));
-    Some(constraints)
+
+    Some(CallSemantics {
+        purpose: CallPurpose::Limit,
+        shows: constraints,
+        rule_name: format!("{} Support", suit.to_char()),
+        description: format!("Limit support for partner's {:?}", suit),
+    })
 }
 
-fn get_rebid_constraints(
+fn get_rebid_semantics(
     auction_model: &AuctionModel,
     level: u8,
     suit: Suit,
-) -> Option<Vec<HandConstraint>> {
+) -> Option<CallSemantics> {
     // Rebid own 6+ suit (already shown by us, not partner's)
     if auction_model.partner_model.has_shown_suit(suit)
         || !auction_model.bidder_model.has_shown_suit(suit)
@@ -114,7 +115,13 @@ fn get_rebid_constraints(
         level,
         &auction_model.partner_model,
     ));
-    Some(constraints)
+
+    Some(CallSemantics {
+        purpose: CallPurpose::Limit,
+        shows: constraints,
+        rule_name: format!("{} Rebid", suit.to_char()),
+        description: format!("Limit rebid in own {:?}", suit),
+    })
 }
 
 #[cfg(test)]

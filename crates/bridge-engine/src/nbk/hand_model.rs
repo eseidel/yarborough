@@ -2,9 +2,10 @@
 
 use crate::nbk::HandConstraint;
 use bridge_core::{Distribution, Hand, Shape, Suit};
+use serde::{Deserialize, Serialize};
 
 /// Analysis of the current hand for bidding purposes
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HandModel {
     /// High Card Points (A=4, K=3, Q=2, J=1)
     pub hcp: u8,

@@ -1,6 +1,6 @@
 //! Discovery Protocol: Show new 4+ card suits (forcing)
 
-use crate::nbk::{AuctionModel, CallPurpose, CallSemantics, HandConstraint};
+use crate::nbk::{AuctionModel, CallPurpose, CallSemantics, HandConstraint, PointRanges};
 use bridge_core::Call;
 
 /// Discovery Protocol implementation
@@ -27,7 +27,7 @@ impl DiscoveryProtocol {
         }
 
         // Calculate HCP requirement
-        let min_combined_points = crate::nbk::PointRanges::min_points_for_suited_bid(level);
+        let min_combined_points = PointRanges::min_points_for_suited_bid(level);
         let needed_hcp =
             min_combined_points.saturating_sub(auction_model.partner_model.min_hcp.unwrap_or(0));
 
@@ -38,6 +38,8 @@ impl DiscoveryProtocol {
                 HandConstraint::MinLength(suit, 4),
                 HandConstraint::MinHcp(needed_hcp),
             ],
+            rule_name: format!("{} Discovery", suit.to_char()),
+            description: format!("Discovery bid showing 4+ cards in {:?}", suit),
         })
     }
 }

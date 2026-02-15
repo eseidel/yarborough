@@ -1,8 +1,5 @@
-//! Call selection with priority resolution
-//!
-//! Uses CallMenu to group and prioritize legal calls.
-
 use crate::nbk::call_menu::{CallMenu, CallMenuItem};
+use crate::nbk::trace::{BidTrace, SelectionStep};
 use crate::nbk::{AuctionModel, HandModel};
 use bridge_core::Call;
 
@@ -12,21 +9,55 @@ pub struct CallSelector;
 impl CallSelector {
     /// Select the best call according to NBK priority rules
     pub fn select_best_call(hand_model: &HandModel, auction_model: &AuctionModel) -> Option<Call> {
+        Self::select_best_call_with_trace(hand_model, auction_model).selected_call
+    }
+
+    /// Select the best call and return a detailed trace of the selection process
+    pub fn select_best_call_with_trace(
+        hand_model: &HandModel,
+        auction_model: &AuctionModel,
+    ) -> BidTrace {
         let menu = CallMenu::from_auction_model(auction_model);
+        let mut selection_steps = Vec::new();
+        let mut selected_call = None;
 
-        for group in menu.groups {
-            let satisfied: Vec<CallMenuItem> = group
-                .items
-                .into_iter()
-                .filter(|item| hand_model.satisfies_all(item.semantics.shows.clone()))
-                .collect();
+        for group in &menu.groups {
+            let mut satisfied_in_group = Vec::new();
 
-            if let Some(call) = select_best_from_group(&satisfied, hand_model) {
-                return Some(call);
+            for item in &group.items {
+                let mut failed_constraints = Vec::new();
+                for constraint in &item.semantics.shows {
+                    if !hand_model.satisfies(*constraint) {
+                        failed_constraints.push(*constraint);
+                    }
+                }
+
+                let satisfied = failed_constraints.is_empty();
+                selection_steps.push(SelectionStep {
+                    group_name: group.name.clone(),
+                    call: item.call,
+                    semantics: item.semantics.clone(),
+                    satisfied,
+                    failed_constraints,
+                });
+
+                if satisfied {
+                    satisfied_in_group.push(item.clone());
+                }
+            }
+
+            if let Some(call) = select_best_from_group(&satisfied_in_group, hand_model) {
+                selected_call = Some(call);
+                break;
             }
         }
 
-        None
+        BidTrace {
+            hand_model: hand_model.clone(),
+            menu,
+            selection_steps,
+            selected_call,
+        }
     }
 }
 

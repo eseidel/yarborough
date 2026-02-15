@@ -21,4 +21,8 @@ pub struct CallSemantics {
     pub purpose: CallPurpose,
     /// What this call shows about our hand
     pub shows: Vec<HandConstraint>,
+    /// Name of the rule that generated these semantics
+    pub rule_name: String,
+    /// Human-readable description of what the call means
+    pub description: String,
 }
