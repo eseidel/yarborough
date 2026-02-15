@@ -1,0 +1,63 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "ignorePaths": [
+    "node_modules",
+    "target",
+    "dist",
+    "pkg",
+    "pnpm-lock.yaml",
+    "Cargo.lock",
+    "pnpm-approve-builds.json",
+    "*.wasm"
+  ],
+  "words": [
+    "yarborough",
+    "saycbridge",
+    "sayc",
+
+    "notrump",
+    "preempt",
+    "preemptive",
+    "rebid",
+    "overcall",
+    "cuebid",
+    "redouble",
+    "undoubled",
+    "stayman",
+    "jacoby",
+    "gerber",
+    "blackwood",
+    "splinter",
+    "semibalanced",
+    "stopper",
+    "ruff",
+    "ruffing",
+    "declarer",
+    "grandslam",
+    "smallslam",
+
+    "tailwindcss",
+    "vitest",
+    "vite",
+    "vitejs",
+    "pnpm",
+    "eslint",
+    "prettier",
+    "codecov",
+    "lcov",
+    "nodemon",
+    "happydom",
+    "concurrently",
+
+    "serde",
+    "clap",
+    "wasm",
+    "bindgen",
+    "getrandom",
+    "indexmap",
+
+    "tsconfig",
+    "deno"
+  ]
+}
