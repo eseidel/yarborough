@@ -507,9 +507,11 @@ mod tests {
 
     #[test]
     fn test_format_partner_model() {
-        let mut model = nbk::PartnerModel::default();
-        model.min_hcp = Some(12);
-        model.max_hcp = Some(14);
+        let model = nbk::PartnerModel {
+            min_hcp: Some(12),
+            max_hcp: Some(14),
+            ..Default::default()
+        };
         let s = format_partner_model(&model);
         assert!(s.contains("HCP: 12 - 14"));
     }
