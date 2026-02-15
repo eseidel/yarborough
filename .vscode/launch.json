@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Bidding Test Case (Prompted)",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=bidding_debug"
+        ],
+        "filter": {
+          "name": "bidding_debug",
+          "kind": "bin"
+        }
+      },
+      "args": [
+        "--test-case",
+        "${input:testCase}",
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testCase",
+      "type": "promptString",
+      "description": "Enter the test case JSON string",
+      "default": "[\"753.97.Q753.K982\", \"2H\", \"1H P\"]"
+    },
+  ]
+}
