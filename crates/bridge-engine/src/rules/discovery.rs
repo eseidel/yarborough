@@ -57,10 +57,6 @@ mod tests {
             },
             shape: Shape::Balanced,
         };
-        let partner_model = PartnerModel {
-            min_hcp: Some(13),
-            ..Default::default()
-        };
         let diamonds = Call::Bid {
             level: 1,
             strain: Strain::Diamonds,
@@ -133,10 +129,6 @@ mod tests {
         let h_bid = Call::Bid {
             level: 1,
             strain: Strain::Hearts,
-        };
-        let s_bid = Call::Bid {
-            level: 1,
-            strain: Strain::Spades,
         };
         let s_bid = Call::Bid {
             level: 1,
