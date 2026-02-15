@@ -14,6 +14,10 @@ impl CallPredicate for NotCall {
     }
 }
 
+pub fn not_call(predicate: impl CallPredicate + 'static) -> NotCall {
+    NotCall(Box::new(predicate))
+}
+
 #[derive(Debug)]
 pub struct IsLevel(pub u8);
 impl CallPredicate for IsLevel {
@@ -59,8 +63,8 @@ impl CallPredicate for IsSuit {
 }
 
 #[derive(Debug)]
-pub struct IsUnbidSuit;
-impl CallPredicate for IsUnbidSuit {
+pub struct IsNewSuit;
+impl CallPredicate for IsNewSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
         match call {
             Call::Bid { strain, .. } => {
@@ -92,5 +96,31 @@ pub struct IsPass;
 impl CallPredicate for IsPass {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
         matches!(call, Call::Pass)
+    }
+}
+
+#[derive(Debug)]
+pub struct BidderHasShownSuit;
+impl CallPredicate for BidderHasShownSuit {
+    fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
+        if let Call::Bid { strain, .. } = call {
+            if let Some(suit) = strain.to_suit() {
+                return auction.bidder_model.has_shown_suit(suit);
+            }
+        }
+        false
+    }
+}
+
+#[derive(Debug)]
+pub struct PartnerHasShownSuit;
+impl CallPredicate for PartnerHasShownSuit {
+    fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
+        if let Call::Bid { strain, .. } = call {
+            if let Some(suit) = strain.to_suit() {
+                return auction.partner_model.has_shown_suit(suit);
+            }
+        }
+        false
     }
 }

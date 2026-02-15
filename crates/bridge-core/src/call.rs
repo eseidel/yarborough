@@ -17,7 +17,7 @@ impl Call {
             Call::Pass => "P".to_string(),
             Call::Double => "X".to_string(),
             Call::Redouble => "XX".to_string(),
-            Call::Bid { level, strain } => format!("{}{}", level, strain),
+            Call::Bid { level, strain } => format!("{}{}", level, strain.to_char()),
         }
     }
 

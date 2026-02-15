@@ -1,48 +1,26 @@
 //! Discovery Rules for the NBK DSL
 
-use crate::rules::auction_predicates::AuctionPredicate;
+use crate::bidding_rule;
 use crate::rules::auction_predicates::IsOpen;
-use crate::rules::bidding_rule::BiddingRule;
-use crate::rules::call_predicates::CallPredicate;
-use crate::rules::call_predicates::IsUnbidSuit;
-use crate::rules::shows::ShowSuitLength;
-use crate::rules::shows::Shows;
-use crate::rules::shows::SufficientValues;
-use bridge_core::Call;
+use crate::rules::call_predicates::IsNewSuit;
+use crate::rules::shows::ShowMinSuitLength;
+use crate::rules::shows::ShowSufficientValues;
 
-pub struct NewSuitDiscovery;
-impl BiddingRule for NewSuitDiscovery {
-    fn name(&self, call: &Call) -> String {
-        match call {
-            Call::Bid { strain, .. } => format!("{:?} Discovery", strain),
-            _ => "New Suit Discovery".to_string(),
-        }
-    }
-
-    fn description(&self, call: &Call) -> String {
-        match call {
-            Call::Bid { strain, .. } => format!("Discovery bid showing 4+ cards in {:?}", strain),
-            _ => "Discovery bid showing 4+ cards in new suit".to_string(),
-        }
-    }
-
-    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
-        vec![Box::new(IsOpen)]
-    }
-
-    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
-        vec![Box::new(IsUnbidSuit)]
-    }
-
-    fn shows(&self) -> Vec<Box<dyn Shows>> {
-        vec![Box::new(ShowSuitLength(4)), Box::new(SufficientValues)]
-    }
+// --- New Suit Discovery ---
+bidding_rule! {
+    struct NewSuitDiscovery;
+    name: format_strain!("{strain} Discovery"),
+    description: format_strain!("Showing 4+ cards in {strain}"),
+    auction: [IsOpen],
+    call: [IsNewSuit],
+    shows: [ShowMinSuitLength(4), ShowSufficientValues]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::nbk::{AuctionModel, HandModel, PartnerModel};
+    use crate::rules::bidding_rule::BiddingRule;
     use bridge_core::{Call, Distribution, Shape, Strain};
 
     #[test]

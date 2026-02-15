@@ -50,8 +50,8 @@ impl Shows for ShowBalanced {
 }
 
 #[derive(Debug)]
-pub struct ShowSuitLength(pub u8); // Infers suit from Call
-impl Shows for ShowSuitLength {
+pub struct ShowMinSuitLength(pub u8);
+impl Shows for ShowMinSuitLength {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
         if let Call::Bid { strain, .. } = call {
             if let Some(suit) = strain.to_suit() {
@@ -63,8 +63,8 @@ impl Shows for ShowSuitLength {
 }
 
 #[derive(Debug)]
-pub struct SufficientValues;
-impl Shows for SufficientValues {
+pub struct ShowSufficientValues;
+impl Shows for ShowSufficientValues {
     fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
         let (level, strain) = match call {
             Call::Bid { level, strain } => (*level, *strain),
@@ -137,5 +137,64 @@ impl Shows for ShowMaxLength {
             }
         }
         vec![]
+    }
+}
+
+#[derive(Debug)]
+pub struct ShowSemiBalanced;
+impl Shows for ShowSemiBalanced {
+    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
+        vec![HandConstraint::MaxUnbalancedness(Shape::SemiBalanced)]
+    }
+}
+
+#[derive(Debug)]
+pub struct ShowSupportLength;
+impl Shows for ShowSupportLength {
+    fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
+        if let Call::Bid { strain, .. } = call {
+            if let Some(suit) = strain.to_suit() {
+                let needed_len = auction.partner_model.length_needed_to_reach_target(suit, 8);
+                return vec![HandConstraint::MinLength(suit, needed_len)];
+            }
+        }
+        vec![]
+    }
+}
+
+#[derive(Debug)]
+pub struct ShowBetterContractIsRemote;
+impl Shows for ShowBetterContractIsRemote {
+    fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
+        if let Call::Pass = call {
+            let partner_max_hcp = auction.partner_model.max_hcp.unwrap_or(0); // Should be Some due to Predicate
+            let our_partnership = auction.auction.current_partnership();
+            let contract = if let Some(c) = auction.auction.current_contract() {
+                if c.belongs_to(our_partnership) {
+                    c
+                } else {
+                    return vec![];
+                }
+            } else {
+                return vec![];
+            };
+
+            if contract.is_grand_slam() {
+                return vec![];
+            }
+
+            let goal = if contract.is_slam() {
+                PointRanges::GRAND_SLAM_THRESHOLD
+            } else if contract.is_game() {
+                PointRanges::SLAM_THRESHOLD
+            } else {
+                PointRanges::GAME_THRESHOLD
+            };
+
+            let threshold = (goal - 1).saturating_sub(partner_max_hcp);
+            vec![HandConstraint::MaxHcp(threshold)]
+        } else {
+            vec![]
+        }
     }
 }

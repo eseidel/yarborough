@@ -29,7 +29,7 @@ impl RuleRegistry {
         rules.push(Box::new(limit::NoTrumpResponse));
         rules.push(Box::new(limit::SupportResponse));
         rules.push(Box::new(limit::RebidResponse));
-        rules.push(Box::new(limit::PassLimit));
+        rules.push(Box::new(limit::PassBetterContractIsRemote));
         Self { rules }
     }
 

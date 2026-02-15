@@ -81,7 +81,10 @@ impl Strain {
 
 impl fmt::Display for Strain {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_char())
+        match self {
+            Strain::NoTrump => write!(f, "NT"),
+            _ => write!(f, "{}", self.to_char()),
+        }
     }
 }
 
