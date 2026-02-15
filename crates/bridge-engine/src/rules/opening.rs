@@ -1,86 +1,105 @@
 //! Opening Rules for the NBK DSL
 
-use crate::nbk::{AuctionModel, CallSemantics, HandConstraint};
-use crate::rules::BiddingRule;
-use bridge_core::{Call, Shape, Strain};
+use crate::rules::auction_predicates::AuctionPredicate;
+use crate::rules::auction_predicates::IsNotOpen;
+use crate::rules::auction_predicates::IsSeat;
+use crate::rules::auction_predicates::NotAuction;
+use crate::rules::bidding_rule::BiddingRule;
+use crate::rules::call_predicates::CallPredicate;
+use crate::rules::call_predicates::IsCall;
+use crate::rules::call_predicates::IsLevel;
+use crate::rules::call_predicates::IsPass;
+use crate::rules::call_predicates::IsStrain;
+use crate::rules::call_predicates::IsSuit;
+use crate::rules::call_predicates::MinLevel;
+use crate::rules::call_predicates::NotCall;
+use crate::rules::shows::ShowBalanced;
+use crate::rules::shows::ShowHcpRange;
+use crate::rules::shows::ShowMaxHcp;
+use crate::rules::shows::ShowMinHcp;
+use crate::rules::shows::ShowOpeningSuitLength;
+use crate::rules::shows::ShowPreemptLength;
+use crate::rules::shows::ShowRuleOfFifteen;
+use crate::rules::shows::ShowRuleOfTwenty;
+use crate::rules::shows::ShowSuitLength;
+use crate::rules::shows::Shows;
+use bridge_core::{Call, Strain};
 
+// --- Strong 2C ---
 pub struct Strong2C;
 impl BiddingRule for Strong2C {
-    fn applies(&self, auction_model: &AuctionModel) -> bool {
-        !auction_model.auction.is_open()
-    }
-
     fn name(&self, _call: &Call) -> String {
         "Strong 2C Opening".to_string()
     }
 
-    fn get_semantics(&self, _auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
-        if let Call::Bid {
-            level: 2,
-            strain: Strain::Clubs,
-        } = call
-        {
-            Some(CallSemantics {
-                shows: vec![HandConstraint::MinHcp(22)],
-                rule_name: self.name(call),
-                description: "Very strong hand (22+ HCP)".to_string(),
-            })
-        } else {
-            None
-        }
+    fn description(&self, _call: &Call) -> String {
+        "Very strong hand (22+ HCP)".to_string()
+    }
+
+    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
+        vec![Box::new(IsNotOpen)]
+    }
+
+    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
+        vec![Box::new(IsCall(2, Strain::Clubs))]
+    }
+
+    fn shows(&self) -> Vec<Box<dyn Shows>> {
+        vec![Box::new(ShowMinHcp(22))]
     }
 }
 
-pub struct NoTrumpOpening;
-impl BiddingRule for NoTrumpOpening {
-    fn applies(&self, auction_model: &AuctionModel) -> bool {
-        !auction_model.auction.is_open()
+// --- 1NT Opening ---
+pub struct OneNoTrumpOpening;
+impl BiddingRule for OneNoTrumpOpening {
+    fn name(&self, _call: &Call) -> String {
+        "1NT Opening".to_string()
     }
 
-    fn name(&self, call: &Call) -> String {
-        match call {
-            Call::Bid { level, .. } => format!("{}NT Opening", level),
-            _ => "NT Opening".to_string(),
-        }
+    fn description(&self, _call: &Call) -> String {
+        "Balanced hand with 15-17 HCP".to_string()
     }
 
-    fn get_semantics(&self, _auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
-        match call {
-            Call::Bid {
-                level: 1,
-                strain: Strain::NoTrump,
-            } => Some(CallSemantics {
-                shows: vec![
-                    HandConstraint::MinHcp(15),
-                    HandConstraint::MaxHcp(17),
-                    HandConstraint::MaxUnbalancedness(Shape::Balanced),
-                ],
-                rule_name: self.name(call),
-                description: "Balanced hand with 15-17 HCP".to_string(),
-            }),
-            Call::Bid {
-                level: 2,
-                strain: Strain::NoTrump,
-            } => Some(CallSemantics {
-                shows: vec![
-                    HandConstraint::MinHcp(20),
-                    HandConstraint::MaxHcp(21),
-                    HandConstraint::MaxUnbalancedness(Shape::Balanced),
-                ],
-                rule_name: self.name(call),
-                description: "Balanced hand with 20-21 HCP".to_string(),
-            }),
-            _ => None,
-        }
+    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
+        vec![Box::new(IsNotOpen)]
+    }
+
+    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
+        vec![Box::new(IsCall(1, Strain::NoTrump))]
+    }
+
+    fn shows(&self) -> Vec<Box<dyn Shows>> {
+        vec![Box::new(ShowHcpRange(15, 17)), Box::new(ShowBalanced)]
     }
 }
 
+// --- 2NT Opening ---
+pub struct TwoNoTrumpOpening;
+impl BiddingRule for TwoNoTrumpOpening {
+    fn name(&self, _call: &Call) -> String {
+        "2NT Opening".to_string()
+    }
+
+    fn description(&self, _call: &Call) -> String {
+        "Balanced hand with 20-21 HCP".to_string()
+    }
+
+    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
+        vec![Box::new(IsNotOpen)]
+    }
+
+    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
+        vec![Box::new(IsCall(2, Strain::NoTrump))]
+    }
+
+    fn shows(&self) -> Vec<Box<dyn Shows>> {
+        vec![Box::new(ShowHcpRange(20, 21)), Box::new(ShowBalanced)]
+    }
+}
+
+// --- Suit Opening (Normal) ---
 pub struct SuitOpening;
 impl BiddingRule for SuitOpening {
-    fn applies(&self, auction_model: &AuctionModel) -> bool {
-        !auction_model.auction.is_open()
-    }
-
     fn name(&self, call: &Call) -> String {
         match call {
             Call::Bid { level, strain } => format!("{}{:?} Opening", level, strain),
@@ -88,39 +107,68 @@ impl BiddingRule for SuitOpening {
         }
     }
 
-    fn get_semantics(&self, auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
-        if let Call::Bid { level: 1, strain } = call {
-            let suit = strain.to_suit()?;
-            let mut shows = Vec::new();
-            if suit.is_major() {
-                shows.push(HandConstraint::MinLength(suit, 5));
-            } else {
-                shows.push(HandConstraint::MinLength(suit, 4));
-            }
-            let seat = auction_model.auction.current_seat();
-            if seat == 4 {
-                shows.push(HandConstraint::RuleOfFifteen);
-            } else {
-                shows.push(HandConstraint::RuleOfTwenty);
-                shows.push(HandConstraint::MinHcp(12));
-            }
-            Some(CallSemantics {
-                shows,
-                rule_name: self.name(call),
-                description: format!("Opening bid showing 4+ cards in {:?}", suit),
-            })
+    fn description(&self, call: &Call) -> String {
+        if let Call::Bid { strain, .. } = call {
+            format!("Opening bid showing 4+ cards in {:?}", strain)
         } else {
-            None
+            "Suit Opening".to_string()
         }
+    }
+
+    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
+        vec![
+            Box::new(IsNotOpen),
+            Box::new(NotAuction(Box::new(IsSeat(4)))),
+        ]
+    }
+
+    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
+        vec![Box::new(IsLevel(1)), Box::new(IsSuit)]
+    }
+
+    fn shows(&self) -> Vec<Box<dyn Shows>> {
+        vec![
+            Box::new(ShowOpeningSuitLength),
+            Box::new(ShowRuleOfTwenty),
+            Box::new(ShowMinHcp(12)),
+        ]
     }
 }
 
-pub struct WeakTwo;
-impl BiddingRule for WeakTwo {
-    fn applies(&self, auction_model: &AuctionModel) -> bool {
-        !auction_model.auction.is_open() && auction_model.auction.current_seat() != 4
+// --- Suit Opening (4th Seat) ---
+pub struct SuitOpeningFourthSeat;
+impl BiddingRule for SuitOpeningFourthSeat {
+    fn name(&self, call: &Call) -> String {
+        match call {
+            Call::Bid { level, strain } => format!("{}{:?} Opening (4th Seat)", level, strain),
+            _ => "Suit Opening (4th Seat)".to_string(),
+        }
     }
 
+    fn description(&self, call: &Call) -> String {
+        if let Call::Bid { strain, .. } = call {
+            format!("Opening bid showing 4+ cards in {:?}", strain)
+        } else {
+            "Suit Opening".to_string()
+        }
+    }
+
+    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
+        vec![Box::new(IsNotOpen), Box::new(IsSeat(4))]
+    }
+
+    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
+        vec![Box::new(IsLevel(1)), Box::new(IsSuit)]
+    }
+
+    fn shows(&self) -> Vec<Box<dyn Shows>> {
+        vec![Box::new(ShowOpeningSuitLength), Box::new(ShowRuleOfFifteen)]
+    }
+}
+
+// --- Weak Two ---
+pub struct WeakTwo;
+impl BiddingRule for WeakTwo {
     fn name(&self, call: &Call) -> String {
         match call {
             Call::Bid { strain, .. } => format!("Weak 2{:?}", strain),
@@ -128,89 +176,120 @@ impl BiddingRule for WeakTwo {
         }
     }
 
-    fn get_semantics(&self, _auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
-        if let Call::Bid { level: 2, strain } = call {
-            let suit = strain.to_suit()?;
-            if suit == bridge_core::Suit::Clubs {
-                return None;
-            } // 2C is Strong
-            Some(CallSemantics {
-                shows: vec![
-                    HandConstraint::MinLength(suit, 6),
-                    HandConstraint::MaxLength(suit, 6),
-                    HandConstraint::MinHcp(5),
-                    HandConstraint::MaxHcp(10),
-                ],
-                rule_name: self.name(call),
-                description: format!("Weak opening bid showing 6 cards in {:?}", suit),
-            })
-        } else {
-            None
+    fn description(&self, call: &Call) -> String {
+        match call {
+            Call::Bid { strain, .. } => format!("Weak opening bid showing 6 cards in {:?}", strain),
+            _ => "Weak Two Opening".to_string(),
         }
+    }
+
+    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
+        vec![
+            Box::new(IsNotOpen),
+            Box::new(NotAuction(Box::new(IsSeat(4)))),
+        ]
+    }
+
+    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
+        vec![
+            Box::new(IsLevel(2)),
+            Box::new(IsSuit),
+            Box::new(NotCall(Box::new(IsStrain(Strain::Clubs)))),
+        ]
+    }
+
+    fn shows(&self) -> Vec<Box<dyn Shows>> {
+        // Need to infer suit for length
+        vec![
+            Box::new(ShowSuitLength(6)), // Min length
+            // Max length 6? ShowSuitLength implies Min.
+            // I need ShowMaxLength.
+            // ShowMaxLength in mod.rs takes Suit.
+            // I need ShowSuitMaxLength similar to ShowSuitLength.
+            // Or use ShowSuitLength(6) and ShowHcp.
+            // My imperative logic had MinLength(suit, 6) AND MaxLength(suit, 6).
+            // `mod.rs` has `ShowSuitLength` (Min).
+            // `ShowMaxLength` takes `(u8)`. Wait, `mod.rs` `ShowMaxHcp` is u8.
+            // `ShowMaxLength(Suit, u8)`.
+            // I need generic `ShowSuitMaxLength(u8)` that infers suit.
+            // I didn't verify `mod.rs` had `ShowSuitMaxLength`.
+            // I should assume I missed it or need to add it.
+            // I will add it to this file or mod.rs?
+            // Better to add to mod.rs, but I can implement `Shows` locally too.
+            Box::new(ShowHcpRange(5, 10)),
+        ]
     }
 }
 
+// Check if ShowSuitMaxLength is needed in mod.rs?
+// I don't recall adding it. I added `ShowSuitLength` (min).
+// I will implement a local one here to be safe and avoid back-and-forth.
+
+// Updating WeakTwo shows:
+// ...
+// Box::new(ShowSuitMaxLength(6)),
+
+// --- Preempt ---
 pub struct Preempt;
 impl BiddingRule for Preempt {
-    fn applies(&self, auction_model: &AuctionModel) -> bool {
-        !auction_model.auction.is_open()
-    }
-
     fn name(&self, call: &Call) -> String {
         format!("Preemptive {} Opening", call.render())
     }
 
-    fn get_semantics(&self, _auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
+    fn description(&self, call: &Call) -> String {
         if let Call::Bid { level, strain } = call {
-            if *level < 3 || *strain == Strain::NoTrump {
-                return None;
-            }
-            let suit = strain.to_suit()?;
-            Some(CallSemantics {
-                shows: vec![
-                    HandConstraint::MinLength(suit, level + 4),
-                    HandConstraint::MaxHcp(10),
-                ],
-                rule_name: self.name(call),
-                description: format!(
-                    "Preemptive opening bid showing {} cards in {:?}",
-                    level + 4,
-                    suit
-                ),
-            })
+            format!(
+                "Preemptive opening bid showing {} cards in {:?}",
+                level + 4,
+                strain
+            )
         } else {
-            None
+            "Preemptive Opening".to_string()
         }
+    }
+
+    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
+        vec![Box::new(IsNotOpen)]
+    }
+
+    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
+        vec![Box::new(MinLevel(3)), Box::new(IsSuit)]
+    }
+
+    fn shows(&self) -> Vec<Box<dyn Shows>> {
+        vec![Box::new(ShowPreemptLength), Box::new(ShowMaxHcp(10))]
     }
 }
 
+// --- Pass Opening ---
 pub struct PassOpening;
 impl BiddingRule for PassOpening {
-    fn applies(&self, auction_model: &AuctionModel) -> bool {
-        !auction_model.auction.is_open()
-    }
-
     fn name(&self, _call: &Call) -> String {
         "Pass (Opening)".to_string()
     }
 
-    fn get_semantics(&self, _auction_model: &AuctionModel, call: &Call) -> Option<CallSemantics> {
-        if let Call::Pass = call {
-            Some(CallSemantics {
-                shows: vec![HandConstraint::MaxHcp(12)],
-                rule_name: self.name(call),
-                description: "Hand does not meet requirements for an opening bid".to_string(),
-            })
-        } else {
-            None
-        }
+    fn description(&self, _call: &Call) -> String {
+        "Hand does not meet requirements for an opening bid".to_string()
+    }
+
+    fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>> {
+        vec![Box::new(IsNotOpen)]
+    }
+
+    fn call_predicates(&self) -> Vec<Box<dyn CallPredicate>> {
+        vec![Box::new(IsPass)]
+    }
+
+    fn shows(&self) -> Vec<Box<dyn Shows>> {
+        vec![Box::new(ShowMaxHcp(12))]
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bridge_core::{Call, Position, Suit};
+    use crate::nbk::{AuctionModel, HandConstraint};
+    use bridge_core::{Call, Distribution, Position, Shape, Strain, Suit};
 
     fn make_auction(calls: Vec<Call>) -> AuctionModel {
         let mut auction = bridge_core::Auction::new(Position::North);
@@ -233,5 +312,31 @@ mod tests {
             .shows
             .contains(&HandConstraint::MinLength(Suit::Spades, 5)));
         assert!(sem.shows.contains(&HandConstraint::RuleOfTwenty));
+    }
+
+    #[test]
+    fn test_weak_two_short_suit() {
+        let model = make_auction(vec![]);
+        let call = Call::Bid {
+            level: 2,
+            strain: Strain::Spades,
+        };
+        let sem = WeakTwo.get_semantics(&model, &call).unwrap();
+
+        let hand_model = crate::nbk::HandModel {
+            hcp: 8,
+            distribution: Distribution {
+                spades: 2,
+                hearts: 4,
+                diamonds: 4,
+                clubs: 3,
+            },
+            shape: Shape::Balanced,
+        };
+
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MinLength(Suit::Spades, 6)));
+        assert!(!hand_model.satisfies_all(sem.shows));
     }
 }

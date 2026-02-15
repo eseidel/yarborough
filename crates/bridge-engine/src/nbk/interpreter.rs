@@ -3,7 +3,7 @@
 //! Interprets the semantic meaning of calls by querying discovery and limit protocols.
 
 use crate::nbk::{AuctionModel, CallSemantics};
-use crate::rules::RuleRegistry;
+use crate::rules::registry::RuleRegistry;
 use bridge_core::Call;
 use std::sync::OnceLock;
 
