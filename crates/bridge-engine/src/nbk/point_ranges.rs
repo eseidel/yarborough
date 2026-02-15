@@ -1,7 +1,5 @@
 //! Point requirement tables for NBK bidding
 
-use crate::nbk::{HandConstraint, PartnerModel};
-
 /// Point range requirements for bidding
 pub struct PointRanges;
 
@@ -54,40 +52,6 @@ impl PointRanges {
             7 => 37,
             _ => 40, // Safety fallback for invalid levels
         }
-    }
-
-    pub fn for_suited_bid(level: u8, partner_model: &PartnerModel) -> Vec<HandConstraint> {
-        let partner_min_hcp = partner_model.min_hcp.unwrap_or(0);
-        let min_points = Self::min_points_for_suited_bid(level);
-        let mut constraints = vec![HandConstraint::MinHcp(
-            min_points.saturating_sub(partner_min_hcp),
-        )];
-
-        let next_min_points = Self::min_points_for_suited_bid(level + 1);
-        if next_min_points < 40 {
-            constraints.push(HandConstraint::MaxHcp(
-                (next_min_points - 1).saturating_sub(partner_min_hcp),
-            ));
-        }
-
-        constraints
-    }
-
-    pub fn for_nt_bid(level: u8, partner_model: &PartnerModel) -> Vec<HandConstraint> {
-        let partner_min_hcp = partner_model.min_hcp.unwrap_or(0);
-        let min_points = Self::min_points_for_nt_bid(level);
-        let mut constraints = vec![HandConstraint::MinHcp(
-            min_points.saturating_sub(partner_min_hcp),
-        )];
-
-        let next_min_points = Self::min_points_for_nt_bid(level + 1);
-        if next_min_points < 40 {
-            constraints.push(HandConstraint::MaxHcp(
-                (next_min_points - 1).saturating_sub(partner_min_hcp),
-            ));
-        }
-
-        constraints
     }
 }
 
