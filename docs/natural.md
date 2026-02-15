@@ -27,7 +27,7 @@ In terms of priority:
 - We prefer bidding slams to bidding games.
 - We prefer bidding games to bidding part scores.
 - We prefer bidding major games to bidding minor games.
-- We prefer bidding notump games to bidding minor games.
+- We prefer bidding notrump games to bidding minor games.
 - With stoppers, we prefer bidding notrump games to bidding major games.
 - Without stoppers, we prefer bidding major games to bidding notrump games.
 - We prefer bidding notrump slams to bidding suited slams.

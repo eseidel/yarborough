@@ -235,7 +235,7 @@ test_invitational_response_to_one_of_a_major:
 
   - ["AKJ52.J.J9743.54", "2C", "1H P"] # deal 8791080045553853812852250533176, N underbid by using length points instead of support points
 
-test_game_forcing_resonse_to_one_of_a_major:
+test_game_forcing_response_to_one_of_a_major:
   # Responding with game forcing values or better
   - ["K84.AKQ9.76.J984", "1S", "1H P"] # p38, h12
   - ["987.Q732.QJ743.9", "4H", "1H P"] # p38, h13

@@ -196,7 +196,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pass_doesnt_update() {
+    fn test_pass_does_not_update() {
         let auction = make_auction_with_bids(
             Position::North,
             vec![

@@ -151,7 +151,7 @@ test_invitational_response_to_one_of_a_major:
   QJ54.J753.KT2.A4:1S P:None: "FAIL: step 2, expected 2C, got 1N"
   43.KT76.K85.A753:1H P:None: "FAIL: step 2, expected 3H, got 2H"
   AKJ52.J.J9743.54:1H P:None: "FAIL: step 2, expected 2C, got 2H"
-test_game_forcing_resonse_to_one_of_a_major:
+test_game_forcing_response_to_one_of_a_major:
   K84.AKQ9.76.J984:1H P:None: PASS
   987.Q732.QJ743.9:1H P:None: "FAIL: step 2, expected 4H, got P"
   42.KJ653.KJ5.KJ7:1H P:None: "FAIL: step 2, expected 2D, got 2H"
