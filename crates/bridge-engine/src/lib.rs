@@ -45,16 +45,23 @@ pub fn get_interpretations(calls_string: &str, dealer: &str, _vulnerability: &st
     let auction_model = nbk::AuctionModel::from_auction(&auction, auction.current_player());
     let menu = nbk::call_menu::CallMenu::from_auction_model(&auction_model);
 
-    let mut interpretations = Vec::new();
+    let mut items = Vec::new();
     for group in menu.groups {
         for item in group.items {
-            interpretations.push(CallInterpretation {
-                call_name: item.call.render(),
-                rule_name: item.semantics.rule_name,
-                description: item.semantics.description,
-            });
+            items.push(item);
         }
     }
+
+    items.sort_by_key(|item| item.call);
+
+    let interpretations: Vec<CallInterpretation> = items
+        .into_iter()
+        .map(|item| CallInterpretation {
+            call_name: item.call.render(),
+            rule_name: item.semantics.rule_name,
+            description: item.semantics.description,
+        })
+        .collect();
 
     serde_wasm_bindgen::to_value(&interpretations).unwrap()
 }
