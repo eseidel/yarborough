@@ -1,17 +1,29 @@
 use crate::nbk::{AuctionModel, HandConstraint};
-use bridge_core::{Hand, Suit};
+use bridge_core::{Call, Hand, Suit};
 
 /// A planner decides whether a bidding rule applies to a given hand in a given auction.
 pub trait Planner: Send + Sync {
     /// Check if the rule applies to the given hand.
-    fn applies(&self, auction: &AuctionModel, hand: &Hand, shows: &[HandConstraint]) -> bool;
+    fn applies(
+        &self,
+        auction: &AuctionModel,
+        hand: &Hand,
+        call: &Call,
+        shows: &[HandConstraint],
+    ) -> bool;
 }
 
 /// The default planner that checks if the hand satisfies all "shows" constraints.
 pub struct GenuinePlanner;
 
 impl Planner for GenuinePlanner {
-    fn applies(&self, _auction: &AuctionModel, hand: &Hand, shows: &[HandConstraint]) -> bool {
+    fn applies(
+        &self,
+        _auction: &AuctionModel,
+        hand: &Hand,
+        _call: &Call,
+        shows: &[HandConstraint],
+    ) -> bool {
         for constraint in shows {
             if !satisfies_constraint(hand, constraint) {
                 return false;
@@ -26,24 +38,27 @@ impl Planner for GenuinePlanner {
 pub struct RuleOfTwentyPlanner;
 
 impl Planner for RuleOfTwentyPlanner {
-    fn applies(&self, _auction: &AuctionModel, hand: &Hand, shows: &[HandConstraint]) -> bool {
+    fn applies(
+        &self,
+        _auction: &AuctionModel,
+        hand: &Hand,
+        call: &Call,
+        _shows: &[HandConstraint],
+    ) -> bool {
         // First check Rule of 20
         if !rule_of_twenty(hand) {
             return false;
         }
 
-        // Then check other constraints, ignoring HCP
-        for constraint in shows {
-            match constraint {
-                HandConstraint::MinHcp(_) | HandConstraint::MaxHcp(_) => continue,
-                _ => {
-                    if !satisfies_constraint(hand, constraint) {
-                        return false;
-                    }
-                }
+        // Ignore the hand constraints for the shows and instead check the length of the call's suit
+        if let Call::Bid { level: _, strain } = call {
+            if let Some(suit) = strain.to_suit() {
+                let min_len = if suit.is_major() { 5 } else { 3 };
+                return hand.length(suit) >= min_len;
             }
         }
-        true
+
+        false
     }
 }
 

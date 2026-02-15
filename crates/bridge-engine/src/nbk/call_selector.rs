@@ -33,7 +33,8 @@ impl CallSelector {
                     .map(|p| p.as_ref())
                     .unwrap_or(&genuine_planner);
 
-                let satisfied = planner.applies(auction_model, hand, &item.semantics.shows);
+                let satisfied =
+                    planner.applies(auction_model, hand, &item.call, &item.semantics.shows);
 
                 let mut failed_constraints = Vec::new();
                 if !satisfied {
