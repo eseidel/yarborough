@@ -10,24 +10,23 @@ pub struct RuleRegistry {
 
 impl RuleRegistry {
     pub fn new_natural() -> Self {
-        let mut rules: Vec<Box<dyn BiddingRule>> = Vec::new();
-
-        // Natural (Discovery, Responses)
-        rules.push(Box::new(natural::NewSuitDiscovery));
-        rules.push(Box::new(natural::NoTrumpResponse));
-        rules.push(Box::new(natural::SupportResponse));
-        rules.push(Box::new(natural::RebidResponse));
-        rules.push(Box::new(natural::PassBetterContractIsRemote));
-
-        // Opening
-        rules.push(Box::new(opening::Strong2C));
-        rules.push(Box::new(opening::OneNoTrumpOpening));
-        rules.push(Box::new(opening::TwoNoTrumpOpening));
-        rules.push(Box::new(opening::SuitOpening));
-        rules.push(Box::new(opening::SuitOpeningFourthSeat));
-        rules.push(Box::new(opening::WeakTwo));
-        rules.push(Box::new(opening::Preempt));
-        rules.push(Box::new(opening::PassOpening));
+        let rules: Vec<Box<dyn BiddingRule>> = vec![
+            // Natural (Discovery, Responses)
+            Box::new(natural::NewSuitDiscovery),
+            Box::new(natural::NoTrumpResponse),
+            Box::new(natural::SupportResponse),
+            Box::new(natural::RebidResponse),
+            Box::new(natural::PassBetterContractIsRemote),
+            // Opening
+            Box::new(opening::Strong2C),
+            Box::new(opening::OneNoTrumpOpening),
+            Box::new(opening::TwoNoTrumpOpening),
+            Box::new(opening::SuitOpening),
+            Box::new(opening::SuitOpeningFourthSeat),
+            Box::new(opening::WeakTwo),
+            Box::new(opening::Preempt),
+            Box::new(opening::PassOpening),
+        ];
         Self { rules }
     }
 

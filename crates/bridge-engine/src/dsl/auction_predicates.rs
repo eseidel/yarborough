@@ -21,7 +21,7 @@ impl AuctionPredicate for NotAuction {
 pub struct IsSeat(pub u8);
 impl AuctionPredicate for IsSeat {
     fn check(&self, auction: &AuctionModel) -> bool {
-        auction.auction.current_seat() as u8 == self.0
+        auction.auction.current_seat() == self.0
     }
 }
 

@@ -104,14 +104,12 @@ impl CallMenu {
                                 if now_shown > already_known {
                                     if already_known >= 4 {
                                         best_purpose = best_purpose.min(CallPurpose::RebidSuit);
-                                    } else {
-                                        if suit.is_major() {
-                                            best_purpose =
-                                                best_purpose.min(CallPurpose::MajorDiscovery);
-                                        } else if suit.is_minor() {
-                                            best_purpose =
-                                                best_purpose.min(CallPurpose::MinorDiscovery);
-                                        }
+                                    } else if suit.is_major() {
+                                        best_purpose =
+                                            best_purpose.min(CallPurpose::MajorDiscovery);
+                                    } else if suit.is_minor() {
+                                        best_purpose =
+                                            best_purpose.min(CallPurpose::MinorDiscovery);
                                     }
                                 }
                             }
