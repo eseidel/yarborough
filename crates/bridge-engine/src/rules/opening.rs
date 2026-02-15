@@ -90,7 +90,7 @@ bidding_rule! {
     description: "Hand does not meet requirements for an opening bid",
     auction: [IsNotOpen],
     call: [IsPass],
-    shows: [ShowMaxHcp(12)]
+    shows: []
 }
 
 #[cfg(test)]

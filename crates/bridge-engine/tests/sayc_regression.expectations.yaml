@@ -9,9 +9,9 @@ test_rebids_after_minor_response:
   A65.K92.KQ.QT972:1S P 2C P:None: "FAIL: step 4, expected 2N, got P"
   22.KJ83.A4.AQJ95:1S P 2D P:None: "FAIL: step 4, expected 3D, got 2N"
 test_preemptive_openings:
-  QJ987652.432.2.2::None: "FAIL: step 0, expected 4C, got P"
+  QJ987652.432.2.2::None: "FAIL: step 0, expected 4C, got 3C"
   432.2.2.AQJ98762::None: "FAIL: step 0, expected 4S, got 2S"
-  2.AQJ987652.2.2::None: "FAIL: step 0, expected 5D, got P"
+  2.AQJ987652.2.2::None: "FAIL: step 0, expected 5D, got 2D"
   AKJ.AKQ.A82.AQ43::None: "FAIL: step 0, expected 3N, got 2C"
 test_partner_profile_inference:
   KJ64.JT.KQT9.KJ9:1D P 1H P 1N P:None: PASS
