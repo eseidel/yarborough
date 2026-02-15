@@ -1,6 +1,6 @@
 //! Hand constraints for NBK bidding rules
 
-use bridge_core::{Shape, Suit};
+use bridge_core::{Hand, Shape, Suit};
 use serde::{Deserialize, Serialize};
 
 /// Constraints that a hand must satisfy
@@ -20,4 +20,24 @@ pub enum HandConstraint {
     RuleOfTwenty,
     /// Rule of 15: HCP + length of spades >= 15
     RuleOfFifteen,
+}
+
+impl HandConstraint {
+    /// Check whether a hand satisfies this constraint.
+    pub fn check(&self, hand: &Hand) -> bool {
+        let dist = hand.distribution();
+        match *self {
+            HandConstraint::MinHcp(hcp) => hand.hcp() >= hcp,
+            HandConstraint::MaxHcp(hcp) => hand.hcp() <= hcp,
+            HandConstraint::MinLength(suit, len) => dist.length(suit) >= len,
+            HandConstraint::MaxLength(suit, len) => dist.length(suit) <= len,
+            HandConstraint::MaxUnbalancedness(max_shape) => hand.shape() <= max_shape,
+            HandConstraint::RuleOfTwenty => {
+                let mut lengths: Vec<u8> = Suit::ALL.iter().map(|&s| dist.length(s)).collect();
+                lengths.sort_unstable_by(|a, b| b.cmp(a));
+                hand.hcp() + lengths[0] + lengths[1] >= 20
+            }
+            HandConstraint::RuleOfFifteen => hand.hcp() + dist.length(Suit::Spades) >= 15,
+        }
+    }
 }

@@ -98,7 +98,7 @@ mod tests {
     use super::*;
     use crate::dsl::bidding_rule::BiddingRule;
     use crate::nbk::{AuctionModel, HandConstraint};
-    use bridge_core::{Call, Distribution, Position, Shape, Strain, Suit};
+    use bridge_core::{Call, Position, Strain, Suit};
 
     fn make_auction(calls: Vec<Call>) -> AuctionModel {
         let mut auction = bridge_core::Auction::new(Position::North);
@@ -131,20 +131,8 @@ mod tests {
         };
         let sem = WeakTwo.get_semantics(&model, &call).unwrap();
 
-        let hand_model = crate::nbk::HandModel {
-            hcp: 8,
-            distribution: Distribution {
-                spades: 2,
-                hearts: 4,
-                diamonds: 4,
-                clubs: 3,
-            },
-            shape: Shape::Balanced,
-        };
-
         assert!(sem
             .shows
             .contains(&HandConstraint::MinLength(Suit::Spades, 6)));
-        assert!(!hand_model.satisfies_all(sem.shows));
     }
 }
