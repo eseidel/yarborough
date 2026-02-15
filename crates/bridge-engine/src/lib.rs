@@ -1,4 +1,5 @@
 pub mod nbk;
+pub mod rules;
 
 use bridge_core::auction::Auction;
 use bridge_core::board::Position;
