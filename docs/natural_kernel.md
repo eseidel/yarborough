@@ -89,9 +89,10 @@ Iterate through all 4 suits. A suit is a valid **Discovery Bid** if:
 2. **Not Partner's Suit:** It is not a suit partner has shown length in.
 3. **Level Safety:** You possess the HCP to bid at the required level.
 4. **Priority:**
-  - Bid **Longest** suit first.
-  - If equal length (5-5), bid **Higher Ranking** suit.
-  - If equal length (4-4), bid **Lower Ranking** suit (up-the-line).
+
+- Bid **Longest** suit first.
+- If equal length (5-5), bid **Higher Ranking** suit.
+- If equal length (4-4), bid **Lower Ranking** suit (up-the-line).
 
 ### 4.2. Protocol B: The Limit Protocol (Non-Forcing / Invitational)
 
