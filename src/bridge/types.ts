@@ -1,3 +1,4 @@
+// cspell:ignore SHDC
 export type SuitName = "C" | "D" | "H" | "S";
 
 export interface Suit {

@@ -1,3 +1,4 @@
+// cspell:ignore AKQJT
 use bridge_core::auction::Auction;
 use bridge_core::board::{Board, Position, Vulnerability};
 use bridge_core::call::Call;

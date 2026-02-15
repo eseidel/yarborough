@@ -1,3 +1,4 @@
+// cspell:ignore SAHDC
 use crate::auction::Auction;
 use crate::board::{Board, Position, Vulnerability};
 use crate::call::Call;

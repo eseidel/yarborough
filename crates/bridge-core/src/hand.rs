@@ -1,3 +1,4 @@
+// cspell:ignore AKQJT AKQJ
 use crate::card::Card;
 use crate::rank::Rank;
 use crate::suit::Suit;

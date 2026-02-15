@@ -1,3 +1,4 @@
+// cspell:ignore DAKJ
 import type {
   Deal,
   Hand,

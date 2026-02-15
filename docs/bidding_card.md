@@ -1,3 +1,5 @@
+<!-- cspell:ignore RONF -->
+
 ### **I. Overview & General Approach**
 
 The Standard American Yellow Card (SAYC) was designed to be a simple, modern method allowing players in casual partnerships (like online play or partnership desks) to have a solid understanding without complex system discussions.
