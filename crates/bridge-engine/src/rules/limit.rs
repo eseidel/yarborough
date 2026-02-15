@@ -1,19 +1,17 @@
-//! Limit Rules for the NBK DSL
-
 use crate::bidding_rule;
-use crate::rules::auction_predicates::IsOpen;
-use crate::rules::auction_predicates::PartnerLimited;
-use crate::rules::call_predicates::not_call;
-use crate::rules::call_predicates::BidderHasShownSuit;
-use crate::rules::call_predicates::IsPass;
-use crate::rules::call_predicates::IsStrain;
-use crate::rules::call_predicates::IsSuit;
-use crate::rules::call_predicates::PartnerHasShownSuit;
-use crate::rules::shows::ShowBetterContractIsRemote;
-use crate::rules::shows::ShowMinSuitLength;
-use crate::rules::shows::ShowSemiBalanced;
-use crate::rules::shows::ShowSufficientValues;
-use crate::rules::shows::ShowSupportLength;
+use crate::dsl::auction_predicates::IsOpen;
+use crate::dsl::auction_predicates::PartnerLimited;
+use crate::dsl::call_predicates::not_call;
+use crate::dsl::call_predicates::BidderHasShownSuit;
+use crate::dsl::call_predicates::IsPass;
+use crate::dsl::call_predicates::IsStrain;
+use crate::dsl::call_predicates::IsSuit;
+use crate::dsl::call_predicates::PartnerHasShownSuit;
+use crate::dsl::shows::ShowBetterContractIsRemote;
+use crate::dsl::shows::ShowMinSuitLength;
+use crate::dsl::shows::ShowSemiBalanced;
+use crate::dsl::shows::ShowSufficientValues;
+use crate::dsl::shows::ShowSupportLength;
 use bridge_core::Strain;
 
 bidding_rule! {
@@ -59,8 +57,8 @@ bidding_rule! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dsl::bidding_rule::BiddingRule;
     use crate::nbk::{AuctionModel, HandModel, PartnerModel};
-    use crate::rules::bidding_rule::BiddingRule;
     use bridge_core::{Auction, Call, Distribution, Position, Shape};
 
     #[test]

@@ -1,3 +1,4 @@
+pub mod dsl;
 pub mod nbk;
 pub mod rules;
 

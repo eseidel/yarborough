@@ -1,5 +1,5 @@
 use crate::nbk::{AuctionModel, CallSemantics};
-use crate::rules::bidding_rule::BiddingRule;
+use crate::dsl::bidding_rule::BiddingRule;
 use crate::rules::{discovery, limit, opening};
 use bridge_core::Call;
 

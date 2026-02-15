@@ -105,7 +105,7 @@ macro_rules! bidding_rule {
     ) => {
         pub struct $struct_name;
 
-        impl $crate::rules::bidding_rule::BiddingRule for $struct_name {
+        impl $crate::dsl::bidding_rule::BiddingRule for $struct_name {
             fn name(&self, call: &bridge_core::Call) -> String {
                 match call {
                     bridge_core::Call::Bid { level, strain } => {
@@ -128,15 +128,15 @@ macro_rules! bidding_rule {
                 }
             }
 
-            fn auction_criteria(&self) -> Vec<Box<dyn $crate::rules::auction_predicates::AuctionPredicate>> {
+            fn auction_criteria(&self) -> Vec<Box<dyn $crate::dsl::auction_predicates::AuctionPredicate>> {
                 vec![ $( Box::new($auction_pred) ),* ]
             }
 
-            fn call_predicates(&self) -> Vec<Box<dyn $crate::rules::call_predicates::CallPredicate>> {
+            fn call_predicates(&self) -> Vec<Box<dyn $crate::dsl::call_predicates::CallPredicate>> {
                 vec![ $( Box::new($call_pred) ),* ]
             }
 
-            fn shows(&self) -> Vec<Box<dyn $crate::rules::shows::Shows>> {
+            fn shows(&self) -> Vec<Box<dyn $crate::dsl::shows::Shows>> {
                 vec![ $( Box::new($shows_pred) ),* ]
             }
         }

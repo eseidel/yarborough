@@ -1,25 +1,23 @@
-//! Opening Rules for the NBK DSL
-
 use crate::bidding_rule;
-use crate::rules::auction_predicates::not_auction;
-use crate::rules::auction_predicates::IsNotOpen;
-use crate::rules::auction_predicates::IsSeat;
-use crate::rules::call_predicates::IsCall;
-use crate::rules::call_predicates::IsLevel;
-use crate::rules::call_predicates::IsPass;
-use crate::rules::call_predicates::IsStrain;
-use crate::rules::call_predicates::IsSuit;
-use crate::rules::call_predicates::MinLevel;
-use crate::rules::call_predicates::NotCall;
-use crate::rules::shows::ShowBalanced;
-use crate::rules::shows::ShowHcpRange;
-use crate::rules::shows::ShowMaxHcp;
-use crate::rules::shows::ShowMinHcp;
-use crate::rules::shows::ShowMinSuitLength;
-use crate::rules::shows::ShowOpeningSuitLength;
-use crate::rules::shows::ShowPreemptLength;
-use crate::rules::shows::ShowRuleOfFifteen;
-use crate::rules::shows::ShowRuleOfTwenty;
+use crate::dsl::auction_predicates::not_auction;
+use crate::dsl::auction_predicates::IsNotOpen;
+use crate::dsl::auction_predicates::IsSeat;
+use crate::dsl::call_predicates::IsCall;
+use crate::dsl::call_predicates::IsLevel;
+use crate::dsl::call_predicates::IsPass;
+use crate::dsl::call_predicates::IsStrain;
+use crate::dsl::call_predicates::IsSuit;
+use crate::dsl::call_predicates::MinLevel;
+use crate::dsl::call_predicates::NotCall;
+use crate::dsl::shows::ShowBalanced;
+use crate::dsl::shows::ShowHcpRange;
+use crate::dsl::shows::ShowMaxHcp;
+use crate::dsl::shows::ShowMinHcp;
+use crate::dsl::shows::ShowMinSuitLength;
+use crate::dsl::shows::ShowOpeningSuitLength;
+use crate::dsl::shows::ShowPreemptLength;
+use crate::dsl::shows::ShowRuleOfFifteen;
+use crate::dsl::shows::ShowRuleOfTwenty;
 use bridge_core::Strain;
 
 bidding_rule! {
@@ -97,8 +95,8 @@ bidding_rule! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dsl::bidding_rule::BiddingRule;
     use crate::nbk::{AuctionModel, HandConstraint};
-    use crate::rules::bidding_rule::BiddingRule;
     use bridge_core::{Call, Distribution, Position, Shape, Strain, Suit};
 
     fn make_auction(calls: Vec<Call>) -> AuctionModel {

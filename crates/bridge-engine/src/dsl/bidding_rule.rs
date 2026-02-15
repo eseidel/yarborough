@@ -1,7 +1,7 @@
 use crate::nbk::{AuctionModel, CallSemantics, HandConstraint};
-use crate::rules::auction_predicates::AuctionPredicate;
-use crate::rules::call_predicates::CallPredicate;
-use crate::rules::shows::Shows;
+use crate::dsl::auction_predicates::AuctionPredicate;
+use crate::dsl::call_predicates::CallPredicate;
+use crate::dsl::shows::Shows;
 use bridge_core::Call;
 
 /// A bidding rule in the NBK DSL

@@ -1,12 +1,9 @@
-//! Discovery Rules for the NBK DSL
-
 use crate::bidding_rule;
-use crate::rules::auction_predicates::IsOpen;
-use crate::rules::call_predicates::IsNewSuit;
-use crate::rules::shows::ShowMinSuitLength;
-use crate::rules::shows::ShowSufficientValues;
+use crate::dsl::auction_predicates::IsOpen;
+use crate::dsl::call_predicates::IsNewSuit;
+use crate::dsl::shows::ShowMinSuitLength;
+use crate::dsl::shows::ShowSufficientValues;
 
-// --- New Suit Discovery ---
 bidding_rule! {
     struct NewSuitDiscovery;
     name: format_strain!("{strain} Discovery"),
@@ -19,8 +16,8 @@ bidding_rule! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dsl::bidding_rule::BiddingRule;
     use crate::nbk::{AuctionModel, HandModel, PartnerModel};
-    use crate::rules::bidding_rule::BiddingRule;
     use bridge_core::{Call, Distribution, Shape, Strain};
 
     #[test]
