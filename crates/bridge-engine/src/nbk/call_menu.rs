@@ -33,7 +33,7 @@ pub struct CallMenu {
 
 /// Types of predefined call groups in the NBK model
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum CallMenuGroupType {
+pub enum CallPurpose {
     SupportMajors = 0,
     MajorDiscovery = 1,
     CharacterizeStrength = 2,
@@ -43,7 +43,7 @@ pub enum CallMenuGroupType {
     Miscellaneous = 6,
 }
 
-impl CallMenuGroupType {
+impl CallPurpose {
     /// Get the display name for the group type
     pub fn name(&self) -> &'static str {
         match self {
@@ -86,7 +86,7 @@ impl CallMenu {
 
         for call in legal_calls {
             if let Some(semantics) = CallInterpreter::interpret(auction_model, &call) {
-                let mut best_group = CallMenuGroupType::Miscellaneous;
+                let mut best_purpose = CallPurpose::Miscellaneous;
 
                 let mut did_show_length = false;
                 let mut did_characterize_strength = false;
@@ -95,22 +95,22 @@ impl CallMenu {
                         HandConstraint::MinLength(suit, now_shown) => {
                             if auction_model.partner_model.has_shown_suit(suit) {
                                 if suit.is_major() {
-                                    best_group = best_group.min(CallMenuGroupType::SupportMajors);
+                                    best_purpose = best_purpose.min(CallPurpose::SupportMajors);
                                 } else if suit.is_minor() {
-                                    best_group = best_group.min(CallMenuGroupType::SupportMinors);
+                                    best_purpose = best_purpose.min(CallPurpose::SupportMinors);
                                 }
                             } else {
                                 let already_known = auction_model.bidder_model.min_length(suit);
                                 if now_shown > already_known {
                                     if already_known >= 4 {
-                                        best_group = best_group.min(CallMenuGroupType::RebidSuit);
+                                        best_purpose = best_purpose.min(CallPurpose::RebidSuit);
                                     } else {
                                         if suit.is_major() {
-                                            best_group =
-                                                best_group.min(CallMenuGroupType::MajorDiscovery);
+                                            best_purpose =
+                                                best_purpose.min(CallPurpose::MajorDiscovery);
                                         } else if suit.is_minor() {
-                                            best_group =
-                                                best_group.min(CallMenuGroupType::MinorDiscovery);
+                                            best_purpose =
+                                                best_purpose.min(CallPurpose::MinorDiscovery);
                                         }
                                     }
                                 }
@@ -135,15 +135,15 @@ impl CallMenu {
                 }
 
                 if !did_show_length && did_characterize_strength {
-                    best_group = best_group.min(CallMenuGroupType::CharacterizeStrength);
+                    best_purpose = best_purpose.min(CallPurpose::CharacterizeStrength);
                 }
 
-                group_items[best_group as usize].push(CallMenuItem { call, semantics });
+                group_items[best_purpose as usize].push(CallMenuItem { call, semantics });
             }
         }
 
         let mut menu = Self::default();
-        for group_type in CallMenuGroupType::ALL {
+        for group_type in CallPurpose::ALL {
             menu = menu.with_group(group_type.name(), group_items[group_type as usize].clone());
         }
 
