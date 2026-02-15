@@ -1,10 +1,12 @@
 //! Semantic meaning of calls in the NBK model
 
+use crate::dsl::planner::Planner;
 use crate::nbk::HandConstraint;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 /// Semantic meaning of a call
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CallSemantics {
     /// What this call shows about our hand
     pub shows: Vec<HandConstraint>,
@@ -12,4 +14,28 @@ pub struct CallSemantics {
     pub rule_name: String,
     /// Human-readable description of what the call means
     pub description: String,
+    /// Optional planner for selecting the bid
+    #[serde(skip)]
+    pub planner: Option<Arc<dyn Planner>>,
 }
+
+impl std::fmt::Debug for CallSemantics {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CallSemantics")
+            .field("shows", &self.shows)
+            .field("rule_name", &self.rule_name)
+            .field("description", &self.description)
+            .field("planner", &self.planner.as_ref().map(|_| "Some(Planner)"))
+            .finish()
+    }
+}
+
+impl PartialEq for CallSemantics {
+    fn eq(&self, other: &Self) -> bool {
+        self.shows == other.shows
+            && self.rule_name == other.rule_name
+            && self.description == other.description
+    }
+}
+
+impl Eq for CallSemantics {}

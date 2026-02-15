@@ -1,8 +1,10 @@
-use crate::nbk::{AuctionModel, CallSemantics, HandConstraint};
 use crate::dsl::auction_predicates::AuctionPredicate;
 use crate::dsl::call_predicates::CallPredicate;
+use crate::dsl::planner::Planner;
 use crate::dsl::shows::Shows;
+use crate::nbk::{AuctionModel, CallSemantics, HandConstraint};
 use bridge_core::Call;
+use std::sync::Arc;
 
 /// A bidding rule in the NBK DSL
 pub trait BiddingRule: Send + Sync {
@@ -20,6 +22,11 @@ pub trait BiddingRule: Send + Sync {
 
     /// What this rule shows about the hand
     fn shows(&self) -> Vec<Box<dyn Shows>>;
+
+    /// Optional planner for this rule
+    fn planner(&self) -> Option<Arc<dyn Planner>> {
+        None
+    }
 
     /// Try to interpret a call using this rule.
     fn get_semantics(&self, auction: &AuctionModel, call: &Call) -> Option<CallSemantics> {
@@ -53,6 +60,7 @@ pub trait BiddingRule: Send + Sync {
             shows: constraints,
             rule_name: self.name(call),
             description: self.description(call),
+            planner: self.planner(),
         })
     }
 }

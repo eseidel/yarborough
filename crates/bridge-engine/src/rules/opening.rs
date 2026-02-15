@@ -9,6 +9,7 @@ use crate::dsl::call_predicates::IsStrain;
 use crate::dsl::call_predicates::IsSuit;
 use crate::dsl::call_predicates::MinLevel;
 use crate::dsl::call_predicates::NotCall;
+use crate::dsl::planner::RuleOfTwentyPlanner;
 use crate::dsl::shows::ShowBalanced;
 use crate::dsl::shows::ShowHcpRange;
 use crate::dsl::shows::ShowMaxHcp;
@@ -17,7 +18,6 @@ use crate::dsl::shows::ShowMinSuitLength;
 use crate::dsl::shows::ShowOpeningSuitLength;
 use crate::dsl::shows::ShowPreemptLength;
 use crate::dsl::shows::ShowRuleOfFifteen;
-use crate::dsl::shows::ShowRuleOfTwenty;
 use bridge_core::Strain;
 
 bidding_rule! {
@@ -53,7 +53,8 @@ bidding_rule! {
     description: format_strain!("Opening bid showing 4+ cards in {strain}"),
     auction: [IsNotOpen, not_auction(IsSeat(4))],
     call: [IsLevel(1), IsSuit],
-    shows: [ShowOpeningSuitLength, ShowRuleOfTwenty, ShowMinHcp(12)],
+    shows: [ShowOpeningSuitLength, ShowMinHcp(12)],
+    planner: RuleOfTwentyPlanner,
 }
 
 bidding_rule! {
@@ -119,7 +120,6 @@ mod tests {
         assert!(sem
             .shows
             .contains(&HandConstraint::MinLength(Suit::Spades, 5)));
-        assert!(sem.shows.contains(&HandConstraint::RuleOfTwenty));
     }
 
     #[test]

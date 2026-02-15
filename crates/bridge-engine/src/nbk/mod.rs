@@ -32,14 +32,12 @@ use bridge_core::{Auction, Call, Hand, Position};
 /// Given a hand, auction state, and position, returns the best bid according to NBK logic.
 /// Returns None if no valid bid can be determined (should be rare - will default to Pass).
 pub fn select_bid(hand: &Hand, auction: &Auction, position: Position) -> Option<Call> {
-    let hand_model = HandModel::from_hand(hand);
     let auction_model = AuctionModel::from_auction(auction, position);
-    CallSelector::select_best_call(&hand_model, &auction_model)
+    CallSelector::select_best_call(hand, &auction_model)
 }
 
 /// Like select_bid but returns a detailed trace
 pub fn select_bid_with_trace(hand: &Hand, auction: &Auction, position: Position) -> BidTrace {
-    let hand_model = HandModel::from_hand(hand);
     let auction_model = AuctionModel::from_auction(auction, position);
-    CallSelector::select_best_call_with_trace(&hand_model, &auction_model)
+    CallSelector::select_best_call_with_trace(hand, &auction_model)
 }

@@ -1,38 +1,51 @@
+use crate::dsl::planner::GenuinePlanner;
 use crate::nbk::call_menu::{CallMenu, CallMenuItem};
 use crate::nbk::trace::{BidTrace, SelectionStep};
 use crate::nbk::{AuctionModel, HandModel};
-use bridge_core::Call;
+use bridge_core::{Call, Hand};
 
 /// Call selector implementing the NBK priority stack
 pub struct CallSelector;
 
 impl CallSelector {
     /// Select the best call according to NBK priority rules
-    pub fn select_best_call(hand_model: &HandModel, auction_model: &AuctionModel) -> Option<Call> {
-        Self::select_best_call_with_trace(hand_model, auction_model).selected_call
+    pub fn select_best_call(hand: &Hand, auction_model: &AuctionModel) -> Option<Call> {
+        Self::select_best_call_with_trace(hand, auction_model).selected_call
     }
 
     /// Select the best call and return a detailed trace of the selection process
-    pub fn select_best_call_with_trace(
-        hand_model: &HandModel,
-        auction_model: &AuctionModel,
-    ) -> BidTrace {
+    pub fn select_best_call_with_trace(hand: &Hand, auction_model: &AuctionModel) -> BidTrace {
+        let hand_model = HandModel::from_hand(hand);
         let menu = CallMenu::from_auction_model(auction_model);
         let mut selection_steps = Vec::new();
         let mut selected_call = None;
+
+        let genuine_planner = GenuinePlanner;
 
         for group in &menu.groups {
             let mut satisfied_in_group = Vec::new();
 
             for item in &group.items {
+                let planner = item
+                    .semantics
+                    .planner
+                    .as_ref()
+                    .map(|p| p.as_ref())
+                    .unwrap_or(&genuine_planner);
+
+                let satisfied = planner.applies(auction_model, hand, &item.semantics.shows);
+
                 let mut failed_constraints = Vec::new();
-                for constraint in &item.semantics.shows {
-                    if !hand_model.satisfies(*constraint) {
-                        failed_constraints.push(*constraint);
+                if !satisfied {
+                    // For the trace, we still want to show which constraints failed
+                    // if it was a "Genuine" check or similar.
+                    for constraint in &item.semantics.shows {
+                        if !hand_model.satisfies(*constraint) {
+                            failed_constraints.push(*constraint);
+                        }
                     }
                 }
 
-                let satisfied = failed_constraints.is_empty();
                 selection_steps.push(SelectionStep {
                     group_name: group.name.clone(),
                     call: item.call,
@@ -46,14 +59,14 @@ impl CallSelector {
                 }
             }
 
-            if let Some(call) = select_best_from_group(&satisfied_in_group, hand_model) {
+            if let Some(call) = select_best_from_group(&satisfied_in_group, &hand_model) {
                 selected_call = Some(call);
                 break;
             }
         }
 
         BidTrace {
-            hand_model: hand_model.clone(),
+            hand_model,
             auction_model: auction_model.clone(),
             menu,
             selection_steps,
