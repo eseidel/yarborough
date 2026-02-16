@@ -304,7 +304,7 @@ mod tests {
         assert!(id.contains('-'));
         let parts: Vec<&str> = id.split('-').collect();
         assert_eq!(parts.len(), 2);
-        // Board number should be valid.
+        // Board number should be parseable.
         let _board_number: u32 = parts[0].parse().expect("board number should be a u32");
         // Hex deal should be 26 characters.
         assert_eq!(parts[1].len(), 26);
