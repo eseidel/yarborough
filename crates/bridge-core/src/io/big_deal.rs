@@ -8,7 +8,7 @@ use std::collections::HashMap;
 /// Big Deal Index format is often a compact string representation of the deal.
 /// Here we implement a simple version that lists all cards in a fixed order.
 /// Another version and more common is a very large integer.
-/// For the purpose of this task, I'll implement a hex-encoded version of the bitmask
+/// For the purpose of this task, I'll implement a hex-encoded version of the bit mask
 /// or a standard compact string if that's what's expected.
 /// Actually, "Big Deal" often refers to the `bigdeal` software.
 /// I'll implement a basic canonical representation.
