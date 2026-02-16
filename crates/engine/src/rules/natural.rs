@@ -1,8 +1,8 @@
 use crate::bidding_rule;
 use crate::dsl::auction_predicates::{PartnerLimited, WeOpened};
 use crate::dsl::call_predicates::{
-    not_call, BidderHasShownSuit, IsLevel, IsMajorSuit, IsMinorSuit, IsNewSuit, IsNotrump, IsPass,
-    IsSuit, MinLevel, PartnerHasShownSuit,
+    not_call, BidderHasShownSuit, IsJump, IsLevel, IsMajorSuit, IsMinorSuit, IsNewSuit, IsNotrump,
+    IsPass, IsSuit, MinLevel, PartnerHasShownSuit,
 };
 use crate::dsl::shows::{
     ShowBetterContractIsRemote, ShowMinHcp, ShowMinSuitLength, ShowSemiBalanced,
@@ -17,24 +17,31 @@ bidding_rule! {
 }
 
 bidding_rule! {
-    OneNotrumpResponse: "Notrump Response",
+    OneNotrumpResponse: "1NT Response",
     auction: [WeOpened],
-    call: [IsNotrump],
+    call: [IsLevel(1), IsNotrump],
     shows: [ShowMinHcp(6)]
 }
 
 bidding_rule! {
     NewMajorAtLevelTwo: "New Major",
     auction: [WeOpened],
-    call: [IsLevel(2), IsNewSuit, IsMajorSuit],
+    call: [IsLevel(2), not_call(IsJump), IsNewSuit, IsMajorSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
 }
 
 bidding_rule! {
     NewMinorAtLevelTwo: "New Minor",
     auction: [WeOpened],
-    call: [IsLevel(2), IsNewSuit, IsMinorSuit],
+    call: [IsLevel(2), not_call(IsJump), IsNewSuit, IsMinorSuit],
     shows: [ShowMinSuitLength(4), ShowMinHcp(10)]
+}
+
+bidding_rule! {
+    JumpShiftResponse: "Jump Shift Response",
+    auction: [WeOpened],
+    call: [IsJump, IsNewSuit],
+    shows: [ShowMinSuitLength(5), ShowMinHcp(19)]
 }
 
 bidding_rule! {

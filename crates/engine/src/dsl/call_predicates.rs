@@ -163,7 +163,7 @@ impl CallPredicate for IsJump {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
         if let Call::Bid { level, strain } = call {
             if let Some(min_level) = min_level_for_strain(auction, *strain) {
-                return *level > min_level;
+                return *level == min_level + 1;
             }
         }
         false
