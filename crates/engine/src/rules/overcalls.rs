@@ -9,7 +9,7 @@ use crate::dsl::call_predicates::{
 use crate::dsl::planner::TakeoutDoublePlanner;
 use crate::dsl::shows::{
     ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinSuitLength, ShowPreemptLength,
-    ShowSupportForUnbidSuits,
+    ShowStopperInOpponentSuit, ShowSupportForUnbidSuits,
 };
 
 bidding_rule! {
@@ -38,7 +38,7 @@ bidding_rule! {
     OneNotrumpOvercall: "Notrump Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(1), IsNotrump],
-    shows: [ShowHcpRange(15, 18), ShowBalanced]
+    shows: [ShowHcpRange(15, 18), ShowBalanced, ShowStopperInOpponentSuit]
 }
 
 bidding_rule! {

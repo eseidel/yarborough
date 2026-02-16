@@ -96,6 +96,7 @@ fn satisfies_constraint(hand: &Hand, constraint: &HandConstraint) -> bool {
         HandConstraint::MinLength(suit, len) => hand.length(suit) >= len,
         HandConstraint::MaxLength(suit, len) => hand.length(suit) <= len,
         HandConstraint::MaxUnbalancedness(max_shape) => hand.shape() <= max_shape,
+        HandConstraint::StopperIn(_) => constraint.check(hand),
         HandConstraint::RuleOfTwenty => rule_of_twenty(hand),
         HandConstraint::RuleOfFifteen => rule_of_fifteen(hand),
     }

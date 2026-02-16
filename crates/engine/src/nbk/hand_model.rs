@@ -48,7 +48,9 @@ impl HandModel {
             HandConstraint::MaxUnbalancedness(shape) => {
                 self.max_shape = Some(update_shape_max(self.max_shape, shape));
             }
-            HandConstraint::RuleOfTwenty | HandConstraint::RuleOfFifteen => {
+            HandConstraint::RuleOfTwenty
+            | HandConstraint::RuleOfFifteen
+            | HandConstraint::StopperIn(_) => {
                 // Complex constraints not currently tracked in hand model
             }
         }

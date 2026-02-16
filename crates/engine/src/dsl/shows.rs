@@ -2,6 +2,22 @@ use crate::nbk::{AuctionModel, HandConstraint, PointRanges};
 use std::fmt::Debug;
 use types::{Call, Shape, Suit};
 
+/// Requires a stopper in each suit the opponents have shown.
+/// Used for notrump overcalls.
+#[derive(Debug)]
+pub struct ShowStopperInOpponentSuit;
+impl Shows for ShowStopperInOpponentSuit {
+    fn show(&self, auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
+        Suit::ALL
+            .iter()
+            .filter(|&&suit| {
+                auction.rho_hand().has_shown_suit(suit) || auction.lho_hand().has_shown_suit(suit)
+            })
+            .map(|&suit| HandConstraint::StopperIn(suit))
+            .collect()
+    }
+}
+
 /// Shows 3+ cards in each suit that opponents have NOT shown.
 /// Used for takeout doubles to indicate support for all unbid suits.
 #[derive(Debug)]

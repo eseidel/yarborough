@@ -37,10 +37,11 @@ pub enum CallPurpose {
     SupportMajors = 0,
     MajorDiscovery = 1,
     CharacterizeStrength = 2,
-    SupportMinors = 3,
-    MinorDiscovery = 4,
-    RebidSuit = 5,
-    Miscellaneous = 6,
+    CompetitiveAction = 3,
+    SupportMinors = 4,
+    MinorDiscovery = 5,
+    RebidSuit = 6,
+    Miscellaneous = 7,
 }
 
 impl CallPurpose {
@@ -50,6 +51,7 @@ impl CallPurpose {
             Self::SupportMajors => "Support Majors",
             Self::MajorDiscovery => "Major Discovery",
             Self::CharacterizeStrength => "Characterize Strength",
+            Self::CompetitiveAction => "Competitive Action",
             Self::SupportMinors => "Support Minors",
             Self::MinorDiscovery => "Minor Discovery",
             Self::RebidSuit => "Rebid Suit",
@@ -58,10 +60,11 @@ impl CallPurpose {
     }
 
     /// All available group types in priority order
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::SupportMajors,
         Self::MajorDiscovery,
         Self::CharacterizeStrength,
+        Self::CompetitiveAction,
         Self::SupportMinors,
         Self::MinorDiscovery,
         Self::RebidSuit,
@@ -74,67 +77,17 @@ impl CallMenu {
     pub fn from_auction_model(auction_model: &AuctionModel) -> Self {
         let legal_calls = auction_model.auction.legal_calls();
 
-        let mut group_items: [Vec<CallMenuItem>; 7] = [
-            Vec::new(),
-            Vec::new(),
-            Vec::new(),
-            Vec::new(),
-            Vec::new(),
-            Vec::new(),
-            Vec::new(),
-        ];
+        let mut group_items: [Vec<CallMenuItem>; 8] = Default::default();
 
         for call in legal_calls {
             if let Some(semantics) = CallInterpreter::interpret(auction_model, &call) {
-                let mut best_purpose = CallPurpose::Miscellaneous;
-
-                let mut did_show_length = false;
-                let mut did_characterize_strength = false;
-                for constraint in &semantics.shows {
-                    match *constraint {
-                        HandConstraint::MinLength(suit, now_shown) => {
-                            if auction_model.partner_hand().has_shown_suit(suit) {
-                                if suit.is_major() {
-                                    best_purpose = best_purpose.min(CallPurpose::SupportMajors);
-                                } else if suit.is_minor() {
-                                    best_purpose = best_purpose.min(CallPurpose::SupportMinors);
-                                }
-                            } else {
-                                let already_known = auction_model.bidder_hand().min_length(suit);
-                                if now_shown > already_known {
-                                    if already_known >= 4 {
-                                        best_purpose = best_purpose.min(CallPurpose::RebidSuit);
-                                    } else if suit.is_major() {
-                                        best_purpose =
-                                            best_purpose.min(CallPurpose::MajorDiscovery);
-                                    } else if suit.is_minor() {
-                                        best_purpose =
-                                            best_purpose.min(CallPurpose::MinorDiscovery);
-                                    }
-                                }
-                            }
-                            did_show_length = true;
-                        }
-                        HandConstraint::MinHcp(now_shown) => {
-                            if now_shown > auction_model.bidder_hand().min_hcp.unwrap_or(0) {
-                                did_characterize_strength = true;
-                            }
-                        }
-                        HandConstraint::MaxHcp(now_shown) => {
-                            if now_shown < auction_model.bidder_hand().max_hcp.unwrap_or(40) {
-                                did_characterize_strength = true;
-                            }
-                        }
-                        _ => {
-                            // This is a constraint that doesn't fit into any of the above categories.
-                            // We'll ignore it for now.
-                        }
-                    }
-                }
-
-                if !did_show_length && did_characterize_strength {
-                    best_purpose = best_purpose.min(CallPurpose::CharacterizeStrength);
-                }
+                // Doubles/redoubles go to CompetitiveAction — they show values
+                // and general shape but don't commit to a suit.
+                let best_purpose = if matches!(call, Call::Double | Call::Redouble) {
+                    CallPurpose::CompetitiveAction
+                } else {
+                    categorize_bid(auction_model, &semantics)
+                };
 
                 group_items[best_purpose as usize].push(CallMenuItem { call, semantics });
             }
@@ -158,6 +111,56 @@ impl CallMenu {
         }
         self
     }
+}
+
+/// Determine the purpose category for a bid based on its shown constraints.
+fn categorize_bid(auction_model: &AuctionModel, semantics: &CallSemantics) -> CallPurpose {
+    let mut best_purpose = CallPurpose::Miscellaneous;
+    let mut did_show_length = false;
+    let mut did_characterize_strength = false;
+
+    for constraint in &semantics.shows {
+        match *constraint {
+            HandConstraint::MinLength(suit, now_shown) => {
+                if auction_model.partner_hand().has_shown_suit(suit) {
+                    if suit.is_major() {
+                        best_purpose = best_purpose.min(CallPurpose::SupportMajors);
+                    } else if suit.is_minor() {
+                        best_purpose = best_purpose.min(CallPurpose::SupportMinors);
+                    }
+                } else {
+                    let already_known = auction_model.bidder_hand().min_length(suit);
+                    if now_shown > already_known {
+                        if already_known >= 4 {
+                            best_purpose = best_purpose.min(CallPurpose::RebidSuit);
+                        } else if suit.is_major() {
+                            best_purpose = best_purpose.min(CallPurpose::MajorDiscovery);
+                        } else if suit.is_minor() {
+                            best_purpose = best_purpose.min(CallPurpose::MinorDiscovery);
+                        }
+                    }
+                }
+                did_show_length = true;
+            }
+            HandConstraint::MinHcp(now_shown) => {
+                if now_shown > auction_model.bidder_hand().min_hcp.unwrap_or(0) {
+                    did_characterize_strength = true;
+                }
+            }
+            HandConstraint::MaxHcp(now_shown) => {
+                if now_shown < auction_model.bidder_hand().max_hcp.unwrap_or(40) {
+                    did_characterize_strength = true;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    if !did_show_length && did_characterize_strength {
+        best_purpose = best_purpose.min(CallPurpose::CharacterizeStrength);
+    }
+
+    best_purpose
 }
 
 #[cfg(test)]

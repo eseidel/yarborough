@@ -500,8 +500,8 @@ test_overcalls:
   KQ4.K98.KQ873.K2:1S:None: PASS
   KQ4.A98.QJ873.K2:1C:None: "FAIL: step 1, expected 1N, got 1H"
   A3.KT97.JT3.AQ65:1C:None: PASS
-  A3.KT97.JT3.AK65:1C:None: "FAIL: step 1, expected 1N, got X"
-  A3.KQ97.QT3.AK65:1C:None: "FAIL: step 1, expected 1N, got X"
+  A3.KT97.JT3.AK65:1C:None: PASS
+  A3.KQ97.QT3.AK65:1C:None: PASS
   A3.KQ97.KT3.AK65:1C:None: PASS
   J63.Q843.KT87.J5:1C 1H P:None: "FAIL: step 3, expected 3H, got P"
   J63.Q843.KT8.J75:1C 1H P:None: "FAIL: step 3, expected 2H, got P"
