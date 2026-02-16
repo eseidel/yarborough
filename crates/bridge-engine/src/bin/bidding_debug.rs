@@ -92,6 +92,7 @@ fn pos_char(pos: Position) -> char {
     }
 }
 
+/// Splits call names on both commas or whitespace.
 fn parse_calls(s: &str) -> Vec<Call> {
     s.split(|c: char| c == ',' || c == ' ' || c.is_whitespace())
         .filter(|part| !part.is_empty())

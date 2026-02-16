@@ -57,20 +57,10 @@ impl PartnerModel {
         self.min_distribution.length(suit) > 0
     }
 
-    #[allow(dead_code)]
-    pub fn shown_suits(&self) -> Vec<Suit> {
-        Suit::ALL
-            .iter()
-            .filter(|&&suit| self.min_distribution.length(suit) > 0)
-            .copied()
-            .collect()
-    }
-
     pub fn min_length(&self, suit: Suit) -> u8 {
         self.min_distribution.length(suit)
     }
 
-    #[allow(dead_code)]
     pub fn max_length(&self, suit: Suit) -> u8 {
         self.max_distribution.length(suit)
     }
@@ -117,7 +107,6 @@ mod tests {
 
         assert_eq!(model.min_hcp, None);
         assert_eq!(model.max_hcp, None);
-        assert_eq!(model.shown_suits().len(), 0);
         assert_eq!(model.max_length(Suit::Spades), 13);
     }
 
