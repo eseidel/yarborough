@@ -75,12 +75,19 @@ impl CallSelector {
 
 /// Select the best item from a group of satisfied items.
 ///
-/// When multiple calls in a group are satisfied, prefer the one whose shown
-/// suit is longest in the hand. With equal length, generally preserve the
-/// original "up the line" ordering (cheapest bid first), except for
-/// equal-length minors with 4+ cards at level 1 where SAYC prefers the
-/// higher-ranking minor (1D over 1C).
+/// Consults suit-based selection first, then falls back to the lowest
+/// (first) call in the group.
 fn select_best_from_group(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+    select_by_longest_suit(items, hand).or_else(|| items.first().map(|item| item.call))
+}
+
+/// Select the call whose shown suit is longest in the hand.
+///
+/// Returns `None` if no items show a suit (e.g., all are NT or Pass).
+/// With equal length, preserves "up the line" ordering (cheapest bid first),
+/// except for equal-length minors with 4+ cards at level 1 where SAYC
+/// prefers the higher-ranking minor (1D over 1C).
+fn select_by_longest_suit(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
     let mut best: Option<(&CallMenuItem, Suit, u8)> = None;
 
     for item in items {
@@ -107,10 +114,7 @@ fn select_best_from_group(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
         }
     }
 
-    // If no items showed a suit, fall back to the first item in the group.
-    // This handles calls like 1NT or Pass that don't have MinLength constraints.
     best.map(|(item, _, _)| item.call)
-        .or_else(|| items.first().map(|item| item.call))
 }
 
 /// Find the longest suit shown by a call's semantics, measured by the hand's
