@@ -26,6 +26,7 @@ impl RuleRegistry {
             Box::new(overcalls::TwoLevelOvercall),
             Box::new(overcalls::WeakJumpOvercall),
             Box::new(overcalls::OneNotrumpOvercall),
+            Box::new(overcalls::OneLevelTakeoutDouble),
             Box::new(overcalls::PassOvercall),
             // Opening
             Box::new(opening::Strong2COpening),

@@ -75,10 +75,25 @@ impl AuctionPredicate for TheyOpened {
     }
 }
 
-/// Checks that our partnership has not made a non-pass call (bid/double/redouble).
+/// Checks that RHO's call (the last call in the auction) was not a pass.
+/// This identifies "direct seat" — we are acting immediately after an opponent's action.
 #[derive(Debug)]
-pub struct WeHaveNotBid;
-impl AuctionPredicate for WeHaveNotBid {
+pub struct RhoMadeLastBid;
+impl AuctionPredicate for RhoMadeLastBid {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model
+            .auction
+            .calls
+            .last()
+            .map(|call| !matches!(call, Call::Pass))
+            .unwrap_or(false)
+    }
+}
+
+/// Checks that our partnership has only passed (no bids, doubles, or redoubles).
+#[derive(Debug)]
+pub struct WeHaveOnlyPassed;
+impl AuctionPredicate for WeHaveOnlyPassed {
     fn check(&self, model: &AuctionModel) -> bool {
         let our_partnership = model.auction.current_partnership();
         for (position, call) in model.auction.iter() {
@@ -87,6 +102,21 @@ impl AuctionPredicate for WeHaveNotBid {
             }
         }
         true
+    }
+}
+
+/// Checks that the last bid in the auction is at most the given level.
+#[derive(Debug)]
+pub struct LastBidMaxLevel(pub u8);
+impl AuctionPredicate for LastBidMaxLevel {
+    fn check(&self, model: &AuctionModel) -> bool {
+        let mut last_level = None;
+        for (_, call) in model.auction.iter() {
+            if let Call::Bid { level, .. } = call {
+                last_level = Some(*level);
+            }
+        }
+        last_level.map(|l| l <= self.0).unwrap_or(false)
     }
 }
 
@@ -155,15 +185,71 @@ mod tests {
     }
 
     #[test]
-    fn test_we_have_not_bid() {
-        let pred = WeHaveNotBid;
+    fn test_rho_made_last_bid() {
+        let pred = RhoMadeLastBid;
+
+        // N opens 1C, E's turn — RHO (N) made the last bid
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model), "E is in direct seat after N's 1C");
+
+        // N: 1S, E: P, S: P, W's turn — last bid was N (LHO), not RHO
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Spades,
+        });
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Pass);
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            !pred.check(&model),
+            "W is in balancing seat, not direct seat"
+        );
+
+        // N: 1C, E: P, S: 1S, W's turn — last bid was S (RHO)
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Spades,
+        });
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model), "W is in direct seat after S's 1S");
+
+        // N: 1C, E: X, S: P, W's turn — last non-pass was E (partner's double), not RHO
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        auction.add_call(Call::Double);
+        auction.add_call(Call::Pass);
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            !pred.check(&model),
+            "Last non-pass was E's double, not RHO (S)"
+        );
+    }
+
+    #[test]
+    fn test_we_have_only_passed() {
+        let pred = WeHaveOnlyPassed;
 
         // Empty auction — no one has bid
         let auction = types::Auction::new(Position::North);
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model));
 
-        // N opens 1D, E's turn — EW has not bid
+        // N opens 1D, E's turn — EW has only passed
         let mut auction = types::Auction::new(Position::North);
         auction.add_call(Call::Bid {
             level: 1,
@@ -181,11 +267,50 @@ mod tests {
         let model = AuctionModel::from_auction(&auction);
         assert!(!pred.check(&model));
 
-        // N: P, E: P, S's turn — NS has not bid (N only passed)
+        // N: P, E: P, S's turn — NS has only passed
         let mut auction = types::Auction::new(Position::North);
         auction.add_call(Call::Pass);
         auction.add_call(Call::Pass);
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model));
+
+        // N: 1C, E: X, S: P, W's turn — EW has doubled (not only passed)
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        auction.add_call(Call::Double);
+        auction.add_call(Call::Pass);
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model));
+    }
+
+    #[test]
+    fn test_last_bid_max_level() {
+        let pred = LastBidMaxLevel(1);
+
+        // N opens 1C — last bid is level 1
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model));
+
+        // N opens 2D — last bid is level 2, exceeds max
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 2,
+            strain: Strain::Diamonds,
+        });
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model));
+
+        // Empty auction — no bids at all
+        let auction = types::Auction::new(Position::North);
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model));
     }
 }

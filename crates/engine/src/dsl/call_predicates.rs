@@ -204,6 +204,14 @@ impl CallPredicate for PartnerHasShownSuit {
     }
 }
 
+#[derive(Debug)]
+pub struct IsDouble;
+impl CallPredicate for IsDouble {
+    fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
+        matches!(call, Call::Double)
+    }
+}
+
 /// Checks that no opponent has shown the same suit as this call.
 /// Uses opponent HandModels (semantic meaning) rather than raw bid strains,
 /// so conventional bids like Stayman (2C) won't be treated as showing clubs.

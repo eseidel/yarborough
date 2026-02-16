@@ -62,6 +62,33 @@ impl Planner for RuleOfTwentyPlanner {
     }
 }
 
+/// A planner for takeout doubles.
+/// Either satisfies all constraints (11+ HCP + 3+ in each unbid suit),
+/// or has 17+ HCP regardless of shape.
+pub struct TakeoutDoublePlanner;
+
+impl Planner for TakeoutDoublePlanner {
+    fn applies(
+        &self,
+        _auction: &AuctionModel,
+        hand: &Hand,
+        _call: &Call,
+        shows: &[HandConstraint],
+    ) -> bool {
+        // Strong hand (17+ HCP) can double regardless of shape
+        if hand.hcp() >= 17 {
+            return true;
+        }
+        // Otherwise, must satisfy all constraints (11+ HCP + 3+ in each unbid suit)
+        for constraint in shows {
+            if !satisfies_constraint(hand, constraint) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 fn satisfies_constraint(hand: &Hand, constraint: &HandConstraint) -> bool {
     match *constraint {
         HandConstraint::MinHcp(hcp) => hand.hcp() >= hcp,
@@ -69,6 +96,7 @@ fn satisfies_constraint(hand: &Hand, constraint: &HandConstraint) -> bool {
         HandConstraint::MinLength(suit, len) => hand.length(suit) >= len,
         HandConstraint::MaxLength(suit, len) => hand.length(suit) <= len,
         HandConstraint::MaxUnbalancedness(max_shape) => hand.shape() <= max_shape,
+        HandConstraint::StopperIn(_) => constraint.check(hand),
         HandConstraint::RuleOfTwenty => rule_of_twenty(hand),
         HandConstraint::RuleOfFifteen => rule_of_fifteen(hand),
     }
