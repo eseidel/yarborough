@@ -12,7 +12,9 @@ impl RuleRegistry {
     pub fn new_natural() -> Self {
         let rules: Vec<Box<dyn BiddingRule>> = vec![
             // Natural (Discovery, Responses)
-            Box::new(natural::NewSuitDiscovery),
+            Box::new(natural::NewSuitAtLevelOne),
+            Box::new(natural::NewMajorAtLevelTwo),
+            Box::new(natural::NewMinorAtLevelTwo),
             Box::new(natural::NoTrumpResponse),
             Box::new(natural::SupportResponse),
             Box::new(natural::RebidResponse),

@@ -101,6 +101,12 @@ impl Auction {
         self.calls.iter().any(|c| matches!(c, Call::Bid { .. }))
     }
 
+    pub fn opener(&self) -> Option<Position> {
+        self.iter()
+            .find(|(_, call)| matches!(call, Call::Bid { .. }))
+            .map(|(position, _)| position)
+    }
+
     pub fn final_contract(&self) -> Option<Contract> {
         if self.is_complete() {
             self.current_contract()
@@ -247,13 +253,19 @@ mod tests {
     fn test_is_open() {
         let mut auction = Auction::new(Position::North);
         assert!(!auction.is_open());
+        assert_eq!(auction.opener(), None);
         auction.add_call(Call::Pass);
         assert!(!auction.is_open());
+        assert_eq!(auction.opener(), None);
         auction.add_call(Call::Bid {
             level: 1,
             strain: Strain::Clubs,
         });
         assert!(auction.is_open());
+        assert_eq!(
+            auction.opener().map(|p| p.partnership()),
+            Some(Partnership::EW)
+        );
     }
 
     #[test]

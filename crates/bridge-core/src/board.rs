@@ -30,6 +30,13 @@ impl Partnership {
             Partnership::EW => 1,
         }
     }
+
+    pub fn opponent(self) -> Self {
+        match self {
+            Partnership::NS => Partnership::EW,
+            Partnership::EW => Partnership::NS,
+        }
+    }
 }
 
 impl Position {

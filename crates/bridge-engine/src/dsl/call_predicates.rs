@@ -81,6 +81,28 @@ impl CallPredicate for IsNewSuit {
 }
 
 #[derive(Debug)]
+pub struct IsMajorSuit;
+impl CallPredicate for IsMajorSuit {
+    fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
+        match call {
+            Call::Bid { strain, .. } => strain.is_major(),
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct IsMinorSuit;
+impl CallPredicate for IsMinorSuit {
+    fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
+        match call {
+            Call::Bid { strain, .. } => strain.is_minor(),
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct MinLevel(pub u8);
 impl CallPredicate for MinLevel {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {

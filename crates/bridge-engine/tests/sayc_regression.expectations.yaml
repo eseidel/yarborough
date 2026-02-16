@@ -5,9 +5,9 @@ test_opening_response_generalization:
 test_rebids_after_minor_response:
   2.345.AKJ954.AQ3:1H P 2C P:None: "FAIL: step 4, expected 3H, got 2H"
   2.345.AQJ954.AQ3:1H P 2C P:None: PASS
-  52.A6.KQJ92.A983:1H P 2D P:None: PASS
-  A65.K92.KQ.QT972:1S P 2C P:None: "FAIL: step 4, expected 2N, got P"
-  22.KJ83.A4.AQJ95:1S P 2D P:None: "FAIL: step 4, expected 3D, got 2N"
+  52.A6.KQJ92.A983:1H P 2D P:None: "FAIL: step 4, expected 2S, got 2N"
+  A65.K92.KQ.QT972:1S P 2C P:None: PASS
+  22.KJ83.A4.AQJ95:1S P 2D P:None: "FAIL: step 4, expected 3D, got 3N"
 test_preemptive_openings:
   QJ987652.432.2.2::None: "FAIL: step 0, expected 4C, got 3C"
   432.2.2.AQJ98762::None: "FAIL: step 0, expected 4S, got 2S"
