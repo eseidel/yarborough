@@ -1,9 +1,9 @@
 // cspell:ignore AKQJT
+use bridge_cli::bidding_utils::*;
 use bridge_core::auction::Auction;
 use bridge_core::board::Board;
 use bridge_core::call::Call;
 use bridge_core::io::identifier;
-use bridge_engine::bidding_utils::*;
 use bridge_engine::nbk;
 use clap::Parser;
 

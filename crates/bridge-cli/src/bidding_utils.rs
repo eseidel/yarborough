@@ -1,9 +1,9 @@
-use crate::nbk;
 use bridge_core::auction::Auction;
 use bridge_core::board::{Board, Position, Vulnerability};
 use bridge_core::call::Call;
 use bridge_core::hand::Hand;
 use bridge_core::suit::Suit;
+use bridge_engine::nbk;
 use std::collections::HashMap;
 use std::fmt::Write;
 

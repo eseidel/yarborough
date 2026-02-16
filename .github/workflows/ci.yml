@@ -62,5 +62,5 @@ jobs:
       - uses: codecov/codecov-action@v5
         with:
           files: ./rust-coverage.lcov
-          flags: bridge-core,bridge-engine
+          flags: bridge-core,bridge-engine,bridge-cli
           token: ${{ secrets.CODECOV_TOKEN }}

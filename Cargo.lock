@@ -74,6 +74,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
+name = "bridge-cli"
+version = "0.1.0"
+dependencies = [
+ "bridge-core",
+ "bridge-engine",
+ "clap",
+ "crossterm",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+]
+
+[[package]]
 name = "bridge-core"
 version = "0.1.0"
 dependencies = [
@@ -88,12 +102,9 @@ name = "bridge-engine"
 version = "0.1.0"
 dependencies = [
  "bridge-core",
- "clap",
- "crossterm",
  "getrandom",
  "indexmap",
  "rand",
- "ratatui",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",

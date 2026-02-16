@@ -1,4 +1,4 @@
-use bridge_engine::bidding_utils;
+use bridge_cli::bidding_utils;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
