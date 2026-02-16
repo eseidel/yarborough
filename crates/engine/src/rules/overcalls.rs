@@ -22,6 +22,7 @@ bidding_rule! {
     shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
 }
 
+// TODO: Add honor concentration constraint — most HCP should be in the bid suit.
 bidding_rule! {
     struct WeakJumpOvercall;
     name: "Weak Jump Overcall",
@@ -61,7 +62,7 @@ mod tests {
             strain: opening_strain,
         });
         // East's turn (they want to overcall)
-        AuctionModel::from_auction(&auction, Position::East)
+        AuctionModel::from_auction(&auction)
     }
 
     #[test]
@@ -83,7 +84,7 @@ mod tests {
     fn test_one_level_overcall_not_when_we_opened() {
         // We opened, not them
         let auction = types::Auction::new(Position::North);
-        let model = AuctionModel::from_auction(&auction, Position::North);
+        let model = AuctionModel::from_auction(&auction);
         let call = Call::Bid {
             level: 1,
             strain: Strain::Hearts,
@@ -141,7 +142,7 @@ mod tests {
             strain: Strain::Diamonds,
         });
         // East's turn to overcall
-        let bid = nbk::select_bid(&hand, &auction, Position::East);
+        let bid = nbk::select_bid(&hand, &auction);
         // Should bid 1S (5 spades, 10 HCP)
         assert_eq!(
             bid,
@@ -166,7 +167,7 @@ mod tests {
             strain: Strain::Diamonds,
         });
         // East should pass - only long suit is diamonds (opponent's suit)
-        let bid = nbk::select_bid(&hand, &auction, Position::East);
+        let bid = nbk::select_bid(&hand, &auction);
         assert_eq!(
             bid,
             Some(Call::Pass),
@@ -238,7 +239,7 @@ mod tests {
             strain: Strain::Hearts,
         });
         auction.add_call(Call::Pass);
-        let model = AuctionModel::from_auction(&auction, Position::West);
+        let model = AuctionModel::from_auction(&auction);
         let call = Call::Bid {
             level: 1,
             strain: Strain::Spades,
@@ -252,11 +253,11 @@ mod tests {
         // N opens 1S — from East's perspective, RHO (North) has shown spades
         let model = make_overcall_auction(Strain::Spades);
         assert!(
-            model.rho_model.has_shown_suit(Suit::Spades),
+            model.rho_model().has_shown_suit(Suit::Spades),
             "RHO should have shown spades after opening 1S"
         );
         assert!(
-            !model.rho_model.has_shown_suit(Suit::Hearts),
+            !model.rho_model().has_shown_suit(Suit::Hearts),
             "RHO should not have shown hearts"
         );
     }

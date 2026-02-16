@@ -46,7 +46,7 @@ pub fn get_interpretations(
         auction.add_call(call);
     }
 
-    let auction_model = nbk::AuctionModel::from_auction(&auction, auction.current_player());
+    let auction_model = nbk::AuctionModel::from_auction(&auction);
 
     let mut legal_calls = auction.legal_calls();
     legal_calls.sort();
@@ -56,7 +56,7 @@ pub fn get_interpretations(
         .map(|call| {
             let semantics = nbk::CallInterpreter::interpret(&auction_model, &call);
             let description = if let Some(semantics) = &semantics {
-                let mut bidder_model = auction_model.bidder_model.clone();
+                let mut bidder_model = auction_model.bidder_model().clone();
                 for constraint in &semantics.shows {
                     bidder_model.apply_constraint(*constraint);
                 }
@@ -97,7 +97,7 @@ pub fn get_next_bid(identifier: &str) -> String {
     };
 
     // Use NBK bidding logic
-    match nbk::select_bid(hand, &auction, current_player) {
+    match nbk::select_bid(hand, &auction) {
         Some(call) => call.render(),
         None => "P".to_string(),
     }
@@ -130,7 +130,7 @@ pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
         }
     };
 
-    let trace = nbk::select_bid_with_trace(hand, &auction, current_player);
+    let trace = nbk::select_bid_with_trace(hand, &auction);
     match trace.selected_call {
         Some(call) => {
             let step = trace
@@ -139,7 +139,7 @@ pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
                 .find(|s| s.satisfied && Some(s.call) == trace.selected_call)
                 .expect("No satisfied step found for selected call");
 
-            let mut bidder_model = trace.auction_model.bidder_model.clone();
+            let mut bidder_model = trace.auction_model.bidder_model().clone();
             for constraint in &step.semantics.shows {
                 bidder_model.apply_constraint(*constraint);
             }
@@ -151,11 +151,11 @@ pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
             }
         }
         None => {
-            let auction_model = nbk::AuctionModel::from_auction(&auction, current_player);
+            let auction_model = nbk::AuctionModel::from_auction(&auction);
             CallInterpretation {
                 call_name: "P".into(),
                 rule_name: "Pass (Limit)".into(),
-                description: auction_model.bidder_model.to_string(),
+                description: auction_model.bidder_model().to_string(),
             }
         }
     }

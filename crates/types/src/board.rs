@@ -63,6 +63,15 @@ impl Position {
         }
     }
 
+    pub fn idx(self) -> usize {
+        match self {
+            Position::North => 0,
+            Position::East => 1,
+            Position::South => 2,
+            Position::West => 3,
+        }
+    }
+
     pub fn partner(self) -> Self {
         match self {
             Position::North => Position::South,
@@ -70,6 +79,16 @@ impl Position {
             Position::East => Position::West,
             Position::West => Position::East,
         }
+    }
+
+    /// Left-hand opponent (next in clockwise bidding order).
+    pub fn lho(self) -> Self {
+        self.next()
+    }
+
+    /// Right-hand opponent (previous in clockwise bidding order).
+    pub fn rho(self) -> Self {
+        self.partner().next()
     }
 
     pub fn to_char(self) -> char {

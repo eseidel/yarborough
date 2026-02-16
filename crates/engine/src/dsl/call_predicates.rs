@@ -83,8 +83,8 @@ impl CallPredicate for IsNewSuit {
         match call {
             Call::Bid { strain, .. } => {
                 if let Some(suit) = strain.to_suit() {
-                    !auction.partner_model.has_shown_suit(suit)
-                        && !auction.bidder_model.has_shown_suit(suit)
+                    !auction.partner_model().has_shown_suit(suit)
+                        && !auction.bidder_model().has_shown_suit(suit)
                 } else {
                     false
                 }
@@ -173,7 +173,7 @@ impl CallPredicate for BidderHasShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
         if let Call::Bid { strain, .. } = call {
             if let Some(suit) = strain.to_suit() {
-                return auction.bidder_model.has_shown_suit(suit);
+                return auction.bidder_model().has_shown_suit(suit);
             }
         }
         false
@@ -186,7 +186,7 @@ impl CallPredicate for PartnerHasShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
         if let Call::Bid { strain, .. } = call {
             if let Some(suit) = strain.to_suit() {
-                return auction.partner_model.has_shown_suit(suit);
+                return auction.partner_model().has_shown_suit(suit);
             }
         }
         false
@@ -202,8 +202,8 @@ impl CallPredicate for OpponentHasNotShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
         if let Call::Bid { strain, .. } = call {
             if let Some(suit) = strain.to_suit() {
-                return !auction.lho_model.has_shown_suit(suit)
-                    && !auction.rho_model.has_shown_suit(suit);
+                return !auction.lho_model().has_shown_suit(suit)
+                    && !auction.rho_model().has_shown_suit(suit);
             }
         }
         true
