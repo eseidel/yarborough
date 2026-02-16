@@ -98,12 +98,21 @@ impl Auction {
     }
 
     pub fn is_open(&self) -> bool {
-        self.calls.iter().any(|c| matches!(c, Call::Bid { .. }))
+        self.calls.iter().any(|c| c.is_bid())
     }
 
     pub fn opener(&self) -> Option<Position> {
         self.iter()
-            .find(|(_, call)| matches!(call, Call::Bid { .. }))
+            .find(|(_, call)| call.is_bid())
+            .map(|(position, _)| position)
+    }
+
+    // Returns the position to last make a bid.  This does not include
+    // passes or doubles, which are not bids.
+    pub fn last_bidder(&self) -> Option<Position> {
+        self.iter()
+            .filter(|(_, call)| call.is_bid())
+            .last()
             .map(|(position, _)| position)
     }
 
@@ -408,6 +417,34 @@ mod tests {
             auction.current_contract().unwrap().declarer,
             Position::North
         );
+    }
+
+    #[test]
+    fn test_last_bidder() {
+        let mut auction = Auction::new(Position::North);
+        assert_eq!(auction.last_bidder(), None);
+
+        // N opens 1C — last bidder is North
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Clubs,
+        });
+        assert_eq!(auction.last_bidder(), Some(Position::North));
+
+        // E passes — last bidder still North
+        auction.add_call(Call::Pass);
+        assert_eq!(auction.last_bidder(), Some(Position::North));
+
+        // S bids 1S — last bidder is South
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Spades,
+        });
+        assert_eq!(auction.last_bidder(), Some(Position::South));
+
+        // W doubles — last bidder still South (double is not a bid)
+        auction.add_call(Call::Double);
+        assert_eq!(auction.last_bidder(), Some(Position::South));
     }
 
     #[test]
