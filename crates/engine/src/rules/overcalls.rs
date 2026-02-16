@@ -46,7 +46,7 @@ mod tests {
     use super::*;
     use crate::dsl::bidding_rule::BiddingRule;
     use crate::nbk::{AuctionModel, HandConstraint};
-    use types::{Call, Position, Strain, Suit};
+    use types::{Call, Hand, Position, Strain, Suit};
 
     fn make_overcall_auction(opening_strain: Strain) -> AuctionModel {
         let mut auction = types::Auction::new(Position::North);
@@ -125,11 +125,9 @@ mod tests {
     #[test]
     fn test_overcall_selects_correct_suit() {
         use crate::nbk;
-        use types::io::hand_parser::parse_hand;
-
         // Hand format is C.D.H.S
         // 3 clubs, 2 diamonds, 3 hearts, 5 spades = AK975 in spades, 10 HCP
-        let hand = parse_hand("A94.73.AT6.QT752");
+        let hand = Hand::parse("A94.73.AT6.QT752");
         let mut auction = types::Auction::new(Position::North);
         auction.add_call(Call::Bid {
             level: 1,
@@ -151,10 +149,8 @@ mod tests {
     #[test]
     fn test_overcall_avoids_opponent_suit() {
         use crate::nbk;
-        use types::io::hand_parser::parse_hand;
-
         // Hand format is C.D.H.S: 2 clubs, 5 diamonds, 3 hearts, 3 spades
-        let hand = parse_hand("K6.AQT43.KT4.543");
+        let hand = Hand::parse("K6.AQT43.KT4.543");
         let mut auction = types::Auction::new(Position::North);
         auction.add_call(Call::Bid {
             level: 1,

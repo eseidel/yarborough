@@ -92,7 +92,7 @@ pub fn parse_test_case(test_case_json: &str) -> (Board, Vec<Call>, Option<String
     let history_str = parts.get(2).map(|s| s.as_str()).unwrap_or("");
     let vuln_str = parts.get(3).map(|s| s.as_str()).unwrap_or("None");
 
-    let hand = types::io::hand_parser::parse_hand(hand_str);
+    let hand = Hand::parse(hand_str);
     let vulnerability = match vuln_str {
         "N-S" | "NS" => Vulnerability::NS,
         "E-W" | "EW" => Vulnerability::EW,

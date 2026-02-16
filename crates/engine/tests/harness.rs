@@ -11,8 +11,6 @@ use types::io::identifier;
 use types::rank::Rank;
 use types::suit::Suit;
 
-use types::io::hand_parser::parse_hand;
-
 fn parse_auction(history: &str, dealer: Position) -> Auction {
     let mut auction = Auction::new(dealer);
     if history.trim().is_empty() {
@@ -124,7 +122,7 @@ fn run_test_vector(test_file: &str, expectations_path: &str) -> Result<(), Vec<S
                 "None"
             };
 
-            let hand = parse_hand(hand_str);
+            let hand = Hand::parse(hand_str);
             let dealer = Position::North; // Default
             let history_auction = parse_auction(history_str, dealer);
             let our_position = history_auction.current_player();

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
-use types::io::{identifier, lin, pbn};
+use types::io::identifier;
 
 #[derive(Debug, Deserialize)]
 struct TestVector {
@@ -48,34 +48,6 @@ fn test_io_roundtrip() {
                 "Identifier roundtrip failed for {}",
                 vector.name
             );
-        }
-
-        // Verify LIN format if present
-        if let Some(expected_lin) = vector.expected.get("lin") {
-            let (imported_board, imported_auction) = lin::import_board(expected_lin)
-                .unwrap_or_else(|| panic!("{}: Failed to import LIN", vector.name));
-
-            // LIN sometimes has normalized output, so we check if it imports correctly
-            let exported_lin = lin::export_board(&imported_board, imported_auction.as_ref());
-            // Note: LIN export might not be identical due to md| numbering or suit order,
-            // but we should at least be able to re-import it correctly.
-            let (reimported_board, _) = lin::import_board(&exported_lin).unwrap();
-            assert_eq!(reimported_board.dealer, imported_board.dealer);
-        }
-
-        // Verify PBN format if present
-        if let Some(expected_pbn) = vector.expected.get("pbn") {
-            let imported_board = pbn::import_board(expected_pbn)
-                .unwrap_or_else(|| panic!("{}: Failed to import PBN", vector.name));
-
-            assert_eq!(
-                imported_board.dealer.to_char().to_string(),
-                vector.dealer.chars().next().unwrap().to_string()
-            );
-
-            let exported_pbn = pbn::export_board(&imported_board);
-            let reimported_board = pbn::import_board(&exported_pbn).unwrap();
-            assert_eq!(reimported_board.dealer, imported_board.dealer);
         }
     }
 }

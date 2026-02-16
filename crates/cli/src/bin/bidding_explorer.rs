@@ -198,7 +198,7 @@ impl App {
         // Actually, let's just use the fields we have to build the inputs directly.
 
         // Hand
-        let hand = types::io::hand_parser::parse_hand(&test.hand);
+        let hand = types::Hand::parse(&test.hand);
 
         // Vulnerability
         let _vulnerability = match test.vulnerability.as_str() {

@@ -67,10 +67,9 @@ impl Hand {
         Self { cards }
     }
 
-    /// Parse a hand from PBN notation (e.g., "AKQJT.AKQJ.AK.AK" for S.H.D.C)
-    #[cfg(test)]
+    /// Parse a hand string in the format "Clubs.Diamonds.Hearts.Spades".
     pub fn parse(s: &str) -> Self {
-        crate::io::pbn::import_hand(s).expect("Invalid hand string")
+        crate::io::hand_parser::parse_hand(s)
     }
 
     pub fn hcp(&self) -> u8 {
@@ -219,13 +218,13 @@ mod tests {
 
     #[test]
     fn test_hcp_calculation() {
-        let hand = Hand::parse("A2.K.Q.J");
+        let hand = Hand::parse("J.Q.K.A2");
         assert_eq!(hand.hcp(), 10);
     }
 
     #[test]
     fn test_distribution() {
-        let hand = Hand::parse("AK.Q..");
+        let hand = Hand::parse("..Q.AK");
         let dist = hand.distribution();
         assert_eq!(dist.spades, 2);
         assert_eq!(dist.hearts, 1);
@@ -235,7 +234,7 @@ mod tests {
 
     #[test]
     fn test_hand_sorting() {
-        let mut hand = Hand::parse("2...A");
+        let mut hand = Hand::parse("A...2");
         hand.sort();
         assert_eq!(hand.cards[0].suit, Suit::Spades);
         assert_eq!(hand.cards[1].suit, Suit::Clubs);
@@ -244,7 +243,7 @@ mod tests {
     #[test]
     fn test_balanced_4333() {
         // 4-3-3-3 distribution
-        let hand = Hand::parse("AKQJ.AKQ.AKQ.AKQ");
+        let hand = Hand::parse("AKQ.AKQ.AKQ.AKQJ");
         assert_eq!(hand.shape(), Shape::Balanced);
         assert!(hand.is_balanced());
         assert!(!hand.is_semi_balanced());
@@ -253,7 +252,7 @@ mod tests {
     #[test]
     fn test_balanced_4432() {
         // 4-4-3-2 distribution
-        let hand = Hand::parse("AKQJ.AKQJ.AKQ.AK");
+        let hand = Hand::parse("AK.AKQ.AKQJ.AKQJ");
         assert_eq!(hand.shape(), Shape::Balanced);
         assert!(hand.is_balanced());
     }
@@ -261,7 +260,7 @@ mod tests {
     #[test]
     fn test_balanced_5332() {
         // 5-3-3-2 distribution
-        let hand = Hand::parse("AKQJT.AKQ.AKQ.AK");
+        let hand = Hand::parse("AK.AKQ.AKQ.AKQJT");
         assert_eq!(hand.shape(), Shape::Balanced);
         assert!(hand.is_balanced());
     }
@@ -269,7 +268,7 @@ mod tests {
     #[test]
     fn test_semi_balanced_5422() {
         // 5-4-2-2 distribution (two doubletons)
-        let hand = Hand::parse("AKQJT.AKQJ.AK.AK");
+        let hand = Hand::parse("AK.AK.AKQJ.AKQJT");
         assert_eq!(hand.shape(), Shape::SemiBalanced);
         assert!(hand.is_semi_balanced());
         assert!(!hand.is_balanced());
@@ -278,7 +277,7 @@ mod tests {
     #[test]
     fn test_semi_balanced_6322() {
         // 6-3-2-2 distribution (two doubletons)
-        let hand = Hand::parse("AKQJT9.AKQ.AK.AK");
+        let hand = Hand::parse("AK.AK.AKQ.AKQJT9");
         assert_eq!(hand.shape(), Shape::SemiBalanced);
         assert!(hand.is_semi_balanced());
     }
@@ -286,7 +285,7 @@ mod tests {
     #[test]
     fn test_semi_balanced_5431() {
         // 5-4-3-1 distribution (one singleton)
-        let hand = Hand::parse("AKQJT.AKQJ.AKQ.A");
+        let hand = Hand::parse("A.AKQ.AKQJ.AKQJT");
         assert_eq!(hand.shape(), Shape::SemiBalanced);
         assert!(hand.is_semi_balanced());
     }
@@ -294,7 +293,7 @@ mod tests {
     #[test]
     fn test_unbalanced_5440() {
         // 5-4-4-0 distribution (void)
-        let hand = Hand::parse("AKQJT.AKQJ.AKQJ.");
+        let hand = Hand::parse(".AKQJ.AKQJ.AKQJT");
         assert_eq!(hand.shape(), Shape::Unbalanced);
         assert!(!hand.is_balanced());
         assert!(!hand.is_semi_balanced());
@@ -303,19 +302,19 @@ mod tests {
     #[test]
     fn test_unbalanced_7321() {
         // 7-3-2-1 distribution
-        let hand = Hand::parse("AKQJT98.AKQ.AK.A");
+        let hand = Hand::parse("A.AK.AKQ.AKQJT98");
         assert_eq!(hand.shape(), Shape::Unbalanced);
     }
 
     #[test]
     fn test_longest_suit() {
-        let hand = Hand::parse("AKQJT.AK.A.");
+        let hand = Hand::parse(".A.AK.AKQJT");
         assert_eq!(hand.longest_suit(), Suit::Spades);
     }
 
     #[test]
     fn test_longest_suits_single() {
-        let hand = Hand::parse("AKQJT.AK.A.");
+        let hand = Hand::parse(".A.AK.AKQJT");
         let longest = hand.longest_suits();
         assert_eq!(longest.len(), 1);
         assert_eq!(longest[0], Suit::Spades);
@@ -324,7 +323,7 @@ mod tests {
     #[test]
     fn test_longest_suits_tied() {
         // 5-5-2-1 distribution
-        let hand = Hand::parse("AKQJT.AKQJT.AK.A");
+        let hand = Hand::parse("A.AK.AKQJT.AKQJT");
         let longest = hand.longest_suits();
         assert_eq!(longest.len(), 2);
         assert!(longest.contains(&Suit::Spades));
