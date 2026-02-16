@@ -85,8 +85,14 @@ fn select_best_from_group(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
 ///
 /// Returns `None` if no items show a suit (e.g., all are NT or Pass).
 /// With equal length, preserves "up the line" ordering (cheapest bid first),
-/// except for equal-length minors with 4+ cards at level 1 where SAYC
-/// prefers the higher-ranking minor (1D over 1C).
+/// with two exceptions at level 1:
+/// - 4+ card equal-length minors: prefer diamonds over clubs
+/// - 5+ card equal-length suits: prefer the higher-ranking suit
+///
+/// The 5+ rule is from SAYC: "with equal length suits of 5 or 6 cards
+/// each, bid the higher ranking suit first." This is really an opening
+/// rule — for responses with unequal lengths (e.g., 4H and 5S), you'd
+/// bid the 4-card suit first to show both cheaply.
 fn select_by_longest_suit(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
     let mut best: Option<(&CallMenuItem, Suit, u8)> = None;
 
@@ -98,15 +104,11 @@ fn select_by_longest_suit(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
             if len > *best_len {
                 best = Some((item, suit, len));
             } else if len == *best_len
-                && len >= 4
                 && is_level_1(&item.call)
                 && is_level_1(&best_item.call)
-                && suit.is_minor()
-                && best_suit.is_minor()
                 && suit != *best_suit
+                && prefer_higher_ranking(len, suit, *best_suit)
             {
-                // With 4-4 or 5-5 in different minors at level 1, prefer
-                // diamonds over clubs.
                 best = Some((item, suit, len));
             }
         } else {
@@ -115,6 +117,21 @@ fn select_by_longest_suit(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
     }
 
     best.map(|(item, _, _)| item.call)
+}
+
+/// Whether to prefer the higher-ranking suit over the lower one at level 1.
+///
+/// - 5+ cards: always prefer higher ranking (open 1S with 5-5 majors)
+/// - 4 cards in both minors: prefer diamonds (open 1D with 4-4 minors)
+/// - 4 cards in both majors: do NOT prefer higher — bid up the line (1H)
+fn prefer_higher_ranking(len: u8, _candidate: Suit, _current_best: Suit) -> bool {
+    if len >= 5 {
+        return true;
+    }
+    if len >= 4 && _candidate.is_minor() && _current_best.is_minor() {
+        return true;
+    }
+    false
 }
 
 /// Find the longest suit shown by a call's semantics, measured by the hand's
@@ -270,6 +287,24 @@ mod tests {
             Some(Call::Bid {
                 level: 1,
                 strain: Strain::Hearts
+            })
+        );
+    }
+
+    #[test]
+    fn test_five_five_majors_prefers_higher() {
+        // C.D.H.S: 2 clubs, 1 diamond, 5 hearts, 5 spades
+        let hand = Hand::parse("64.6.AK732.QJ854");
+        let items = vec![
+            make_item(1, Strain::Hearts, 5),
+            make_item(1, Strain::Spades, 5),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Spades
             })
         );
     }
