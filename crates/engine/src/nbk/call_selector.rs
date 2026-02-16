@@ -73,65 +73,142 @@ impl CallSelector {
     }
 }
 
+/// A strategy for choosing among satisfied calls in a group.
+/// Returns `None` if it doesn't apply, deferring to the next chooser.
+trait GroupChooser {
+    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call>;
+}
+
 /// Select the best item from a group of satisfied items.
 ///
-/// Consults suit-based selection first, then falls back to the lowest
-/// (first) call in the group.
+/// Consults choosers in priority order; first to return `Some` wins.
 fn select_best_from_group(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
-    select_by_longest_suit(items, hand).or_else(|| items.first().map(|item| item.call))
+    let choosers: &[&dyn GroupChooser] = &[
+        &UniqueLongestSuit,
+        &PreferHigherMinor,
+        &PreferHigherWithFivePlus,
+        &FirstCall,
+    ];
+    choosers.iter().find_map(|c| c.choose(items, hand))
 }
 
-/// Select the call whose shown suit is longest in the hand.
-///
-/// Returns `None` if no items show a suit (e.g., all are NT or Pass).
-/// With equal length, preserves "up the line" ordering (cheapest bid first),
-/// with two exceptions at level 1:
-/// - 4+ card equal-length minors: prefer diamonds over clubs
-/// - 5+ card equal-length suits: prefer the higher-ranking suit
-///
-/// The 5+ rule is from SAYC: "with equal length suits of 5 or 6 cards
-/// each, bid the higher ranking suit first." This is really an opening
-/// rule — for responses with unequal lengths (e.g., 4H and 5S), you'd
-/// bid the 4-card suit first to show both cheaply.
-fn select_by_longest_suit(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
-    let mut best: Option<(&CallMenuItem, Suit, u8)> = None;
+/// Pick the call showing a strictly longest suit. Returns `None` if there's
+/// a tie or no items show a suit.
+struct UniqueLongestSuit;
 
-    for item in items {
-        let Some((suit, len)) = longest_shown_suit(item, hand) else {
-            continue;
-        };
-        if let Some((best_item, best_suit, best_len)) = &best {
-            if len > *best_len {
-                best = Some((item, suit, len));
-            } else if len == *best_len
-                && is_level_1(&item.call)
-                && is_level_1(&best_item.call)
-                && suit != *best_suit
-                && prefer_higher_ranking(len, suit, *best_suit)
-            {
-                best = Some((item, suit, len));
+impl GroupChooser for UniqueLongestSuit {
+    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+        let mut best: Option<(&CallMenuItem, u8)> = None;
+        let mut tied = false;
+
+        for item in items {
+            let Some((_, len)) = longest_shown_suit(item, hand) else {
+                continue;
+            };
+            match &best {
+                Some((_, best_len)) if len > *best_len => {
+                    best = Some((item, len));
+                    tied = false;
+                }
+                Some((_, best_len)) if len == *best_len => {
+                    tied = true;
+                }
+                None => {
+                    best = Some((item, len));
+                }
+                _ => {}
             }
-        } else {
-            best = Some((item, suit, len));
         }
-    }
 
-    best.map(|(item, _, _)| item.call)
+        if tied {
+            return None;
+        }
+        best.map(|(item, _)| item.call)
+    }
 }
 
-/// Whether to prefer the higher-ranking suit over the lower one at level 1.
-///
-/// - 5+ cards: always prefer higher ranking (open 1S with 5-5 majors)
-/// - 4 cards in both minors: prefer diamonds (open 1D with 4-4 minors)
-/// - 4 cards in both majors: do NOT prefer higher — bid up the line (1H)
-fn prefer_higher_ranking(len: u8, _candidate: Suit, _current_best: Suit) -> bool {
-    if len >= 5 {
-        return true;
+/// With 4+ card equal-length minors at level 1, prefer diamonds over clubs.
+struct PreferHigherMinor;
+
+impl GroupChooser for PreferHigherMinor {
+    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+        let minor_items: Vec<_> = items
+            .iter()
+            .filter(|item| is_level_1(&item.call))
+            .filter_map(|item| {
+                let (suit, len) = longest_shown_suit(item, hand)?;
+                if len >= 4 && suit.is_minor() {
+                    Some((item, suit, len))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if !has_tied_distinct_suits(&minor_items) {
+            return None;
+        }
+
+        // Pick the highest-ranking minor (diamonds > clubs).
+        minor_items
+            .iter()
+            .max_by_key(|(_, suit, _)| *suit as u8)
+            .map(|(item, _, _)| item.call)
     }
-    if len >= 4 && _candidate.is_minor() && _current_best.is_minor() {
-        return true;
+}
+
+/// With 5+ card equal-length suits at level 1, prefer the higher-ranking suit.
+/// SAYC: "with equal length suits of 5 or 6 cards each, bid the higher
+/// ranking suit first." This is really an opening rule.
+struct PreferHigherWithFivePlus;
+
+impl GroupChooser for PreferHigherWithFivePlus {
+    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+        let suit_items: Vec<_> = items
+            .iter()
+            .filter(|item| is_level_1(&item.call))
+            .filter_map(|item| {
+                let (suit, len) = longest_shown_suit(item, hand)?;
+                if len >= 5 {
+                    Some((item, suit, len))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if !has_tied_distinct_suits(&suit_items) {
+            return None;
+        }
+
+        suit_items
+            .iter()
+            .max_by_key(|(_, suit, _)| *suit as u8)
+            .map(|(item, _, _)| item.call)
     }
-    false
+}
+
+/// Fallback: pick the first (lowest) call in the group.
+struct FirstCall;
+
+impl GroupChooser for FirstCall {
+    fn choose(&self, items: &[CallMenuItem], _hand: &Hand) -> Option<Call> {
+        items.first().map(|item| item.call)
+    }
+}
+
+/// Check that candidates have 2+ items, all at the same length, with at
+/// least two distinct suits.
+fn has_tied_distinct_suits(candidates: &[(&CallMenuItem, Suit, u8)]) -> bool {
+    if candidates.len() < 2 {
+        return false;
+    }
+    let len = candidates[0].2;
+    if !candidates.iter().all(|(_, _, l)| *l == len) {
+        return false;
+    }
+    let first_suit = candidates[0].1;
+    candidates.iter().any(|(_, s, _)| *s != first_suit)
 }
 
 /// Find the longest suit shown by a call's semantics, measured by the hand's
