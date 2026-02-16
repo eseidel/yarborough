@@ -6,9 +6,9 @@
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "dev": "concurrently \"pnpm wasm:watch\" \"vite\"",
-    "wasm:dev": "wasm-pack build crates/bridge-wasm --target web --out-dir pkg --dev",
+    "wasm:dev": "wasm-pack build crates/wasm --target web --out-dir pkg --dev",
     "wasm:watch": "nodemon --watch crates --ext rs,yaml --exec \"pnpm wasm:dev\"",
-    "wasm:build": "wasm-pack build crates/bridge-wasm --target web --out-dir pkg --release",
+    "wasm:build": "wasm-pack build crates/wasm --target web --out-dir pkg --release",
     "build": "pnpm wasm:build && tsc -b && vite build",
     "format:check": "prettier --check .",
     "lint": "eslint .",

@@ -1,7 +1,7 @@
-// Type declarations for the wasm-pack generated bridge-wasm module.
+// Type declarations for the wasm-pack generated wasm module.
 // wasm-pack generates its own .d.ts but this ensures TS is happy
 // before the first build.
-declare module "../../crates/bridge-wasm/pkg/bridge_wasm" {
+declare module "../../crates/wasm/pkg/wasm" {
   export default function init(): Promise<void>;
   export function get_interpretations(
     calls_string: string,
