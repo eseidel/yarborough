@@ -215,10 +215,8 @@ impl App {
             auction.add_call(*call);
         }
 
-        let current_player = auction.current_player();
-
         // Trace
-        let trace = engine::select_bid_with_trace(&hand, &auction, current_player);
+        let trace = engine::select_bid_with_trace(&hand, &auction);
 
         let actual_bid = trace
             .selected_call

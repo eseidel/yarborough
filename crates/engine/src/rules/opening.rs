@@ -97,7 +97,7 @@ mod tests {
         for c in calls {
             auction.add_call(c);
         }
-        AuctionModel::from_auction(&auction, Position::North)
+        AuctionModel::from_auction(&auction)
     }
 
     #[test]

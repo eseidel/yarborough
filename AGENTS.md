@@ -11,6 +11,10 @@ Do not use manual testing. Write automated tests instead.
 - **TypeScript**: Vitest tests in `src/**/__tests__/*.test.ts`
 - **Rust**: Inline `#[cfg(test)]` unit tests; YAML test vectors in `tests/`
 
+## Conventions
+
+**Hand string format is C.D.H.S** (Clubs.Diamonds.Hearts.Spades), matching `Suit::ALL` order. Example: `"AK.J.T8753.JT432"` = AK clubs, J diamonds, T8753 hearts, JT432 spades.
+
 ## Bidding Engine Development
 
 ### Testing Bidding Logic

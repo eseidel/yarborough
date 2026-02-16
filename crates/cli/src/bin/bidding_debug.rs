@@ -71,7 +71,7 @@ fn run_bidding_loop(
             }
         };
 
-        let trace = select_bid_with_trace(hand, auction, current_player);
+        let trace = select_bid_with_trace(hand, auction);
         *bid_idx += 1;
 
         if let Some(trace_bid_num) = args.bid {
@@ -95,7 +95,7 @@ fn run_bidding_loop(
                     .ok_or_else(|| format!("No satisfied rule found for selected call: {:?}", call))
                     .unwrap();
 
-                let mut bidder_model = trace.auction_model.bidder_model.clone();
+                let mut bidder_model = trace.auction_model.bidder_model().clone();
                 for constraint in &rule_trace.semantics.shows {
                     bidder_model.apply_constraint(*constraint);
                 }

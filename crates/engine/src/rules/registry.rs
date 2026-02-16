@@ -1,6 +1,6 @@
 use crate::dsl::bidding_rule::BiddingRule;
 use crate::nbk::{AuctionModel, CallSemantics};
-use crate::rules::{natural, opening};
+use crate::rules::{natural, opening, overcalls};
 use types::Call;
 
 /// Registry of all bidding rules
@@ -20,6 +20,12 @@ impl RuleRegistry {
             Box::new(natural::NaturalNotrump),
             Box::new(natural::RebidOwnSuit),
             Box::new(natural::BetterContractRemote),
+            // Overcalls (when opponents opened)
+            Box::new(overcalls::OneLevelOvercall),
+            Box::new(overcalls::TwoLevelOvercall),
+            Box::new(overcalls::WeakJumpOvercall),
+            Box::new(overcalls::OneNtOvercall),
+            Box::new(overcalls::PassOvercall),
             // Opening
             Box::new(opening::Strong2C),
             Box::new(opening::OneNoTrumpOpening),

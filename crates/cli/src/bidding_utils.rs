@@ -159,7 +159,7 @@ pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {
     write!(
         out,
         "{}",
-        format_partner_model(&trace.auction_model.bidder_model)
+        format_partner_model(trace.auction_model.bidder_model())
     )
     .unwrap();
 
@@ -167,7 +167,7 @@ pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {
     write!(
         out,
         "{}",
-        format_partner_model(&trace.auction_model.partner_model)
+        format_partner_model(trace.auction_model.partner_model())
     )
     .unwrap();
 

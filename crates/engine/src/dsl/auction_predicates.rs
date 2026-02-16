@@ -1,5 +1,6 @@
 use crate::nbk::AuctionModel;
 use std::fmt::Debug;
+use types::Call;
 
 pub trait AuctionPredicate: Send + Sync + Debug {
     fn check(&self, auction: &AuctionModel) -> bool;
@@ -46,7 +47,7 @@ impl AuctionPredicate for IsNotOpen {
 pub struct PartnerLimited;
 impl AuctionPredicate for PartnerLimited {
     fn check(&self, model: &AuctionModel) -> bool {
-        model.partner_model.max_hcp.is_some()
+        model.partner_model().max_hcp.is_some()
     }
 }
 
@@ -63,7 +64,6 @@ impl AuctionPredicate for WeOpened {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct TheyOpened;
 impl AuctionPredicate for TheyOpened {
     fn check(&self, model: &AuctionModel) -> bool {
@@ -72,6 +72,21 @@ impl AuctionPredicate for TheyOpened {
             .opener()
             .map(|p| p.partnership() == model.auction.current_partnership().opponent())
             .unwrap_or(false)
+    }
+}
+
+/// Checks that our partnership has not made a non-pass call (bid/double/redouble).
+#[derive(Debug)]
+pub struct WeHaveNotBid;
+impl AuctionPredicate for WeHaveNotBid {
+    fn check(&self, model: &AuctionModel) -> bool {
+        let our_partnership = model.auction.current_partnership();
+        for (position, call) in model.auction.iter() {
+            if position.partnership() == our_partnership && !matches!(call, Call::Pass) {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -92,7 +107,7 @@ mod tests {
         });
 
         // Now it's South's (NS) turn
-        let model = AuctionModel::from_auction(&auction, Position::South);
+        let model = AuctionModel::from_auction(&auction);
 
         let we = WeOpened;
         let they = TheyOpened;
@@ -110,7 +125,7 @@ mod tests {
         });
 
         // Now it's North's turn (NS)
-        let model_north = AuctionModel::from_auction(&auction, Position::North);
+        let model_north = AuctionModel::from_auction(&auction);
         // EW still opened. North is NS. So "they" opened.
         assert!(!we.check(&model_north));
         assert!(they.check(&model_north));
@@ -122,7 +137,7 @@ mod tests {
             strain: Strain::Spades,
         });
         // East's turn
-        let model_east = AuctionModel::from_auction(&auction2, Position::East);
+        let model_east = AuctionModel::from_auction(&auction2);
         // North (NS) opened. East is EW. So "they" opened.
         assert!(!we.check(&model_east));
         assert!(they.check(&model_east));
@@ -133,9 +148,44 @@ mod tests {
             level: 2,
             strain: Strain::Spades,
         });
-        let model_west = AuctionModel::from_auction(&auction2, Position::West);
+        let model_west = AuctionModel::from_auction(&auction2);
         // North (NS) opened. West is EW. So "they" opened.
         assert!(!we.check(&model_west));
         assert!(they.check(&model_west));
+    }
+
+    #[test]
+    fn test_we_have_not_bid() {
+        let pred = WeHaveNotBid;
+
+        // Empty auction — no one has bid
+        let auction = types::Auction::new(Position::North);
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model));
+
+        // N opens 1D, E's turn — EW has not bid
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Diamonds,
+        });
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model));
+
+        // N: 1D, E: 1H, S: P, W's turn — EW HAS bid (E bid 1H)
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Hearts,
+        });
+        auction.add_call(Call::Pass);
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model));
+
+        // N: P, E: P, S's turn — NS has not bid (N only passed)
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Pass);
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model));
     }
 }
