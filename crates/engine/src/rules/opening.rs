@@ -11,6 +11,7 @@ use crate::dsl::call_predicates::IsSuit;
 use crate::dsl::call_predicates::MinLevel;
 use crate::dsl::planner::RuleOfTwentyPlanner;
 use crate::dsl::shows::ShowBalanced;
+use crate::dsl::shows::ShowEntersNotrumpSystem;
 use crate::dsl::shows::ShowHcpRange;
 use crate::dsl::shows::ShowMaxHcp;
 use crate::dsl::shows::ShowMinHcp;
@@ -31,14 +32,14 @@ bidding_rule! {
     OneNotrumpOpening: "1NT Opening",
     auction: [IsNotOpen],
     call: [IsCall(1, Strain::Notrump)],
-    shows: [ShowHcpRange(15, 17), ShowBalanced]
+    shows: [ShowHcpRange(15, 17), ShowBalanced, ShowEntersNotrumpSystem]
 }
 
 bidding_rule! {
     TwoNotrumpOpening: "2NT Opening",
     auction: [IsNotOpen],
     call: [IsCall(2, Strain::Notrump)],
-    shows: [ShowHcpRange(20, 21), ShowBalanced]
+    shows: [ShowHcpRange(20, 21), ShowBalanced, ShowEntersNotrumpSystem]
 }
 
 bidding_rule! {

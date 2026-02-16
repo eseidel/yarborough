@@ -23,6 +23,8 @@ pub enum HandConstraint {
     RuleOfTwenty,
     /// Rule of 15: HCP + length of spades >= 15
     RuleOfFifteen,
+    /// Annotation: this bid enters a notrump system (Stayman, transfers, etc.)
+    EntersNotrumpSystem,
 }
 
 impl HandConstraint {
@@ -42,6 +44,7 @@ impl HandConstraint {
                 hand.hcp() + lengths[0] + lengths[1] >= 20
             }
             HandConstraint::RuleOfFifteen => hand.hcp() + dist.length(Suit::Spades) >= 15,
+            HandConstraint::EntersNotrumpSystem => true, // pure annotation
         }
     }
 }

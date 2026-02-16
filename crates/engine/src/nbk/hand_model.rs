@@ -50,8 +50,9 @@ impl HandModel {
             }
             HandConstraint::RuleOfTwenty
             | HandConstraint::RuleOfFifteen
-            | HandConstraint::StopperIn(_) => {
-                // Complex constraints not currently tracked in hand model
+            | HandConstraint::StopperIn(_)
+            | HandConstraint::EntersNotrumpSystem => {
+                // Complex constraints / annotations not tracked in hand model
             }
         }
     }
