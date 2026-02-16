@@ -27,10 +27,12 @@ fn parse_calls(calls_string: &str) -> Vec<Call> {
         .collect()
 }
 
-/// Given a call history string, dealer position, and vulnerability, return
-/// possible next calls with their interpretations from the NBK bidding system.
-#[wasm_bindgen]
-pub fn get_interpretations(calls_string: &str, dealer: &str, _vulnerability: &str) -> JsValue {
+/// Core logic for get_interpretations, returning Rust types for testability.
+pub fn get_interpretations_impl(
+    calls_string: &str,
+    dealer: &str,
+    _vulnerability: &str,
+) -> Vec<CallInterpretation> {
     let dealer_pos = dealer
         .chars()
         .next()
@@ -46,7 +48,7 @@ pub fn get_interpretations(calls_string: &str, dealer: &str, _vulnerability: &st
     let mut legal_calls = auction.legal_calls();
     legal_calls.sort();
 
-    let interpretations: Vec<CallInterpretation> = legal_calls
+    legal_calls
         .into_iter()
         .map(|call| {
             let semantics = nbk::CallInterpreter::interpret(&auction_model, &call);
@@ -62,9 +64,19 @@ pub fn get_interpretations(calls_string: &str, dealer: &str, _vulnerability: &st
                     .unwrap_or_default(),
             }
         })
-        .collect();
+        .collect()
+}
 
-    serde_wasm_bindgen::to_value(&interpretations).unwrap()
+/// Given a call history string, dealer position, and vulnerability, return
+/// possible next calls with their interpretations from the NBK bidding system.
+#[wasm_bindgen]
+pub fn get_interpretations(calls_string: &str, dealer: &str, _vulnerability: &str) -> JsValue {
+    serde_wasm_bindgen::to_value(&get_interpretations_impl(
+        calls_string,
+        dealer,
+        _vulnerability,
+    ))
+    .unwrap()
 }
 
 /// Receives a board and auction state in the "identifier" format
@@ -95,18 +107,16 @@ pub fn get_next_bid(identifier: &str) -> String {
     }
 }
 
-/// Like get_next_bid, but returns the bid along with its rule name and description.
-#[wasm_bindgen]
-pub fn get_suggested_bid(identifier: &str) -> JsValue {
+/// Core logic for get_suggested_bid, returning Rust types for testability.
+pub fn get_suggested_bid_impl(identifier: &str) -> CallInterpretation {
     let (board, auction) = match identifier::import_board(identifier) {
         Some(val) => val,
         None => {
-            return serde_wasm_bindgen::to_value(&CallInterpretation {
+            return CallInterpretation {
                 call_name: "P".into(),
                 rule_name: String::new(),
                 description: String::new(),
-            })
-            .unwrap()
+            }
         }
     };
 
@@ -116,18 +126,17 @@ pub fn get_suggested_bid(identifier: &str) -> JsValue {
     let hand = match board.hands.get(&current_player) {
         Some(h) => h,
         None => {
-            return serde_wasm_bindgen::to_value(&CallInterpretation {
+            return CallInterpretation {
                 call_name: "P".into(),
                 rule_name: String::new(),
                 description: String::new(),
-            })
-            .unwrap()
+            }
         }
     };
 
     // Use NBK bidding logic with trace
     let trace = nbk::select_bid_with_trace(hand, &auction, current_player);
-    let interpretation = match trace.selected_call {
+    match trace.selected_call {
         Some(call) => {
             let step = trace
                 .selection_steps
@@ -145,9 +154,13 @@ pub fn get_suggested_bid(identifier: &str) -> JsValue {
             rule_name: "Pass (Limit)".into(),
             description: "No better bid found; passing as a limit bid".into(),
         },
-    };
+    }
+}
 
-    serde_wasm_bindgen::to_value(&interpretation).unwrap()
+/// Like get_next_bid, but returns the bid along with its rule name and description.
+#[wasm_bindgen]
+pub fn get_suggested_bid(identifier: &str) -> JsValue {
+    serde_wasm_bindgen::to_value(&get_suggested_bid_impl(identifier)).unwrap()
 }
 
 #[wasm_bindgen]
@@ -308,5 +321,82 @@ mod tests {
         let _board_number: u32 = parts[0].parse().expect("board number should be a u32");
         // Hex deal should be 26 characters.
         assert_eq!(parts[1].len(), 26);
+    }
+
+    #[test]
+    fn test_get_interpretations_empty_auction() {
+        let results = get_interpretations_impl("", "N", "None");
+        // With no calls yet, all opening bids + pass should be available.
+        assert!(!results.is_empty());
+        // Pass should always be a legal call.
+        assert!(results.iter().any(|r| r.call_name == "P"));
+        // 1C should be a legal opening bid.
+        assert!(results.iter().any(|r| r.call_name == "1C"));
+        // Every result should have a call_name.
+        for r in &results {
+            assert!(!r.call_name.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_get_interpretations_after_opening() {
+        let results = get_interpretations_impl("1C", "N", "None");
+        // After 1C, the next player (East) should have legal responses.
+        assert!(!results.is_empty());
+        // Pass is always legal.
+        assert!(results.iter().any(|r| r.call_name == "P"));
+        // 1C should NOT be legal (can't bid at or below the current level in same strain).
+        assert!(!results.iter().any(|r| r.call_name == "1C"));
+    }
+
+    #[test]
+    fn test_get_interpretations_default_dealer() {
+        // Invalid dealer string should default to North.
+        let results = get_interpretations_impl("", "Z", "None");
+        assert!(!results.is_empty());
+    }
+
+    #[test]
+    fn test_get_interpretations_has_rule_names() {
+        let results = get_interpretations_impl("", "N", "None");
+        // At least some opening bids should have rule names from the bidding system.
+        let with_rules: Vec<_> = results.iter().filter(|r| !r.rule_name.is_empty()).collect();
+        assert!(
+            !with_rules.is_empty(),
+            "Expected some calls to have rule_name interpretations"
+        );
+    }
+
+    #[test]
+    fn test_get_suggested_bid_valid_identifier() {
+        let mut rng = rand::thread_rng();
+        let board = generate_random_board(1, &mut rng);
+        let id = identifier::export_board(&board, 1, None);
+        let result = get_suggested_bid_impl(&id);
+        // Should return a non-empty call name.
+        assert!(!result.call_name.is_empty());
+        // Should have a rule name (either a matched rule or "Pass (Limit)").
+        assert!(!result.rule_name.is_empty());
+        // Should have a description.
+        assert!(!result.description.is_empty());
+    }
+
+    #[test]
+    fn test_get_suggested_bid_invalid_identifier() {
+        let result = get_suggested_bid_impl("garbage");
+        assert_eq!(result.call_name, "P");
+        assert!(result.rule_name.is_empty());
+        assert!(result.description.is_empty());
+    }
+
+    #[test]
+    fn test_get_suggested_bid_matches_get_next_bid() {
+        // The suggested bid's call_name should match get_next_bid for the same identifier.
+        let mut rng = rand::thread_rng();
+        let board = generate_random_board(1, &mut rng);
+        let id = identifier::export_board(&board, 1, None);
+        let next = get_next_bid(&id);
+        let suggested = get_suggested_bid_impl(&id);
+        assert_eq!(suggested.call_name, next);
     }
 }
