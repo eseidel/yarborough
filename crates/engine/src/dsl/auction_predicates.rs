@@ -26,6 +26,7 @@ impl AuctionPredicate for IsSeat {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct IsOpen;
 impl AuctionPredicate for IsOpen {
     fn check(&self, model: &AuctionModel) -> bool {
@@ -62,6 +63,7 @@ impl AuctionPredicate for WeOpened {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct TheyOpened;
 impl AuctionPredicate for TheyOpened {
     fn check(&self, model: &AuctionModel) -> bool {

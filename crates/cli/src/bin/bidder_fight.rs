@@ -1,5 +1,5 @@
 use clap::Parser;
-use engine::{generate_random_board, nbk};
+use engine::{generate_random_board, select_bid};
 use rand::Rng;
 use serde::Deserialize;
 /// Compare the yarborough bidder against z3b or kbb.
@@ -156,8 +156,7 @@ fn bid_board(remote_url: &str, board: &Board, board_number: u32) {
         let remote_call = remote_calls[remote_index];
         remote_index += 1;
 
-        let local_call =
-            nbk::select_bid(hand, &local_auction, current_player).unwrap_or(Call::Pass);
+        let local_call = select_bid(hand, &local_auction, current_player).unwrap_or(Call::Pass);
 
         if local_call != remote_call {
             println!("Difference found!");

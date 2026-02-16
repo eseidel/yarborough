@@ -1,4 +1,4 @@
-use engine::nbk;
+use engine::{BidTrace, PartnerModel};
 use std::collections::HashMap;
 use std::fmt::Write;
 use types::auction::Auction;
@@ -146,7 +146,7 @@ pub fn format_table_header() -> String {
     out
 }
 
-pub fn format_partner_model(model: &nbk::PartnerModel) -> String {
+pub fn format_partner_model(model: &PartnerModel) -> String {
     let mut out = String::new();
     if let Some(max_hcp) = model.max_hcp {
         writeln!(out, "  HCP: {} - {}", model.min_hcp.unwrap_or(0), max_hcp).unwrap();
@@ -184,7 +184,7 @@ pub fn format_partner_model(model: &nbk::PartnerModel) -> String {
     out
 }
 
-pub fn format_full_trace(bid_num: usize, trace: &nbk::BidTrace) -> String {
+pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {
     let mut out = String::new();
     writeln!(out, "\nFull Trace for Bid {}:", bid_num).unwrap();
     writeln!(out, "=======================").unwrap();

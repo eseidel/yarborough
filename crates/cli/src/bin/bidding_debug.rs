@@ -1,7 +1,7 @@
 // cspell:ignore AKQJT
 use clap::Parser;
 use cli::bidding_utils::*;
-use engine::nbk;
+use engine::select_bid_with_trace;
 use types::auction::Auction;
 use types::board::Board;
 use types::call::Call;
@@ -71,7 +71,7 @@ fn run_bidding_loop(
             }
         };
 
-        let trace = nbk::select_bid_with_trace(hand, auction, current_player);
+        let trace = select_bid_with_trace(hand, auction, current_player);
         *bid_idx += 1;
 
         if let Some(trace_bid_num) = args.bid {
