@@ -63,7 +63,6 @@ impl AuctionPredicate for WeOpened {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct TheyOpened;
 impl AuctionPredicate for TheyOpened {
     fn check(&self, model: &AuctionModel) -> bool {

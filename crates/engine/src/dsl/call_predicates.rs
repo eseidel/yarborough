@@ -160,3 +160,31 @@ impl CallPredicate for PartnerHasShownSuit {
         false
     }
 }
+
+/// Checks that no opponent has bid in the same suit as this call.
+#[derive(Debug)]
+pub struct OpponentHasNotBidSuit;
+impl CallPredicate for OpponentHasNotBidSuit {
+    fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
+        let our_suit = match call {
+            Call::Bid { strain, .. } => match strain.to_suit() {
+                Some(s) => s,
+                None => return true, // NT bids are fine
+            },
+            _ => return true,
+        };
+
+        let our_partnership = auction.auction.current_partnership();
+        for (position, opponent_call) in auction.auction.iter() {
+            if position.partnership() == our_partnership {
+                continue; // Skip our side's calls
+            }
+            if let Call::Bid { strain, .. } = opponent_call {
+                if strain.to_suit() == Some(our_suit) {
+                    return false; // Opponent has bid this suit
+                }
+            }
+        }
+        true
+    }
+}
