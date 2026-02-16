@@ -135,15 +135,7 @@ fn update_shape_max(current: Option<Shape>, new: Shape) -> Shape {
 mod tests {
     use super::*;
     use crate::nbk::AuctionModel;
-    use types::{Auction, Call, Position, Strain};
-
-    fn make_auction_with_bids(dealer: Position, calls: Vec<Call>) -> Auction {
-        let mut auction = Auction::new(dealer);
-        for call in calls {
-            auction.calls.push(call);
-        }
-        auction
-    }
+    use types::{Auction, Position};
 
     #[test]
     fn test_empty_auction() {
@@ -159,16 +151,7 @@ mod tests {
     #[test]
     fn test_1nt_opening() {
         // N opens 1NT, E passes → current_player = South
-        let auction = make_auction_with_bids(
-            Position::North,
-            vec![
-                Call::Bid {
-                    level: 1,
-                    strain: Strain::Notrump,
-                },
-                Call::Pass, // East
-            ],
-        );
+        let auction = Auction::bidding(Position::North, "1N P");
         let auction_model = AuctionModel::from_auction(&auction);
         let model = auction_model.partner_hand().clone();
 
@@ -179,16 +162,7 @@ mod tests {
     #[test]
     fn test_one_spade_opening() {
         // N opens 1S, E passes → current_player = South
-        let auction = make_auction_with_bids(
-            Position::North,
-            vec![
-                Call::Bid {
-                    level: 1,
-                    strain: Strain::Spades,
-                },
-                Call::Pass, // East
-            ],
-        );
+        let auction = Auction::bidding(Position::North, "1S P");
         let auction_model = AuctionModel::from_auction(&auction);
         let model = auction_model.partner_hand().clone();
 
@@ -201,21 +175,7 @@ mod tests {
     fn test_partner_position_filtering() {
         // N:1S, E:P, S:1H, W:P → current_player = North
         // From North's perspective, partner (South) bid 1H
-        let auction = make_auction_with_bids(
-            Position::North,
-            vec![
-                Call::Bid {
-                    level: 1,
-                    strain: Strain::Spades,
-                }, // North
-                Call::Pass, // East
-                Call::Bid {
-                    level: 1,
-                    strain: Strain::Hearts,
-                }, // South
-                Call::Pass, // West
-            ],
-        );
+        let auction = Auction::bidding(Position::North, "1S P 1H P");
 
         let auction_model = AuctionModel::from_auction(&auction);
         let model = auction_model.partner_hand().clone();
@@ -228,16 +188,7 @@ mod tests {
     #[test]
     fn test_two_level_bid() {
         // N opens 2D, E passes → current_player = South
-        let auction = make_auction_with_bids(
-            Position::North,
-            vec![
-                Call::Bid {
-                    level: 2,
-                    strain: Strain::Diamonds,
-                },
-                Call::Pass, // East
-            ],
-        );
+        let auction = Auction::bidding(Position::North, "2D P");
         let auction_model = AuctionModel::from_auction(&auction);
         let model = auction_model.partner_hand().clone();
 
@@ -249,17 +200,7 @@ mod tests {
     fn test_pass_does_not_update() {
         // N:1C, E:P, S:P → current_player = West
         // From West's perspective, partner (East) only passed
-        let auction = make_auction_with_bids(
-            Position::North,
-            vec![
-                Call::Bid {
-                    level: 1,
-                    strain: Strain::Clubs,
-                },
-                Call::Pass, // East (West's partner)
-                Call::Pass, // South
-            ],
-        );
+        let auction = Auction::bidding(Position::North, "1C P P");
 
         let auction_model = AuctionModel::from_auction(&auction);
         let model = auction_model.partner_hand().clone();

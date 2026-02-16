@@ -119,18 +119,11 @@ impl AuctionPredicate for LastBidMaxLevel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use types::{Call, Position, Strain};
+    use types::Position;
 
     #[test]
     fn test_we_opened_they_opened() {
-        let mut auction = types::Auction::new(Position::North);
-        // North (NS) passes
-        auction.add_call(Call::Pass);
-        // East (EW) bids 1C
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
+        let mut auction = types::Auction::bidding(Position::North, "P 1C");
 
         // Now it's South's (NS) turn
         let model = AuctionModel::from_auction(&auction);
@@ -142,13 +135,8 @@ mod tests {
         assert!(!we.check(&model));
         assert!(they.check(&model));
 
-        // Let South pass
-        auction.add_call(Call::Pass);
-        // West (EW) bids 2C
-        auction.add_call(Call::Bid {
-            level: 2,
-            strain: Strain::Clubs,
-        });
+        // Let South pass, West (EW) bids 2C
+        auction.bids("P 2C");
 
         // Now it's North's turn (NS)
         let model_north = AuctionModel::from_auction(&auction);
@@ -157,11 +145,7 @@ mod tests {
         assert!(they.check(&model_north));
 
         // If North had opened 1S
-        let mut auction2 = types::Auction::new(Position::North);
-        auction2.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Spades,
-        });
+        let mut auction2 = types::Auction::bidding(Position::North, "1S");
         // East's turn
         let model_east = AuctionModel::from_auction(&auction2);
         // North (NS) opened. East is EW. So "they" opened.
@@ -169,11 +153,7 @@ mod tests {
         assert!(they.check(&model_east));
 
         // West's turn after N: 1S, E: Pass, S: 2S, W: ?
-        auction2.add_call(Call::Pass);
-        auction2.add_call(Call::Bid {
-            level: 2,
-            strain: Strain::Spades,
-        });
+        auction2.bids("P 2S");
         let model_west = AuctionModel::from_auction(&auction2);
         // North (NS) opened. West is EW. So "they" opened.
         assert!(!we.check(&model_west));
@@ -185,22 +165,12 @@ mod tests {
         let pred = RhoMadeLastBid;
 
         // N opens 1C, E's turn — RHO (N) made the last bid
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
+        let auction = types::Auction::bidding(Position::North, "1C");
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model), "E is in direct seat after N's 1C");
 
         // N: 1S, E: P, S: P, W's turn — last bid was N (LHO), not RHO
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Spades,
-        });
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
+        let auction = types::Auction::bidding(Position::North, "1S P P");
         let model = AuctionModel::from_auction(&auction);
         assert!(
             !pred.check(&model),
@@ -208,28 +178,13 @@ mod tests {
         );
 
         // N: 1C, E: P, S: 1S, W's turn — last bid was S (RHO)
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Spades,
-        });
+        let auction = types::Auction::bidding(Position::North, "1C P 1S");
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model), "W is in direct seat after S's 1S");
 
         // N: 1C, E: X, S: P, W's turn — last bidder is N (LHO), not RHO
         // E's double is not a bid, so it doesn't count
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
-        auction.add_call(Call::Double);
-        auction.add_call(Call::Pass);
+        let auction = types::Auction::bidding(Position::North, "1C X P");
         let model = AuctionModel::from_auction(&auction);
         assert!(
             !pred.check(&model),
@@ -247,38 +202,22 @@ mod tests {
         assert!(pred.check(&model));
 
         // N opens 1D, E's turn — EW has only passed
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Diamonds,
-        });
+        let mut auction = types::Auction::bidding(Position::North, "1D");
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model));
 
         // N: 1D, E: 1H, S: P, W's turn — EW HAS bid (E bid 1H)
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Hearts,
-        });
-        auction.add_call(Call::Pass);
+        auction.bids("1H P");
         let model = AuctionModel::from_auction(&auction);
         assert!(!pred.check(&model));
 
         // N: P, E: P, S's turn — NS has only passed
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
+        let auction = types::Auction::bidding(Position::North, "P P");
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model));
 
         // N: 1C, E: X, S: P, W's turn — EW has doubled (not only passed)
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
-        auction.add_call(Call::Double);
-        auction.add_call(Call::Pass);
+        let auction = types::Auction::bidding(Position::North, "1C X P");
         let model = AuctionModel::from_auction(&auction);
         assert!(!pred.check(&model));
     }
@@ -288,20 +227,12 @@ mod tests {
         let pred = LastBidMaxLevel(1);
 
         // N opens 1C — last bid is level 1
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
+        let auction = types::Auction::bidding(Position::North, "1C");
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model));
 
         // N opens 2D — last bid is level 2, exceeds max
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 2,
-            strain: Strain::Diamonds,
-        });
+        let auction = types::Auction::bidding(Position::North, "2D");
         let model = AuctionModel::from_auction(&auction);
         assert!(!pred.check(&model));
 

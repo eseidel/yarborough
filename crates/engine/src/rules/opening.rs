@@ -84,17 +84,14 @@ mod tests {
     use crate::nbk::{AuctionModel, HandConstraint};
     use types::{Call, Position, Strain, Suit};
 
-    fn make_auction(calls: Vec<Call>) -> AuctionModel {
-        let mut auction = types::Auction::new(Position::North);
-        for c in calls {
-            auction.add_call(c);
-        }
+    fn make_auction(calls: &str) -> AuctionModel {
+        let auction = types::Auction::bidding(Position::North, calls);
         AuctionModel::from_auction(&auction)
     }
 
     #[test]
     fn test_opening_1major() {
-        let model = make_auction(vec![]);
+        let model = make_auction("");
         let call = Call::Bid {
             level: 1,
             strain: Strain::Spades,
@@ -108,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_weak_two_short_suit() {
-        let model = make_auction(vec![]);
+        let model = make_auction("");
         let call = Call::Bid {
             level: 2,
             strain: Strain::Spades,

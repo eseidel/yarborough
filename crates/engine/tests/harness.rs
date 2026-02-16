@@ -12,16 +12,7 @@ use types::rank::Rank;
 use types::suit::Suit;
 
 fn parse_auction(history: &str, dealer: Position) -> Auction {
-    let mut auction = Auction::new(dealer);
-    if history.trim().is_empty() {
-        return auction;
-    }
-    for call_str in history.split_whitespace() {
-        if let Ok(call) = call_str.parse::<Call>() {
-            auction.add_call(call);
-        }
-    }
-    auction
+    Auction::bidding(dealer, history)
 }
 
 fn create_dummy_full_deal(h: &Hand, pos: Position) -> HashMap<Position, Hand> {

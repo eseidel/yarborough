@@ -27,8 +27,34 @@ impl Auction {
         })
     }
 
+    /// Add a pre-parsed call. Use this for programmatic/untrusted input
+    /// where you need to handle parse errors yourself.
     pub fn add_call(&mut self, call: Call) {
         self.calls.push(call);
+    }
+
+    /// Parse and add a single call from a string like "1C", "P", or "X".
+    /// Panics on invalid input — use for tests and known-good data only.
+    pub fn bid(&mut self, s: &str) {
+        self.add_call(s.parse().expect("invalid call"));
+    }
+
+    /// Parse and add multiple space-separated calls like "P 1C P".
+    /// Panics on invalid input — use for tests and known-good data only.
+    pub fn bids(&mut self, s: &str) {
+        for token in s.split_whitespace() {
+            self.bid(token);
+        }
+    }
+
+    /// Build an auction from space-separated calls like "P 1C P 2C".
+    /// Panics on invalid input — use for tests and known-good data only.
+    pub fn bidding(dealer: Position, calls: &str) -> Self {
+        let mut auction = Self::new(dealer);
+        for token in calls.split_whitespace() {
+            auction.bid(token);
+        }
+        auction
     }
 
     pub fn current_partnership(&self) -> Partnership {
@@ -245,15 +271,10 @@ mod tests {
     #[test]
     fn test_auction_finished() {
         let mut auction = Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Spades,
-        });
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
+        auction.bids("1S P P");
         assert!(!auction.is_finished());
         assert!(!auction.is_complete());
-        auction.add_call(Call::Pass);
+        auction.bid("P");
         assert!(auction.is_finished());
         assert!(auction.is_complete());
     }
@@ -263,13 +284,10 @@ mod tests {
         let mut auction = Auction::new(Position::North);
         assert!(!auction.is_open());
         assert_eq!(auction.opener(), None);
-        auction.add_call(Call::Pass);
+        auction.bid("P");
         assert!(!auction.is_open());
         assert_eq!(auction.opener(), None);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
+        auction.bid("1C");
         assert!(auction.is_open());
         assert_eq!(
             auction.opener().map(|p| p.partnership()),
@@ -280,14 +298,9 @@ mod tests {
     #[test]
     fn test_final_contract() {
         let mut auction = Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
+        auction.bid("1C");
         assert_eq!(auction.final_contract(), None);
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
+        auction.bids("P P P");
         assert_eq!(
             auction.final_contract(),
             Some(Contract {
@@ -303,7 +316,7 @@ mod tests {
     fn test_current_partnership() {
         let mut auction = Auction::new(Position::North);
         assert_eq!(auction.current_partnership(), Partnership::NS);
-        auction.add_call(Call::Pass);
+        auction.bid("P");
         assert_eq!(auction.current_partnership(), Partnership::EW);
     }
 
@@ -311,7 +324,7 @@ mod tests {
     fn test_current_player() {
         let mut auction = Auction::new(Position::North);
         assert_eq!(auction.current_player(), Position::North);
-        auction.add_call(Call::Pass);
+        auction.bid("P");
         assert_eq!(auction.current_player(), Position::East);
     }
 
@@ -320,10 +333,7 @@ mod tests {
         let mut auction = Auction::new(Position::North);
         assert_eq!(auction.current_contract(), None);
 
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
+        auction.bid("1C");
         assert_eq!(
             auction.current_contract(),
             Some(Contract {
@@ -334,7 +344,7 @@ mod tests {
             })
         );
 
-        auction.add_call(Call::Double);
+        auction.bid("X");
         assert_eq!(
             auction.current_contract(),
             Some(Contract {
@@ -345,7 +355,7 @@ mod tests {
             })
         );
 
-        auction.add_call(Call::Redouble);
+        auction.bid("XX");
         assert_eq!(
             auction.current_contract(),
             Some(Contract {
@@ -356,10 +366,7 @@ mod tests {
             })
         );
 
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Diamonds,
-        });
+        auction.bid("1D");
         assert_eq!(
             auction.current_contract(),
             Some(Contract {
@@ -373,19 +380,9 @@ mod tests {
 
     #[test]
     fn test_declarer_logic() {
-        let mut auction = Auction::new(Position::North);
         // N: Pass, E: 1C, S: Pass, W: 2C
         // East was the first to bid Clubs for EW.
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Bid {
-            level: 2,
-            strain: Strain::Clubs,
-        });
+        let mut auction = Auction::bidding(Position::North, "P 1C P 2C");
 
         assert_eq!(
             auction.current_contract(),
@@ -398,21 +395,14 @@ mod tests {
         );
 
         // N: 2D. North is first to bid Diamonds for NS.
-        auction.add_call(Call::Bid {
-            level: 2,
-            strain: Strain::Diamonds,
-        });
+        auction.bid("2D");
         assert_eq!(
             auction.current_contract().unwrap().declarer,
             Position::North
         );
 
         // E: Pass, S: 3D. North is still the first to bid Diamonds for NS.
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Bid {
-            level: 3,
-            strain: Strain::Diamonds,
-        });
+        auction.bids("P 3D");
         assert_eq!(
             auction.current_contract().unwrap().declarer,
             Position::North
@@ -425,45 +415,26 @@ mod tests {
         assert_eq!(auction.last_bidder(), None);
 
         // N opens 1C — last bidder is North
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
+        auction.bid("1C");
         assert_eq!(auction.last_bidder(), Some(Position::North));
 
         // E passes — last bidder still North
-        auction.add_call(Call::Pass);
+        auction.bid("P");
         assert_eq!(auction.last_bidder(), Some(Position::North));
 
         // S bids 1S — last bidder is South
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Spades,
-        });
+        auction.bid("1S");
         assert_eq!(auction.last_bidder(), Some(Position::South));
 
         // W doubles — last bidder still South (double is not a bid)
-        auction.add_call(Call::Double);
+        auction.bid("X");
         assert_eq!(auction.last_bidder(), Some(Position::South));
     }
 
     #[test]
     fn test_validate_basic() {
-        let calls = vec![
-            Call::Bid {
-                level: 1,
-                strain: Strain::Clubs,
-            },
-            Call::Pass,
-            Call::Bid {
-                level: 1,
-                strain: Strain::Diamonds,
-            },
-            Call::Pass,
-            Call::Pass,
-            Call::Pass,
-        ];
-        assert!(Auction::validate_calls(&calls));
+        let auction = Auction::bidding(Position::North, "1C P 1D P P P");
+        assert!(auction.is_valid());
     }
 
     #[test]
@@ -483,14 +454,8 @@ mod tests {
 
     #[test]
     fn test_validate_double() {
-        let calls = vec![
-            Call::Bid {
-                level: 1,
-                strain: Strain::Clubs,
-            },
-            Call::Double, // Opponent's bid
-        ];
-        assert!(Auction::validate_calls(&calls));
+        let auction = Auction::bidding(Position::North, "1C X");
+        assert!(auction.is_valid());
 
         let calls = vec![
             Call::Bid {
@@ -505,15 +470,8 @@ mod tests {
 
     #[test]
     fn test_validate_redouble() {
-        let calls = vec![
-            Call::Bid {
-                level: 1,
-                strain: Strain::Clubs,
-            },
-            Call::Double,   // Opponent
-            Call::Redouble, // Opponent's double (friend of bidder)
-        ];
-        assert!(Auction::validate_calls(&calls));
+        let auction = Auction::bidding(Position::North, "1C X XX");
+        assert!(auction.is_valid());
 
         let calls = vec![
             Call::Bid {
@@ -545,11 +503,7 @@ mod tests {
 
     #[test]
     fn test_legal_calls_after_bid() {
-        let mut auction = Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Hearts,
-        });
+        let auction = Auction::bidding(Position::North, "1H");
         let calls = auction.legal_calls();
         // Pass + higher bids + Double (opponent can double)
         assert!(calls.contains(&Call::Pass));
@@ -565,12 +519,81 @@ mod tests {
     }
 
     #[test]
-    fn test_legal_calls_finished_auction() {
+    fn test_bid_convenience() {
         let mut auction = Auction::new(Position::North);
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
+        auction.bid("1C");
+        assert_eq!(auction.calls.len(), 1);
+        assert_eq!(
+            auction.calls[0],
+            Call::Bid {
+                level: 1,
+                strain: Strain::Clubs
+            }
+        );
+
+        auction.bid("P");
+        assert_eq!(auction.calls[1], Call::Pass);
+
+        auction.bid("X");
+        assert_eq!(auction.calls[2], Call::Double);
+    }
+
+    #[test]
+    fn test_bids_convenience() {
+        let mut auction = Auction::new(Position::North);
+        auction.bid("1C");
+        auction.bids("P 1S P");
+        assert_eq!(auction.calls.len(), 4);
+        assert_eq!(
+            auction.calls[2],
+            Call::Bid {
+                level: 1,
+                strain: Strain::Spades,
+            }
+        );
+        assert_eq!(auction.calls[3], Call::Pass);
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid call")]
+    fn test_bid_invalid_panics() {
+        let mut auction = Auction::new(Position::North);
+        auction.bid("zzz");
+    }
+
+    #[test]
+    fn test_bidding_convenience() {
+        let auction = Auction::bidding(Position::North, "P 1C P 2C");
+        assert_eq!(auction.dealer, Position::North);
+        assert_eq!(auction.calls.len(), 4);
+        assert_eq!(auction.calls[0], Call::Pass);
+        assert_eq!(
+            auction.calls[1],
+            Call::Bid {
+                level: 1,
+                strain: Strain::Clubs
+            }
+        );
+        assert_eq!(auction.calls[2], Call::Pass);
+        assert_eq!(
+            auction.calls[3],
+            Call::Bid {
+                level: 2,
+                strain: Strain::Clubs
+            }
+        );
+    }
+
+    #[test]
+    fn test_bidding_empty() {
+        let auction = Auction::bidding(Position::South, "");
+        assert_eq!(auction.dealer, Position::South);
+        assert!(auction.calls.is_empty());
+    }
+
+    #[test]
+    fn test_legal_calls_finished_auction() {
+        let auction = Auction::bidding(Position::North, "P P P P");
         assert!(auction.legal_calls().is_empty());
     }
 

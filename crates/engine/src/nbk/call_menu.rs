@@ -166,7 +166,7 @@ fn categorize_bid(auction_model: &AuctionModel, semantics: &CallSemantics) -> Ca
 #[cfg(test)]
 mod tests {
     use super::*;
-    use types::{Auction, Position, Strain};
+    use types::{Auction, Position};
 
     #[test]
     fn test_call_menu_empty_auction() {
@@ -194,12 +194,7 @@ mod tests {
 
     #[test]
     fn test_call_menu_after_opening() {
-        let mut auction = Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Hearts,
-        });
-        auction.add_call(Call::Pass); // East
+        let auction = Auction::bidding(Position::North, "1H P");
 
         // South's turn
         let auction_model = AuctionModel::from_auction(&auction);

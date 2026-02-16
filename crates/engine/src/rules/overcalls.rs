@@ -64,13 +64,8 @@ mod tests {
     use types::{Call, Hand, Position, Strain, Suit};
 
     fn make_overcall_auction(opening_strain: Strain) -> AuctionModel {
-        let mut auction = types::Auction::new(Position::North);
-        // North opens
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: opening_strain,
-        });
-        // East's turn (they want to overcall)
+        let call = format!("1{}", opening_strain.to_char());
+        let auction = types::Auction::bidding(Position::North, &call);
         AuctionModel::from_auction(&auction)
     }
 
@@ -143,11 +138,7 @@ mod tests {
         // Hand format is C.D.H.S
         // 3 clubs, 2 diamonds, 3 hearts, 5 spades = AK975 in spades, 10 HCP
         let hand = Hand::parse("A94.73.AT6.QT752");
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Diamonds,
-        });
+        let auction = types::Auction::bidding(Position::North, "1D");
         // East's turn to overcall
         let bid = nbk::select_bid(&hand, &auction);
         // Should bid 1S (5 spades, 10 HCP)
@@ -166,11 +157,7 @@ mod tests {
         use crate::nbk;
         // Hand format is C.D.H.S: 2 clubs, 5 diamonds, 3 hearts, 3 spades
         let hand = Hand::parse("K6.AQT43.KT4.543");
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Diamonds,
-        });
+        let auction = types::Auction::bidding(Position::North, "1D");
         // East should pass - only long suit is diamonds (opponent's suit)
         let bid = nbk::select_bid(&hand, &auction);
         assert_eq!(
@@ -234,16 +221,7 @@ mod tests {
     fn test_overcall_blocked_when_partner_has_bid() {
         // N opens 1D, E overcalls 1H, S passes, W's turn
         // WeHaveOnlyPassed should be false for W since E (partner) already bid
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Diamonds,
-        });
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Hearts,
-        });
-        auction.add_call(Call::Pass);
+        let auction = types::Auction::bidding(Position::North, "1D 1H P");
         let model = AuctionModel::from_auction(&auction);
         let call = Call::Bid {
             level: 1,
@@ -318,16 +296,7 @@ mod tests {
     fn test_takeout_double_not_when_partner_bid() {
         // N opens 1D, E overcalls 1H, S passes, W's turn
         // WeHaveOnlyPassed should be false for W since E (partner) already bid
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Diamonds,
-        });
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Hearts,
-        });
-        auction.add_call(Call::Pass);
+        let auction = types::Auction::bidding(Position::North, "1D 1H P");
         let model = AuctionModel::from_auction(&auction);
         assert!(OneLevelTakeoutDouble
             .get_semantics(&model, &Call::Double)
@@ -340,11 +309,7 @@ mod tests {
         // Hand format is C.D.H.S: 6 clubs, 3 diamonds, 2 hearts, 2 spades
         // 18 HCP — should double despite lacking shape (strong hand override)
         let hand = Hand::parse("AKQ982.AQ5.K7.43");
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Hearts,
-        });
+        let auction = types::Auction::bidding(Position::North, "1H");
         let bid = nbk::select_bid(&hand, &auction);
         assert_eq!(
             bid,
@@ -359,11 +324,7 @@ mod tests {
         // Hand format is C.D.H.S: 1 club, 4 diamonds, 4 hearts, 4 spades
         // Classic 4-4-4-1 takeout double shape, 13 HCP
         let hand = Hand::parse("A.KJ63.AQ54.K854");
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Clubs,
-        });
+        let auction = types::Auction::bidding(Position::North, "1C");
         let bid = nbk::select_bid(&hand, &auction);
         assert_eq!(
             bid,
@@ -375,13 +336,7 @@ mod tests {
     #[test]
     fn test_takeout_double_not_in_balancing_seat() {
         // N: 1S, E: P, S: P, W's turn — balancing seat, not direct seat
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Spades,
-        });
-        auction.add_call(Call::Pass);
-        auction.add_call(Call::Pass);
+        let auction = types::Auction::bidding(Position::North, "1S P P");
         let model = AuctionModel::from_auction(&auction);
         assert!(
             OneLevelTakeoutDouble
@@ -397,11 +352,7 @@ mod tests {
         // Hand format is C.D.H.S: 5 clubs, 4 diamonds, 2 hearts, 2 spades
         // 12 HCP but lacks support for unbid majors — should not double
         let hand = Hand::parse("AKJ74.QJ62.85.93");
-        let mut auction = types::Auction::new(Position::North);
-        auction.add_call(Call::Bid {
-            level: 1,
-            strain: Strain::Hearts,
-        });
+        let auction = types::Auction::bidding(Position::North, "1H");
         let bid = nbk::select_bid(&hand, &auction);
         assert_ne!(
             bid,
