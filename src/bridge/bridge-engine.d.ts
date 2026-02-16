@@ -1,7 +1,7 @@
-// Type declarations for the wasm-pack generated bridge-engine module.
+// Type declarations for the wasm-pack generated bridge-wasm module.
 // wasm-pack generates its own .d.ts but this ensures TS is happy
 // before the first build.
-declare module "../../crates/bridge-engine/pkg/bridge_engine" {
+declare module "../../crates/bridge-wasm/pkg/bridge_wasm" {
   export default function init(): Promise<void>;
   export function get_interpretations(
     calls_string: string,
@@ -9,4 +9,5 @@ declare module "../../crates/bridge-engine/pkg/bridge_engine" {
   ): unknown;
   export function get_next_bid(identifier: string): string;
   export function get_suggested_bid(identifier: string): unknown;
+  export function generate_filtered_board(deal_type: string): string;
 }

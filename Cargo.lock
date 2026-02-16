@@ -122,13 +122,20 @@ name = "bridge-engine"
 version = "0.1.0"
 dependencies = [
  "bridge-core",
- "getrandom 0.2.17",
  "indexmap",
  "rand",
  "serde",
- "serde-wasm-bindgen",
  "serde_json",
  "serde_yaml",
+]
+
+[[package]]
+name = "bridge-wasm"
+version = "0.1.0"
+dependencies = [
+ "bridge-engine",
+ "getrandom 0.2.17",
+ "serde-wasm-bindgen",
  "wasm-bindgen",
 ]
 

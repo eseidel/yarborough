@@ -3,17 +3,13 @@
 use bridge_core::auction::Auction;
 use bridge_core::board::{Board, Position, Vulnerability};
 use bridge_core::call::Call;
-use bridge_core::card::Card;
 use bridge_core::hand::Hand;
 use bridge_core::io::identifier;
-use bridge_core::rank::Rank;
 use bridge_core::suit::Suit;
-use bridge_engine::nbk;
+use bridge_engine::{generate_random_board, nbk};
 use clap::Parser;
-use rand::seq::SliceRandom;
 use rand::Rng;
 use serde::Deserialize;
-use std::collections::HashMap;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -62,33 +58,6 @@ fn render_auction(auction: &Auction) -> String {
         .map(|c| c.render())
         .collect::<Vec<_>>()
         .join(" ")
-}
-
-fn generate_random_board(board_number: u32, rng: &mut impl Rng) -> Board {
-    let mut deck = Vec::with_capacity(52);
-    for suit in Suit::ALL {
-        for rank in Rank::ALL {
-            deck.push(Card::new(suit, rank));
-        }
-    }
-    deck.shuffle(rng);
-
-    let mut hands = HashMap::new();
-    let positions = [
-        Position::North,
-        Position::East,
-        Position::South,
-        Position::West,
-    ];
-    for (i, chunk) in deck.chunks(13).enumerate() {
-        hands.insert(positions[i], Hand::new(chunk.to_vec()));
-    }
-
-    Board {
-        dealer: Position::dealer_from_board_number(board_number),
-        vulnerability: Vulnerability::from_board_number(board_number),
-        hands,
-    }
 }
 
 fn get_remote_auction(
