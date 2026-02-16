@@ -17,7 +17,6 @@ pub struct CallInterpretation {
 }
 
 /// Parse a comma-separated call string (e.g. "1C,P,1D") into a Vec<Call>.
-#[allow(dead_code)]
 fn parse_calls(calls_string: &str) -> Vec<Call> {
     if calls_string.is_empty() {
         return Vec::new();
@@ -190,5 +189,124 @@ fn generate_random_board(board_number: u32, rng: &mut impl rand::Rng) -> bridge_
         dealer: Position::dealer_from_board_number(board_number),
         vulnerability: bridge_core::board::Vulnerability::from_board_number(board_number),
         hands,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bridge_core::call::Call;
+    use bridge_core::strain::Strain;
+
+    #[test]
+    fn test_parse_calls_empty() {
+        let calls = parse_calls("");
+        assert!(calls.is_empty());
+    }
+
+    #[test]
+    fn test_parse_calls_single() {
+        let calls = parse_calls("1C");
+        assert_eq!(calls.len(), 1);
+        assert!(matches!(
+            calls[0],
+            Call::Bid {
+                level: 1,
+                strain: Strain::Clubs
+            }
+        ));
+    }
+
+    #[test]
+    fn test_parse_calls_multiple() {
+        let calls = parse_calls("1C,P,1D");
+        assert_eq!(calls.len(), 3);
+        assert!(matches!(
+            calls[0],
+            Call::Bid {
+                level: 1,
+                strain: Strain::Clubs
+            }
+        ));
+        assert!(matches!(calls[1], Call::Pass));
+        assert!(matches!(
+            calls[2],
+            Call::Bid {
+                level: 1,
+                strain: Strain::Diamonds
+            }
+        ));
+    }
+
+    #[test]
+    fn test_parse_calls_with_whitespace() {
+        let calls = parse_calls("1C, P, 1D");
+        assert_eq!(calls.len(), 3);
+    }
+
+    #[test]
+    fn test_parse_calls_skips_invalid() {
+        let calls = parse_calls("1C,INVALID,P");
+        assert_eq!(calls.len(), 2);
+    }
+
+    #[test]
+    fn test_generate_random_board_has_four_hands() {
+        let mut rng = rand::thread_rng();
+        let board = generate_random_board(1, &mut rng);
+        assert_eq!(board.hands.len(), 4);
+        for hand in board.hands.values() {
+            assert_eq!(hand.cards.len(), 13);
+        }
+    }
+
+    #[test]
+    fn test_generate_random_board_dealer_matches_board_number() {
+        let mut rng = rand::thread_rng();
+        for board_number in 1..=4 {
+            let board = generate_random_board(board_number, &mut rng);
+            assert_eq!(
+                board.dealer,
+                Position::dealer_from_board_number(board_number)
+            );
+        }
+    }
+
+    #[test]
+    fn test_generate_random_board_all_52_cards() {
+        let mut rng = rand::thread_rng();
+        let board = generate_random_board(1, &mut rng);
+        let total_cards: usize = board.hands.values().map(|h| h.cards.len()).sum();
+        assert_eq!(total_cards, 52);
+    }
+
+    #[test]
+    fn test_get_next_bid_with_valid_identifier() {
+        // Generate a board and export it to get a valid identifier.
+        let mut rng = rand::thread_rng();
+        let board = generate_random_board(1, &mut rng);
+        let id = identifier::export_board(&board, 1, None);
+        let result = get_next_bid(&id);
+        // Should return a valid call string (not empty).
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_get_next_bid_invalid_identifier() {
+        let result = get_next_bid("garbage");
+        assert_eq!(result, "P");
+    }
+
+    #[test]
+    fn test_generate_filtered_board_returns_valid_identifier() {
+        let id = generate_filtered_board("any");
+        // Identifier format: "<board_number>-<26 hex chars>"
+        assert!(id.contains('-'));
+        let parts: Vec<&str> = id.split('-').collect();
+        assert_eq!(parts.len(), 2);
+        // Board number should be parseable.
+        let _board_number: u32 = parts[0].parse().expect("board number should be a u32");
+        // Hex deal should be 26 characters.
+        assert_eq!(parts[1].len(), 26);
     }
 }
