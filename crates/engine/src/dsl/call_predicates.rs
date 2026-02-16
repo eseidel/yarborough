@@ -127,6 +127,17 @@ impl CallPredicate for MinLevel {
     }
 }
 
+#[derive(Debug)]
+pub struct MaxLevel(pub u8);
+impl CallPredicate for MaxLevel {
+    fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
+        match call {
+            Call::Bid { level, .. } => *level <= self.0,
+            _ => false,
+        }
+    }
+}
+
 /// Returns the minimum legal level for a given strain, based on the last bid in the auction.
 /// Returns None if there is no previous bid.
 fn min_level_for_strain(auction: &AuctionModel, strain: Strain) -> Option<u8> {
