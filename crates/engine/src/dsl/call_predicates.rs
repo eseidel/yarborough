@@ -52,13 +52,13 @@ impl CallPredicate for IsStrain {
 }
 
 #[derive(Debug)]
-pub struct IsNoTrump;
-impl CallPredicate for IsNoTrump {
+pub struct IsNotrump;
+impl CallPredicate for IsNotrump {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
         matches!(
             call,
             Call::Bid {
-                strain: Strain::NoTrump,
+                strain: Strain::Notrump,
                 ..
             }
         )
@@ -83,8 +83,8 @@ impl CallPredicate for IsNewSuit {
         match call {
             Call::Bid { strain, .. } => {
                 if let Some(suit) = strain.to_suit() {
-                    !auction.partner_model().has_shown_suit(suit)
-                        && !auction.bidder_model().has_shown_suit(suit)
+                    !auction.partner_hand().has_shown_suit(suit)
+                        && !auction.bidder_hand().has_shown_suit(suit)
                 } else {
                     false
                 }
@@ -173,7 +173,7 @@ impl CallPredicate for BidderHasShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
         if let Call::Bid { strain, .. } = call {
             if let Some(suit) = strain.to_suit() {
-                return auction.bidder_model().has_shown_suit(suit);
+                return auction.bidder_hand().has_shown_suit(suit);
             }
         }
         false
@@ -186,7 +186,7 @@ impl CallPredicate for PartnerHasShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
         if let Call::Bid { strain, .. } = call {
             if let Some(suit) = strain.to_suit() {
-                return auction.partner_model().has_shown_suit(suit);
+                return auction.partner_hand().has_shown_suit(suit);
             }
         }
         false
@@ -194,7 +194,7 @@ impl CallPredicate for PartnerHasShownSuit {
 }
 
 /// Checks that no opponent has shown the same suit as this call.
-/// Uses opponent PartnerModels (semantic meaning) rather than raw bid strains,
+/// Uses opponent HandModels (semantic meaning) rather than raw bid strains,
 /// so conventional bids like Stayman (2C) won't be treated as showing clubs.
 #[derive(Debug)]
 pub struct OpponentHasNotShownSuit;
@@ -202,8 +202,8 @@ impl CallPredicate for OpponentHasNotShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
         if let Call::Bid { strain, .. } = call {
             if let Some(suit) = strain.to_suit() {
-                return !auction.lho_model().has_shown_suit(suit)
-                    && !auction.rho_model().has_shown_suit(suit);
+                return !auction.lho_hand().has_shown_suit(suit)
+                    && !auction.rho_hand().has_shown_suit(suit);
             }
         }
         true

@@ -1,6 +1,6 @@
 //! Auction state analysis for NBK
 
-use crate::nbk::{CallInterpreter, PartnerModel};
+use crate::nbk::{CallInterpreter, HandModel};
 use types::Auction;
 
 use serde::{Deserialize, Serialize};
@@ -13,41 +13,41 @@ use serde::{Deserialize, Serialize};
 pub struct AuctionModel {
     /// The auction state
     pub auction: Auction,
-    /// Per-position models indexed by Position::idx()
-    models: [PartnerModel; 4],
+    /// Per-position profiles indexed by Position::idx()
+    hands: [HandModel; 4],
 }
 
 impl AuctionModel {
-    pub fn bidder_model(&self) -> &PartnerModel {
-        &self.models[self.auction.current_player().idx()]
+    pub fn bidder_hand(&self) -> &HandModel {
+        &self.hands[self.auction.current_player().idx()]
     }
 
-    pub fn partner_model(&self) -> &PartnerModel {
-        &self.models[self.auction.current_player().partner().idx()]
+    pub fn partner_hand(&self) -> &HandModel {
+        &self.hands[self.auction.current_player().partner().idx()]
     }
 
-    pub fn lho_model(&self) -> &PartnerModel {
-        &self.models[self.auction.current_player().lho().idx()]
+    pub fn lho_hand(&self) -> &HandModel {
+        &self.hands[self.auction.current_player().lho().idx()]
     }
 
-    pub fn rho_model(&self) -> &PartnerModel {
-        &self.models[self.auction.current_player().rho().idx()]
+    pub fn rho_hand(&self) -> &HandModel {
+        &self.hands[self.auction.current_player().rho().idx()]
     }
 
     /// Analyze the auction to build models of all four hands
     pub fn from_auction(auction: &Auction) -> Self {
-        let mut models: [PartnerModel; 4] = Default::default();
+        let mut hands: [HandModel; 4] = Default::default();
         let mut current_auction = Auction::new(auction.dealer);
 
         for (position, call) in auction.iter() {
             let context = Self {
                 auction: current_auction.clone(),
-                models: models.clone(),
+                hands: hands.clone(),
             };
 
             if let Some(semantics) = CallInterpreter::interpret(&context, call) {
                 for constraint in semantics.shows {
-                    models[position.idx()].apply_constraint(constraint);
+                    hands[position.idx()].apply_constraint(constraint);
                 }
             }
 
@@ -56,7 +56,7 @@ impl AuctionModel {
 
         Self {
             auction: auction.clone(),
-            models,
+            hands,
         }
     }
 }

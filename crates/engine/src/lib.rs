@@ -3,7 +3,7 @@ mod nbk;
 mod rules;
 
 pub use nbk::{select_bid, select_bid_with_trace};
-pub use nbk::{AuctionModel, BidTrace, CallSemantics, HandConstraint, PartnerModel};
+pub use nbk::{AuctionModel, BidTrace, CallSemantics, HandConstraint, HandModel};
 
 use serde::Serialize;
 use types::auction::Auction;
@@ -56,11 +56,11 @@ pub fn get_interpretations(
         .map(|call| {
             let semantics = nbk::CallInterpreter::interpret(&auction_model, &call);
             let description = if let Some(semantics) = &semantics {
-                let mut bidder_model = auction_model.bidder_model().clone();
+                let mut bidder_hand = auction_model.bidder_hand().clone();
                 for constraint in &semantics.shows {
-                    bidder_model.apply_constraint(*constraint);
+                    bidder_hand.apply_constraint(*constraint);
                 }
-                bidder_model.to_string()
+                bidder_hand.to_string()
             } else {
                 String::new()
             };
@@ -139,15 +139,15 @@ pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
                 .find(|s| s.satisfied && Some(s.call) == trace.selected_call)
                 .expect("No satisfied step found for selected call");
 
-            let mut bidder_model = trace.auction_model.bidder_model().clone();
+            let mut bidder_hand = trace.auction_model.bidder_hand().clone();
             for constraint in &step.semantics.shows {
-                bidder_model.apply_constraint(*constraint);
+                bidder_hand.apply_constraint(*constraint);
             }
 
             CallInterpretation {
                 call_name: call.render(),
                 rule_name: step.semantics.rule_name.clone(),
-                description: bidder_model.to_string(),
+                description: bidder_hand.to_string(),
             }
         }
         None => {
@@ -155,7 +155,7 @@ pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
             CallInterpretation {
                 call_name: "P".into(),
                 rule_name: "Pass (Limit)".into(),
-                description: auction_model.bidder_model().to_string(),
+                description: auction_model.bidder_hand().to_string(),
             }
         }
     }

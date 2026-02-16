@@ -21,32 +21,28 @@ use crate::dsl::shows::ShowRuleOfFifteen;
 use types::Strain;
 
 bidding_rule! {
-    struct Strong2C;
-    name: "Strong 2C Opening",
+    Strong2COpening: "Strong 2C Opening",
     auction: [IsNotOpen],
     call: [IsCall(2, Strain::Clubs)],
     shows: [ShowMinHcp(22)]
 }
 
 bidding_rule! {
-    struct OneNoTrumpOpening;
-    name: "1NT Opening",
+    OneNotrumpOpening: "1NT Opening",
     auction: [IsNotOpen],
-    call: [IsCall(1, Strain::NoTrump)],
+    call: [IsCall(1, Strain::Notrump)],
     shows: [ShowHcpRange(15, 17), ShowBalanced]
 }
 
 bidding_rule! {
-    struct TwoNoTrumpOpening;
-    name: "2NT Opening",
+    TwoNotrumpOpening: "2NT Opening",
     auction: [IsNotOpen],
-    call: [IsCall(2, Strain::NoTrump)],
+    call: [IsCall(2, Strain::Notrump)],
     shows: [ShowHcpRange(20, 21), ShowBalanced]
 }
 
 bidding_rule! {
-    struct SuitOpening;
-    name: format!("{level}{strain} Opening"),
+    SuitedOpening: "Suited Opening",
     auction: [IsNotOpen, not_auction(IsSeat(4))],
     call: [IsLevel(1), IsSuit],
     shows: [ShowOpeningSuitLength, ShowMinHcp(12)],
@@ -54,32 +50,28 @@ bidding_rule! {
 }
 
 bidding_rule! {
-    struct SuitOpeningFourthSeat;
-    name: format!("{level}{strain} Opening (4th Seat)"),
+    FourthSeatSuitedOpening: "Suited Opening (4th Seat)",
     auction: [IsNotOpen, IsSeat(4)],
     call: [IsLevel(1), IsSuit],
     shows: [ShowOpeningSuitLength, ShowRuleOfFifteen]
 }
 
 bidding_rule! {
-    struct WeakTwo;
-    name: format_strain!("Weak 2{strain}"),
+    WeakTwoOpening: "Weak Two Opening",
     auction: [IsNotOpen, not_auction(IsSeat(4))],
     call: [IsLevel(2), IsSuit, NotCall(Box::new(IsStrain(Strain::Clubs)))],
     shows: [ShowMinSuitLength(6), ShowHcpRange(5, 10)],
 }
 
 bidding_rule! {
-    struct Preempt;
-    name: format!("Preemptive {level}{strain} Opening"),
+    PreemptiveOpening: "Preemptive Opening",
     auction: [IsNotOpen],
     call: [MinLevel(3), IsSuit],
     shows: [ShowPreemptLength, ShowMaxHcp(10)]
 }
 
 bidding_rule! {
-    struct PassOpening;
-    name: "Pass (Opening)",
+    PassOpening: "Pass (Opening)",
     auction: [IsNotOpen],
     call: [IsPass],
     shows: []
@@ -107,7 +99,7 @@ mod tests {
             level: 1,
             strain: Strain::Spades,
         };
-        let sem = SuitOpening.get_semantics(&model, &call).unwrap();
+        let sem = SuitedOpening.get_semantics(&model, &call).unwrap();
 
         assert!(sem
             .shows
@@ -121,7 +113,7 @@ mod tests {
             level: 2,
             strain: Strain::Spades,
         };
-        let sem = WeakTwo.get_semantics(&model, &call).unwrap();
+        let sem = WeakTwoOpening.get_semantics(&model, &call).unwrap();
 
         assert!(sem
             .shows

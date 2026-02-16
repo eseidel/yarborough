@@ -1,27 +1,26 @@
-//! Partner profile inference from auction history
+//! Hand profile inference from auction history
 
 use crate::nbk::HandConstraint;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use types::{Distribution, Shape, Suit};
 
-// TODO(eseidel): rename to HandModel.
-/// Inferred profile of partner's hand based on auction history
+/// Inferred profile of a hand based on auction history
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PartnerModel {
-    /// Minimum distribution partner has shown (minimum length in each suit)
+pub struct HandModel {
+    /// Minimum distribution shown (minimum length in each suit)
     pub min_distribution: Distribution,
-    /// Maximum distribution partner has shown (maximum length in each suit)
+    /// Maximum distribution shown (maximum length in each suit)
     pub max_distribution: Distribution,
-    /// Minimum HCP partner has shown, if any
+    /// Minimum HCP shown, if any
     pub min_hcp: Option<u8>,
-    /// Maximum HCP partner has shown, if any
+    /// Maximum HCP shown, if any
     pub max_hcp: Option<u8>,
     /// Maximum unbalancedness allowed (max shape)
     pub max_shape: Option<Shape>,
 }
 
-impl Default for PartnerModel {
+impl Default for HandModel {
     fn default() -> Self {
         Self {
             min_distribution: Distribution::default(),
@@ -33,7 +32,7 @@ impl Default for PartnerModel {
     }
 }
 
-impl PartnerModel {
+impl HandModel {
     pub fn apply_constraint(&mut self, constraint: HandConstraint) {
         match constraint {
             HandConstraint::MinHcp(hcp) => self.min_hcp = Some(update_min(self.min_hcp, hcp)),
@@ -50,7 +49,7 @@ impl PartnerModel {
                 self.max_shape = Some(update_shape_max(self.max_shape, shape));
             }
             HandConstraint::RuleOfTwenty | HandConstraint::RuleOfFifteen => {
-                // Complex constraints not currently tracked in partner model
+                // Complex constraints not currently tracked in hand model
             }
         }
     }
@@ -72,7 +71,7 @@ impl PartnerModel {
     }
 }
 
-impl fmt::Display for PartnerModel {
+impl fmt::Display for HandModel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut parts = Vec::new();
 
@@ -148,7 +147,7 @@ mod tests {
     fn test_empty_auction() {
         let auction = Auction::new(Position::South);
         let auction_model = AuctionModel::from_auction(&auction);
-        let model = auction_model.partner_model().clone();
+        let model = auction_model.partner_hand().clone();
 
         assert_eq!(model.min_hcp, None);
         assert_eq!(model.max_hcp, None);
@@ -163,13 +162,13 @@ mod tests {
             vec![
                 Call::Bid {
                     level: 1,
-                    strain: Strain::NoTrump,
+                    strain: Strain::Notrump,
                 },
                 Call::Pass, // East
             ],
         );
         let auction_model = AuctionModel::from_auction(&auction);
-        let model = auction_model.partner_model().clone();
+        let model = auction_model.partner_hand().clone();
 
         assert_eq!(model.min_hcp, Some(15));
         assert_eq!(model.max_hcp, Some(17));
@@ -189,7 +188,7 @@ mod tests {
             ],
         );
         let auction_model = AuctionModel::from_auction(&auction);
-        let model = auction_model.partner_model().clone();
+        let model = auction_model.partner_hand().clone();
 
         assert_eq!(model.min_hcp, Some(12));
         assert_eq!(model.min_length(Suit::Spades), 5);
@@ -217,10 +216,10 @@ mod tests {
         );
 
         let auction_model = AuctionModel::from_auction(&auction);
-        let model = auction_model.partner_model().clone();
+        let model = auction_model.partner_hand().clone();
         // Partner (South) bid 1H — should show hearts
         assert!(model.has_shown_suit(Suit::Hearts));
-        // North's own 1S bid shouldn't appear in partner model
+        // North's own 1S bid shouldn't appear in hand model
         assert!(!model.has_shown_suit(Suit::Spades));
     }
 
@@ -238,7 +237,7 @@ mod tests {
             ],
         );
         let auction_model = AuctionModel::from_auction(&auction);
-        let model = auction_model.partner_model().clone();
+        let model = auction_model.partner_hand().clone();
 
         assert_eq!(model.min_length(Suit::Diamonds), 6);
         assert_eq!(model.min_hcp, Some(5));
@@ -261,14 +260,14 @@ mod tests {
         );
 
         let auction_model = AuctionModel::from_auction(&auction);
-        let model = auction_model.partner_model().clone();
+        let model = auction_model.partner_hand().clone();
         // Partner (East) only passed — no suit info should be present
         assert!(!model.has_shown_suit(Suit::Clubs));
     }
 
     #[test]
     fn test_apply_constraint() {
-        let mut model = PartnerModel::default();
+        let mut model = HandModel::default();
 
         model.apply_constraint(HandConstraint::MinHcp(10));
         assert_eq!(model.min_hcp, Some(10));
@@ -310,7 +309,7 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let mut model = PartnerModel::default();
+        let mut model = HandModel::default();
         // Initial state: ? hcp (suits are unknown and thus omitted)
         assert_eq!(model.to_string(), "? hcp");
 
@@ -320,7 +319,7 @@ mod tests {
         model.apply_constraint(HandConstraint::MinLength(Suit::Clubs, 4));
         assert_eq!(model.to_string(), "10+ hcp, 4+♣️");
 
-        let mut model2 = PartnerModel::default();
+        let mut model2 = HandModel::default();
         model2.apply_constraint(HandConstraint::MinHcp(15));
         model2.apply_constraint(HandConstraint::MaxHcp(17));
         model2.apply_constraint(HandConstraint::MinLength(Suit::Clubs, 2));
@@ -333,7 +332,7 @@ mod tests {
         model2.apply_constraint(HandConstraint::MaxLength(Suit::Spades, 3));
         assert_eq!(model2.to_string(), "15-17 hcp, 2-5♣️ 2-5♦️ 2-5❤️ 2-3♠️");
 
-        let mut model3 = PartnerModel::default();
+        let mut model3 = HandModel::default();
         model3.apply_constraint(HandConstraint::MaxHcp(5));
         model3.apply_constraint(HandConstraint::MaxLength(Suit::Spades, 4));
         assert_eq!(model3.to_string(), "0-5 hcp, 0-4♠️");

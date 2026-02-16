@@ -7,16 +7,14 @@ use crate::dsl::shows::{ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinSuitLengt
 use types::Strain;
 
 bidding_rule! {
-    struct OneLevelOvercall;
-    name: "Overcall",
+    OneLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveNotBid],
     call: [IsLevel(1), IsSuit, OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(8)]
 }
 
 bidding_rule! {
-    struct TwoLevelOvercall;
-    name: "Overcall",
+    TwoLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveNotBid],
     call: [IsLevel(2), IsSuit, not_call(IsJump), OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
@@ -24,24 +22,21 @@ bidding_rule! {
 
 // TODO: Add honor concentration constraint — most HCP should be in the bid suit.
 bidding_rule! {
-    struct WeakJumpOvercall;
-    name: "Weak Jump Overcall",
+    WeakJumpOvercall: "Weak Jump Overcall",
     auction: [TheyOpened, WeHaveNotBid],
     call: [IsSuit, IsJump, OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(6), ShowHcpRange(5, 10)]
 }
 
 bidding_rule! {
-    struct OneNtOvercall;
-    name: "1NT Overcall",
+    OneNotrumpOvercall: "Notrump Overcall",
     auction: [TheyOpened, WeHaveNotBid],
-    call: [IsCall(1, Strain::NoTrump)],
+    call: [IsCall(1, Strain::Notrump)],
     shows: [ShowHcpRange(15, 18), ShowBalanced]
 }
 
 bidding_rule! {
-    struct PassOvercall;
-    name: "Pass (Overcall Position)",
+    PassOvercall: "Pass (Overcall)",
     auction: [TheyOpened],
     call: [IsPass],
     shows: []
@@ -112,9 +107,9 @@ mod tests {
         let model = make_overcall_auction(Strain::Clubs);
         let call = Call::Bid {
             level: 1,
-            strain: Strain::NoTrump,
+            strain: Strain::Notrump,
         };
-        let sem = OneNtOvercall.get_semantics(&model, &call).unwrap();
+        let sem = OneNotrumpOvercall.get_semantics(&model, &call).unwrap();
 
         assert!(sem.shows.contains(&HandConstraint::MinHcp(15)));
         assert!(sem.shows.contains(&HandConstraint::MaxHcp(18)));
@@ -253,11 +248,11 @@ mod tests {
         // N opens 1S — from East's perspective, RHO (North) has shown spades
         let model = make_overcall_auction(Strain::Spades);
         assert!(
-            model.rho_model().has_shown_suit(Suit::Spades),
+            model.rho_hand().has_shown_suit(Suit::Spades),
             "RHO should have shown spades after opening 1S"
         );
         assert!(
-            !model.rho_model().has_shown_suit(Suit::Hearts),
+            !model.rho_hand().has_shown_suit(Suit::Hearts),
             "RHO should not have shown hearts"
         );
     }

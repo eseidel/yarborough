@@ -78,7 +78,7 @@ impl Shows for ShowSufficientValues {
             PointRanges::min_points_for_nt_bid(level)
         };
 
-        let partner_min = auction.partner_model().min_hcp.unwrap_or(0);
+        let partner_min = auction.partner_hand().min_hcp.unwrap_or(0);
         let needed_hcp = min_combined_points.saturating_sub(partner_min);
 
         vec![HandConstraint::MinHcp(needed_hcp)]
@@ -109,15 +109,6 @@ impl Shows for ShowPreemptLength {
             }
         }
         vec![]
-    }
-}
-
-#[derive(Debug)]
-#[allow(dead_code)]
-pub struct ShowRuleOfTwenty;
-impl Shows for ShowRuleOfTwenty {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![HandConstraint::RuleOfTwenty]
     }
 }
 
@@ -159,7 +150,7 @@ impl Shows for ShowSupportValues {
             const SUPPORT_VALUES: [u8; 7] = [18, 18, 22, 25, 28, 33, 37];
             let min_combined_points = SUPPORT_VALUES[*level as usize - 1];
             let needed_hcp =
-                min_combined_points.saturating_sub(auction.partner_model().min_hcp.unwrap_or(0));
+                min_combined_points.saturating_sub(auction.partner_hand().min_hcp.unwrap_or(0));
             return vec![HandConstraint::MinHcp(needed_hcp)];
         }
         vec![]
@@ -173,7 +164,7 @@ impl Shows for ShowSupportLength {
         if let Call::Bid { strain, .. } = call {
             if let Some(suit) = strain.to_suit() {
                 let needed_len = auction
-                    .partner_model()
+                    .partner_hand()
                     .length_needed_to_reach_target(suit, 8);
                 return vec![HandConstraint::MinLength(suit, needed_len)];
             }
@@ -187,7 +178,7 @@ pub struct ShowBetterContractIsRemote;
 impl Shows for ShowBetterContractIsRemote {
     fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
         if let Call::Pass = call {
-            let partner_max_hcp = auction.partner_model().max_hcp.unwrap_or(0); // Should be Some due to Predicate
+            let partner_max_hcp = auction.partner_hand().max_hcp.unwrap_or(0); // Should be Some due to Predicate
             let our_partnership = auction.auction.current_partnership();
             let contract = if let Some(c) = auction.auction.current_contract() {
                 if c.belongs_to(our_partnership) {

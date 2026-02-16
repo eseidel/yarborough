@@ -1,7 +1,7 @@
 use crate::bidding_rule;
 use crate::dsl::auction_predicates::{PartnerLimited, WeOpened};
 use crate::dsl::call_predicates::{
-    not_call, BidderHasShownSuit, IsLevel, IsMajorSuit, IsMinorSuit, IsNewSuit, IsNoTrump, IsPass,
+    not_call, BidderHasShownSuit, IsLevel, IsMajorSuit, IsMinorSuit, IsNewSuit, IsNotrump, IsPass,
     IsSuit, MinLevel, PartnerHasShownSuit,
 };
 use crate::dsl::shows::{
@@ -10,56 +10,49 @@ use crate::dsl::shows::{
 };
 
 bidding_rule! {
-    struct NewSuitAtLevelOne;
-    name: "New Suit at Level One",
+    NewSuitAtLevelOne: "New Suit",
     auction: [WeOpened],
     call: [IsLevel(1), IsNewSuit],
     shows: [ShowMinSuitLength(4), ShowMinHcp(6)]
 }
 
 bidding_rule! {
-    struct OneNotrumpResponse;
-    name: "Notrump Response at Level 1",
+    OneNotrumpResponse: "Notrump Response",
     auction: [WeOpened],
-    call: [IsNoTrump],
+    call: [IsNotrump],
     shows: [ShowMinHcp(6)]
 }
 
 bidding_rule! {
-    struct NewMajorAtLevelTwo;
-    name: "New Major at Level Two",
+    NewMajorAtLevelTwo: "New Major",
     auction: [WeOpened],
     call: [IsLevel(2), IsNewSuit, IsMajorSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
 }
 
 bidding_rule! {
-    struct NewMinorAtLevelTwo;
-    name: "New Minor at Level Two",
+    NewMinorAtLevelTwo: "New Minor",
     auction: [WeOpened],
     call: [IsLevel(2), IsNewSuit, IsMinorSuit],
     shows: [ShowMinSuitLength(4), ShowMinHcp(10)]
 }
 
 bidding_rule! {
-    struct SupportPartner;
-    name: "Support Partner",
+    SupportPartner: "Support Partner",
     auction: [WeOpened],
     call: [IsSuit, PartnerHasShownSuit],
     shows: [ShowSupportLength, ShowSupportValues]
 }
 
 bidding_rule! {
-    struct NaturalNotrump;
-    name: "Natural Notrump",
+    NaturalNotrump: "Natural Notrump",
     auction: [WeOpened],
-    call: [MinLevel(2), IsNoTrump],
+    call: [MinLevel(2), IsNotrump],
     shows: [ShowSemiBalanced, ShowSufficientValues]
 }
 
 bidding_rule! {
-    struct RebidOwnSuit;
-    name: "Rebid Own Suit",
+    RebidOwnSuit: "Rebid Suit",
     auction: [WeOpened],
     call: [
         IsSuit,
@@ -70,8 +63,7 @@ bidding_rule! {
 }
 
 bidding_rule! {
-    struct BetterContractRemote;
-    name: "Better Contract Remote",
+    BetterContractRemote: "Pass (Better Contract Remote)",
     auction: [WeOpened, PartnerLimited],
     call: [IsPass],
     shows: [ShowBetterContractIsRemote]

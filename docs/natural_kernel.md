@@ -11,28 +11,23 @@ The NBK is designed to respond to the auction state at the start of every turn. 
 
 ## 2. State Management
 
-### 2.1. Hand Model (`HandModel`)
+### 2.1. Hand Profile (`HandModel`)
 
-This object is derived from the caller's hand.
+A `HandModel` represents the inferred characteristics of a player's hand based on their bidding history. The `AuctionModel` maintains a `HandModel` for each of the four positions.
 
-- **`HCP` (High Card Points):** A = 4, K = 3, Q = 2, J = 1.
-- **`Lengths`:** Length of each suit (e.g., `{Spades: 5, Hearts: 3...}`).
-- **`Shape`:** Enum [`Balanced`, `SemiBalanced`, `Unbalanced`].
-  - _Definition:_ `Balanced` = No singletons, no voids, max one doubleton.
+- **`MinHCP`**: The lower bound on the number of HCP shown, if any.
+- **`MaxHCP`**: The upper bound on the number of HCP shown, if any.
+- **`MinLengths`**: The minimum length shown in each suit.
+- **`MaxLengths`**: The maximum length shown in each suit.
+- **`MaxUnbalancedness`**: The maximum allowed shape (Balanced, SemiBalanced, Unbalanced).
 
-### 2.2. Partner Model (`PartnerModel`)
+### 2.2. Auction Model (`AuctionModel`)
 
-This object is derived from the auction state and represents the partner's contribution to the auction.
+This object is derived from the auction state and represents the current status of the auction and all players.
 
-- **`MinLengths`**: The minimum length partner has shown in each suit in the auction.
-- **`MinHCP`**: The lower bound on the number of HCP partner has shown in the auction, if any.
-- **`MaxHCP`**: The upper bound on the number of HCP partner has shown in the auction, if any.
-
-### 2.3. Auction Model (`AuctionModel`)
-
-This object is derived from the auction state and represents constraints on the auction.
-
-- **`IsForcing`**: Boolean. True if the previous bid demands a response (e.g., New Suit by opener).
+- **`bidder_hand()`**: The `HandModel` of the current player (what partner knows about us).
+- **`partner_hand()`**: The `HandModel` of the partner (what we know about partner).
+- **`lho_hand()` / `rho_hand()`**: The `HandModel` of the opponents.
 
 ---
 
@@ -101,7 +96,7 @@ Iterate through all 4 suits. A suit is a valid **Discovery Bid** if:
 - **Forcing Status:** **Not Forcing** (unless the bid is a "Game Force" convention).
 
 **Logic Implementation:**
-Determine the **Target Level** by summing `Hand.HCP + Partner.MinHCP`:
+Determine the **Target Level** by summing `Hand.HCP + Partner.Hand.MinHCP`:
 
 - **< 25:** Partscore Zone
 - **25–29:** Game Zone

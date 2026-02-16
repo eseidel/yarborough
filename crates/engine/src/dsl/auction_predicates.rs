@@ -47,7 +47,7 @@ impl AuctionPredicate for IsNotOpen {
 pub struct PartnerLimited;
 impl AuctionPredicate for PartnerLimited {
     fn check(&self, model: &AuctionModel) -> bool {
-        model.partner_model().max_hcp.is_some()
+        model.partner_hand().max_hcp.is_some()
     }
 }
 

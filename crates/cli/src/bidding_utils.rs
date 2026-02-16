@@ -1,4 +1,4 @@
-use engine::{BidTrace, PartnerModel};
+use engine::{BidTrace, HandModel};
 use std::collections::HashMap;
 use std::fmt::Write;
 use types::auction::Auction;
@@ -146,7 +146,7 @@ pub fn format_table_header() -> String {
     out
 }
 
-pub fn format_partner_model(model: &PartnerModel) -> String {
+pub fn format_hand_model(model: &HandModel) -> String {
     format!("  {}\n", model)
 }
 
@@ -159,7 +159,7 @@ pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {
     write!(
         out,
         "{}",
-        format_partner_model(trace.auction_model.bidder_model())
+        format_hand_model(trace.auction_model.bidder_hand())
     )
     .unwrap();
 
@@ -167,7 +167,7 @@ pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {
     write!(
         out,
         "{}",
-        format_partner_model(trace.auction_model.partner_model())
+        format_hand_model(trace.auction_model.partner_hand())
     )
     .unwrap();
 

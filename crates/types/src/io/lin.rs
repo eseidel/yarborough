@@ -84,7 +84,7 @@ fn export_call(call: Call) -> String {
                 Strain::Diamonds => "D",
                 Strain::Hearts => "H",
                 Strain::Spades => "S",
-                Strain::NoTrump => "N",
+                Strain::Notrump => "N",
             };
             format!("{}{}", level, s)
         }
@@ -219,7 +219,7 @@ mod tests {
             import_call("1N"),
             Some(Call::Bid {
                 level: 1,
-                strain: Strain::NoTrump
+                strain: Strain::Notrump
             })
         );
         assert_eq!(import_call("p"), Some(Call::Pass));

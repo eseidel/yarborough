@@ -29,7 +29,7 @@ impl Contract {
 
     pub fn is_game(&self) -> bool {
         match self.strain {
-            Strain::NoTrump => self.level >= 3,
+            Strain::Notrump => self.level >= 3,
             Strain::Hearts | Strain::Spades => self.level >= 4,
             Strain::Clubs | Strain::Diamonds => self.level >= 5,
         }

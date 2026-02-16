@@ -8,7 +8,7 @@ pub enum Strain {
     Diamonds,
     Hearts,
     Spades,
-    NoTrump,
+    Notrump,
 }
 
 impl Strain {
@@ -17,7 +17,7 @@ impl Strain {
         Strain::Diamonds,
         Strain::Hearts,
         Strain::Spades,
-        Strain::NoTrump,
+        Strain::Notrump,
     ];
 
     pub fn idx(self) -> usize {
@@ -26,7 +26,7 @@ impl Strain {
             Strain::Diamonds => 1,
             Strain::Hearts => 2,
             Strain::Spades => 3,
-            Strain::NoTrump => 4,
+            Strain::Notrump => 4,
         }
     }
 
@@ -36,7 +36,7 @@ impl Strain {
             Strain::Diamonds => 'D',
             Strain::Hearts => 'H',
             Strain::Spades => 'S',
-            Strain::NoTrump => 'N',
+            Strain::Notrump => 'N',
         }
     }
 
@@ -46,7 +46,7 @@ impl Strain {
             'D' => Some(Strain::Diamonds),
             'H' => Some(Strain::Hearts),
             'S' => Some(Strain::Spades),
-            'N' => Some(Strain::NoTrump),
+            'N' => Some(Strain::Notrump),
             _ => None,
         }
     }
@@ -66,7 +66,7 @@ impl Strain {
             Strain::Diamonds => Some(Suit::Diamonds),
             Strain::Hearts => Some(Suit::Hearts),
             Strain::Spades => Some(Suit::Spades),
-            Strain::NoTrump => None,
+            Strain::Notrump => None,
         }
     }
 
@@ -82,7 +82,7 @@ impl Strain {
 impl fmt::Display for Strain {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Strain::NoTrump => write!(f, "NT"),
+            Strain::Notrump => write!(f, "NT"),
             _ => write!(f, "{}", self.to_char()),
         }
     }
@@ -95,6 +95,6 @@ mod tests {
     #[test]
     fn test_strain_parsing() {
         assert_eq!(Strain::from_char('S'), Some(Strain::Spades));
-        assert_eq!(Strain::from_char('N'), Some(Strain::NoTrump));
+        assert_eq!(Strain::from_char('N'), Some(Strain::Notrump));
     }
 }

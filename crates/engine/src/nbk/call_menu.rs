@@ -93,14 +93,14 @@ impl CallMenu {
                 for constraint in &semantics.shows {
                     match *constraint {
                         HandConstraint::MinLength(suit, now_shown) => {
-                            if auction_model.partner_model().has_shown_suit(suit) {
+                            if auction_model.partner_hand().has_shown_suit(suit) {
                                 if suit.is_major() {
                                     best_purpose = best_purpose.min(CallPurpose::SupportMajors);
                                 } else if suit.is_minor() {
                                     best_purpose = best_purpose.min(CallPurpose::SupportMinors);
                                 }
                             } else {
-                                let already_known = auction_model.bidder_model().min_length(suit);
+                                let already_known = auction_model.bidder_hand().min_length(suit);
                                 if now_shown > already_known {
                                     if already_known >= 4 {
                                         best_purpose = best_purpose.min(CallPurpose::RebidSuit);
@@ -116,12 +116,12 @@ impl CallMenu {
                             did_show_length = true;
                         }
                         HandConstraint::MinHcp(now_shown) => {
-                            if now_shown > auction_model.bidder_model().min_hcp.unwrap_or(0) {
+                            if now_shown > auction_model.bidder_hand().min_hcp.unwrap_or(0) {
                                 did_characterize_strength = true;
                             }
                         }
                         HandConstraint::MaxHcp(now_shown) => {
-                            if now_shown < auction_model.bidder_model().max_hcp.unwrap_or(40) {
+                            if now_shown < auction_model.bidder_hand().max_hcp.unwrap_or(40) {
                                 did_characterize_strength = true;
                             }
                         }
