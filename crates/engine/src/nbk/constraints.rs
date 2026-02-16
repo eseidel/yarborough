@@ -1,3 +1,4 @@
+// cspell:ignore Jxxx
 //! Hand constraints for NBK bidding rules
 
 use serde::{Deserialize, Serialize};
