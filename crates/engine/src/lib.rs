@@ -1,6 +1,9 @@
-pub mod dsl;
-pub mod nbk;
-pub mod rules;
+mod dsl;
+mod nbk;
+mod rules;
+
+pub use nbk::{select_bid, select_bid_with_trace};
+pub use nbk::{AuctionModel, BidTrace, CallSemantics, HandConstraint, PartnerModel};
 
 use serde::Serialize;
 use types::auction::Auction;
