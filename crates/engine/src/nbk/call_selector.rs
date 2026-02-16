@@ -2,7 +2,8 @@ use crate::dsl::planner::GenuinePlanner;
 use crate::nbk::call_menu::{CallMenu, CallMenuItem};
 use crate::nbk::trace::{BidTrace, SelectionStep};
 use crate::nbk::AuctionModel;
-use types::{Call, Hand};
+use crate::nbk::HandConstraint;
+use types::{Call, Hand, Suit};
 
 /// Call selector implementing the NBK priority stack
 pub struct CallSelector;
@@ -72,8 +73,398 @@ impl CallSelector {
     }
 }
 
-/// Select the best item from a group of satisfied items
-fn select_best_from_group(items: &[CallMenuItem], _hand: &Hand) -> Option<Call> {
-    // TODO: Decide which call best satisfies the hand.
-    items.first().map(|item| item.call)
+/// A strategy for choosing among satisfied calls in a group.
+/// Returns `None` if it doesn't apply, deferring to the next chooser.
+trait GroupChooser {
+    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call>;
+}
+
+/// Select the best item from a group of satisfied items.
+///
+/// Consults choosers in priority order; first to return `Some` wins.
+fn select_best_from_group(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+    let choosers: &[&dyn GroupChooser] = &[
+        &UniqueLongestSuit,
+        &PreferHigherMinor,
+        &PreferHigherWithFivePlus,
+        &FirstCall,
+    ];
+    choosers.iter().find_map(|c| c.choose(items, hand))
+}
+
+/// Pick the call showing a strictly longest suit. Returns `None` if there's
+/// a tie or no items show a suit.
+struct UniqueLongestSuit;
+
+impl GroupChooser for UniqueLongestSuit {
+    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+        let mut best: Option<(&CallMenuItem, u8)> = None;
+        let mut tied = false;
+
+        for item in items {
+            let Some((_, len)) = longest_shown_suit(item, hand) else {
+                continue;
+            };
+            match &best {
+                Some((_, best_len)) if len > *best_len => {
+                    best = Some((item, len));
+                    tied = false;
+                }
+                Some((_, best_len)) if len == *best_len => {
+                    tied = true;
+                }
+                None => {
+                    best = Some((item, len));
+                }
+                _ => {}
+            }
+        }
+
+        if tied {
+            return None;
+        }
+        best.map(|(item, _)| item.call)
+    }
+}
+
+/// With 4+ card equal-length minors at level 1, prefer diamonds over clubs.
+struct PreferHigherMinor;
+
+impl GroupChooser for PreferHigherMinor {
+    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+        let minor_items: Vec<_> = items
+            .iter()
+            .filter(|item| is_level_1(&item.call))
+            .filter_map(|item| {
+                let (suit, len) = longest_shown_suit(item, hand)?;
+                if len >= 4 && suit.is_minor() {
+                    Some((item, suit, len))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if !has_tied_distinct_suits(&minor_items) {
+            return None;
+        }
+
+        // Pick the highest-ranking minor (diamonds > clubs).
+        minor_items
+            .iter()
+            .max_by_key(|(_, suit, _)| *suit as u8)
+            .map(|(item, _, _)| item.call)
+    }
+}
+
+/// With 5+ card equal-length suits at level 1, prefer the higher-ranking suit.
+/// SAYC: "with equal length suits of 5 or 6 cards each, bid the higher
+/// ranking suit first." This is really an opening rule.
+struct PreferHigherWithFivePlus;
+
+impl GroupChooser for PreferHigherWithFivePlus {
+    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+        let suit_items: Vec<_> = items
+            .iter()
+            .filter(|item| is_level_1(&item.call))
+            .filter_map(|item| {
+                let (suit, len) = longest_shown_suit(item, hand)?;
+                if len >= 5 {
+                    Some((item, suit, len))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if !has_tied_distinct_suits(&suit_items) {
+            return None;
+        }
+
+        suit_items
+            .iter()
+            .max_by_key(|(_, suit, _)| *suit as u8)
+            .map(|(item, _, _)| item.call)
+    }
+}
+
+/// Fallback: pick the first (lowest) call in the group.
+struct FirstCall;
+
+impl GroupChooser for FirstCall {
+    fn choose(&self, items: &[CallMenuItem], _hand: &Hand) -> Option<Call> {
+        items.first().map(|item| item.call)
+    }
+}
+
+/// Check that candidates have 2+ items, all at the same length, with at
+/// least two distinct suits.
+fn has_tied_distinct_suits(candidates: &[(&CallMenuItem, Suit, u8)]) -> bool {
+    if candidates.len() < 2 {
+        return false;
+    }
+    let len = candidates[0].2;
+    if !candidates.iter().all(|(_, _, l)| *l == len) {
+        return false;
+    }
+    let first_suit = candidates[0].1;
+    candidates.iter().any(|(_, s, _)| *s != first_suit)
+}
+
+/// Find the longest suit shown by a call's semantics, measured by the hand's
+/// actual length. A bid may show multiple suits via multiple MinLength
+/// constraints; this returns the suit where the hand is longest.
+fn longest_shown_suit(item: &CallMenuItem, hand: &Hand) -> Option<(Suit, u8)> {
+    item.semantics
+        .shows
+        .iter()
+        .filter_map(|c| match c {
+            HandConstraint::MinLength(suit, _) => {
+                let len = hand.length(*suit);
+                Some((*suit, len))
+            }
+            _ => None,
+        })
+        .max_by_key(|(_, len)| *len)
+}
+
+fn is_level_1(call: &Call) -> bool {
+    matches!(call, Call::Bid { level: 1, .. })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::nbk::CallSemantics;
+    use types::Strain;
+
+    /// Create a CallMenuItem showing MinLength for the bid's suit.
+    fn make_item(level: u8, strain: Strain, min_length: u8) -> CallMenuItem {
+        let suit = strain.to_suit().expect("test items must be suit bids");
+        CallMenuItem {
+            call: Call::Bid { level, strain },
+            semantics: CallSemantics {
+                shows: vec![HandConstraint::MinLength(suit, min_length)],
+                rule_name: "test".to_string(),
+                planner: None,
+            },
+        }
+    }
+
+    /// Create a CallMenuItem showing MinLength for multiple suits.
+    fn make_multi_suit_item(level: u8, strain: Strain, suits: &[(Suit, u8)]) -> CallMenuItem {
+        CallMenuItem {
+            call: Call::Bid { level, strain },
+            semantics: CallSemantics {
+                shows: suits
+                    .iter()
+                    .map(|(s, l)| HandConstraint::MinLength(*s, *l))
+                    .collect(),
+                rule_name: "test".to_string(),
+                planner: None,
+            },
+        }
+    }
+
+    /// Create a CallMenuItem with no MinLength constraints (e.g., NT or Pass).
+    fn make_no_suit_item(level: u8, strain: Strain) -> CallMenuItem {
+        CallMenuItem {
+            call: Call::Bid { level, strain },
+            semantics: CallSemantics {
+                shows: vec![],
+                rule_name: "test".to_string(),
+                planner: None,
+            },
+        }
+    }
+
+    #[test]
+    fn test_four_four_minors_prefers_diamonds() {
+        // C.D.H.S: 4 clubs, 4 diamonds, 3 hearts, 2 spades
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let items = vec![
+            make_item(1, Strain::Clubs, 4),
+            make_item(1, Strain::Diamonds, 4),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Diamonds
+            })
+        );
+    }
+
+    #[test]
+    fn test_three_three_minors_prefers_clubs() {
+        // C.D.H.S: 3 clubs, 3 diamonds, 4 hearts, 3 spades
+        let hand = Hand::parse("752.AKQ.QT76.K98");
+        let items = vec![
+            make_item(1, Strain::Clubs, 3),
+            make_item(1, Strain::Diamonds, 3),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Clubs
+            })
+        );
+    }
+
+    #[test]
+    fn test_longer_suit_preferred() {
+        // C.D.H.S: 3 clubs, 5 diamonds, 3 hearts, 2 spades
+        let hand = Hand::parse("K53.8JQ67.K76.AT");
+        let items = vec![
+            make_item(1, Strain::Clubs, 4),
+            make_item(1, Strain::Diamonds, 4),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Diamonds
+            })
+        );
+    }
+
+    #[test]
+    fn test_same_suit_different_levels_prefers_lower() {
+        // C.D.H.S: 6 clubs, 2 diamonds, 4 hearts, 1 spade
+        let hand = Hand::parse("AQJ754.K7.QJ72.6");
+        let items = vec![
+            make_item(3, Strain::Clubs, 6),
+            make_item(5, Strain::Clubs, 6),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 3,
+                strain: Strain::Clubs
+            })
+        );
+    }
+
+    #[test]
+    fn test_four_four_majors_bids_up_the_line() {
+        // C.D.H.S: 2 clubs, 3 diamonds, 4 hearts, 4 spades
+        let hand = Hand::parse("42.652.8643.KQJ4");
+        let items = vec![
+            make_item(1, Strain::Hearts, 4),
+            make_item(1, Strain::Spades, 4),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Hearts
+            })
+        );
+    }
+
+    #[test]
+    fn test_five_five_majors_prefers_higher() {
+        // C.D.H.S: 2 clubs, 1 diamond, 5 hearts, 5 spades
+        let hand = Hand::parse("64.6.AK732.QJ854");
+        let items = vec![
+            make_item(1, Strain::Hearts, 5),
+            make_item(1, Strain::Spades, 5),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Spades
+            })
+        );
+    }
+
+    #[test]
+    fn test_minor_preference_only_at_level_1() {
+        // C.D.H.S: 4 clubs, 4 diamonds, 3 hearts, 2 spades
+        // At level 2, should preserve original order (clubs first).
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let items = vec![
+            make_item(2, Strain::Clubs, 4),
+            make_item(2, Strain::Diamonds, 4),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 2,
+                strain: Strain::Clubs
+            })
+        );
+    }
+
+    #[test]
+    fn test_multi_suit_bid_uses_longest() {
+        // C.D.H.S: 3 clubs, 2 diamonds, 5 hearts, 3 spades
+        // A bid showing both hearts(5) and spades(4) should use hearts length.
+        let hand = Hand::parse("K53.K7.QJ872.A96");
+        let items = vec![
+            make_item(1, Strain::Hearts, 4),
+            make_multi_suit_item(1, Strain::Spades, &[(Suit::Hearts, 4), (Suit::Spades, 4)]),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        // Both resolve to hearts length 5, so first wins (up the line).
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Hearts
+            })
+        );
+    }
+
+    #[test]
+    fn test_items_without_suit_constraints_skipped() {
+        // C.D.H.S: 4 clubs, 4 diamonds, 3 hearts, 2 spades
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let items = vec![
+            make_no_suit_item(1, Strain::Notrump),
+            make_item(1, Strain::Diamonds, 4),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Diamonds
+            })
+        );
+    }
+
+    #[test]
+    fn test_empty_group_returns_none() {
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let result = select_best_from_group(&[], &hand);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_all_no_suit_items_returns_first() {
+        // When no items show a suit, fall back to the first item.
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let items = vec![
+            make_no_suit_item(1, Strain::Notrump),
+            make_no_suit_item(2, Strain::Notrump),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Notrump
+            })
+        );
+    }
 }
