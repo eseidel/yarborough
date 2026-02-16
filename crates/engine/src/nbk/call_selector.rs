@@ -78,51 +78,60 @@ impl CallSelector {
 /// When multiple calls in a group are satisfied, prefer the one whose shown
 /// suit is longest in the hand. With equal length, generally preserve the
 /// original "up the line" ordering (cheapest bid first), except for
-/// equal-length minors with 4+ cards where SAYC prefers the higher-ranking
-/// minor (1D over 1C).
+/// equal-length minors with 4+ cards at level 1 where SAYC prefers the
+/// higher-ranking minor (1D over 1C).
 fn select_best_from_group(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
-    if items.is_empty() {
-        return None;
-    }
+    let mut best: Option<(&CallMenuItem, Suit, u8)> = None;
 
-    let mut best = &items[0];
-    let mut best_len = shown_suit_length(best, hand);
-
-    for item in &items[1..] {
-        let len = shown_suit_length(item, hand);
-        if len > best_len {
-            best = item;
-            best_len = len;
-        } else if len == best_len
-            && len >= 4
-            && shows_minor(item)
-            && shows_minor(best)
-            && shown_suit(item) != shown_suit(best)
-        {
-            // With 4-4 or 5-5 in different minors, prefer diamonds over clubs.
-            best = item;
+    for item in items {
+        let Some((suit, len)) = longest_shown_suit(item, hand) else {
+            continue;
+        };
+        if let Some((best_item, best_suit, best_len)) = &best {
+            if len > *best_len {
+                best = Some((item, suit, len));
+            } else if len == *best_len
+                && len >= 4
+                && is_level_1(&item.call)
+                && is_level_1(&best_item.call)
+                && suit.is_minor()
+                && best_suit.is_minor()
+                && suit != *best_suit
+            {
+                // With 4-4 or 5-5 in different minors at level 1, prefer
+                // diamonds over clubs.
+                best = Some((item, suit, len));
+            }
+        } else {
+            best = Some((item, suit, len));
         }
     }
 
-    Some(best.call)
+    // If no items showed a suit, fall back to the first item in the group.
+    // This handles calls like 1NT or Pass that don't have MinLength constraints.
+    best.map(|(item, _, _)| item.call)
+        .or_else(|| items.first().map(|item| item.call))
 }
 
-/// Extract the suit shown by a call's semantics (from MinLength constraints).
-fn shown_suit(item: &CallMenuItem) -> Option<Suit> {
-    item.semantics.shows.iter().find_map(|c| match c {
-        HandConstraint::MinLength(suit, _) => Some(*suit),
-        _ => None,
-    })
+/// Find the longest suit shown by a call's semantics, measured by the hand's
+/// actual length. A bid may show multiple suits via multiple MinLength
+/// constraints; this returns the suit where the hand is longest.
+fn longest_shown_suit(item: &CallMenuItem, hand: &Hand) -> Option<(Suit, u8)> {
+    item.semantics
+        .shows
+        .iter()
+        .filter_map(|c| match c {
+            HandConstraint::MinLength(suit, _) => {
+                let len = hand.length(*suit);
+                Some((*suit, len))
+            }
+            _ => None,
+        })
+        .max_by_key(|(_, len)| *len)
 }
 
-/// Get the hand's actual length in the suit shown by this call's semantics.
-fn shown_suit_length(item: &CallMenuItem, hand: &Hand) -> u8 {
-    shown_suit(item).map(|s| hand.length(s)).unwrap_or(0)
-}
-
-/// Whether a call's semantics show a minor suit.
-fn shows_minor(item: &CallMenuItem) -> bool {
-    shown_suit(item).is_some_and(|s| s.is_minor())
+fn is_level_1(call: &Call) -> bool {
+    matches!(call, Call::Bid { level: 1, .. })
 }
 
 #[cfg(test)]
@@ -131,13 +140,40 @@ mod tests {
     use crate::nbk::CallSemantics;
     use types::Strain;
 
-    /// Create a CallMenuItem that shows a MinLength constraint for the bid's suit.
+    /// Create a CallMenuItem showing MinLength for the bid's suit.
     fn make_item(level: u8, strain: Strain, min_length: u8) -> CallMenuItem {
         let suit = strain.to_suit().expect("test items must be suit bids");
         CallMenuItem {
             call: Call::Bid { level, strain },
             semantics: CallSemantics {
                 shows: vec![HandConstraint::MinLength(suit, min_length)],
+                rule_name: "test".to_string(),
+                planner: None,
+            },
+        }
+    }
+
+    /// Create a CallMenuItem showing MinLength for multiple suits.
+    fn make_multi_suit_item(level: u8, strain: Strain, suits: &[(Suit, u8)]) -> CallMenuItem {
+        CallMenuItem {
+            call: Call::Bid { level, strain },
+            semantics: CallSemantics {
+                shows: suits
+                    .iter()
+                    .map(|(s, l)| HandConstraint::MinLength(*s, *l))
+                    .collect(),
+                rule_name: "test".to_string(),
+                planner: None,
+            },
+        }
+    }
+
+    /// Create a CallMenuItem with no MinLength constraints (e.g., NT or Pass).
+    fn make_no_suit_item(level: u8, strain: Strain) -> CallMenuItem {
+        CallMenuItem {
+            call: Call::Bid { level, strain },
+            semantics: CallSemantics {
+                shows: vec![],
                 rule_name: "test".to_string(),
                 planner: None,
             },
@@ -230,6 +266,88 @@ mod tests {
             Some(Call::Bid {
                 level: 1,
                 strain: Strain::Hearts
+            })
+        );
+    }
+
+    #[test]
+    fn test_minor_preference_only_at_level_1() {
+        // C.D.H.S: 4 clubs, 4 diamonds, 3 hearts, 2 spades
+        // At level 2, should preserve original order (clubs first).
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let items = vec![
+            make_item(2, Strain::Clubs, 4),
+            make_item(2, Strain::Diamonds, 4),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 2,
+                strain: Strain::Clubs
+            })
+        );
+    }
+
+    #[test]
+    fn test_multi_suit_bid_uses_longest() {
+        // C.D.H.S: 3 clubs, 2 diamonds, 5 hearts, 3 spades
+        // A bid showing both hearts(5) and spades(4) should use hearts length.
+        let hand = Hand::parse("K53.K7.QJ872.A96");
+        let items = vec![
+            make_item(1, Strain::Hearts, 4),
+            make_multi_suit_item(1, Strain::Spades, &[(Suit::Hearts, 4), (Suit::Spades, 4)]),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        // Both resolve to hearts length 5, so first wins (up the line).
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Hearts
+            })
+        );
+    }
+
+    #[test]
+    fn test_items_without_suit_constraints_skipped() {
+        // C.D.H.S: 4 clubs, 4 diamonds, 3 hearts, 2 spades
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let items = vec![
+            make_no_suit_item(1, Strain::Notrump),
+            make_item(1, Strain::Diamonds, 4),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Diamonds
+            })
+        );
+    }
+
+    #[test]
+    fn test_empty_group_returns_none() {
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let result = select_best_from_group(&[], &hand);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_all_no_suit_items_returns_first() {
+        // When no items show a suit, fall back to the first item.
+        let hand = Hand::parse("Q642.764A.KQ9.6J");
+        let items = vec![
+            make_no_suit_item(1, Strain::Notrump),
+            make_no_suit_item(2, Strain::Notrump),
+        ];
+        let result = select_best_from_group(&items, &hand);
+        assert_eq!(
+            result,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Notrump
             })
         );
     }

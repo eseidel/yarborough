@@ -424,7 +424,7 @@ test_preemption:
   A9432.A8652.AKQ.:3S P:None: "FAIL: step 2, expected 4S, got P"
   864.AKQT6.A2.K83:3S P 4N P 5C P:None: "FAIL: step 2, expected 4N, got P"
   864.AKQT6.A2.K83:3S P 4N P 5D P:None: "FAIL: step 2, expected 4N, got P"
-  AKQ83.AKT93..A85:2H P:None: "FAIL: step 2, expected 2N, got 4D"
+  AKQ83.AKT93..A85:2H P:None: "FAIL: step 2, expected 2N, got 4C"
   74.K6.AQ8.KQJ983:3C P:Both: "FAIL: step 2, expected 3N, got P"
   AK7432.42.62.Q87:3C P 3N P:Both: "FAIL: step 0, expected 3C, got P"
   A53.K5.AKJ72.QJ3:3C P:None: "FAIL: step 2, expected 3N, got P"
