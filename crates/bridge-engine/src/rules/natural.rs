@@ -1,14 +1,13 @@
 use crate::bidding_rule;
 use crate::dsl::auction_predicates::{PartnerLimited, WeOpened};
 use crate::dsl::call_predicates::{
-    not_call, BidderHasShownSuit, IsLevel, IsMajorSuit, IsMinorSuit, IsNewSuit, IsPass, IsStrain,
-    IsSuit, PartnerHasShownSuit,
+    not_call, BidderHasShownSuit, IsLevel, IsMajorSuit, IsMinorSuit, IsNewSuit, IsNoTrump, IsPass,
+    IsSuit, MinLevel, PartnerHasShownSuit,
 };
 use crate::dsl::shows::{
     ShowBetterContractIsRemote, ShowMinHcp, ShowMinSuitLength, ShowSemiBalanced,
-    ShowSufficientValues, ShowSupportLength,
+    ShowSufficientValues, ShowSupportLength, ShowSupportValues,
 };
-use bridge_core::Strain;
 
 bidding_rule! {
     struct NewSuitAtLevelOne;
@@ -17,6 +16,15 @@ bidding_rule! {
     auction: [WeOpened],
     call: [IsLevel(1), IsNewSuit],
     shows: [ShowMinSuitLength(4), ShowMinHcp(6)]
+}
+
+bidding_rule! {
+    struct OneNotrumpResponse;
+    name: "Notrump Response at Level 1",
+    description: "No more information to convey at this point",
+    auction: [WeOpened],
+    call: [IsNoTrump],
+    shows: [ShowMinHcp(6)]
 }
 
 bidding_rule! {
@@ -38,27 +46,27 @@ bidding_rule! {
 }
 
 bidding_rule! {
-    struct NoTrumpResponse;
-    name: format!("{level}{strain} Limit"),
-    description: "Limit bid in NT",
+    struct SupportPartner;
+    name: "Support Partner",
+    description: "Showing support for partner's suit",
     auction: [WeOpened],
-    call: [IsStrain(Strain::NoTrump)],
+    call: [IsSuit, PartnerHasShownSuit],
+    shows: [ShowSupportLength, ShowSupportValues]
+}
+
+bidding_rule! {
+    struct NaturalNotrump;
+    name: "Natural Notrump",
+    description: "Shows values and a semi-balanced hand",
+    auction: [WeOpened],
+    call: [MinLevel(2), IsNoTrump],
     shows: [ShowSemiBalanced, ShowSufficientValues]
 }
 
 bidding_rule! {
-    struct SupportResponse;
-    name: format_strain!("{strain} Support"),
-    description: format_strain!("Support for partner's {strain}"),
-    auction: [WeOpened],
-    call: [IsSuit, PartnerHasShownSuit],
-    shows: [ShowSupportLength, ShowSufficientValues]
-}
-
-bidding_rule! {
-    struct RebidResponse;
-    name: format_strain!("{strain} Rebid"),
-    description: format_strain!("Rebid own {strain}"),
+    struct RebidOwnSuit;
+    name: "Rebid Own Suit",
+    description: "Rebid own suit to show length",
     auction: [WeOpened],
     call: [
         IsSuit,
@@ -69,8 +77,8 @@ bidding_rule! {
 }
 
 bidding_rule! {
-    struct PassBetterContractIsRemote;
-    name: "Pass (Better Contract Remote)",
+    struct BetterContractRemote;
+    name: "Better Contract Remote",
     description: "Pass showing no interest in competing further",
     auction: [WeOpened, PartnerLimited],
     call: [IsPass],

@@ -52,6 +52,20 @@ impl CallPredicate for IsStrain {
 }
 
 #[derive(Debug)]
+pub struct IsNoTrump;
+impl CallPredicate for IsNoTrump {
+    fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
+        match call {
+            Call::Bid {
+                strain: Strain::NoTrump,
+                ..
+            } => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct IsSuit;
 impl CallPredicate for IsSuit {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {

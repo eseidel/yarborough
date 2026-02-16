@@ -13,12 +13,13 @@ impl RuleRegistry {
         let rules: Vec<Box<dyn BiddingRule>> = vec![
             // Natural (Discovery, Responses)
             Box::new(natural::NewSuitAtLevelOne),
+            Box::new(natural::OneNotrumpResponse),
             Box::new(natural::NewMajorAtLevelTwo),
             Box::new(natural::NewMinorAtLevelTwo),
-            Box::new(natural::NoTrumpResponse),
-            Box::new(natural::SupportResponse),
-            Box::new(natural::RebidResponse),
-            Box::new(natural::PassBetterContractIsRemote),
+            Box::new(natural::SupportPartner),
+            Box::new(natural::NaturalNotrump),
+            Box::new(natural::RebidOwnSuit),
+            Box::new(natural::BetterContractRemote),
             // Opening
             Box::new(opening::Strong2C),
             Box::new(opening::OneNoTrumpOpening),

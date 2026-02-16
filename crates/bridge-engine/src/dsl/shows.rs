@@ -149,6 +149,21 @@ impl Shows for ShowSemiBalanced {
 }
 
 #[derive(Debug)]
+pub struct ShowSupportValues;
+impl Shows for ShowSupportValues {
+    fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
+        if let Call::Bid { level, .. } = call {
+            const SUPPORT_VALUES: [u8; 7] = [18, 18, 22, 25, 28, 33, 37];
+            let min_combined_points = SUPPORT_VALUES[*level as usize - 1];
+            let needed_hcp =
+                min_combined_points.saturating_sub(auction.partner_model.min_hcp.unwrap_or(0));
+            return vec![HandConstraint::MinHcp(needed_hcp)];
+        }
+        vec![]
+    }
+}
+
+#[derive(Debug)]
 pub struct ShowSupportLength;
 impl Shows for ShowSupportLength {
     fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
