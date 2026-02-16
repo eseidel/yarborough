@@ -147,41 +147,7 @@ pub fn format_table_header() -> String {
 }
 
 pub fn format_partner_model(model: &PartnerModel) -> String {
-    let mut out = String::new();
-    if let Some(max_hcp) = model.max_hcp {
-        writeln!(out, "  HCP: {} - {}", model.min_hcp.unwrap_or(0), max_hcp).unwrap();
-    } else {
-        let min_hcp = model.min_hcp.unwrap_or(0);
-        if min_hcp == 0 {
-            writeln!(out, "  HCP: ?").unwrap();
-        } else {
-            writeln!(out, "  HCP: {}+", min_hcp).unwrap();
-        }
-    }
-    if let Some(shape) = model.max_shape {
-        writeln!(out, "  Shape: {:?}", shape).unwrap();
-    }
-    write!(out, "  Length: ").unwrap();
-    let mut known_length = false;
-    for suit in Suit::ALL {
-        let min_length = model.min_length(suit);
-        let max_length = model.max_length(suit);
-        if max_length == 13 {
-            if min_length > 0 {
-                write!(out, "{}:{}+ ", suit.to_char(), min_length).unwrap();
-                known_length = true;
-            }
-        } else {
-            write!(out, "{}:{}-{} ", suit.to_char(), min_length, max_length).unwrap();
-            known_length = true;
-        }
-    }
-    if !known_length {
-        writeln!(out, "?").unwrap();
-    } else {
-        writeln!(out).unwrap();
-    }
-    out
+    format!("  {}\n", model)
 }
 
 pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {

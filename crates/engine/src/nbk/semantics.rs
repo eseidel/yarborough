@@ -12,8 +12,6 @@ pub struct CallSemantics {
     pub shows: Vec<HandConstraint>,
     /// Name of the rule that generated these semantics
     pub rule_name: String,
-    /// Human-readable description of what the call means
-    pub description: String,
     /// Optional planner for selecting the bid
     #[serde(skip)]
     pub planner: Option<Arc<dyn Planner>>,
@@ -24,7 +22,6 @@ impl std::fmt::Debug for CallSemantics {
         f.debug_struct("CallSemantics")
             .field("shows", &self.shows)
             .field("rule_name", &self.rule_name)
-            .field("description", &self.description)
             .field("planner", &self.planner.as_ref().map(|_| "Some(Planner)"))
             .finish()
     }
@@ -32,9 +29,7 @@ impl std::fmt::Debug for CallSemantics {
 
 impl PartialEq for CallSemantics {
     fn eq(&self, other: &Self) -> bool {
-        self.shows == other.shows
-            && self.rule_name == other.rule_name
-            && self.description == other.description
+        self.shows == other.shows && self.rule_name == other.rule_name
     }
 }
 

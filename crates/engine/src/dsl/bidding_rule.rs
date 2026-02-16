@@ -11,9 +11,6 @@ pub trait BiddingRule: Send + Sync {
     /// The name of the rule for the given call
     fn name(&self, call: &Call) -> String;
 
-    /// The description of the rule for the given call
-    fn description(&self, call: &Call) -> String;
-
     /// Auction criteria that must be met for this rule to apply
     fn auction_criteria(&self) -> Vec<Box<dyn AuctionPredicate>>;
 
@@ -59,7 +56,6 @@ pub trait BiddingRule: Send + Sync {
         Some(CallSemantics {
             shows: constraints,
             rule_name: self.name(call),
-            description: self.description(call),
             planner: self.planner(),
         })
     }

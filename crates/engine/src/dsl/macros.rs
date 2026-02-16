@@ -56,64 +56,56 @@ macro_rules! bidding_rule {
         struct $struct_name:ident;
         $($rest:tt)*
     ) => {
-        $crate::bidding_rule!(@parse $struct_name, { name: (), desc: (), auction: (), call: (), shows: (), planner: () }, $($rest)*);
+        $crate::bidding_rule!(@parse $struct_name, { name: (), auction: (), call: (), shows: (), planner: () }, $($rest)*);
     };
 
     // TERMINAL RULES
-    (@parse $s:ident, { name: $n:tt, desc: $d:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt }, ) => {
-        $crate::bidding_rule!(@generate $s, $n, $d, $a, $c, $sh, $p);
+    (@parse $s:ident, { name: $n:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt }, ) => {
+        $crate::bidding_rule!(@generate $s, $n, $a, $c, $sh, $p);
     };
-    (@parse $s:ident, { name: $n:tt, desc: $d:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt } ) => {
-        $crate::bidding_rule!(@generate $s, $n, $d, $a, $c, $sh, $p);
+    (@parse $s:ident, { name: $n:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt } ) => {
+        $crate::bidding_rule!(@generate $s, $n, $a, $c, $sh, $p);
     };
 
     // NAME
-    (@parse $s:ident, { name: (), desc: $d:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt }, name: $lit:literal, $($rest:tt)*) => {
-        $crate::bidding_rule!(@parse $s, { name: ($lit), desc: $d, auction: $a, call: $c, shows: $sh, planner: $p }, $($rest)*);
+    (@parse $s:ident, { name: (), auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt }, name: $lit:literal, $($rest:tt)*) => {
+        $crate::bidding_rule!(@parse $s, { name: ($lit), auction: $a, call: $c, shows: $sh, planner: $p }, $($rest)*);
     };
-    (@parse $s:ident, { name: (), desc: $d:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt }, name: $m:ident ! $args:tt, $($rest:tt)*) => {
-        $crate::bidding_rule!(@parse $s, { name: ($m ! $args), desc: $d, auction: $a, call: $c, shows: $sh, planner: $p }, $($rest)*);
+    (@parse $s:ident, { name: (), auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt }, name: $m:ident ! $args:tt, $($rest:tt)*) => {
+        $crate::bidding_rule!(@parse $s, { name: ($m ! $args), auction: $a, call: $c, shows: $sh, planner: $p }, $($rest)*);
     };
 
-    // DESCRIPTION
-    (@parse $s:ident, { name: $n:tt, desc: (), auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt }, description: $lit:literal, $($rest:tt)*) => {
-        $crate::bidding_rule!(@parse $s, { name: $n, desc: ($lit), auction: $a, call: $c, shows: $sh, planner: $p }, $($rest)*);
-    };
-    (@parse $s:ident, { name: $n:tt, desc: (), auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: $p:tt }, description: $m:ident ! $args:tt, $($rest:tt)*) => {
-        $crate::bidding_rule!(@parse $s, { name: $n, desc: ($m ! $args), auction: $a, call: $c, shows: $sh, planner: $p }, $($rest)*);
-    };
 
     // AUCTION
-    (@parse $s:ident, { name: $n:tt, desc: $d:tt, auction: (), call: $c:tt, shows: $sh:tt, planner: $p:tt }, auction: [ $( $a_pred:expr ),* $(,)? ], $($rest:tt)*) => {
-        $crate::bidding_rule!(@parse $s, { name: $n, desc: $d, auction: ([ $($a_pred),* ]), call: $c, shows: $sh, planner: $p }, $($rest)*);
+    (@parse $s:ident, { name: $n:tt, auction: (), call: $c:tt, shows: $sh:tt, planner: $p:tt }, auction: [ $( $a_pred:expr ),* $(,)? ], $($rest:tt)*) => {
+        $crate::bidding_rule!(@parse $s, { name: $n, auction: ([ $($a_pred),* ]), call: $c, shows: $sh, planner: $p }, $($rest)*);
     };
 
     // CALL
-    (@parse $s:ident, { name: $n:tt, desc: $d:tt, auction: $a:tt, call: (), shows: $sh:tt, planner: $p:tt }, call: [ $( $c_pred:expr ),* $(,)? ], $($rest:tt)*) => {
-        $crate::bidding_rule!(@parse $s, { name: $n, desc: $d, auction: $a, call: ([ $($c_pred),* ]), shows: $sh, planner: $p }, $($rest)*);
+    (@parse $s:ident, { name: $n:tt, auction: $a:tt, call: (), shows: $sh:tt, planner: $p:tt }, call: [ $( $c_pred:expr ),* $(,)? ], $($rest:tt)*) => {
+        $crate::bidding_rule!(@parse $s, { name: $n, auction: $a, call: ([ $($c_pred),* ]), shows: $sh, planner: $p }, $($rest)*);
     };
 
     // SHOWS
-    (@parse $s:ident, { name: $n:tt, desc: $d:tt, auction: $a:tt, call: $c:tt, shows: (), planner: $p:tt }, shows: [ $( $sh_pred:expr ),* $(,)? ], $($rest:tt)*) => {
-        $crate::bidding_rule!(@parse $s, { name: $n, desc: $d, auction: $a, call: $c, shows: ([ $($sh_pred),* ]), planner: $p }, $($rest)*);
+    (@parse $s:ident, { name: $n:tt, auction: $a:tt, call: $c:tt, shows: (), planner: $p:tt }, shows: [ $( $sh_pred:expr ),* $(,)? ], $($rest:tt)*) => {
+        $crate::bidding_rule!(@parse $s, { name: $n, auction: $a, call: $c, shows: ([ $($sh_pred),* ]), planner: $p }, $($rest)*);
     };
-    (@parse $s:ident, { name: $n:tt, desc: $d:tt, auction: $a:tt, call: $c:tt, shows: (), planner: $p:tt }, shows: [ $( $sh_pred:expr ),* $(,)? ]) => {
-        $crate::bidding_rule!(@parse $s, { name: $n, desc: $d, auction: $a, call: $c, shows: ([ $($sh_pred),* ]), planner: $p });
+    (@parse $s:ident, { name: $n:tt, auction: $a:tt, call: $c:tt, shows: (), planner: $p:tt }, shows: [ $( $sh_pred:expr ),* $(,)? ]) => {
+        $crate::bidding_rule!(@parse $s, { name: $n, auction: $a, call: $c, shows: ([ $($sh_pred),* ]), planner: $p });
     };
 
     // PLANNER
-    (@parse $s:ident, { name: $n:tt, desc: $d:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: () }, planner: $p_type:ident, $($rest:tt)*) => {
-        $crate::bidding_rule!(@parse $s, { name: $n, desc: $d, auction: $a, call: $c, shows: $sh, planner: (Some(std::sync::Arc::new($p_type))) }, $($rest)*);
+    (@parse $s:ident, { name: $n:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: () }, planner: $p_type:ident, $($rest:tt)*) => {
+        $crate::bidding_rule!(@parse $s, { name: $n, auction: $a, call: $c, shows: $sh, planner: (Some(std::sync::Arc::new($p_type))) }, $($rest)*);
     };
-    (@parse $s:ident, { name: $n:tt, desc: $d:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: () }, planner: $p_type:ident) => {
-        $crate::bidding_rule!(@parse $s, { name: $n, desc: $d, auction: $a, call: $c, shows: $sh, planner: (Some(std::sync::Arc::new($p_type))) });
+    (@parse $s:ident, { name: $n:tt, auction: $a:tt, call: $c:tt, shows: $sh:tt, planner: () }, planner: $p_type:ident) => {
+        $crate::bidding_rule!(@parse $s, { name: $n, auction: $a, call: $c, shows: $sh, planner: (Some(std::sync::Arc::new($p_type))) });
     };
 
     // GENERATE
     (@generate
         $struct_name:ident,
         ($($name_expanded:tt)+),
-        ($($desc_expanded:tt)+),
         ([$($auction_pred:expr),*]),
         ([$($call_pred:expr),*]),
         ([$($shows_pred:expr),*]),
@@ -130,17 +122,6 @@ macro_rules! bidding_rule {
                         $crate::expand_rule_field!(call, level, strain, $($name_expanded)+)
                     }
                     _ => $crate::expand_rule_fallback!( $($name_expanded)+ ),
-                }
-            }
-
-            fn description(&self, call: &types::Call) -> String {
-                match call {
-                    types::Call::Bid { level, strain } => {
-                        #[allow(unused_variables)]
-                        let (level, strain) = (level, strain);
-                        $crate::expand_rule_field!(call, level, strain, $($desc_expanded)+)
-                    }
-                    _ => $crate::expand_rule_fallback!( $($desc_expanded)+ ),
                 }
             }
 

@@ -2,6 +2,7 @@
 
 use crate::nbk::HandConstraint;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use types::{Distribution, Shape, Suit};
 
 /// Inferred profile of partner's hand based on auction history
@@ -67,6 +68,49 @@ impl PartnerModel {
 
     pub fn length_needed_to_reach_target(&self, suit: Suit, target_len: u8) -> u8 {
         target_len.saturating_sub(self.min_length(suit))
+    }
+}
+
+impl fmt::Display for PartnerModel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut parts = Vec::new();
+
+        // 1. HCP part
+        let hcp_str = match (self.min_hcp, self.max_hcp) {
+            (None, None) => "? hcp".to_string(),
+            (Some(min), None) => format!("{}+ hcp", min),
+            (None, Some(max)) => format!("0-{} hcp", max),
+            (Some(min), Some(max)) if min == max => format!("{} hcp", min),
+            (Some(min), Some(max)) => format!("{}-{} hcp", min, max),
+        };
+        parts.push(hcp_str);
+
+        // 2. Suits part
+        let mut suit_parts = Vec::new();
+        for suit in Suit::ALL {
+            let min = self.min_length(suit);
+            let max = self.max_length(suit);
+            let symbol = suit.symbol();
+
+            let s = match (min, max) {
+                (0, 13) => Default::default(),
+                (m, 13) if m > 0 => format!("{}+{}", m, symbol),
+                (0, m) => format!("0-{}{}", m, symbol),
+                (min, max) if min == max => format!("{}{}", min, symbol),
+                (min, max) => format!("{}-{}{}", min, max, symbol),
+            };
+            suit_parts.push(s);
+        }
+        let suit_str = suit_parts
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ");
+        if !suit_str.is_empty() {
+            parts.push(suit_str);
+        }
+
+        write!(f, "{}", parts.join(", "))
     }
 }
 
@@ -245,5 +289,36 @@ mod tests {
         model.apply_constraint(HandConstraint::MaxLength(Suit::Hearts, 5));
         assert_eq!(model.max_length(Suit::Hearts), 3);
         assert_eq!(model.max_shape, Some(Shape::Balanced));
+    }
+
+    #[test]
+    fn test_display() {
+        let mut model = PartnerModel::default();
+        // Initial state: ? hcp (suits are unknown and thus omitted)
+        assert_eq!(model.to_string(), "? hcp");
+
+        model.apply_constraint(HandConstraint::MinHcp(10));
+        assert_eq!(model.to_string(), "10+ hcp");
+
+        model.apply_constraint(HandConstraint::MinLength(Suit::Clubs, 4));
+        assert_eq!(model.to_string(), "10+ hcp, 4+♣️");
+
+        let mut model2 = PartnerModel::default();
+        model2.apply_constraint(HandConstraint::MinHcp(15));
+        model2.apply_constraint(HandConstraint::MaxHcp(17));
+        model2.apply_constraint(HandConstraint::MinLength(Suit::Clubs, 2));
+        model2.apply_constraint(HandConstraint::MaxLength(Suit::Clubs, 5));
+        model2.apply_constraint(HandConstraint::MinLength(Suit::Diamonds, 2));
+        model2.apply_constraint(HandConstraint::MaxLength(Suit::Diamonds, 5));
+        model2.apply_constraint(HandConstraint::MinLength(Suit::Hearts, 2));
+        model2.apply_constraint(HandConstraint::MaxLength(Suit::Hearts, 5));
+        model2.apply_constraint(HandConstraint::MinLength(Suit::Spades, 2));
+        model2.apply_constraint(HandConstraint::MaxLength(Suit::Spades, 3));
+        assert_eq!(model2.to_string(), "15-17 hcp, 2-5♣️ 2-5♦️ 2-5❤️ 2-3♠️");
+
+        let mut model3 = PartnerModel::default();
+        model3.apply_constraint(HandConstraint::MaxHcp(5));
+        model3.apply_constraint(HandConstraint::MaxLength(Suit::Spades, 4));
+        assert_eq!(model3.to_string(), "0-5 hcp, 0-4♠️");
     }
 }

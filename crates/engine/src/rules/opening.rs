@@ -23,7 +23,6 @@ use types::Strain;
 bidding_rule! {
     struct Strong2C;
     name: "Strong 2C Opening",
-    description: "Very strong hand (22+ HCP)",
     auction: [IsNotOpen],
     call: [IsCall(2, Strain::Clubs)],
     shows: [ShowMinHcp(22)]
@@ -32,7 +31,6 @@ bidding_rule! {
 bidding_rule! {
     struct OneNoTrumpOpening;
     name: "1NT Opening",
-    description: "Balanced hand with 15-17 HCP",
     auction: [IsNotOpen],
     call: [IsCall(1, Strain::NoTrump)],
     shows: [ShowHcpRange(15, 17), ShowBalanced]
@@ -41,7 +39,6 @@ bidding_rule! {
 bidding_rule! {
     struct TwoNoTrumpOpening;
     name: "2NT Opening",
-    description: "Balanced hand with 20-21 HCP",
     auction: [IsNotOpen],
     call: [IsCall(2, Strain::NoTrump)],
     shows: [ShowHcpRange(20, 21), ShowBalanced]
@@ -50,7 +47,6 @@ bidding_rule! {
 bidding_rule! {
     struct SuitOpening;
     name: format!("{level}{strain} Opening"),
-    description: format_strain!("Opening bid showing 4+ cards in {strain}"),
     auction: [IsNotOpen, not_auction(IsSeat(4))],
     call: [IsLevel(1), IsSuit],
     shows: [ShowOpeningSuitLength, ShowMinHcp(12)],
@@ -60,7 +56,6 @@ bidding_rule! {
 bidding_rule! {
     struct SuitOpeningFourthSeat;
     name: format!("{level}{strain} Opening (4th Seat)"),
-    description: format_strain!("Opening bid showing 4+ cards in {strain}"),
     auction: [IsNotOpen, IsSeat(4)],
     call: [IsLevel(1), IsSuit],
     shows: [ShowOpeningSuitLength, ShowRuleOfFifteen]
@@ -69,7 +64,6 @@ bidding_rule! {
 bidding_rule! {
     struct WeakTwo;
     name: format_strain!("Weak 2{strain}"),
-    description: format_strain!("Weak opening bid showing 6 cards in {strain}"),
     auction: [IsNotOpen, not_auction(IsSeat(4))],
     call: [IsLevel(2), IsSuit, NotCall(Box::new(IsStrain(Strain::Clubs)))],
     shows: [ShowMinSuitLength(6), ShowHcpRange(5, 10)],
@@ -78,7 +72,6 @@ bidding_rule! {
 bidding_rule! {
     struct Preempt;
     name: format!("Preemptive {level}{strain} Opening"),
-    description: "Preemptive opening bid",
     auction: [IsNotOpen],
     call: [MinLevel(3), IsSuit],
     shows: [ShowPreemptLength, ShowMaxHcp(10)]
@@ -87,7 +80,6 @@ bidding_rule! {
 bidding_rule! {
     struct PassOpening;
     name: "Pass (Opening)",
-    description: "Hand does not meet requirements for an opening bid",
     auction: [IsNotOpen],
     call: [IsPass],
     shows: []
