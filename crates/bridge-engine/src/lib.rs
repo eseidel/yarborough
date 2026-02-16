@@ -1,4 +1,3 @@
-// pub mod bidding_utils; (Moved to bridge-cli)
 pub mod dsl;
 pub mod nbk;
 pub mod rules;
@@ -8,7 +7,6 @@ use bridge_core::board::Position;
 use bridge_core::call::Call;
 use bridge_core::io::identifier;
 use serde::Serialize;
-use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
 pub struct CallInterpretation {
@@ -18,7 +16,7 @@ pub struct CallInterpretation {
 }
 
 /// Parse a comma-separated call string (e.g. "1C,P,1D") into a Vec<Call>.
-fn parse_calls(calls_string: &str) -> Vec<Call> {
+pub fn parse_calls(calls_string: &str) -> Vec<Call> {
     if calls_string.is_empty() {
         return Vec::new();
     }
@@ -28,8 +26,9 @@ fn parse_calls(calls_string: &str) -> Vec<Call> {
         .collect()
 }
 
-/// Core logic for get_interpretations, returning Rust types for testability.
-pub fn get_interpretations_impl(
+/// Given a call history string, dealer position, and vulnerability, return
+/// possible next calls with their interpretations from the NBK bidding system.
+pub fn get_interpretations(
     calls_string: &str,
     dealer: &str,
     _vulnerability: &str,
@@ -68,22 +67,9 @@ pub fn get_interpretations_impl(
         .collect()
 }
 
-/// Given a call history string, dealer position, and vulnerability, return
-/// possible next calls with their interpretations from the NBK bidding system.
-#[wasm_bindgen]
-pub fn get_interpretations(calls_string: &str, dealer: &str, _vulnerability: &str) -> JsValue {
-    serde_wasm_bindgen::to_value(&get_interpretations_impl(
-        calls_string,
-        dealer,
-        _vulnerability,
-    ))
-    .unwrap()
-}
-
 /// Receives a board and auction state in the "identifier" format
-/// and returns the next bid.
+/// and returns the next bid as a call string.
 /// Uses the SAYC bidding engine.
-#[wasm_bindgen]
 pub fn get_next_bid(identifier: &str) -> String {
     let (board, auction) = match identifier::import_board(identifier) {
         Some(val) => val,
@@ -108,8 +94,8 @@ pub fn get_next_bid(identifier: &str) -> String {
     }
 }
 
-/// Core logic for get_suggested_bid, returning Rust types for testability.
-pub fn get_suggested_bid_impl(identifier: &str) -> CallInterpretation {
+/// Like get_next_bid, but returns the bid along with its rule name and description.
+pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
     let (board, auction) = match identifier::import_board(identifier) {
         Some(val) => val,
         None => {
@@ -158,13 +144,6 @@ pub fn get_suggested_bid_impl(identifier: &str) -> CallInterpretation {
     }
 }
 
-/// Like get_next_bid, but returns the bid along with its rule name and description.
-#[wasm_bindgen]
-pub fn get_suggested_bid(identifier: &str) -> JsValue {
-    serde_wasm_bindgen::to_value(&get_suggested_bid_impl(identifier)).unwrap()
-}
-
-#[wasm_bindgen]
 pub fn generate_filtered_board(_deal_type: &str) -> String {
     let mut rng = rand::thread_rng();
     let board_number = rand::Rng::gen_range(&mut rng, 1..=16);
@@ -172,7 +151,10 @@ pub fn generate_filtered_board(_deal_type: &str) -> String {
     identifier::export_board(&board, board_number, None)
 }
 
-fn generate_random_board(board_number: u32, rng: &mut impl rand::Rng) -> bridge_core::board::Board {
+pub fn generate_random_board(
+    board_number: u32,
+    rng: &mut impl rand::Rng,
+) -> bridge_core::board::Board {
     use bridge_core::card::Card;
     use bridge_core::hand::Hand;
     use bridge_core::rank::Rank;
@@ -326,7 +308,7 @@ mod tests {
 
     #[test]
     fn test_get_interpretations_empty_auction() {
-        let results = get_interpretations_impl("", "N", "None");
+        let results = get_interpretations("", "N", "None");
         // With no calls yet, all opening bids + pass should be available.
         assert!(!results.is_empty());
         // Pass should always be a legal call.
@@ -341,7 +323,7 @@ mod tests {
 
     #[test]
     fn test_get_interpretations_after_opening() {
-        let results = get_interpretations_impl("1C", "N", "None");
+        let results = get_interpretations("1C", "N", "None");
         // After 1C, the next player (East) should have legal responses.
         assert!(!results.is_empty());
         // Pass is always legal.
@@ -353,13 +335,13 @@ mod tests {
     #[test]
     fn test_get_interpretations_default_dealer() {
         // Invalid dealer string should default to North.
-        let results = get_interpretations_impl("", "Z", "None");
+        let results = get_interpretations("", "Z", "None");
         assert!(!results.is_empty());
     }
 
     #[test]
     fn test_get_interpretations_has_rule_names() {
-        let results = get_interpretations_impl("", "N", "None");
+        let results = get_interpretations("", "N", "None");
         // At least some opening bids should have rule names from the bidding system.
         let with_rules: Vec<_> = results.iter().filter(|r| !r.rule_name.is_empty()).collect();
         assert!(
@@ -373,7 +355,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let board = generate_random_board(1, &mut rng);
         let id = identifier::export_board(&board, 1, None);
-        let result = get_suggested_bid_impl(&id);
+        let result = get_suggested_bid(&id);
         // Should return a non-empty call name.
         assert!(!result.call_name.is_empty());
         // Should have a rule name (either a matched rule or "Pass (Limit)").
@@ -384,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_get_suggested_bid_invalid_identifier() {
-        let result = get_suggested_bid_impl("garbage");
+        let result = get_suggested_bid("garbage");
         assert_eq!(result.call_name, "P");
         assert!(result.rule_name.is_empty());
         assert!(result.description.is_empty());
@@ -397,7 +379,7 @@ mod tests {
         let board = generate_random_board(1, &mut rng);
         let id = identifier::export_board(&board, 1, None);
         let next = get_next_bid(&id);
-        let suggested = get_suggested_bid_impl(&id);
+        let suggested = get_suggested_bid(&id);
         assert_eq!(suggested.call_name, next);
     }
 }

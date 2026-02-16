@@ -6,7 +6,7 @@ import init, {
   get_next_bid,
   get_suggested_bid,
   generate_filtered_board,
-} from "../../crates/bridge-engine/pkg/bridge_engine";
+} from "../../crates/bridge-wasm/pkg/bridge_wasm";
 
 let initialized = false;
 

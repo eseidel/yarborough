@@ -1,0 +1,13 @@
+[package]
+name = "bridge-wasm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+bridge-engine = { path = "../bridge-engine" }
+wasm-bindgen = "0.2"
+serde-wasm-bindgen = "0.6"
+getrandom = { version = "0.2", features = ["js"] }
