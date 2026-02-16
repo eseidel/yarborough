@@ -17,7 +17,7 @@ Do not use manual testing. Write automated tests instead.
 
 **Use YAML expectations, not Rust unit tests for specific bids:**
 
-- Specific bidding scenarios are tested via YAML test vectors in `crates/bridge-engine/tests/`
+- Specific bidding scenarios are tested via YAML test vectors in `crates/engine/tests/`
 - When changing bidding logic, run `UPDATE_EXPECTATIONS=1 cargo test --test harness` to update expectations
 - Rust unit tests in `inference.rs` should test the inference _mechanism_, not specific bid scenarios
 
@@ -31,7 +31,7 @@ Do not use manual testing. Write automated tests instead.
 
 **Partner Profile Inference:**
 
-- Lives in `crates/bridge-engine/src/inference.rs`
+- Lives in `crates/engine/src/inference.rs`
 - Takes MINIMUM HCP/length across all matching rule variants
 - To add implicit HCP assumptions (like RuleOfTwenty → 10 HCP), modify the inference logic, NOT the rules themselves
 - Modifying opening bid rules changes which hands can open (side effects!)

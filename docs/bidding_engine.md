@@ -161,10 +161,9 @@ trait NaturalEvaluator {
 
 ### 7.1 Crate Structure
 
-- `bridge-core`: Basic types (`Card`, `Suit`, `Hand`).
-- `bridge-solver`: The logic engine (`Solver`, `ContextManager`, `Evaluator`).
-- `bridge-rules`: The JSON definitions for SAYC/2/1.
-- `bridge-wasm`: The `wasm-bindgen` interface exposing the `get_best_bid` function to JavaScript.
+- `types`: Basic types (`Card`, `Suit`, `Hand`).
+- `engine`: The logic engine (`Solver`, `ContextManager`, `Evaluator`).
+- `wasm`: The `wasm-bindgen` interface exposing the `get_best_bid` function to JavaScript.
 
 ### 7.2 Integration Steps for the Coding Agent
 

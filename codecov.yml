@@ -12,15 +12,15 @@ flags:
     paths:
       - src/
     carryforward: true
-  bridge-core:
+  types:
     paths:
-      - crates/bridge-core/
+      - crates/types/
     carryforward: true
-  bridge-engine:
+  engine:
     paths:
-      - crates/bridge-engine/
+      - crates/engine/
     carryforward: true
-  bridge-cli:
+  cli:
     paths:
-      - crates/bridge-cli/
+      - crates/cli/
     carryforward: true
