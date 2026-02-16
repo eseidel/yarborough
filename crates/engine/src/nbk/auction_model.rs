@@ -31,24 +31,31 @@ fn pos_idx(p: Position) -> usize {
 }
 
 impl AuctionModel {
+    /// Build an AuctionModel from a position's perspective using the model array.
+    fn from_perspective(
+        auction: Auction,
+        models: &[PartnerModel; 4],
+        position: Position,
+    ) -> Self {
+        let partner = position.partner();
+        let lho = position.next();
+        let rho = partner.next();
+        Self {
+            auction,
+            bidder_model: models[pos_idx(position)].clone(),
+            partner_model: models[pos_idx(partner)].clone(),
+            lho_model: models[pos_idx(lho)].clone(),
+            rho_model: models[pos_idx(rho)].clone(),
+        }
+    }
+
     /// Analyze the auction to build models of all four hands
     pub fn from_auction(auction: &Auction, our_position: Position) -> Self {
         let mut models: [PartnerModel; 4] = Default::default();
         let mut current_auction = Auction::new(auction.dealer);
 
         for (position, call) in auction.iter() {
-            let partner = position.partner();
-            let lho = position.next();
-            let rho = partner.next();
-
-            // Build context from the caller's perspective
-            let context = AuctionModel {
-                auction: current_auction.clone(),
-                bidder_model: models[pos_idx(position)].clone(),
-                partner_model: models[pos_idx(partner)].clone(),
-                lho_model: models[pos_idx(lho)].clone(),
-                rho_model: models[pos_idx(rho)].clone(),
-            };
+            let context = Self::from_perspective(current_auction.clone(), &models, position);
 
             if let Some(semantics) = CallInterpreter::interpret(&context, call) {
                 for constraint in semantics.shows {
@@ -59,17 +66,6 @@ impl AuctionModel {
             current_auction.add_call(*call);
         }
 
-        // Rotate models into our_position's perspective
-        let partner = our_position.partner();
-        let lho = our_position.next();
-        let rho = partner.next();
-
-        Self {
-            auction: auction.clone(),
-            bidder_model: models[pos_idx(our_position)].clone(),
-            partner_model: models[pos_idx(partner)].clone(),
-            lho_model: models[pos_idx(lho)].clone(),
-            rho_model: models[pos_idx(rho)].clone(),
-        }
+        Self::from_perspective(auction.clone(), &models, our_position)
     }
 }
