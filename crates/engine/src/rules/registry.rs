@@ -23,6 +23,7 @@ impl RuleRegistry {
             // Overcalls (when opponents opened)
             Box::new(overcalls::OneLevelOvercall),
             Box::new(overcalls::TwoLevelOvercall),
+            Box::new(overcalls::WeakJumpOvercall),
             Box::new(overcalls::OneNtOvercall),
             Box::new(overcalls::PassOvercall),
             // Opening

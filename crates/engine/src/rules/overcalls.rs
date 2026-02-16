@@ -1,29 +1,39 @@
 use crate::bidding_rule;
-use crate::dsl::auction_predicates::TheyOpened;
-use crate::dsl::call_predicates::{IsCall, IsLevel, IsPass, IsSuit, OpponentHasNotBidSuit};
+use crate::dsl::auction_predicates::{TheyOpened, WeHaveNotBid};
+use crate::dsl::call_predicates::{
+    not_call, IsCall, IsJump, IsLevel, IsPass, IsSuit, OpponentHasNotShownSuit,
+};
 use crate::dsl::shows::{ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinSuitLength};
 use types::Strain;
 
 bidding_rule! {
     struct OneLevelOvercall;
-    name: format!("{level}{strain} Overcall"),
-    auction: [TheyOpened],
-    call: [IsLevel(1), IsSuit, OpponentHasNotBidSuit],
+    name: "Overcall",
+    auction: [TheyOpened, WeHaveNotBid],
+    call: [IsLevel(1), IsSuit, OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(8)]
 }
 
 bidding_rule! {
     struct TwoLevelOvercall;
-    name: format!("{level}{strain} Overcall"),
-    auction: [TheyOpened],
-    call: [IsLevel(2), IsSuit, OpponentHasNotBidSuit],
+    name: "Overcall",
+    auction: [TheyOpened, WeHaveNotBid],
+    call: [IsLevel(2), IsSuit, not_call(IsJump), OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
+}
+
+bidding_rule! {
+    struct WeakJumpOvercall;
+    name: "Weak Jump Overcall",
+    auction: [TheyOpened, WeHaveNotBid],
+    call: [IsSuit, IsJump, OpponentHasNotShownSuit],
+    shows: [ShowMinSuitLength(6), ShowHcpRange(5, 10)]
 }
 
 bidding_rule! {
     struct OneNtOvercall;
     name: "1NT Overcall",
-    auction: [TheyOpened],
+    auction: [TheyOpened, WeHaveNotBid],
     call: [IsCall(1, Strain::NoTrump)],
     shows: [ShowHcpRange(15, 18), ShowBalanced]
 }
@@ -162,5 +172,104 @@ mod tests {
             Some(Call::Pass),
             "Should pass when only long suit is opponent's"
         );
+    }
+
+    #[test]
+    fn test_two_level_overcall_rejects_jump() {
+        // Over 1C, 2H is a jump (minimum for hearts is 1H)
+        let model = make_overcall_auction(Strain::Clubs);
+        let call = Call::Bid {
+            level: 2,
+            strain: Strain::Hearts,
+        };
+        // TwoLevelOvercall requires not_call(IsJump), so this should be None
+        assert!(TwoLevelOvercall.get_semantics(&model, &call).is_none());
+    }
+
+    #[test]
+    fn test_two_level_overcall_non_jump() {
+        // Over 1S, 2H is NOT a jump (minimum for hearts is 2H)
+        let model = make_overcall_auction(Strain::Spades);
+        let call = Call::Bid {
+            level: 2,
+            strain: Strain::Hearts,
+        };
+        assert!(TwoLevelOvercall.get_semantics(&model, &call).is_some());
+    }
+
+    #[test]
+    fn test_weak_jump_overcall() {
+        // Over 1C, 2H is a jump overcall
+        let model = make_overcall_auction(Strain::Clubs);
+        let call = Call::Bid {
+            level: 2,
+            strain: Strain::Hearts,
+        };
+        let sem = WeakJumpOvercall.get_semantics(&model, &call).unwrap();
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MinLength(Suit::Hearts, 6)));
+        assert!(sem.shows.contains(&HandConstraint::MinHcp(5)));
+        assert!(sem.shows.contains(&HandConstraint::MaxHcp(10)));
+    }
+
+    #[test]
+    fn test_weak_jump_overcall_not_non_jump() {
+        // Over 1S, 2H is NOT a jump — WeakJumpOvercall should not match
+        let model = make_overcall_auction(Strain::Spades);
+        let call = Call::Bid {
+            level: 2,
+            strain: Strain::Hearts,
+        };
+        assert!(WeakJumpOvercall.get_semantics(&model, &call).is_none());
+    }
+
+    #[test]
+    fn test_overcall_blocked_when_partner_has_bid() {
+        // N opens 1D, E overcalls 1H, S passes, W's turn
+        // WeHaveNotBid should be false for W since E (partner) already bid
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Diamonds,
+        });
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Hearts,
+        });
+        auction.add_call(Call::Pass);
+        let model = AuctionModel::from_auction(&auction, Position::West);
+        let call = Call::Bid {
+            level: 1,
+            strain: Strain::Spades,
+        };
+        // OneLevelOvercall should NOT match (WeHaveNotBid is false)
+        assert!(OneLevelOvercall.get_semantics(&model, &call).is_none());
+    }
+
+    #[test]
+    fn test_opponent_model_tracks_shown_suits() {
+        // N opens 1S — from East's perspective, RHO (North) has shown spades
+        let model = make_overcall_auction(Strain::Spades);
+        assert!(
+            model.rho_model.has_shown_suit(Suit::Spades),
+            "RHO should have shown spades after opening 1S"
+        );
+        assert!(
+            !model.rho_model.has_shown_suit(Suit::Hearts),
+            "RHO should not have shown hearts"
+        );
+    }
+
+    #[test]
+    fn test_opponent_shown_suit_blocks_overcall() {
+        // N opens 1S — OpponentHasNotShownSuit should block overcalling in spades
+        let model = make_overcall_auction(Strain::Spades);
+        let call = Call::Bid {
+            level: 2,
+            strain: Strain::Spades,
+        };
+        // This is a cuebid in opponent's suit — should not match simple overcall
+        assert!(TwoLevelOvercall.get_semantics(&model, &call).is_none());
     }
 }

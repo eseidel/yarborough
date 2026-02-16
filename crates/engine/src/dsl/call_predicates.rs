@@ -127,6 +127,38 @@ impl CallPredicate for MinLevel {
     }
 }
 
+/// Returns the minimum legal level for a given strain, based on the last bid in the auction.
+/// Returns None if there is no previous bid.
+fn min_level_for_strain(auction: &AuctionModel, strain: Strain) -> Option<u8> {
+    let last_bid = auction.auction.calls.iter().rev().find_map(|c| match c {
+        Call::Bid {
+            level,
+            strain: last_strain,
+        } => Some((*level, *last_strain)),
+        _ => None,
+    })?;
+    let (last_level, last_strain) = last_bid;
+    Some(if strain > last_strain {
+        last_level
+    } else {
+        last_level + 1
+    })
+}
+
+/// Checks if a bid is a jump (at least one level higher than necessary).
+#[derive(Debug)]
+pub struct IsJump;
+impl CallPredicate for IsJump {
+    fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
+        if let Call::Bid { level, strain } = call {
+            if let Some(min_level) = min_level_for_strain(auction, *strain) {
+                return *level > min_level;
+            }
+        }
+        false
+    }
+}
+
 #[derive(Debug)]
 pub struct IsPass;
 impl CallPredicate for IsPass {
@@ -161,28 +193,17 @@ impl CallPredicate for PartnerHasShownSuit {
     }
 }
 
-/// Checks that no opponent has bid in the same suit as this call.
+/// Checks that no opponent has shown the same suit as this call.
+/// Uses opponent PartnerModels (semantic meaning) rather than raw bid strains,
+/// so conventional bids like Stayman (2C) won't be treated as showing clubs.
 #[derive(Debug)]
-pub struct OpponentHasNotBidSuit;
-impl CallPredicate for OpponentHasNotBidSuit {
+pub struct OpponentHasNotShownSuit;
+impl CallPredicate for OpponentHasNotShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
-        let our_suit = match call {
-            Call::Bid { strain, .. } => match strain.to_suit() {
-                Some(s) => s,
-                None => return true, // NT bids are fine
-            },
-            _ => return true,
-        };
-
-        let our_partnership = auction.auction.current_partnership();
-        for (position, opponent_call) in auction.auction.iter() {
-            if position.partnership() == our_partnership {
-                continue; // Skip our side's calls
-            }
-            if let Call::Bid { strain, .. } = opponent_call {
-                if strain.to_suit() == Some(our_suit) {
-                    return false; // Opponent has bid this suit
-                }
+        if let Call::Bid { strain, .. } = call {
+            if let Some(suit) = strain.to_suit() {
+                return !auction.lho_model.has_shown_suit(suit)
+                    && !auction.rho_model.has_shown_suit(suit);
             }
         }
         true

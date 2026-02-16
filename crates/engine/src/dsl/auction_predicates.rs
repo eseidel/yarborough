@@ -1,5 +1,6 @@
 use crate::nbk::AuctionModel;
 use std::fmt::Debug;
+use types::Call;
 
 pub trait AuctionPredicate: Send + Sync + Debug {
     fn check(&self, auction: &AuctionModel) -> bool;
@@ -74,6 +75,21 @@ impl AuctionPredicate for TheyOpened {
     }
 }
 
+/// Checks that our partnership has not made a non-pass call (bid/double/redouble).
+#[derive(Debug)]
+pub struct WeHaveNotBid;
+impl AuctionPredicate for WeHaveNotBid {
+    fn check(&self, model: &AuctionModel) -> bool {
+        let our_partnership = model.auction.current_partnership();
+        for (position, call) in model.auction.iter() {
+            if position.partnership() == our_partnership && !matches!(call, Call::Pass) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -136,5 +152,40 @@ mod tests {
         // North (NS) opened. West is EW. So "they" opened.
         assert!(!we.check(&model_west));
         assert!(they.check(&model_west));
+    }
+
+    #[test]
+    fn test_we_have_not_bid() {
+        let pred = WeHaveNotBid;
+
+        // Empty auction — no one has bid
+        let auction = types::Auction::new(Position::North);
+        let model = AuctionModel::from_auction(&auction, Position::North);
+        assert!(pred.check(&model));
+
+        // N opens 1D, E's turn — EW has not bid
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Diamonds,
+        });
+        let model = AuctionModel::from_auction(&auction, Position::East);
+        assert!(pred.check(&model));
+
+        // N: 1D, E: 1H, S: P, W's turn — EW HAS bid (E bid 1H)
+        auction.add_call(Call::Bid {
+            level: 1,
+            strain: Strain::Hearts,
+        });
+        auction.add_call(Call::Pass);
+        let model = AuctionModel::from_auction(&auction, Position::West);
+        assert!(!pred.check(&model));
+
+        // N: P, E: P, S's turn — NS has not bid (N only passed)
+        let mut auction = types::Auction::new(Position::North);
+        auction.add_call(Call::Pass);
+        auction.add_call(Call::Pass);
+        let model = AuctionModel::from_auction(&auction, Position::South);
+        assert!(pred.check(&model));
     }
 }
