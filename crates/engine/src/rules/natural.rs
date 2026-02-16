@@ -54,11 +54,7 @@ bidding_rule! {
 bidding_rule! {
     RebidOwnSuit: "Rebid Suit",
     auction: [WeOpened],
-    call: [
-        IsSuit,
-        not_call(PartnerHasShownSuit),
-        BidderHasShownSuit,
-    ],
+    call: [IsSuit, not_call(PartnerHasShownSuit), BidderHasShownSuit],
     shows: [ShowMinSuitLength(6), ShowSufficientValues]
 }
 

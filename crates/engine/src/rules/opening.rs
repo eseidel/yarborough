@@ -2,13 +2,13 @@ use crate::bidding_rule;
 use crate::dsl::auction_predicates::not_auction;
 use crate::dsl::auction_predicates::IsNotOpen;
 use crate::dsl::auction_predicates::IsSeat;
+use crate::dsl::call_predicates::not_call;
 use crate::dsl::call_predicates::IsCall;
 use crate::dsl::call_predicates::IsLevel;
 use crate::dsl::call_predicates::IsPass;
 use crate::dsl::call_predicates::IsStrain;
 use crate::dsl::call_predicates::IsSuit;
 use crate::dsl::call_predicates::MinLevel;
-use crate::dsl::call_predicates::NotCall;
 use crate::dsl::planner::RuleOfTwentyPlanner;
 use crate::dsl::shows::ShowBalanced;
 use crate::dsl::shows::ShowHcpRange;
@@ -59,7 +59,7 @@ bidding_rule! {
 bidding_rule! {
     WeakTwoOpening: "Weak Two Opening",
     auction: [IsNotOpen, not_auction(IsSeat(4))],
-    call: [IsLevel(2), IsSuit, NotCall(Box::new(IsStrain(Strain::Clubs)))],
+    call: [IsLevel(2), IsSuit, not_call(IsStrain(Strain::Clubs))],
     shows: [ShowMinSuitLength(6), ShowHcpRange(5, 10)],
 }
 

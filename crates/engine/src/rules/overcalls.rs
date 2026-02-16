@@ -1,10 +1,9 @@
 use crate::bidding_rule;
 use crate::dsl::auction_predicates::{TheyOpened, WeHaveNotBid};
 use crate::dsl::call_predicates::{
-    not_call, IsCall, IsJump, IsLevel, IsPass, IsSuit, OpponentHasNotShownSuit,
+    not_call, IsJump, IsLevel, IsNotrump, IsPass, IsSuit, OpponentHasNotShownSuit,
 };
 use crate::dsl::shows::{ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinSuitLength};
-use types::Strain;
 
 bidding_rule! {
     OneLevelOvercall: "Suited Overcall",
@@ -31,7 +30,7 @@ bidding_rule! {
 bidding_rule! {
     OneNotrumpOvercall: "Notrump Overcall",
     auction: [TheyOpened, WeHaveNotBid],
-    call: [IsCall(1, Strain::Notrump)],
+    call: [IsLevel(1), IsNotrump],
     shows: [ShowHcpRange(15, 18), ShowBalanced]
 }
 
