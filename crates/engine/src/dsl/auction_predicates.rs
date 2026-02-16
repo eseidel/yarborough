@@ -75,18 +75,14 @@ impl AuctionPredicate for TheyOpened {
     }
 }
 
-/// Checks that RHO's call (the last call in the auction) was not a pass.
-/// This identifies "direct seat" — we are acting immediately after an opponent's action.
+/// Checks that RHO made the last bid in the auction.
+/// This identifies "direct seat" — we are acting immediately after an opponent's bid.
 #[derive(Debug)]
 pub struct RhoMadeLastBid;
 impl AuctionPredicate for RhoMadeLastBid {
     fn check(&self, model: &AuctionModel) -> bool {
-        model
-            .auction
-            .calls
-            .last()
-            .map(|call| !matches!(call, Call::Pass))
-            .unwrap_or(false)
+        let rho = model.auction.current_player().rho();
+        model.auction.last_bidder() == Some(rho)
     }
 }
 
@@ -225,7 +221,8 @@ mod tests {
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model), "W is in direct seat after S's 1S");
 
-        // N: 1C, E: X, S: P, W's turn — last non-pass was E (partner's double), not RHO
+        // N: 1C, E: X, S: P, W's turn — last bidder is N (LHO), not RHO
+        // E's double is not a bid, so it doesn't count
         let mut auction = types::Auction::new(Position::North);
         auction.add_call(Call::Bid {
             level: 1,
@@ -236,7 +233,7 @@ mod tests {
         let model = AuctionModel::from_auction(&auction);
         assert!(
             !pred.check(&model),
-            "Last non-pass was E's double, not RHO (S)"
+            "Double is not a bid — last bidder is N (LHO), not RHO (S)"
         );
     }
 
