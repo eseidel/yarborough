@@ -12,6 +12,10 @@ pub enum Call {
 }
 
 impl Call {
+    pub fn is_bid(&self) -> bool {
+        matches!(self, Call::Bid { .. })
+    }
+
     pub fn render(self) -> String {
         match self {
             Call::Pass => "P".to_string(),

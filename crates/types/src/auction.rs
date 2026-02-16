@@ -98,12 +98,12 @@ impl Auction {
     }
 
     pub fn is_open(&self) -> bool {
-        self.calls.iter().any(|c| matches!(c, Call::Bid { .. }))
+        self.calls.iter().any(|c| c.is_bid())
     }
 
     pub fn opener(&self) -> Option<Position> {
         self.iter()
-            .find(|(_, call)| matches!(call, Call::Bid { .. }))
+            .find(|(_, call)| call.is_bid())
             .map(|(position, _)| position)
     }
 
@@ -111,7 +111,7 @@ impl Auction {
     // passes or doubles, which are not bids.
     pub fn last_bidder(&self) -> Option<Position> {
         self.iter()
-            .filter(|(_, call)| matches!(call, Call::Bid { .. }))
+            .filter(|(_, call)| call.is_bid())
             .last()
             .map(|(position, _)| position)
     }
