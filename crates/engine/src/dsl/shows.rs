@@ -34,6 +34,7 @@ impl Shows for ShowHcpRange {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ShowMinLength(pub Suit, pub u8);
 impl Shows for ShowMinLength {
     fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
@@ -112,6 +113,7 @@ impl Shows for ShowPreemptLength {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ShowRuleOfTwenty;
 impl Shows for ShowRuleOfTwenty {
     fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
@@ -128,6 +130,7 @@ impl Shows for ShowRuleOfFifteen {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ShowMaxLength(pub u8);
 impl Shows for ShowMaxLength {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
