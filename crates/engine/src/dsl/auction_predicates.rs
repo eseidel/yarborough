@@ -75,19 +75,18 @@ impl AuctionPredicate for TheyOpened {
     }
 }
 
-/// Checks that the last non-pass call was made by RHO (direct seat).
+/// Checks that RHO's call (the last call in the auction) was not a pass.
+/// This identifies "direct seat" — we are acting immediately after an opponent's action.
 #[derive(Debug)]
 pub struct RhoMadeLastBid;
 impl AuctionPredicate for RhoMadeLastBid {
     fn check(&self, model: &AuctionModel) -> bool {
-        let rho = model.auction.current_player().rho();
-        let mut last_caller = None;
-        for (pos, call) in model.auction.iter() {
-            if !matches!(call, Call::Pass) {
-                last_caller = Some(pos);
-            }
-        }
-        last_caller == Some(rho)
+        model
+            .auction
+            .calls
+            .last()
+            .map(|call| !matches!(call, Call::Pass))
+            .unwrap_or(false)
     }
 }
 
