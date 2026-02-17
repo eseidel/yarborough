@@ -57,7 +57,7 @@ pub trait BiddingRule: Send + Sync {
         }
 
         // Optimize constraints
-        constraints = optimize_constraints(constraints);
+        constraints = HandConstraint::optimize(constraints);
 
         Some(CallSemantics {
             shows: constraints,
@@ -66,47 +66,4 @@ pub trait BiddingRule: Send + Sync {
             planner: self.planner(),
         })
     }
-}
-
-pub fn optimize_constraints(constraints: Vec<HandConstraint>) -> Vec<HandConstraint> {
-    let mut min_hcp = 0;
-    let mut max_hcp = 40;
-    // Map of Suit -> min_length
-    let mut min_lengths = std::collections::HashMap::new();
-    // Map of Suit -> max_length
-    let mut max_lengths = std::collections::HashMap::new();
-
-    let mut other_constraints = Vec::new();
-
-    for c in constraints {
-        match c {
-            HandConstraint::MinHcp(h) => min_hcp = min_hcp.max(h),
-            HandConstraint::MaxHcp(h) => max_hcp = max_hcp.min(h),
-            HandConstraint::MinLength(s, l) => {
-                let entry = min_lengths.entry(s).or_insert(0);
-                *entry = (*entry).max(l);
-            }
-            HandConstraint::MaxLength(s, l) => {
-                let entry = max_lengths.entry(s).or_insert(13);
-                *entry = (*entry).min(l);
-            }
-            _ => other_constraints.push(c),
-        }
-    }
-
-    let mut optimised = Vec::new();
-    if min_hcp > 0 {
-        optimised.push(HandConstraint::MinHcp(min_hcp));
-    }
-    if max_hcp < 40 {
-        optimised.push(HandConstraint::MaxHcp(max_hcp));
-    }
-    for (suit, len) in min_lengths {
-        optimised.push(HandConstraint::MinLength(suit, len));
-    }
-    for (suit, len) in max_lengths {
-        optimised.push(HandConstraint::MaxLength(suit, len));
-    }
-    optimised.extend(other_constraints);
-    optimised
 }

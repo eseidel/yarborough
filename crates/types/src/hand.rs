@@ -223,6 +223,16 @@ impl Hand {
             .map(|(_, &suit)| suit)
             .collect()
     }
+
+    /// A stopper is A, Kx, Qxx, or Jxxx (honor backed by enough small cards).
+    pub fn has_stopper(&self, suit: Suit) -> bool {
+        let len = self.length(suit);
+        let has = |r: Rank| self.cards.iter().any(|c| c.suit == suit && c.rank == r);
+        has(Rank::Ace)
+            || (has(Rank::King) && len >= 2)
+            || (has(Rank::Queen) && len >= 3)
+            || (has(Rank::Jack) && len >= 4)
+    }
 }
 
 #[cfg(test)]

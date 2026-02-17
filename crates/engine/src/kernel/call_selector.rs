@@ -1,4 +1,4 @@
-use crate::dsl::planner::GenuinePlanner;
+use crate::dsl::planner::DefaultPlanner;
 use crate::kernel::call_ranker::{CallRankItem, CallRanker};
 use crate::kernel::trace::{BidTrace, SelectionStep};
 use crate::kernel::AuctionModel;
@@ -20,7 +20,7 @@ impl CallSelector {
         let mut selection_steps = Vec::new();
         let mut selected_call = None;
 
-        let genuine_planner = GenuinePlanner;
+        let default_planner = DefaultPlanner;
 
         for group in &menu.groups {
             let mut satisfied_in_group = Vec::new();
@@ -31,7 +31,7 @@ impl CallSelector {
                     .planner
                     .as_ref()
                     .map(|p| p.as_ref())
-                    .unwrap_or(&genuine_planner);
+                    .unwrap_or(&default_planner);
 
                 let satisfied =
                     planner.applies(auction_model, hand, &item.call, &item.semantics.shows);

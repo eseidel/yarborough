@@ -1,8 +1,5 @@
 //! Tracing for Kernel bid selection
-use crate::kernel::call_ranker::CallRanker;
-use crate::kernel::semantics::CallSemantics;
-use crate::kernel::AuctionModel;
-use crate::kernel::HandConstraint;
+use crate::kernel::{AuctionModel, CallRanker, CallSemantics, HandConstraint};
 use serde::{Deserialize, Serialize};
 use types::Call;
 

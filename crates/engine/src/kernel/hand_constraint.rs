@@ -2,6 +2,7 @@
 //! Hand constraints for Kernel bidding rules
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use types::{Hand, Shape, Suit};
 
 /// Constraints that a hand must satisfy
@@ -41,7 +42,7 @@ impl HandConstraint {
             HandConstraint::MinLength(suit, len) => dist.length(suit) >= len,
             HandConstraint::MaxLength(suit, len) => dist.length(suit) <= len,
             HandConstraint::MaxUnbalancedness(max_shape) => hand.shape() <= max_shape,
-            HandConstraint::StopperIn(suit) => has_stopper(hand, suit),
+            HandConstraint::StopperIn(suit) => hand.has_stopper(suit),
             HandConstraint::RuleOfTwenty => {
                 let mut lengths: Vec<u8> = Suit::ALL.iter().map(|&s| dist.length(s)).collect();
                 lengths.sort_unstable_by(|a, b| b.cmp(a));
@@ -55,15 +56,48 @@ impl HandConstraint {
             }
         }
     }
-}
 
-/// A stopper is A, Kx, Qxx, or Jxxx (honor backed by enough small cards).
-fn has_stopper(hand: &Hand, suit: Suit) -> bool {
-    use types::Rank;
-    let len = hand.length(suit);
-    let has = |r: Rank| hand.cards.iter().any(|c| c.suit == suit && c.rank == r);
-    has(Rank::Ace)
-        || (has(Rank::King) && len >= 2)
-        || (has(Rank::Queen) && len >= 3)
-        || (has(Rank::Jack) && len >= 4)
+    /// Optimize a list of constraints by combining HCP and length ranges.
+    pub fn optimize(constraints: Vec<Self>) -> Vec<Self> {
+        let mut min_hcp = 0;
+        let mut max_hcp = 40;
+        // Map of Suit -> min_length
+        let mut min_lengths = HashMap::new();
+        // Map of Suit -> max_length
+        let mut max_lengths = HashMap::new();
+
+        let mut other_constraints = Vec::new();
+
+        for c in constraints {
+            match c {
+                HandConstraint::MinHcp(h) => min_hcp = min_hcp.max(h),
+                HandConstraint::MaxHcp(h) => max_hcp = max_hcp.min(h),
+                HandConstraint::MinLength(s, l) => {
+                    let entry = min_lengths.entry(s).or_insert(0);
+                    *entry = (*entry).max(l);
+                }
+                HandConstraint::MaxLength(s, l) => {
+                    let entry = max_lengths.entry(s).or_insert(13);
+                    *entry = (*entry).min(l);
+                }
+                _ => other_constraints.push(c),
+            }
+        }
+
+        let mut optimised = Vec::new();
+        if min_hcp > 0 {
+            optimised.push(HandConstraint::MinHcp(min_hcp));
+        }
+        if max_hcp < 40 {
+            optimised.push(HandConstraint::MaxHcp(max_hcp));
+        }
+        for (suit, len) in min_lengths {
+            optimised.push(HandConstraint::MinLength(suit, len));
+        }
+        for (suit, len) in max_lengths {
+            optimised.push(HandConstraint::MaxLength(suit, len));
+        }
+        optimised.extend(other_constraints);
+        optimised
+    }
 }

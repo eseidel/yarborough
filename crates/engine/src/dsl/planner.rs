@@ -14,9 +14,9 @@ pub trait Planner: Send + Sync {
 }
 
 /// The default planner that checks if the hand satisfies all "shows" constraints.
-pub struct GenuinePlanner;
+pub struct DefaultPlanner;
 
-impl Planner for GenuinePlanner {
+impl Planner for DefaultPlanner {
     fn applies(
         &self,
         _auction: &AuctionModel,
@@ -24,13 +24,18 @@ impl Planner for GenuinePlanner {
         _call: &Call,
         shows: &[HandConstraint],
     ) -> bool {
-        for constraint in shows {
-            if !constraint.check(hand) {
-                return false;
-            }
-        }
-        true
+        satisfies_all(hand, shows)
     }
+}
+
+/// Helper function to check if a hand satisfies all given constraints.
+pub fn satisfies_all(hand: &Hand, constraints: &[HandConstraint]) -> bool {
+    for constraint in constraints {
+        if !constraint.check(hand) {
+            return false;
+        }
+    }
+    true
 }
 
 /// A planner for Rule of 20 openings.
@@ -80,11 +85,6 @@ impl Planner for TakeoutDoublePlanner {
             return true;
         }
         // Otherwise, must satisfy all constraints (11+ HCP + 3+ in each unbid suit)
-        for constraint in shows {
-            if !constraint.check(hand) {
-                return false;
-            }
-        }
-        true
+        satisfies_all(hand, shows)
     }
 }
