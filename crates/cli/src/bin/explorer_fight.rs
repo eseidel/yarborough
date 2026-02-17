@@ -49,9 +49,17 @@ struct Args {
     #[arg(long)]
     local_only: bool,
 
-    /// Path to saycbridge repo (for local z3b). Falls back to Z3B_PATH env var.
+    /// Path to saycbridge repo (for local z3b). Falls back to Z3B_PATH env var,
+    /// then to the saycbridge submodule.
     #[arg(long, env = "Z3B_PATH")]
     z3b_path: Option<PathBuf>,
+}
+
+fn default_z3b_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../saycbridge")
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from("saycbridge"))
 }
 
 // ── z3b types ─────────────────────────────────────────────────────────
@@ -529,11 +537,9 @@ fn main() {
     } else if args.local_only {
         // local_only doesn't need z3b at all, use a dummy
         Z3bSource::Local(PathBuf::new())
-    } else if let Some(ref path) = args.z3b_path {
-        Z3bSource::Local(path.clone())
     } else {
-        eprintln!("Error: --z3b-path or Z3B_PATH env var required (or use --kbb/--local-only)");
-        std::process::exit(1);
+        let path = args.z3b_path.clone().unwrap_or_else(default_z3b_path);
+        Z3bSource::Local(path)
     };
 
     let delay = Duration::from_millis(args.delay_ms);

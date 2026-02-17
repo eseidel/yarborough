@@ -11,12 +11,12 @@
     "pnpm-approve-builds.json",
     "*.wasm",
     "tests/**/*.yaml",
-    "crates/**/tests/**/*.yaml"
+    "crates/**/tests/**/*.yaml",
+    "saycbridge"
   ],
   "words": [
     "ACBL",
     "abarth",
-    "abortz",
     "autobid",
     "autobidder",
     "bigdeal",

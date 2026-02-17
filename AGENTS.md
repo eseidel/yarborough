@@ -31,7 +31,7 @@ Do not use manual testing. Write automated tests instead.
 **z3b is a reference implementation, not ground truth:**
 
 - z3b is the state-of-the-art SAYCBridge implementation — use it as a reference but it has its own bugs
-- Run z3b locally via `../saycbridge` (set `Z3B_PATH` env var or pass `--z3b-path`)
+- z3b lives in the `saycbridge/` submodule (run `git submodule update --init` to fetch it)
 - kbb (`saycbridge.com`) is the old original implementation, not authoritative
 - Over time yarborough will intentionally diverge from z3b where we're more correct
 
