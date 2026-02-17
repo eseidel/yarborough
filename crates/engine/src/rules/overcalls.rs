@@ -1,5 +1,4 @@
 use crate::bidding_rule;
-use crate::dsl::annotations::Annotation;
 use crate::dsl::auction_predicates::{
     LastBidMaxLevel, RhoMadeLastBid, TheyOpened, WeHaveOnlyPassed,
 };
@@ -39,7 +38,7 @@ bidding_rule! {
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(1), IsNotrump],
     shows: [ShowHcpRange(15, 18), ShowBalanced, ShowStopperInOpponentSuit],
-    annotations: [Annotation::NotrumpSystemsOn]
+    annotations: [NotrumpSystemsOn]
 }
 
 bidding_rule! {
