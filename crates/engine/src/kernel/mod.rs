@@ -13,7 +13,6 @@ pub mod call_semantics;
 pub mod call_trace;
 pub mod hand_constraint;
 pub mod hand_model;
-pub mod point_ranges;
 
 pub use auction_model::AuctionModel;
 pub use call_interpreter::CallInterpreter;
@@ -24,7 +23,6 @@ pub use call_semantics::CallSemantics;
 pub use call_trace::CallTrace;
 pub use hand_constraint::HandConstraint;
 pub use hand_model::HandModel;
-pub use point_ranges::PointRanges;
 
 use types::{Auction, Call, Hand};
 

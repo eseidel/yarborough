@@ -1,4 +1,4 @@
-use crate::kernel::{AuctionModel, HandConstraint, PointRanges};
+use crate::kernel::{AuctionModel, HandConstraint};
 use std::fmt::Debug;
 use types::{Call, Shape, Suit};
 
@@ -146,10 +146,13 @@ impl Shows for ShowSufficientValues {
             _ => return vec![],
         };
 
+        const SUITED_POINTS: [u8; 7] = [16, 19, 22, 25, 28, 33, 37];
+        const NT_POINTS: [u8; 7] = [19, 22, 25, 28, 30, 33, 37];
+
         let min_combined_points = if strain.to_suit().is_some() {
-            PointRanges::min_points_for_suited_bid(level)
+            SUITED_POINTS[level as usize - 1]
         } else {
-            PointRanges::min_points_for_nt_bid(level)
+            NT_POINTS[level as usize - 1]
         };
 
         let partner_min = auction.partner_hand().min_hcp.unwrap_or(0);
@@ -234,12 +237,16 @@ impl Shows for ShowBetterContractIsRemote {
                 return vec![];
             }
 
+            const GAME_THRESHOLD: u8 = 25;
+            const SLAM_THRESHOLD: u8 = 33;
+            const GRAND_SLAM_THRESHOLD: u8 = 37;
+
             let goal = if contract.is_slam() {
-                PointRanges::GRAND_SLAM_THRESHOLD
+                GRAND_SLAM_THRESHOLD
             } else if contract.is_game() {
-                PointRanges::SLAM_THRESHOLD
+                SLAM_THRESHOLD
             } else {
-                PointRanges::GAME_THRESHOLD
+                GAME_THRESHOLD
             };
 
             let threshold = (goal - 1).saturating_sub(partner_max_hcp);
