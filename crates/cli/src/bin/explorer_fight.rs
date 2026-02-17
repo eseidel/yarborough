@@ -49,9 +49,8 @@ struct Args {
     #[arg(long)]
     local_only: bool,
 
-    /// Path to saycbridge repo (for local z3b). Falls back to Z3B_PATH env var,
-    /// then to the saycbridge submodule.
-    #[arg(long, env = "Z3B_PATH")]
+    /// Path to saycbridge repo (for local z3b). Defaults to the saycbridge submodule.
+    #[arg(long)]
     z3b_path: Option<PathBuf>,
 }
 
