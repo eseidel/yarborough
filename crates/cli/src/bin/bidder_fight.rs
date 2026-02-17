@@ -198,7 +198,6 @@ fn run_batch(args: &Args, ref_bidder: &ReferenceBidder) {
     let mut rng = StdRng::seed_from_u64(seed);
     let total = args.count;
 
-    // Compare sequentially (z3b is single-threaded, no parallelism benefit).
     let results: Vec<BoardResult> = (0..total)
         .map(|i| {
             let n = rng.gen_range(1..=16);
