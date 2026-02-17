@@ -1,6 +1,8 @@
 //! Auction state analysis for Kernel
 
+use crate::dsl::annotations::Annotation;
 use crate::kernel::{CallInterpreter, HandModel};
+use std::collections::HashSet;
 use types::Auction;
 
 use serde::{Deserialize, Serialize};
@@ -15,6 +17,8 @@ pub struct AuctionModel {
     pub auction: Auction,
     /// Per-position profiles indexed by Position::idx()
     hands: [HandModel; 4],
+    /// Per-position annotations indexed by Position::idx()
+    annotations: [HashSet<Annotation>; 4],
 }
 
 impl AuctionModel {
@@ -34,20 +38,29 @@ impl AuctionModel {
         &self.hands[self.auction.current_player().rho().idx()]
     }
 
+    pub fn partner_annotations(&self) -> &HashSet<Annotation> {
+        &self.annotations[self.auction.current_player().partner().idx()]
+    }
+
     /// Analyze the auction to build models of all four hands
     pub fn from_auction(auction: &Auction) -> Self {
         let mut hands: [HandModel; 4] = Default::default();
+        let mut annotations: [HashSet<Annotation>; 4] = Default::default();
         let mut current_auction = Auction::new(auction.dealer);
 
         for (position, call) in auction.iter() {
             let context = Self {
                 auction: current_auction.clone(),
                 hands: hands.clone(),
+                annotations: annotations.clone(),
             };
 
             if let Some(semantics) = CallInterpreter::interpret(&context, call) {
                 for constraint in semantics.shows {
                     hands[position.idx()].apply_constraint(constraint);
+                }
+                for annotation in &semantics.annotations {
+                    annotations[position.idx()].insert(*annotation);
                 }
             }
 
@@ -57,6 +70,7 @@ impl AuctionModel {
         Self {
             auction: auction.clone(),
             hands,
+            annotations,
         }
     }
 }

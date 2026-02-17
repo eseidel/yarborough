@@ -11,4 +11,6 @@ use serde::{Deserialize, Serialize};
 pub enum Annotation {
     /// This bid activates the notrump system (Stayman, transfers, etc.)
     NotrumpSystemsOn,
+    /// This bid is a suited overcall (1-level, 2-level, or weak jump)
+    Overcall,
 }

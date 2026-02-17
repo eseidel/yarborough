@@ -16,6 +16,14 @@ test_preemptive_openings:
   - ["2.AQJ987652.2.2", "5D"] # 9 Diamonds, 7 HCP
   - ["AKJ.AKQ.A82.AQ43", "3N"] # 26 HCP, Balanced. C, D, H, S order. 13 cards.
 
+test_advance_bids:
+  # Raise partner's overcall — 4-card support, 13 HCP
+  - ["AQ4.K64.J82.KT95", "2S", "1D 1S P"] # raise 1S overcall with 4 spades
+  # New suit advance — 5-card suit, 13 HCP, only 2-card support
+  - ["932.K64.AKJ72.Q8", "2H", "1C 1S P"] # bid 2H with 5 hearts, can't raise spades
+  # Pass advance — too weak to act
+  - ["732.864.J82.T953", "P", "1D 1S P"] # 3 HCP, pass
+
 test_partner_profile_inference:
   # Before fix: passed (thought partner could have 0 HCP). After fix: bid 2N (know partner has 10+ HCP)
   - ["KJ64.JT.KQT9.KJ9", "2N", "1D P 1H P 1N P"]

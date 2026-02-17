@@ -18,21 +18,24 @@ rule! {
     OneLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(1), IsSuit, OpponentHasNotShownSuit],
-    shows: [ShowMinSuitLength(5), ShowMinHcp(8), ShowThreeOfTopFiveOrBetter]
+    shows: [ShowMinSuitLength(5), ShowMinHcp(8), ShowThreeOfTopFiveOrBetter],
+    annotations: [Overcall]
 }
 
 rule! {
     TwoLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(2), IsSuit, not_call(IsJump), OpponentHasNotShownSuit],
-    shows: [ShowMinSuitLength(5), ShowMinHcp(10), ShowThreeOfTopFiveOrBetter]
+    shows: [ShowMinSuitLength(5), ShowMinHcp(10), ShowThreeOfTopFiveOrBetter],
+    annotations: [Overcall]
 }
 
 rule! {
     WeakJumpOvercall: "Weak Jump Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsSuit, IsJump, MaxLevel(4), OpponentHasNotShownSuit],
-    shows: [ShowPreemptLength, ShowHcpRange(5, 10), ShowThreeOfTopFiveOrBetter]
+    shows: [ShowPreemptLength, ShowHcpRange(5, 10), ShowThreeOfTopFiveOrBetter],
+    annotations: [Overcall]
 }
 
 rule! {
