@@ -2,6 +2,8 @@ use clap::Parser;
 use engine::{get_interpretations, CallInterpretation};
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
@@ -31,7 +33,7 @@ struct Args {
     #[arg(long, default_value_t = 100)]
     delay_ms: u64,
 
-    /// Use kbb instead of z3b
+    /// Use kbb (remote) instead of z3b
     #[arg(long)]
     kbb: bool,
 
@@ -46,6 +48,10 @@ struct Args {
     /// Only show local (yarborough) interpretations, skip z3b calls
     #[arg(long)]
     local_only: bool,
+
+    /// Path to saycbridge repo (for local z3b). Falls back to Z3B_PATH env var.
+    #[arg(long, env = "Z3B_PATH")]
+    z3b_path: Option<PathBuf>,
 }
 
 // ── z3b types ─────────────────────────────────────────────────────────
@@ -107,9 +113,44 @@ struct Stats {
     ours_only: usize,
 }
 
-// ── z3b API ───────────────────────────────────────────────────────────
+// ── z3b source: local CLI or remote HTTP ──────────────────────────────
 
-fn get_z3b_interpretations(
+enum Z3bSource {
+    Local(PathBuf),
+    Remote(reqwest::blocking::Client, String),
+}
+
+fn get_z3b_interpretations_local(
+    z3b_path: &Path,
+    calls_string: &str,
+    dealer: &str,
+    vulnerability: &str,
+) -> Result<Vec<Z3bInterpretation>, String> {
+    let python = z3b_path.join(".venv/bin/python");
+    let cli = z3b_path.join("z3b_cli.py");
+
+    let output = Command::new(&python)
+        .env("PYTHONPATH", z3b_path.join("src"))
+        .arg(&cli)
+        .arg("interpret")
+        .arg("--calls")
+        .arg(calls_string)
+        .arg("--dealer")
+        .arg(dealer)
+        .arg("--vulnerability")
+        .arg(vulnerability)
+        .output()
+        .map_err(|e| format!("Failed to run z3b_cli.py: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("z3b_cli.py failed: {stderr}"));
+    }
+
+    serde_json::from_slice(&output.stdout).map_err(|e| format!("JSON: {e}"))
+}
+
+fn get_z3b_interpretations_remote(
     client: &reqwest::blocking::Client,
     remote_url: &str,
     calls_string: &str,
@@ -135,11 +176,27 @@ fn get_z3b_interpretations(
         .map_err(|e| format!("JSON: {e}"))
 }
 
+fn get_z3b_interpretations(
+    source: &Z3bSource,
+    calls_string: &str,
+    dealer: &str,
+    vulnerability: &str,
+    delay: Duration,
+) -> Result<Vec<Z3bInterpretation>, String> {
+    match source {
+        Z3bSource::Local(path) => {
+            get_z3b_interpretations_local(path, calls_string, dealer, vulnerability)
+        }
+        Z3bSource::Remote(client, url) => {
+            get_z3b_interpretations_remote(client, url, calls_string, dealer, vulnerability, delay)
+        }
+    }
+}
+
 // ── comparison logic ──────────────────────────────────────────────────
 
 fn compare_position(
-    client: &reqwest::blocking::Client,
-    remote_url: &str,
+    source: &Z3bSource,
     calls_string: &str,
     dealer: &str,
     vulnerability: &str,
@@ -149,14 +206,7 @@ fn compare_position(
     let z3b = if local_only {
         Vec::new()
     } else {
-        get_z3b_interpretations(
-            client,
-            remote_url,
-            calls_string,
-            dealer,
-            vulnerability,
-            delay,
-        )?
+        get_z3b_interpretations(source, calls_string, dealer, vulnerability, delay)?
     };
     let z3b_map: BTreeMap<&str, &Z3bInterpretation> =
         z3b.iter().map(|i| (i.call_name.as_str(), i)).collect();
@@ -227,8 +277,7 @@ fn compare_position(
 // ── tree walking ──────────────────────────────────────────────────────
 
 fn walk_tree(
-    client: &reqwest::blocking::Client,
-    remote_url: &str,
+    source: &Z3bSource,
     dealer: &str,
     vulnerability: &str,
     max_depth: usize,
@@ -252,15 +301,7 @@ fn walk_tree(
             }
         );
 
-        match compare_position(
-            client,
-            remote_url,
-            &history,
-            dealer,
-            vulnerability,
-            delay,
-            local_only,
-        ) {
+        match compare_position(source, &history, dealer, vulnerability, delay, local_only) {
             Ok(result) => {
                 if depth < max_depth {
                     // Expand recognized calls + Pass
@@ -480,13 +521,20 @@ fn pct(n: usize, total: usize) -> f64 {
 fn main() {
     let args = Args::parse();
 
-    let remote_url = if args.kbb {
-        "https://www.saycbridge.com/json/interpret2"
+    let source = if args.kbb {
+        Z3bSource::Remote(
+            reqwest::blocking::Client::new(),
+            "https://www.saycbridge.com/json/interpret2".into(),
+        )
+    } else if args.local_only {
+        // local_only doesn't need z3b at all, use a dummy
+        Z3bSource::Local(PathBuf::new())
+    } else if let Some(ref path) = args.z3b_path {
+        Z3bSource::Local(path.clone())
     } else {
-        "https://sayc.abortz.net/json/interpret2"
+        eprintln!("Error: --z3b-path or Z3B_PATH env var required (or use --kbb/--local-only)");
+        std::process::exit(1);
     };
-
-    let client = reqwest::blocking::Client::new();
 
     let delay = Duration::from_millis(args.delay_ms);
 
@@ -495,8 +543,7 @@ fn main() {
             .iter()
             .filter_map(|h| {
                 match compare_position(
-                    &client,
-                    remote_url,
+                    &source,
                     h,
                     &args.dealer,
                     &args.vulnerability,
@@ -517,8 +564,7 @@ fn main() {
             args.depth, args.dealer, args.vulnerability
         );
         walk_tree(
-            &client,
-            remote_url,
+            &source,
             &args.dealer,
             &args.vulnerability,
             args.depth,

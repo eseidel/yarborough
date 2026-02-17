@@ -30,7 +30,8 @@ Do not use manual testing. Write automated tests instead.
 
 **z3b is a reference implementation, not ground truth:**
 
-- z3b (`sayc.abortz.net`) is the state-of-the-art SAYCBridge implementation — use it as a reference but it has its own bugs
+- z3b is the state-of-the-art SAYCBridge implementation — use it as a reference but it has its own bugs
+- Run z3b locally via `../saycbridge` (set `Z3B_PATH` env var or pass `--z3b-path`)
 - kbb (`saycbridge.com`) is the old original implementation, not authoritative
 - Over time yarborough will intentionally diverge from z3b where we're more correct
 
@@ -38,7 +39,7 @@ Do not use manual testing. Write automated tests instead.
 
 **Use the debugging tools together:**
 
-1. `cargo run --bin bidder_fight -- -n 200 -s <seed>` - batch comparison against z3b with categorized statistics
+1. `cargo run --bin bidder_fight -- -n 200 -s <seed>` - batch comparison against local z3b
 2. `cargo run --bin bidding-debug -- "<board-id>"` - shows why a bid was chosen
 3. `cargo run --bin bidding-debug -- "<board-id>" --bid N` - detailed trace for specific bid
 

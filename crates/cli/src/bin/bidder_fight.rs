@@ -4,6 +4,8 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use serde::Deserialize;
 use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use types::auction::Auction;
 use types::board::{Board, Position, Vulnerability};
 use types::call::Call;
@@ -41,9 +43,13 @@ struct Args {
     #[arg(long)]
     category: Option<String>,
 
-    /// Use kbb (old) instead of z3b
+    /// Use kbb (remote) instead of z3b
     #[arg(long)]
     kbb: bool,
+
+    /// Path to saycbridge repo (for local z3b). Falls back to Z3B_PATH env var.
+    #[arg(long, env = "Z3B_PATH")]
+    z3b_path: Option<PathBuf>,
 }
 
 // ── types ──────────────────────────────────────────────────────────────
@@ -124,24 +130,111 @@ fn categorize(auction: &Auction, bidder: Position) -> String {
     }
 }
 
-// ── remote API ─────────────────────────────────────────────────────────
+// ── z3b source: local CLI or remote HTTP ──────────────────────────────
 
-fn get_remote_auction(
+enum Z3bSource {
+    Local(PathBuf),
+    Remote(reqwest::blocking::Client, String),
+}
+
+fn vulnerability_z3b(v: Vulnerability) -> &'static str {
+    match v {
+        Vulnerability::None => "None",
+        Vulnerability::NS => "N-S",
+        Vulnerability::EW => "E-W",
+        Vulnerability::Both => "Both",
+    }
+}
+
+fn get_z3b_auction_local(
+    z3b_path: &Path,
+    board: &Board,
+    board_number: u32,
+) -> Result<Vec<Call>, String> {
+    let python = z3b_path.join(".venv/bin/python");
+    let cli = z3b_path.join("z3b_cli.py");
+
+    let output = Command::new(&python)
+        .env("PYTHONPATH", z3b_path.join("src"))
+        .arg(&cli)
+        .arg("autobid")
+        .arg("--number")
+        .arg(board_number.to_string())
+        .arg("--dealer")
+        .arg(board.dealer.to_char().to_string())
+        .arg("--vulnerability")
+        .arg(vulnerability_z3b(board.vulnerability))
+        .arg("--north")
+        .arg(
+            board
+                .hands
+                .get(&Position::North)
+                .map(format_hand_cdhs)
+                .unwrap_or_default(),
+        )
+        .arg("--east")
+        .arg(
+            board
+                .hands
+                .get(&Position::East)
+                .map(format_hand_cdhs)
+                .unwrap_or_default(),
+        )
+        .arg("--south")
+        .arg(
+            board
+                .hands
+                .get(&Position::South)
+                .map(format_hand_cdhs)
+                .unwrap_or_default(),
+        )
+        .arg("--west")
+        .arg(
+            board
+                .hands
+                .get(&Position::West)
+                .map(format_hand_cdhs)
+                .unwrap_or_default(),
+        )
+        .output()
+        .map_err(|e| format!("Failed to run z3b_cli.py: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("z3b_cli.py failed: {stderr}"));
+    }
+
+    let autobid: AutobidResponse =
+        serde_json::from_slice(&output.stdout).map_err(|e| format!("JSON: {e}"))?;
+
+    Ok(autobid
+        .calls_string
+        .split_whitespace()
+        .filter_map(|s| s.parse().ok())
+        .collect())
+}
+
+fn vulnerability_remote(v: Vulnerability) -> &'static str {
+    match v {
+        Vulnerability::None => "NO",
+        Vulnerability::NS => "NS",
+        Vulnerability::EW => "EW",
+        Vulnerability::Both => "BOTH",
+    }
+}
+
+fn get_z3b_auction_remote(
     client: &reqwest::blocking::Client,
     remote_url: &str,
     board: &Board,
     board_number: u32,
 ) -> Result<Vec<Call>, String> {
-    let vulnerability = match board.vulnerability {
-        Vulnerability::None => "NO",
-        Vulnerability::NS => "NS",
-        Vulnerability::EW => "EW",
-        Vulnerability::Both => "BOTH",
-    };
-
     let params = [
         ("number", board_number.to_string()),
-        ("vulnerability", vulnerability.to_string()),
+        (
+            "vulnerability",
+            vulnerability_remote(board.vulnerability).to_string(),
+        ),
         ("dealer", board.dealer.to_char().to_string()),
         ("calls_string", String::new()),
         (
@@ -193,15 +286,21 @@ fn get_remote_auction(
         .collect())
 }
 
-// ── board comparison ───────────────────────────────────────────────────
-
-fn compare_board(
-    client: &reqwest::blocking::Client,
-    remote_url: &str,
+fn get_z3b_auction(
+    source: &Z3bSource,
     board: &Board,
     board_number: u32,
-) -> BoardResult {
-    let remote_calls = match get_remote_auction(client, remote_url, board, board_number) {
+) -> Result<Vec<Call>, String> {
+    match source {
+        Z3bSource::Local(path) => get_z3b_auction_local(path, board, board_number),
+        Z3bSource::Remote(client, url) => get_z3b_auction_remote(client, url, board, board_number),
+    }
+}
+
+// ── board comparison ───────────────────────────────────────────────────
+
+fn compare_board(source: &Z3bSource, board: &Board, board_number: u32) -> BoardResult {
+    let remote_calls = match get_z3b_auction(source, board, board_number) {
         Ok(c) => c,
         Err(e) => return BoardResult::Error(e),
     };
@@ -242,8 +341,7 @@ fn compare_board(
 
 // ── identifier mode ────────────────────────────────────────────────────
 
-fn run_identifiers(remote_url: &str, ids: &[String]) {
-    let client = reqwest::blocking::Client::new();
+fn run_identifiers(source: &Z3bSource, ids: &[String]) {
     for id in ids {
         let Some((board, _auction)) = identifier::import_board(id) else {
             eprintln!("Failed to parse: {id}");
@@ -255,7 +353,7 @@ fn run_identifiers(remote_url: &str, ids: &[String]) {
             .and_then(|s| s.parse().ok())
             .unwrap_or(1);
 
-        match compare_board(&client, remote_url, &board, board_number) {
+        match compare_board(source, &board, board_number) {
             BoardResult::Agree => println!("{id}: Agree"),
             BoardResult::Differ(d) => {
                 println!("{id}: DIFFER [{}]", d.category);
@@ -281,21 +379,20 @@ fn run_identifiers(remote_url: &str, ids: &[String]) {
 
 // ── batch mode ─────────────────────────────────────────────────────────
 
-fn run_batch(args: &Args, remote_url: &str) {
+fn run_batch(args: &Args, source: &Z3bSource) {
     let seed = args.seed.unwrap_or_else(|| rand::thread_rng().gen());
     eprintln!("Seed: {seed} | Boards: {}", args.count);
 
     // Generate all boards deterministically from the seed.
     let mut rng = StdRng::seed_from_u64(seed);
-    let client = reqwest::blocking::Client::new();
     let total = args.count;
 
-    // Compare sequentially (z3b is a single server, no parallelism benefit).
+    // Compare sequentially (z3b is single-threaded, no parallelism benefit).
     let results: Vec<BoardResult> = (0..total)
         .map(|i| {
             let n = rng.gen_range(1..=16);
             let board = generate_random_board(n, &mut rng);
-            let r = compare_board(&client, remote_url, &board, n);
+            let r = compare_board(source, &board, n);
             eprint!("\rProgress: {}/{total}", i + 1);
             r
         })
@@ -428,16 +525,22 @@ fn pct(n: usize, total: usize) -> f64 {
 fn main() {
     let args = Args::parse();
 
-    let remote_url = if args.kbb {
-        "https://www.saycbridge.com/json/autobid"
+    let source = if args.kbb {
+        Z3bSource::Remote(
+            reqwest::blocking::Client::new(),
+            "https://www.saycbridge.com/json/autobid".into(),
+        )
+    } else if let Some(ref path) = args.z3b_path {
+        Z3bSource::Local(path.clone())
     } else {
-        "https://sayc.abortz.net/json/autobid"
+        eprintln!("Error: --z3b-path or Z3B_PATH env var required (or use --kbb for remote)");
+        std::process::exit(1);
     };
 
     if !args.identifiers.is_empty() {
-        run_identifiers(remote_url, &args.identifiers);
+        run_identifiers(&source, &args.identifiers);
     } else {
-        run_batch(&args, remote_url);
+        run_batch(&args, &source);
     }
 }
 
