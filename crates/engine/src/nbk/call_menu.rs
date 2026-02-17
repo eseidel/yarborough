@@ -2,6 +2,7 @@
 //!
 //! Provides a way to group legal calls by their semantic meaning.
 
+use crate::dsl::annotations::Annotation;
 use crate::nbk::{AuctionModel, CallInterpreter, CallSemantics, HandConstraint};
 use serde::{Deserialize, Serialize};
 use types::Call;
@@ -116,11 +117,19 @@ impl CallMenu {
     }
 }
 
-/// Determine the purpose category for a bid based on its shown constraints.
+/// Determine the purpose category for a bid based on its annotations and constraints.
 fn categorize_bid(auction_model: &AuctionModel, semantics: &CallSemantics) -> CallPurpose {
     let mut best_purpose = CallPurpose::Miscellaneous;
     let mut did_show_length = false;
     let mut did_characterize_strength = false;
+
+    // Check annotations first
+    if semantics
+        .annotations
+        .contains(&Annotation::NotrumpSystemsOn)
+    {
+        best_purpose = best_purpose.min(CallPurpose::EnterNotrumpSystem);
+    }
 
     for constraint in &semantics.shows {
         match *constraint {
@@ -154,9 +163,6 @@ fn categorize_bid(auction_model: &AuctionModel, semantics: &CallSemantics) -> Ca
                 if now_shown < auction_model.bidder_hand().max_hcp.unwrap_or(40) {
                     did_characterize_strength = true;
                 }
-            }
-            HandConstraint::EntersNotrumpSystem => {
-                best_purpose = best_purpose.min(CallPurpose::EnterNotrumpSystem);
             }
             _ => {}
         }

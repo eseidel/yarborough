@@ -34,15 +34,6 @@ impl Shows for ShowSupportForUnbidSuits {
     }
 }
 
-/// Annotates that this bid enters a notrump system (Stayman, transfers, etc.)
-#[derive(Debug)]
-pub struct ShowEntersNotrumpSystem;
-impl Shows for ShowEntersNotrumpSystem {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![HandConstraint::EntersNotrumpSystem]
-    }
-}
-
 pub trait Shows: Send + Sync + Debug {
     fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint>;
 }

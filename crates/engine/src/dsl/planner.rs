@@ -99,7 +99,6 @@ fn satisfies_constraint(hand: &Hand, constraint: &HandConstraint) -> bool {
         HandConstraint::StopperIn(_) => constraint.check(hand),
         HandConstraint::RuleOfTwenty => rule_of_twenty(hand),
         HandConstraint::RuleOfFifteen => rule_of_fifteen(hand),
-        HandConstraint::EntersNotrumpSystem => true, // pure annotation
     }
 }
 

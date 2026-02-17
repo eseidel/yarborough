@@ -1,4 +1,5 @@
 use crate::bidding_rule;
+use crate::dsl::annotations::Annotation;
 use crate::dsl::auction_predicates::not_auction;
 use crate::dsl::auction_predicates::IsNotOpen;
 use crate::dsl::auction_predicates::IsSeat;
@@ -11,7 +12,6 @@ use crate::dsl::call_predicates::IsSuit;
 use crate::dsl::call_predicates::MinLevel;
 use crate::dsl::planner::RuleOfTwentyPlanner;
 use crate::dsl::shows::ShowBalanced;
-use crate::dsl::shows::ShowEntersNotrumpSystem;
 use crate::dsl::shows::ShowHcpRange;
 use crate::dsl::shows::ShowMaxHcp;
 use crate::dsl::shows::ShowMinHcp;
@@ -32,14 +32,16 @@ bidding_rule! {
     OneNotrumpOpening: "1NT Opening",
     auction: [IsNotOpen],
     call: [IsCall(1, Strain::Notrump)],
-    shows: [ShowHcpRange(15, 17), ShowBalanced, ShowEntersNotrumpSystem]
+    shows: [ShowHcpRange(15, 17), ShowBalanced],
+    annotations: [Annotation::NotrumpSystemsOn]
 }
 
 bidding_rule! {
     TwoNotrumpOpening: "2NT Opening",
     auction: [IsNotOpen],
     call: [IsCall(2, Strain::Notrump)],
-    shows: [ShowHcpRange(20, 21), ShowBalanced, ShowEntersNotrumpSystem]
+    shows: [ShowHcpRange(20, 21), ShowBalanced],
+    annotations: [Annotation::NotrumpSystemsOn]
 }
 
 bidding_rule! {

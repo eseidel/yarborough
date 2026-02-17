@@ -1,4 +1,5 @@
 use crate::bidding_rule;
+use crate::dsl::annotations::Annotation;
 use crate::dsl::auction_predicates::{
     LastBidMaxLevel, RhoMadeLastBid, TheyOpened, WeHaveOnlyPassed,
 };
@@ -8,8 +9,8 @@ use crate::dsl::call_predicates::{
 };
 use crate::dsl::planner::TakeoutDoublePlanner;
 use crate::dsl::shows::{
-    ShowBalanced, ShowEntersNotrumpSystem, ShowHcpRange, ShowMinHcp, ShowMinSuitLength,
-    ShowPreemptLength, ShowStopperInOpponentSuit, ShowSupportForUnbidSuits,
+    ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinSuitLength, ShowPreemptLength,
+    ShowStopperInOpponentSuit, ShowSupportForUnbidSuits,
 };
 
 bidding_rule! {
@@ -38,7 +39,8 @@ bidding_rule! {
     OneNotrumpOvercall: "Notrump Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(1), IsNotrump],
-    shows: [ShowHcpRange(15, 18), ShowBalanced, ShowStopperInOpponentSuit, ShowEntersNotrumpSystem]
+    shows: [ShowHcpRange(15, 18), ShowBalanced, ShowStopperInOpponentSuit],
+    annotations: [Annotation::NotrumpSystemsOn]
 }
 
 bidding_rule! {
