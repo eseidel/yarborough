@@ -1,4 +1,3 @@
-use crate::bidding_rule;
 use crate::dsl::auction_predicates::not_auction;
 use crate::dsl::auction_predicates::IsNotOpen;
 use crate::dsl::auction_predicates::IsSeat;
@@ -19,16 +18,17 @@ use crate::dsl::shows::ShowOpeningSuitLength;
 use crate::dsl::shows::ShowPreemptLength;
 use crate::dsl::shows::ShowRuleOfFifteen;
 use crate::dsl::shows::ShowThreeOfTopFiveOrBetter;
+use crate::rule;
 use types::Strain;
 
-bidding_rule! {
+rule! {
     Strong2COpening: "Strong 2C Opening",
     auction: [IsNotOpen],
     call: [IsCall(2, Strain::Clubs)],
     shows: [ShowMinHcp(22)]
 }
 
-bidding_rule! {
+rule! {
     OneNotrumpOpening: "1NT Opening",
     auction: [IsNotOpen],
     call: [IsCall(1, Strain::Notrump)],
@@ -36,7 +36,7 @@ bidding_rule! {
     annotations: [NotrumpSystemsOn]
 }
 
-bidding_rule! {
+rule! {
     TwoNotrumpOpening: "2NT Opening",
     auction: [IsNotOpen],
     call: [IsCall(2, Strain::Notrump)],
@@ -44,7 +44,7 @@ bidding_rule! {
     annotations: [NotrumpSystemsOn]
 }
 
-bidding_rule! {
+rule! {
     SuitedOpening: "Suited Opening",
     auction: [IsNotOpen, not_auction(IsSeat(4))],
     call: [IsLevel(1), IsSuit],
@@ -52,28 +52,28 @@ bidding_rule! {
     planner: RuleOfTwentyPlanner,
 }
 
-bidding_rule! {
+rule! {
     FourthSeatSuitedOpening: "Suited Opening (4th Seat)",
     auction: [IsNotOpen, IsSeat(4)],
     call: [IsLevel(1), IsSuit],
     shows: [ShowOpeningSuitLength, ShowRuleOfFifteen]
 }
 
-bidding_rule! {
+rule! {
     WeakTwoOpening: "Weak Two Opening",
     auction: [IsNotOpen, not_auction(IsSeat(4))],
     call: [IsLevel(2), IsSuit, not_call(IsStrain(Strain::Clubs))],
     shows: [ShowMinSuitLength(6), ShowHcpRange(5, 10), ShowThreeOfTopFiveOrBetter],
 }
 
-bidding_rule! {
+rule! {
     PreemptiveOpening: "Preemptive Opening",
     auction: [IsNotOpen],
     call: [MinLevel(3), IsSuit],
     shows: [ShowPreemptLength, ShowMaxHcp(10), ShowThreeOfTopFiveOrBetter]
 }
 
-bidding_rule! {
+rule! {
     PassOpening: "Pass (Opening)",
     auction: [IsNotOpen],
     call: [IsPass],
@@ -83,7 +83,7 @@ bidding_rule! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dsl::bidding_rule::BiddingRule;
+    use crate::dsl::rule::Rule;
     use crate::kernel::{AuctionModel, HandConstraint};
     use types::{Call, Position, Strain, Suit};
 

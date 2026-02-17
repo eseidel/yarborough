@@ -1,4 +1,3 @@
-use crate::bidding_rule;
 use crate::dsl::auction_predicates::{
     LastBidMaxLevel, RhoMadeLastBid, TheyOpened, WeHaveOnlyPassed,
 };
@@ -11,29 +10,30 @@ use crate::dsl::shows::{
     ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinSuitLength, ShowPreemptLength,
     ShowStopperInOpponentSuit, ShowSupportForUnbidSuits, ShowThreeOfTopFiveOrBetter,
 };
+use crate::rule;
 
-bidding_rule! {
+rule! {
     OneLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(1), IsSuit, OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(8), ShowThreeOfTopFiveOrBetter]
 }
 
-bidding_rule! {
+rule! {
     TwoLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(2), IsSuit, not_call(IsJump), OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10), ShowThreeOfTopFiveOrBetter]
 }
 
-bidding_rule! {
+rule! {
     WeakJumpOvercall: "Weak Jump Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsSuit, IsJump, MaxLevel(4), OpponentHasNotShownSuit],
     shows: [ShowPreemptLength, ShowHcpRange(5, 10), ShowThreeOfTopFiveOrBetter]
 }
 
-bidding_rule! {
+rule! {
     OneNotrumpOvercall: "Notrump Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(1), IsNotrump],
@@ -41,7 +41,7 @@ bidding_rule! {
     annotations: [NotrumpSystemsOn]
 }
 
-bidding_rule! {
+rule! {
     OneLevelTakeoutDouble: "Takeout Double",
     auction: [TheyOpened, WeHaveOnlyPassed, RhoMadeLastBid, LastBidMaxLevel(1)],
     call: [IsDouble],
@@ -49,7 +49,7 @@ bidding_rule! {
     planner: TakeoutDoublePlanner
 }
 
-bidding_rule! {
+rule! {
     PassOvercall: "Pass (Overcall)",
     auction: [TheyOpened],
     call: [IsPass],
@@ -59,7 +59,7 @@ bidding_rule! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dsl::bidding_rule::BiddingRule;
+    use crate::dsl::rule::Rule;
     use crate::kernel::{AuctionModel, HandConstraint};
     use types::{Call, Hand, Position, Strain, Suit};
 

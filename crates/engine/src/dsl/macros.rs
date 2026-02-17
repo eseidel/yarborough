@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! bidding_rule {
+macro_rules! rule {
     (
         $struct_name:ident: $name_str:literal,
         auction: [ $( $a_pred:expr ),* $(,)? ],
@@ -11,7 +11,7 @@ macro_rules! bidding_rule {
     ) => {
         pub struct $struct_name;
 
-        impl $crate::dsl::bidding_rule::BiddingRule for $struct_name {
+        impl $crate::dsl::rule::Rule for $struct_name {
             fn name(&self, _call: &types::Call) -> String {
                 $name_str.to_string()
             }

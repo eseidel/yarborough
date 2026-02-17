@@ -8,7 +8,7 @@ use std::sync::Arc;
 use types::Call;
 
 /// A bidding rule in the Kernel DSL
-pub trait BiddingRule: Send + Sync {
+pub trait Rule: Send + Sync {
     /// The name of the rule for the given call
     fn name(&self, call: &Call) -> String;
 
