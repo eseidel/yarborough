@@ -30,13 +30,3 @@ impl std::fmt::Debug for CallSemantics {
             .finish()
     }
 }
-
-impl PartialEq for CallSemantics {
-    fn eq(&self, other: &Self) -> bool {
-        self.shows == other.shows
-            && self.annotations == other.annotations
-            && self.rule_name == other.rule_name
-    }
-}
-
-impl Eq for CallSemantics {}

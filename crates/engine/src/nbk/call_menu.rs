@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use types::Call;
 
 /// An item in the call menu
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallMenuItem {
     /// The call to be made
     pub call: Call,
@@ -17,7 +17,7 @@ pub struct CallMenuItem {
 }
 
 /// A group of calls in the menu
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallMenuGroup {
     /// The name of the group
     pub name: String,
@@ -26,7 +26,7 @@ pub struct CallMenuGroup {
 }
 
 /// A structured menu of legal calls and their meanings
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CallMenu {
     /// The groups of calls in the menu
     pub groups: Vec<CallMenuGroup>,
