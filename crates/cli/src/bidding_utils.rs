@@ -1,4 +1,4 @@
-use engine::{BidTrace, HandModel};
+use engine::{CallTrace, HandModel};
 use std::collections::HashMap;
 use std::fmt::Write;
 use types::auction::Auction;
@@ -150,9 +150,9 @@ pub fn format_hand_model(model: &HandModel) -> String {
     format!("  {}\n", model)
 }
 
-pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {
+pub fn format_full_trace(call_num: usize, trace: &CallTrace) -> String {
     let mut out = String::new();
-    writeln!(out, "\nFull Trace for Bid {}:", bid_num).unwrap();
+    writeln!(out, "\nFull Trace for Call {}:", call_num).unwrap();
     writeln!(out, "=======================").unwrap();
 
     writeln!(out, "\nBidder Model (What partner thinks we have):").unwrap();
@@ -174,7 +174,7 @@ pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {
     writeln!(out, "\nSelection Process:").unwrap();
 
     let mut current_group = String::new();
-    for step in &trace.selection_steps {
+    for step in &trace.call_selection_steps {
         if step.group_name != current_group {
             writeln!(out, "\n--- Group: {} ---", step.group_name).unwrap();
             current_group = step.group_name.clone();
@@ -199,15 +199,15 @@ pub fn format_full_trace(bid_num: usize, trace: &BidTrace) -> String {
     out
 }
 
-pub fn replay_history(auction: &mut Auction, history: &[Call], bid_idx: &mut usize) -> String {
+pub fn replay_history(auction: &mut Auction, history: &[Call], call_idx: &mut usize) -> String {
     let mut out = String::new();
     for call in history {
         let player = auction.current_player();
-        *bid_idx += 1;
+        *call_idx += 1;
         writeln!(
             out,
             "{}",
-            format_row(*bid_idx, pos_char(player), &call.render(), "", "(History)")
+            format_row(*call_idx, pos_char(player), &call.render(), "", "(History)")
         )
         .unwrap();
         auction.add_call(*call);

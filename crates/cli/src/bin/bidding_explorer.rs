@@ -216,7 +216,7 @@ impl App {
         }
 
         // Trace
-        let trace = engine::select_bid_with_trace(&hand, &auction);
+        let trace = engine::select_call_with_trace(&hand, &auction);
 
         let actual_bid = trace
             .selected_call

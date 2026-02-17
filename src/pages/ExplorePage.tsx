@@ -11,7 +11,7 @@ import {
   callToString,
   stringToCall,
 } from "../bridge";
-import { getInterpretations } from "../bridge/engine";
+import { getCallInterpretations } from "../bridge/engine";
 import { dealerFromBoardNumber } from "../bridge/identifier";
 
 export function ExplorePage() {
@@ -40,7 +40,7 @@ export function ExplorePage() {
     let cancelled = false;
 
     const callsString = history.calls.map(callToString).join(",");
-    getInterpretations(callsString, history.dealer, vulnerability)
+    getCallInterpretations(callsString, history.dealer, vulnerability)
       .then((result) => {
         if (!cancelled) {
           setError(null);

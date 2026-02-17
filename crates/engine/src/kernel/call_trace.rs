@@ -1,24 +1,24 @@
-//! Tracing for Kernel bid selection
+//! Tracing for Kernel call selection
 use crate::kernel::{AuctionModel, CallRanker, CallSemantics, HandConstraint};
 use serde::{Deserialize, Serialize};
 use types::Call;
 
-/// A detailed trace of the bid selection process
+/// A detailed trace of the call selection process
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BidTrace {
+pub struct CallTrace {
     /// The auction state and models of the players
     pub auction_model: AuctionModel,
     /// The call ranker generated
-    pub menu: CallRanker,
+    pub ranker: CallRanker,
     /// Detailed steps of the selection process
-    pub selection_steps: Vec<SelectionStep>,
+    pub call_selection_steps: Vec<CallSelectionStep>,
     /// The final call selected (if any)
     pub selected_call: Option<Call>,
 }
 
-/// A single step in the bid selection process
+/// A single step in the call selection process
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SelectionStep {
+pub struct CallSelectionStep {
     /// The group being considered
     pub group_name: String,
     /// The call being considered

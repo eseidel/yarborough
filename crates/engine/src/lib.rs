@@ -2,8 +2,8 @@ mod dsl;
 mod kernel;
 mod rules;
 
-pub use kernel::{select_bid, select_bid_with_trace};
-pub use kernel::{AuctionModel, BidTrace, CallSemantics, HandConstraint, HandModel};
+pub use kernel::{select_call, select_call_with_trace};
+pub use kernel::{AuctionModel, CallSemantics, CallTrace, HandConstraint, HandModel};
 
 use serde::Serialize;
 use types::auction::Auction;
@@ -31,7 +31,7 @@ pub fn parse_calls(calls_string: &str) -> Vec<Call> {
 
 /// Given a call history string, dealer position, and vulnerability, return
 /// possible next calls with their interpretations from the Kernel bidding system.
-pub fn get_interpretations(
+pub fn get_call_interpretations(
     calls_string: &str,
     dealer: &str,
     _vulnerability: &str,
@@ -77,9 +77,9 @@ pub fn get_interpretations(
 }
 
 /// Receives a board and auction state in the "identifier" format
-/// and returns the next bid as a call string.
+/// and returns the next call as a call string.
 /// Uses the SAYC bidding engine.
-pub fn get_next_bid(identifier: &str) -> String {
+pub fn get_next_call(identifier: &str) -> String {
     let (board, auction) = match identifier::import_board(identifier) {
         Some(val) => val,
         None => return "P".to_string(), // Fallback for invalid input
@@ -97,14 +97,14 @@ pub fn get_next_bid(identifier: &str) -> String {
     };
 
     // Use Kernel bidding logic
-    match kernel::select_bid(hand, &auction) {
+    match kernel::select_call(hand, &auction) {
         Some(call) => call.render(),
         None => "P".to_string(),
     }
 }
 
-/// Like get_next_bid, but returns the bid along with its rule name and description.
-pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
+/// Like get_next_call, but returns the call along with its rule name and description.
+pub fn get_suggested_call(identifier: &str) -> CallInterpretation {
     let (board, auction) = match identifier::import_board(identifier) {
         Some(val) => val,
         None => {
@@ -130,11 +130,11 @@ pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
         }
     };
 
-    let trace = kernel::select_bid_with_trace(hand, &auction);
+    let trace = kernel::select_call_with_trace(hand, &auction);
     match trace.selected_call {
         Some(call) => {
             let step = trace
-                .selection_steps
+                .call_selection_steps
                 .iter()
                 .find(|s| s.satisfied && Some(s.call) == trace.selected_call)
                 .expect("No satisfied step found for selected call");
@@ -291,19 +291,19 @@ mod tests {
     }
 
     #[test]
-    fn test_get_next_bid_with_valid_identifier() {
+    fn test_get_next_call_with_valid_identifier() {
         // Generate a board and export it to get a valid identifier.
         let mut rng = rand::thread_rng();
         let board = generate_random_board(1, &mut rng);
         let id = identifier::export_board(&board, 1, None);
-        let result = get_next_bid(&id);
+        let result = get_next_call(&id);
         // Should return a valid call string (not empty).
         assert!(!result.is_empty());
     }
 
     #[test]
-    fn test_get_next_bid_invalid_identifier() {
-        let result = get_next_bid("garbage");
+    fn test_get_next_call_invalid_identifier() {
+        let result = get_next_call("garbage");
         assert_eq!(result, "P");
     }
 
@@ -321,8 +321,8 @@ mod tests {
     }
 
     #[test]
-    fn test_get_interpretations_empty_auction() {
-        let results = get_interpretations("", "N", "None");
+    fn test_get_call_interpretations_empty_auction() {
+        let results = get_call_interpretations("", "N", "None");
         // With no calls yet, all opening bids + pass should be available.
         assert!(!results.is_empty());
         // Pass should always be a legal call.
@@ -336,8 +336,8 @@ mod tests {
     }
 
     #[test]
-    fn test_get_interpretations_after_opening() {
-        let results = get_interpretations("1C", "N", "None");
+    fn test_get_call_interpretations_after_opening() {
+        let results = get_call_interpretations("1C", "N", "None");
         // After 1C, the next player (East) should have legal responses.
         assert!(!results.is_empty());
         // Pass is always legal.
@@ -347,15 +347,15 @@ mod tests {
     }
 
     #[test]
-    fn test_get_interpretations_default_dealer() {
+    fn test_get_call_interpretations_default_dealer() {
         // Invalid dealer string should default to North.
-        let results = get_interpretations("", "Z", "None");
+        let results = get_call_interpretations("", "Z", "None");
         assert!(!results.is_empty());
     }
 
     #[test]
-    fn test_get_interpretations_has_rule_names() {
-        let results = get_interpretations("", "N", "None");
+    fn test_get_call_interpretations_has_rule_names() {
+        let results = get_call_interpretations("", "N", "None");
         // At least some opening bids should have rule names from the bidding system.
         let with_rules: Vec<_> = results.iter().filter(|r| !r.rule_name.is_empty()).collect();
         assert!(
@@ -365,11 +365,11 @@ mod tests {
     }
 
     #[test]
-    fn test_get_suggested_bid_valid_identifier() {
+    fn test_get_suggested_call_valid_identifier() {
         let mut rng = rand::thread_rng();
         let board = generate_random_board(1, &mut rng);
         let id = identifier::export_board(&board, 1, None);
-        let result = get_suggested_bid(&id);
+        let result = get_suggested_call(&id);
         // Should return a non-empty call name.
         assert!(!result.call_name.is_empty());
         // Should have a rule name (either a matched rule or "Pass (Limit)").
@@ -379,21 +379,21 @@ mod tests {
     }
 
     #[test]
-    fn test_get_suggested_bid_invalid_identifier() {
-        let result = get_suggested_bid("garbage");
+    fn test_get_suggested_call_invalid_identifier() {
+        let result = get_suggested_call("garbage");
         assert_eq!(result.call_name, "P");
         assert!(result.rule_name.is_empty());
         assert!(result.description.is_empty());
     }
 
     #[test]
-    fn test_get_suggested_bid_matches_get_next_bid() {
-        // The suggested bid's call_name should match get_next_bid for the same identifier.
+    fn test_get_suggested_call_matches_get_next_call() {
+        // The suggested call's call_name should match get_next_call for the same identifier.
         let mut rng = rand::thread_rng();
         let board = generate_random_board(1, &mut rng);
         let id = identifier::export_board(&board, 1, None);
-        let next = get_next_bid(&id);
-        let suggested = get_suggested_bid(&id);
+        let next = get_next_call(&id);
+        let suggested = get_suggested_call(&id);
         assert_eq!(suggested.call_name, next);
     }
 }

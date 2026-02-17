@@ -1,6 +1,6 @@
 use crate::dsl::planner::DefaultPlanner;
 use crate::kernel::call_ranker::{CallRankItem, CallRanker};
-use crate::kernel::trace::{BidTrace, SelectionStep};
+use crate::kernel::call_trace::{CallSelectionStep, CallTrace};
 use crate::kernel::AuctionModel;
 use crate::kernel::HandConstraint;
 use types::{Call, Hand, Suit};
@@ -15,14 +15,14 @@ impl CallSelector {
     }
 
     /// Select the best call and return a detailed trace of the selection process
-    pub fn select_best_call_with_trace(hand: &Hand, auction_model: &AuctionModel) -> BidTrace {
-        let menu = CallRanker::from_auction_model(auction_model);
-        let mut selection_steps = Vec::new();
+    pub fn select_best_call_with_trace(hand: &Hand, auction_model: &AuctionModel) -> CallTrace {
+        let ranker = CallRanker::from_auction_model(auction_model);
+        let mut call_selection_steps = Vec::new();
         let mut selected_call = None;
 
         let default_planner = DefaultPlanner;
 
-        for group in &menu.groups {
+        for group in &ranker.groups {
             let mut satisfied_in_group = Vec::new();
 
             for item in &group.items {
@@ -45,7 +45,7 @@ impl CallSelector {
                     }
                 }
 
-                selection_steps.push(SelectionStep {
+                call_selection_steps.push(CallSelectionStep {
                     group_name: group.name.clone(),
                     call: item.call,
                     semantics: item.semantics.clone(),
@@ -64,10 +64,10 @@ impl CallSelector {
             }
         }
 
-        BidTrace {
+        CallTrace {
             auction_model: auction_model.clone(),
-            menu,
-            selection_steps,
+            ranker,
+            call_selection_steps,
             selected_call,
         }
     }

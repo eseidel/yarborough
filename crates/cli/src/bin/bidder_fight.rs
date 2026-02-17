@@ -1,6 +1,6 @@
 use clap::Parser;
 use cli::reference_bidder::{default_z3b_path, format_hand_cdhs, ReferenceBidder};
-use engine::{generate_random_board, select_bid};
+use engine::{generate_random_board, select_call};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::collections::BTreeMap;
@@ -128,7 +128,7 @@ fn compare_board(ref_bidder: &ReferenceBidder, board: &Board, board_number: u32)
         let remote_call = remote_calls[remote_index];
         remote_index += 1;
 
-        let local_call = select_bid(hand, &local_auction).unwrap_or(Call::Pass);
+        let local_call = select_call(hand, &local_auction).unwrap_or(Call::Pass);
 
         if local_call != remote_call {
             let category = categorize(&local_auction, current_player);

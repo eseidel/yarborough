@@ -16,7 +16,7 @@ import {
 import { DealSelector } from "../components/DealSelector";
 import { isAuctionComplete, addRobotBids } from "../bridge/auction";
 import { callToString } from "../bridge/types";
-import { getSuggestedBid, getInterpretations } from "../bridge/engine";
+import { getSuggestedCall, getCallInterpretations } from "../bridge/engine";
 import type { CallHistory } from "../bridge";
 
 export function PracticePage() {
@@ -89,7 +89,7 @@ export function PracticePage() {
     const baseId = boardId.split(":")[0];
     const callsStr = history.calls.map(callToString).join(",");
     const identifier = callsStr.length > 0 ? `${baseId}:${callsStr}` : baseId;
-    getSuggestedBid(identifier)
+    getSuggestedCall(identifier)
       .then((interp) => {
         setSuggestion(interp);
         setSuggestLoading(false);
@@ -187,7 +187,7 @@ export function PracticePage() {
       const callsBefore = history.calls.slice(0, callIndex);
       const callsStr = callsBefore.map(callToString).join(",");
       const clickedCall = history.calls[callIndex];
-      getInterpretations(
+      getCallInterpretations(
         callsStr,
         history.dealer,
         parsed?.vulnerability ?? "None",

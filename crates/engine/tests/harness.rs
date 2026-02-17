@@ -1,4 +1,4 @@
-use engine::get_next_bid;
+use engine::get_next_call;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fs;
@@ -141,7 +141,7 @@ fn run_test_vector(test_file: &str, expectations_path: &str) -> Result<(), Vec<S
                     };
 
                     let ident = identifier::export_board(&board, 1, Some(&temp_auction));
-                    let actual_call = get_next_bid(&ident);
+                    let actual_call = get_next_call(&ident);
                     let expected_str = call.render();
 
                     if actual_call != expected_str {

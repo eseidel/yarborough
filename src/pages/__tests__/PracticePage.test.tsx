@@ -35,15 +35,15 @@ vi.mock("../../bridge/engine", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../bridge/engine")>();
   return {
     ...actual,
-    getSuggestedBid: vi.fn(),
-    getInterpretations: vi.fn(),
+    getSuggestedCall: vi.fn(),
+    getCallInterpretations: vi.fn(),
   };
 });
 
 const mockAddRobotBids = vi.mocked(auction.addRobotBids);
 const mockIsAuctionComplete = vi.mocked(auction.isAuctionComplete);
 const mockParseBoardId = vi.mocked(identifier.parseBoardId);
-const mockGetInterpretations = vi.mocked(engine.getInterpretations);
+const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
 
 describe("PracticePage", () => {
   const boardId = "1-00000000000000000000000000";
@@ -111,7 +111,7 @@ describe("PracticePage", () => {
       dealer: "N",
       calls: [{ type: "bid", level: 1, strain: "C" }, { type: "pass" }],
     });
-    mockGetInterpretations.mockResolvedValue([
+    mockGetCallInterpretations.mockResolvedValue([
       {
         call: { type: "bid", level: 1, strain: "C" },
         ruleName: "Opening 1♣",
@@ -142,7 +142,7 @@ describe("PracticePage", () => {
       expect(screen.getByText("12-21 HCP, 3+ clubs")).toBeInTheDocument();
     });
 
-    expect(mockGetInterpretations).toHaveBeenCalledWith("", "N", "None");
+    expect(mockGetCallInterpretations).toHaveBeenCalledWith("", "N", "None");
   });
 
   it("shows 'No interpretation available' for unrecognized bids", async () => {
@@ -150,7 +150,7 @@ describe("PracticePage", () => {
       dealer: "N",
       calls: [{ type: "pass" }],
     });
-    mockGetInterpretations.mockResolvedValue([
+    mockGetCallInterpretations.mockResolvedValue([
       {
         call: { type: "pass" },
         ruleName: undefined,

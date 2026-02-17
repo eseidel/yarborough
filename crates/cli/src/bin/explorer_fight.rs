@@ -1,6 +1,6 @@
 use clap::Parser;
 use cli::reference_bidder::{default_z3b_path, Interpretation, ReferenceBidder};
-use engine::{get_interpretations, CallInterpretation};
+use engine::{get_call_interpretations, CallInterpretation};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::PathBuf;
 use std::time::Duration;
@@ -118,7 +118,8 @@ fn compare_position(
         .map(|i| (i.call_name.as_str(), i))
         .collect();
 
-    let ours: Vec<CallInterpretation> = get_interpretations(calls_string, dealer, vulnerability);
+    let ours: Vec<CallInterpretation> =
+        get_call_interpretations(calls_string, dealer, vulnerability);
     let ours_map: BTreeMap<&str, &CallInterpretation> =
         ours.iter().map(|i| (i.call_name.as_str(), i)).collect();
 
@@ -519,14 +520,14 @@ mod tests {
 
     #[test]
     fn test_local_interpretations_exist() {
-        let ours = get_interpretations("", "N", "NO");
+        let ours = get_call_interpretations("", "N", "NO");
         assert!(!ours.is_empty());
         assert!(ours.iter().any(|i| i.call_name == "P"));
     }
 
     #[test]
     fn test_local_interpretations_after_opening() {
-        let ours = get_interpretations("1C", "N", "NO");
+        let ours = get_call_interpretations("1C", "N", "NO");
         assert!(!ours.is_empty());
         // Some responses should have rule names
         assert!(ours.iter().any(|i| !i.rule_name.is_empty()));

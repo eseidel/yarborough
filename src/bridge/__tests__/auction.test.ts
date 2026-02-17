@@ -10,11 +10,11 @@ import type { CallHistory, Call } from "../types";
 import { callToString } from "../types";
 
 vi.mock("../engine", () => ({
-  getNextBid: vi.fn(),
+  getNextCall: vi.fn(),
 }));
 
-import { getNextBid } from "../engine";
-const mockGetNextBid = vi.mocked(getNextBid);
+import { getNextCall } from "../engine";
+const mockGetNextCall = vi.mocked(getNextCall);
 
 const pass: Call = { type: "pass" };
 const oneClub: Call = { type: "bid", level: 1, strain: "C" };
@@ -22,7 +22,7 @@ const oneHeart: Call = { type: "bid", level: 1, strain: "H" };
 const oneNT: Call = { type: "bid", level: 1, strain: "N" };
 
 beforeEach(() => {
-  mockGetNextBid.mockReset();
+  mockGetNextCall.mockReset();
 });
 
 describe("currentPlayer", () => {
@@ -124,42 +124,42 @@ describe("addRobotBids", () => {
     const history: CallHistory = { dealer: "S", calls: [] };
     const result = await addRobotBids(history, "S", boardId);
     expect(result.calls).toHaveLength(0);
-    expect(mockGetNextBid).not.toHaveBeenCalled();
+    expect(mockGetNextCall).not.toHaveBeenCalled();
   });
 
   it("calls engine for each robot turn until user's turn", async () => {
-    mockGetNextBid.mockResolvedValue(pass);
+    mockGetNextCall.mockResolvedValue(pass);
     const history: CallHistory = { dealer: "N", calls: [] };
     const result = await addRobotBids(history, "S", boardId);
     // N passes, E passes → now S's turn
     expect(result.calls).toHaveLength(2);
     expect(result.calls.every((c) => c.type === "pass")).toBe(true);
     expect(currentPlayer(result)).toBe("S");
-    expect(mockGetNextBid).toHaveBeenCalledTimes(2);
+    expect(mockGetNextCall).toHaveBeenCalledTimes(2);
   });
 
   it("passes the correct identifier with call history", async () => {
-    mockGetNextBid.mockResolvedValue(pass);
+    mockGetNextCall.mockResolvedValue(pass);
     const history: CallHistory = { dealer: "E", calls: [] };
     await addRobotBids(history, "S", boardId);
     // First call: no calls yet
-    expect(mockGetNextBid).toHaveBeenCalledWith(boardId);
+    expect(mockGetNextCall).toHaveBeenCalledWith(boardId);
     // Second call would not happen since E passes then it's S's turn
-    expect(mockGetNextBid).toHaveBeenCalledTimes(1);
+    expect(mockGetNextCall).toHaveBeenCalledTimes(1);
   });
 
   it("builds identifier with accumulated calls", async () => {
-    mockGetNextBid.mockResolvedValue(pass);
+    mockGetNextCall.mockResolvedValue(pass);
     const history: CallHistory = { dealer: "W", calls: [] };
     await addRobotBids(history, "S", boardId);
     // W, N, E all need to bid before S
-    expect(mockGetNextBid).toHaveBeenCalledTimes(3);
+    expect(mockGetNextCall).toHaveBeenCalledTimes(3);
     // Third call should include previous two passes
-    expect(mockGetNextBid).toHaveBeenNthCalledWith(3, `${boardId}:P,P`);
+    expect(mockGetNextCall).toHaveBeenNthCalledWith(3, `${boardId}:P,P`);
   });
 
   it("uses real bids from the engine", async () => {
-    mockGetNextBid.mockResolvedValueOnce(oneNT); // E opens 1NT
+    mockGetNextCall.mockResolvedValueOnce(oneNT); // E opens 1NT
     const history: CallHistory = { dealer: "E", calls: [] };
     const result = await addRobotBids(history, "S", boardId);
     // E bids 1NT → S's turn
@@ -168,7 +168,7 @@ describe("addRobotBids", () => {
   });
 
   it("completes auction when all robots pass out", async () => {
-    mockGetNextBid.mockResolvedValue(pass);
+    mockGetNextCall.mockResolvedValue(pass);
     // Dealer is S (user), user passes. Robots should all pass → auction done.
     const history: CallHistory = { dealer: "S", calls: [pass] };
     const result = await addRobotBids(history, "S", boardId);
@@ -177,7 +177,7 @@ describe("addRobotBids", () => {
   });
 
   it("adds robot bids after user bid until user's turn again", async () => {
-    mockGetNextBid.mockResolvedValue(pass);
+    mockGetNextCall.mockResolvedValue(pass);
     // Dealer is N, user is S. N and E already passed, user bid 1C.
     const history: CallHistory = {
       dealer: "N",

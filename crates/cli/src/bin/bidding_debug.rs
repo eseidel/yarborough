@@ -1,7 +1,7 @@
 // cspell:ignore AKQJT
 use clap::Parser;
 use cli::bidding_utils::*;
-use engine::select_bid_with_trace;
+use engine::select_call_with_trace;
 use types::auction::Auction;
 use types::board::Board;
 use types::call::Call;
@@ -13,9 +13,9 @@ struct Args {
     /// The hand identifier (e.g. 11-decde22e0d283f55b36244ab45)
     identifier: Option<String>,
 
-    /// Optional bid number to show full trace for
+    /// Optional call number to show full trace for
     #[arg(short, long)]
-    bid: Option<usize>,
+    call: Option<usize>,
 
     /// A test case string in JSON format: '["Hand", "ExpectedBid", "Auction"?, "Vulnerability"?]'
     #[arg(short, long)]
@@ -56,7 +56,7 @@ fn run_bidding_loop(
     auction: &mut Auction,
     expected_bid: Option<String>,
     args: &Args,
-    bid_idx: &mut usize,
+    call_idx: &mut usize,
     history_len: usize,
 ) {
     loop {
@@ -64,24 +64,24 @@ fn run_bidding_loop(
         let hand = match board.hands.get(&current_player) {
             Some(h) => h,
             None => {
-                if expected_bid.is_some() && *bid_idx >= history_len {
+                if expected_bid.is_some() && *call_idx >= history_len {
                     break;
                 }
                 break;
             }
         };
 
-        let trace = select_bid_with_trace(hand, auction);
-        *bid_idx += 1;
+        let trace = select_call_with_trace(hand, auction);
+        *call_idx += 1;
 
-        if let Some(trace_bid_num) = args.bid {
-            if trace_bid_num == *bid_idx {
-                print!("{}", format_full_trace(*bid_idx, &trace));
+        if let Some(trace_call_num) = args.call {
+            if trace_call_num == *call_idx {
+                print!("{}", format_full_trace(*call_idx, &trace));
             }
         }
 
         if let Some(expected) = &expected_bid {
-            if *bid_idx == history_len + 1 {
+            if *call_idx == history_len + 1 {
                 println!("EXPECTED: {}", expected);
             }
         }
@@ -89,7 +89,7 @@ fn run_bidding_loop(
         match trace.selected_call {
             Some(call) => {
                 let rule_trace = trace
-                    .selection_steps
+                    .call_selection_steps
                     .iter()
                     .find(|s| s.satisfied && s.call == call)
                     .ok_or_else(|| format!("No satisfied rule found for selected call: {:?}", call))
@@ -103,7 +103,7 @@ fn run_bidding_loop(
                 println!(
                     "{}",
                     format_row(
-                        *bid_idx,
+                        *call_idx,
                         pos_char(current_player),
                         &call.render(),
                         &rule_trace.semantics.rule_name,
@@ -112,7 +112,7 @@ fn run_bidding_loop(
                 );
 
                 if let Some(expected) = &expected_bid {
-                    if *bid_idx == history_len + 1 {
+                    if *call_idx == history_len + 1 {
                         if call.render() == *expected {
                             println!("RESULT: MATCH");
                         } else {
@@ -130,7 +130,7 @@ fn run_bidding_loop(
                 println!(
                     "{}",
                     format_row(
-                        *bid_idx,
+                        *call_idx,
                         pos_char(current_player),
                         "Pass",
                         "No rule matched",
@@ -139,7 +139,7 @@ fn run_bidding_loop(
                 );
 
                 if let Some(expected) = &expected_bid {
-                    if *bid_idx == history_len + 1 {
+                    if *call_idx == history_len + 1 {
                         if expected == "P" || expected == "Pass" {
                             println!("RESULT: MATCH");
                         } else {
@@ -170,19 +170,19 @@ fn main() {
 
     print_board_info(&args, &board);
 
-    let mut current_bid_idx = 0;
+    let mut current_call_idx = 0;
     let mut auction = Auction::new(board.dealer);
 
     print!(
         "{}",
-        replay_history(&mut auction, &auction_to_replay, &mut current_bid_idx)
+        replay_history(&mut auction, &auction_to_replay, &mut current_call_idx)
     );
     run_bidding_loop(
         &board,
         &mut auction,
         expected_bid,
         &args,
-        &mut current_bid_idx,
+        &mut current_call_idx,
         auction_to_replay.len(),
     );
 }

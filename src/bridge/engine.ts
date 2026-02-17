@@ -2,9 +2,9 @@ import type { Call, CallInterpretation, StrainName } from "./types";
 
 // These will be resolved after wasm-pack builds the crate
 import init, {
-  get_interpretations,
-  get_next_bid,
-  get_suggested_bid,
+  get_call_interpretations,
+  get_next_call,
+  get_suggested_call,
   generate_filtered_board,
 } from "../../crates/wasm/pkg/wasm";
 
@@ -41,15 +41,15 @@ function parseCallName(name: string): Call {
   return { type: "bid", level, strain };
 }
 
-/** Call the WASM engine to get bid interpretations for the current auction state. */
-export async function getInterpretations(
+/** Call the WASM engine to get call interpretations for the current auction state. */
+export async function getCallInterpretations(
   callsString: string,
   dealer: string,
   vulnerability: string = "None",
 ): Promise<CallInterpretation[]> {
   await ensureInit();
 
-  const raw = get_interpretations(
+  const raw = get_call_interpretations(
     callsString,
     dealer,
     vulnerability,
@@ -63,25 +63,25 @@ export async function getInterpretations(
 }
 
 /**
- * Call the WASM engine to get the next bid for the current player.
+ * Call the WASM engine to get the next call for the current player.
  * @param identifier - Board identifier in format "<board>-<hex>[:<calls>]"
  */
-export async function getNextBid(identifier: string): Promise<Call> {
+export async function getNextCall(identifier: string): Promise<Call> {
   await ensureInit();
-  const result = get_next_bid(identifier);
+  const result = get_next_call(identifier);
   return parseCallName(result);
 }
 
 /**
- * Call the WASM engine to get a suggested bid with its interpretation.
- * Returns the bid the engine would make plus its rule name and description.
+ * Call the WASM engine to get a suggested call with its interpretation.
+ * Returns the call the engine would make plus its rule name and description.
  * @param identifier - Board identifier in format "<board>-<hex>[:<calls>]"
  */
-export async function getSuggestedBid(
+export async function getSuggestedCall(
   identifier: string,
 ): Promise<CallInterpretation> {
   await ensureInit();
-  const raw = get_suggested_bid(identifier) as RawInterpretation;
+  const raw = get_suggested_call(identifier) as RawInterpretation;
   return {
     call: parseCallName(raw.call_name),
     ruleName: raw.rule_name,

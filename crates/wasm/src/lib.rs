@@ -3,8 +3,8 @@ use wasm_bindgen::prelude::*;
 /// Given a call history string, dealer position, and vulnerability, return
 /// possible next calls with their interpretations from the NBK bidding system.
 #[wasm_bindgen]
-pub fn get_interpretations(calls_string: &str, dealer: &str, vulnerability: &str) -> JsValue {
-    serde_wasm_bindgen::to_value(&engine::get_interpretations(
+pub fn get_call_interpretations(calls_string: &str, dealer: &str, vulnerability: &str) -> JsValue {
+    serde_wasm_bindgen::to_value(&engine::get_call_interpretations(
         calls_string,
         dealer,
         vulnerability,
@@ -13,16 +13,16 @@ pub fn get_interpretations(calls_string: &str, dealer: &str, vulnerability: &str
 }
 
 /// Receives a board and auction state in the "identifier" format
-/// and returns the next bid as a call string.
+/// and returns the next call as a call string.
 #[wasm_bindgen]
-pub fn get_next_bid(identifier: &str) -> String {
-    engine::get_next_bid(identifier)
+pub fn get_next_call(identifier: &str) -> String {
+    engine::get_next_call(identifier)
 }
 
-/// Like get_next_bid, but returns the bid along with its rule name and description.
+/// Like get_next_call, but returns the call along with its rule name and description.
 #[wasm_bindgen]
-pub fn get_suggested_bid(identifier: &str) -> JsValue {
-    serde_wasm_bindgen::to_value(&engine::get_suggested_bid(identifier)).unwrap()
+pub fn get_suggested_call(identifier: &str) -> JsValue {
+    serde_wasm_bindgen::to_value(&engine::get_suggested_call(identifier)).unwrap()
 }
 
 #[wasm_bindgen]

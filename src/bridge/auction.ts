@@ -1,6 +1,6 @@
 import type { Call, CallHistory, Position, StrainName } from "./types";
 import { callToString } from "./types";
-import { getNextBid } from "./engine";
+import { getNextCall } from "./engine";
 
 const POSITION_ORDER: Position[] = ["N", "E", "S", "W"];
 const STRAIN_RANK: StrainName[] = ["C", "D", "H", "S", "N"];
@@ -95,7 +95,7 @@ export async function addRobotBids(
   let h = history;
   while (!isAuctionComplete(h) && currentPlayer(h) !== userPosition) {
     const identifier = buildIdentifier(boardId, h.calls);
-    const call = await getNextBid(identifier);
+    const call = await getNextCall(identifier);
     h = { ...h, calls: [...h.calls, call] };
   }
   return h;

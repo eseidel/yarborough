@@ -146,7 +146,7 @@ mod tests {
         let hand = Hand::parse("AJ4.73.T86.KQ752");
         let auction = types::Auction::bidding(Position::North, "1D");
         // East's turn to overcall
-        let bid = kernel::select_bid(&hand, &auction);
+        let bid = kernel::select_call(&hand, &auction);
         // Should bid 1S (5 spades, 10 HCP, good suit quality)
         assert_eq!(
             bid,
@@ -165,7 +165,7 @@ mod tests {
         let hand = Hand::parse("K6.AQT43.KT4.543");
         let auction = types::Auction::bidding(Position::North, "1D");
         // East should pass - only long suit is diamonds (opponent's suit)
-        let bid = kernel::select_bid(&hand, &auction);
+        let bid = kernel::select_call(&hand, &auction);
         assert_eq!(
             bid,
             Some(Call::Pass),
@@ -319,7 +319,7 @@ mod tests {
         // 18 HCP — should double despite lacking shape (strong hand override)
         let hand = Hand::parse("AKQ982.AQ5.K7.43");
         let auction = types::Auction::bidding(Position::North, "1H");
-        let bid = kernel::select_bid(&hand, &auction);
+        let bid = kernel::select_call(&hand, &auction);
         assert_eq!(
             bid,
             Some(Call::Double),
@@ -334,7 +334,7 @@ mod tests {
         // Classic 4-4-4-1 takeout double shape, 13 HCP
         let hand = Hand::parse("A.KJ63.AQ54.K854");
         let auction = types::Auction::bidding(Position::North, "1C");
-        let bid = kernel::select_bid(&hand, &auction);
+        let bid = kernel::select_call(&hand, &auction);
         assert_eq!(
             bid,
             Some(Call::Double),
@@ -362,7 +362,7 @@ mod tests {
         // 12 HCP but lacks support for unbid majors — should not double
         let hand = Hand::parse("AKJ74.QJ62.85.93");
         let auction = types::Auction::bidding(Position::North, "1H");
-        let bid = kernel::select_bid(&hand, &auction);
+        let bid = kernel::select_call(&hand, &auction);
         assert_ne!(
             bid,
             Some(Call::Double),

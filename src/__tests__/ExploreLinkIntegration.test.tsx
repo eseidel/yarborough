@@ -13,8 +13,8 @@ import * as engine from "../bridge/engine";
 import * as auction from "../bridge/auction";
 
 vi.mock("../bridge/engine", () => ({
-  getSuggestedBid: vi.fn(),
-  getInterpretations: vi.fn(),
+  getSuggestedCall: vi.fn(),
+  getCallInterpretations: vi.fn(),
 }));
 
 vi.mock("../bridge/auction", async (importOriginal) => {
@@ -36,7 +36,7 @@ describe("Explore Link Integration", () => {
       calls: [{ type: "bid" as const, level: 1, strain: "H" as const }],
     };
     vi.mocked(auction.addRobotBids).mockResolvedValue(mockHistory);
-    vi.mocked(engine.getInterpretations).mockResolvedValue([
+    vi.mocked(engine.getCallInterpretations).mockResolvedValue([
       {
         call: { type: "bid", level: 1, strain: "H" },
         ruleName: "Opening 1H",
@@ -74,7 +74,7 @@ describe("Explore Link Integration", () => {
   });
 
   it("ExplorePage initializes state from URL parameters", async () => {
-    vi.mocked(engine.getInterpretations).mockResolvedValue([]);
+    vi.mocked(engine.getCallInterpretations).mockResolvedValue([]);
 
     render(
       <MemoryRouter initialEntries={["/explore/1:1H,1S"]}>
@@ -84,9 +84,9 @@ describe("Explore Link Integration", () => {
       </MemoryRouter>,
     );
 
-    // Should call getInterpretations with the calls from the URL
+    // Should call getCallInterpretations with the calls from the URL
     await waitFor(() => {
-      expect(engine.getInterpretations).toHaveBeenCalledWith(
+      expect(engine.getCallInterpretations).toHaveBeenCalledWith(
         "1H,1S",
         "N",
         "None",
@@ -100,7 +100,7 @@ describe("Explore Link Integration", () => {
   });
 
   it("shows 'Explore ->' link in suggest bid section", async () => {
-    vi.mocked(engine.getSuggestedBid).mockResolvedValue({
+    vi.mocked(engine.getSuggestedCall).mockResolvedValue({
       call: { type: "bid", level: 1, strain: "S" },
       ruleName: "Opening 1S",
       description: "12+ HCP, 5+ spades",
