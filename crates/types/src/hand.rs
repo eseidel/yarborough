@@ -198,6 +198,19 @@ impl Hand {
         longest
     }
 
+    /// Count how many of the top N honors (A, K, Q, J, T) the hand holds in a suit.
+    ///
+    /// `top_honors(suit, 3)` counts honors among {A, K, Q}.
+    /// `top_honors(suit, 5)` counts honors among {A, K, Q, J, T}.
+    pub fn top_honors(&self, suit: Suit, n: u8) -> u8 {
+        const HONOR_RANKS: [Rank; 5] = [Rank::Ace, Rank::King, Rank::Queen, Rank::Jack, Rank::Ten];
+        let top_n = &HONOR_RANKS[..n as usize];
+        self.cards
+            .iter()
+            .filter(|c| c.suit == suit && top_n.contains(&c.rank))
+            .count() as u8
+    }
+
     /// Returns all suits that are tied for the longest length
     pub fn longest_suits(&self) -> Vec<Suit> {
         let lengths: Vec<_> = Suit::ALL.iter().map(|&s| self.length(s)).collect();
@@ -318,6 +331,42 @@ mod tests {
         let longest = hand.longest_suits();
         assert_eq!(longest.len(), 1);
         assert_eq!(longest[0], Suit::Spades);
+    }
+
+    #[test]
+    fn test_top_honors_two_of_top_three() {
+        // AQ753 spades — has A and Q of top 3
+        let hand = Hand::parse("..AQ753.");
+        assert_eq!(hand.top_honors(Suit::Hearts, 3), 2);
+    }
+
+    #[test]
+    fn test_top_honors_three_of_top_five() {
+        // KJT42 spades — has K, J, T of top 5 but only K of top 3
+        let hand = Hand::parse("..KJT42.");
+        assert_eq!(hand.top_honors(Suit::Hearts, 3), 1);
+        assert_eq!(hand.top_honors(Suit::Hearts, 5), 3);
+    }
+
+    #[test]
+    fn test_top_honors_poor_suit() {
+        // K8432 clubs — only K
+        let hand = Hand::parse("K8432...");
+        assert_eq!(hand.top_honors(Suit::Clubs, 3), 1);
+        assert_eq!(hand.top_honors(Suit::Clubs, 5), 1);
+    }
+
+    #[test]
+    fn test_top_honors_empty_suit() {
+        let hand = Hand::parse("AKQJT...");
+        assert_eq!(hand.top_honors(Suit::Spades, 5), 0);
+    }
+
+    #[test]
+    fn test_top_honors_all_five() {
+        let hand = Hand::parse("AKQJT...");
+        assert_eq!(hand.top_honors(Suit::Clubs, 5), 5);
+        assert_eq!(hand.top_honors(Suit::Clubs, 3), 3);
     }
 
     #[test]

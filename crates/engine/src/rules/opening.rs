@@ -19,6 +19,7 @@ use crate::dsl::shows::ShowMinSuitLength;
 use crate::dsl::shows::ShowOpeningSuitLength;
 use crate::dsl::shows::ShowPreemptLength;
 use crate::dsl::shows::ShowRuleOfFifteen;
+use crate::dsl::shows::ShowThreeOfTopFiveOrBetter;
 use types::Strain;
 
 bidding_rule! {
@@ -63,14 +64,14 @@ bidding_rule! {
     WeakTwoOpening: "Weak Two Opening",
     auction: [IsNotOpen, not_auction(IsSeat(4))],
     call: [IsLevel(2), IsSuit, not_call(IsStrain(Strain::Clubs))],
-    shows: [ShowMinSuitLength(6), ShowHcpRange(5, 10)],
+    shows: [ShowMinSuitLength(6), ShowHcpRange(5, 10), ShowThreeOfTopFiveOrBetter],
 }
 
 bidding_rule! {
     PreemptiveOpening: "Preemptive Opening",
     auction: [IsNotOpen],
     call: [MinLevel(3), IsSuit],
-    shows: [ShowPreemptLength, ShowMaxHcp(10)]
+    shows: [ShowPreemptLength, ShowMaxHcp(10), ShowThreeOfTopFiveOrBetter]
 }
 
 bidding_rule! {
@@ -118,5 +119,8 @@ mod tests {
         assert!(sem
             .shows
             .contains(&HandConstraint::MinLength(Suit::Spades, 6)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::ThreeOfTopFiveOrBetter(Suit::Spades)));
     }
 }

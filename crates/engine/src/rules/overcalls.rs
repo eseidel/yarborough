@@ -10,29 +10,28 @@ use crate::dsl::call_predicates::{
 use crate::dsl::planner::TakeoutDoublePlanner;
 use crate::dsl::shows::{
     ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinSuitLength, ShowPreemptLength,
-    ShowStopperInOpponentSuit, ShowSupportForUnbidSuits,
+    ShowStopperInOpponentSuit, ShowSupportForUnbidSuits, ShowThreeOfTopFiveOrBetter,
 };
 
 bidding_rule! {
     OneLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(1), IsSuit, OpponentHasNotShownSuit],
-    shows: [ShowMinSuitLength(5), ShowMinHcp(8)]
+    shows: [ShowMinSuitLength(5), ShowMinHcp(8), ShowThreeOfTopFiveOrBetter]
 }
 
 bidding_rule! {
     TwoLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsLevel(2), IsSuit, not_call(IsJump), OpponentHasNotShownSuit],
-    shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
+    shows: [ShowMinSuitLength(5), ShowMinHcp(10), ShowThreeOfTopFiveOrBetter]
 }
 
-// TODO: Add honor concentration constraint — most HCP should be in the bid suit.
 bidding_rule! {
     WeakJumpOvercall: "Weak Jump Overcall",
     auction: [TheyOpened, WeHaveOnlyPassed],
     call: [IsSuit, IsJump, MaxLevel(4), OpponentHasNotShownSuit],
-    shows: [ShowPreemptLength, ShowHcpRange(5, 10)]
+    shows: [ShowPreemptLength, ShowHcpRange(5, 10), ShowThreeOfTopFiveOrBetter]
 }
 
 bidding_rule! {
@@ -84,6 +83,9 @@ mod tests {
             .shows
             .contains(&HandConstraint::MinLength(Suit::Hearts, 5)));
         assert!(sem.shows.contains(&HandConstraint::MinHcp(8)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::ThreeOfTopFiveOrBetter(Suit::Hearts)));
     }
 
     #[test]
@@ -111,6 +113,9 @@ mod tests {
             .shows
             .contains(&HandConstraint::MinLength(Suit::Hearts, 5)));
         assert!(sem.shows.contains(&HandConstraint::MinHcp(10)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::ThreeOfTopFiveOrBetter(Suit::Hearts)));
     }
 
     #[test]
@@ -138,12 +143,12 @@ mod tests {
     fn test_overcall_selects_correct_suit() {
         use crate::nbk;
         // Hand format is C.D.H.S
-        // 3 clubs, 2 diamonds, 3 hearts, 5 spades = AK975 in spades, 10 HCP
-        let hand = Hand::parse("A94.73.AT6.QT752");
+        // 3 clubs, 2 diamonds, 3 hearts, 5 spades = KQ752 in spades, 10 HCP
+        let hand = Hand::parse("AJ4.73.T86.KQ752");
         let auction = types::Auction::bidding(Position::North, "1D");
         // East's turn to overcall
         let bid = nbk::select_bid(&hand, &auction);
-        // Should bid 1S (5 spades, 10 HCP)
+        // Should bid 1S (5 spades, 10 HCP, good suit quality)
         assert_eq!(
             bid,
             Some(Call::Bid {
@@ -206,6 +211,9 @@ mod tests {
             .contains(&HandConstraint::MinLength(Suit::Hearts, 6)));
         assert!(sem.shows.contains(&HandConstraint::MinHcp(5)));
         assert!(sem.shows.contains(&HandConstraint::MaxHcp(10)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::ThreeOfTopFiveOrBetter(Suit::Hearts)));
     }
 
     #[test]

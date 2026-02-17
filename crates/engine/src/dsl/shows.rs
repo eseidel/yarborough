@@ -38,6 +38,35 @@ pub trait Shows: Send + Sync + Debug {
     fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint>;
 }
 
+/// Requires 2+ of the top 3 honors {A, K, Q} in the bid suit.
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct ShowTwoOfTopThree;
+impl Shows for ShowTwoOfTopThree {
+    fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
+        if let Call::Bid { strain, .. } = call {
+            if let Some(suit) = strain.to_suit() {
+                return vec![HandConstraint::TwoOfTopThree(suit)];
+            }
+        }
+        vec![]
+    }
+}
+
+/// Requires good suit quality: 2 of top 3 OR 3 of top 5 honors in the bid suit.
+#[derive(Debug)]
+pub struct ShowThreeOfTopFiveOrBetter;
+impl Shows for ShowThreeOfTopFiveOrBetter {
+    fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
+        if let Call::Bid { strain, .. } = call {
+            if let Some(suit) = strain.to_suit() {
+                return vec![HandConstraint::ThreeOfTopFiveOrBetter(suit)];
+            }
+        }
+        vec![]
+    }
+}
+
 #[derive(Debug)]
 pub struct ShowMinHcp(pub u8);
 impl Shows for ShowMinHcp {
