@@ -159,15 +159,14 @@ impl Shows for ShowSupportForUnbidSuits {
 pub struct ShowSufficientValues;
 impl Shows for ShowSufficientValues {
     fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        let (level, strain) = match call {
-            Call::Bid { level, strain } => (*level, *strain),
-            _ => return vec![],
+        let Some(level) = call.level() else {
+            return vec![];
         };
 
         const SUITED_POINTS: [u8; 7] = [16, 19, 22, 25, 28, 33, 37];
         const NT_POINTS: [u8; 7] = [19, 22, 25, 28, 30, 33, 37];
 
-        let min_combined_points = if strain.to_suit().is_some() {
+        let min_combined_points = if call.suit().is_some() {
             SUITED_POINTS[level as usize - 1]
         } else {
             NT_POINTS[level as usize - 1]
@@ -196,10 +195,8 @@ impl Shows for ShowOpeningSuitLength {
 pub struct ShowPreemptLength;
 impl Shows for ShowPreemptLength {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { level, .. } = call {
-            if let Some(suit) = call.suit() {
-                return vec![HandConstraint::MinLength(suit, level + 4)];
-            }
+        if let (Some(level), Some(suit)) = (call.level(), call.suit()) {
+            return vec![HandConstraint::MinLength(suit, level + 4)];
         }
         vec![]
     }
@@ -209,9 +206,9 @@ impl Shows for ShowPreemptLength {
 pub struct ShowSupportValues;
 impl Shows for ShowSupportValues {
     fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { level, .. } = call {
+        if let Some(level) = call.level() {
             const SUPPORT_VALUES: [u8; 7] = [18, 18, 22, 25, 28, 33, 37];
-            let min_combined_points = SUPPORT_VALUES[*level as usize - 1];
+            let min_combined_points = SUPPORT_VALUES[level as usize - 1];
             let needed_hcp =
                 min_combined_points.saturating_sub(auction.partner_hand().min_hcp.unwrap_or(0));
             return vec![HandConstraint::MinHcp(needed_hcp)];

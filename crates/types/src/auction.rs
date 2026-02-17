@@ -133,21 +133,21 @@ impl Auction {
             .map(|(position, _)| position)
     }
 
-    // Returns the last bid (not pass/double/redouble) in the auction.
-    pub fn last_bid(&self) -> Option<&Call> {
-        self.iter()
-            .filter(|(_, call)| call.is_bid())
-            .last()
-            .map(|(_, call)| call)
+    /// Returns the last bid (not pass/double/redouble) and who made it.
+    pub fn last_bid(&self) -> Option<(Position, &Call)> {
+        self.iter().filter(|(_, call)| call.is_bid()).last()
     }
 
-    // Returns the position to last make a bid.  This does not include
-    // passes or doubles, which are not bids.
-    pub fn last_bidder(&self) -> Option<Position> {
+    /// Returns true if a player has made any non-Pass call (bid, double, or redouble).
+    pub fn player_has_acted(&self, player: Position) -> bool {
         self.iter()
-            .filter(|(_, call)| call.is_bid())
-            .last()
-            .map(|(position, _)| position)
+            .any(|(pos, call)| pos == player && !matches!(call, Call::Pass))
+    }
+
+    /// Returns true if a partnership has made at least one bid (not pass/double/redouble).
+    pub fn partnership_has_bid(&self, partnership: Partnership) -> bool {
+        self.iter()
+            .any(|(pos, call)| pos.partnership() == partnership && call.is_bid())
     }
 
     pub fn final_contract(&self) -> Option<Contract> {
@@ -418,25 +418,63 @@ mod tests {
     }
 
     #[test]
-    fn test_last_bidder() {
+    fn test_last_bid() {
         let mut auction = Auction::new(Position::North);
-        assert_eq!(auction.last_bidder(), None);
+        assert_eq!(auction.last_bid(), None);
 
-        // N opens 1C — last bidder is North
+        // N opens 1C — last bid is (North, 1C)
         auction.bid("1C");
-        assert_eq!(auction.last_bidder(), Some(Position::North));
+        let (pos, call) = auction.last_bid().unwrap();
+        assert_eq!(pos, Position::North);
+        assert_eq!(*call, "1C".parse::<Call>().unwrap());
 
-        // E passes — last bidder still North
+        // E passes — last bid still (North, 1C)
         auction.bid("P");
-        assert_eq!(auction.last_bidder(), Some(Position::North));
+        assert_eq!(auction.last_bid().unwrap().0, Position::North);
 
-        // S bids 1S — last bidder is South
+        // S bids 1S — last bid is (South, 1S)
         auction.bid("1S");
-        assert_eq!(auction.last_bidder(), Some(Position::South));
+        let (pos, call) = auction.last_bid().unwrap();
+        assert_eq!(pos, Position::South);
+        assert_eq!(*call, "1S".parse::<Call>().unwrap());
 
-        // W doubles — last bidder still South (double is not a bid)
+        // W doubles — last bid still (South, 1S) (double is not a bid)
         auction.bid("X");
-        assert_eq!(auction.last_bidder(), Some(Position::South));
+        assert_eq!(auction.last_bid().unwrap().0, Position::South);
+    }
+
+    #[test]
+    fn test_player_has_acted() {
+        // N opens 1C — North has acted, others haven't
+        let auction = Auction::bidding(Position::North, "1C");
+        assert!(auction.player_has_acted(Position::North));
+        assert!(!auction.player_has_acted(Position::East));
+
+        // N: 1C, E: X — East has acted (double counts)
+        let auction = Auction::bidding(Position::North, "1C X");
+        assert!(auction.player_has_acted(Position::East));
+
+        // N: P, E: P — neither has acted (passes don't count)
+        let auction = Auction::bidding(Position::North, "P P");
+        assert!(!auction.player_has_acted(Position::North));
+        assert!(!auction.player_has_acted(Position::East));
+    }
+
+    #[test]
+    fn test_partnership_has_bid() {
+        // N opens 1C — NS has bid, EW hasn't
+        let auction = Auction::bidding(Position::North, "1C");
+        assert!(auction.partnership_has_bid(Partnership::NS));
+        assert!(!auction.partnership_has_bid(Partnership::EW));
+
+        // N: 1C, E: X — EW doubled but hasn't bid
+        let auction = Auction::bidding(Position::North, "1C X");
+        assert!(!auction.partnership_has_bid(Partnership::EW));
+
+        // N: 1C, E: 1S — both have bid
+        let auction = Auction::bidding(Position::North, "1C 1S");
+        assert!(auction.partnership_has_bid(Partnership::NS));
+        assert!(auction.partnership_has_bid(Partnership::EW));
     }
 
     #[test]

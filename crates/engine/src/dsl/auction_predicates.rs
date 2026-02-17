@@ -1,6 +1,6 @@
 use crate::kernel::AuctionModel;
 use std::fmt::Debug;
-use types::{Call, Suit};
+use types::Suit;
 
 pub trait AuctionPredicate: Send + Sync + Debug {
     fn check(&self, auction: &AuctionModel) -> bool;
@@ -82,7 +82,7 @@ pub struct RhoMadeLastBid;
 impl AuctionPredicate for RhoMadeLastBid {
     fn check(&self, model: &AuctionModel) -> bool {
         let rho = model.auction.current_player().rho();
-        model.auction.last_bidder() == Some(rho)
+        model.auction.last_bid().map(|(pos, _)| pos) == Some(rho)
     }
 }
 
@@ -91,13 +91,8 @@ impl AuctionPredicate for RhoMadeLastBid {
 pub struct WeHaveOnlyPassed;
 impl AuctionPredicate for WeHaveOnlyPassed {
     fn check(&self, model: &AuctionModel) -> bool {
-        let our_partnership = model.auction.current_partnership();
-        for (position, call) in model.auction.iter() {
-            if position.partnership() == our_partnership && !matches!(call, Call::Pass) {
-                return false;
-            }
-        }
-        true
+        let me = model.auction.current_player();
+        !model.auction.player_has_acted(me) && !model.auction.player_has_acted(me.partner())
     }
 }
 
@@ -109,7 +104,8 @@ impl AuctionPredicate for LastBidMaxLevel {
         model
             .auction
             .last_bid()
-            .map(|call| matches!(call, Call::Bid { level, .. } if *level <= self.0))
+            .and_then(|(_, call)| call.level())
+            .map(|level| level <= self.0)
             .unwrap_or(false)
     }
 }
@@ -121,13 +117,9 @@ impl AuctionPredicate for LastBidMaxLevel {
 pub struct IHaveOnlyPassed;
 impl AuctionPredicate for IHaveOnlyPassed {
     fn check(&self, model: &AuctionModel) -> bool {
-        let me = model.auction.current_player();
-        for (position, call) in model.auction.iter() {
-            if position == me && !matches!(call, Call::Pass) {
-                return false;
-            }
-        }
-        true
+        !model
+            .auction
+            .player_has_acted(model.auction.current_player())
     }
 }
 
@@ -137,11 +129,9 @@ impl AuctionPredicate for IHaveOnlyPassed {
 pub struct TheyHaveBid;
 impl AuctionPredicate for TheyHaveBid {
     fn check(&self, model: &AuctionModel) -> bool {
-        let opponent = model.auction.current_partnership().opponent();
         model
             .auction
-            .iter()
-            .any(|(position, call)| position.partnership() == opponent && call.is_bid())
+            .partnership_has_bid(model.auction.current_partnership().opponent())
     }
 }
 
@@ -169,7 +159,7 @@ impl AuctionPredicate for LastBidIsSuit {
         model
             .auction
             .last_bid()
-            .map(|call| call.suit().is_some())
+            .map(|(_, call)| call.suit().is_some())
             .unwrap_or(false)
     }
 }

@@ -256,7 +256,7 @@ fn longest_shown_suit(item: &CallRankItem, hand: &Hand) -> Option<(Suit, u8)> {
 }
 
 fn is_level_1(call: &Call) -> bool {
-    matches!(call, Call::Bid { level: 1, .. })
+    call.level() == Some(1)
 }
 
 #[cfg(test)]

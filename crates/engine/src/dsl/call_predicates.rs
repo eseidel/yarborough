@@ -22,10 +22,7 @@ pub fn not_call(predicate: impl CallPredicate + 'static) -> NotCall {
 pub struct IsLevel(pub u8);
 impl CallPredicate for IsLevel {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { level, .. } => *level == self.0,
-            _ => false,
-        }
+        call.level() == Some(self.0)
     }
 }
 
@@ -33,10 +30,8 @@ impl CallPredicate for IsLevel {
 pub struct IsCall(pub u8, pub Strain);
 impl CallPredicate for IsCall {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { level, strain } => *level == self.0 && *strain == self.1,
-            _ => false,
-        }
+        let (level, strain) = (self.0, self.1);
+        call.level() == Some(level) && call.strain() == Some(strain)
     }
 }
 
@@ -44,10 +39,7 @@ impl CallPredicate for IsCall {
 pub struct IsStrain(pub Strain);
 impl CallPredicate for IsStrain {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { strain, .. } => *strain == self.0,
-            _ => false,
-        }
+        call.strain() == Some(self.0)
     }
 }
 
@@ -55,13 +47,7 @@ impl CallPredicate for IsStrain {
 pub struct IsNotrump;
 impl CallPredicate for IsNotrump {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        matches!(
-            call,
-            Call::Bid {
-                strain: Strain::Notrump,
-                ..
-            }
-        )
+        call.strain() == Some(Strain::Notrump)
     }
 }
 
@@ -69,10 +55,7 @@ impl CallPredicate for IsNotrump {
 pub struct IsSuit;
 impl CallPredicate for IsSuit {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { strain, .. } => strain.to_suit().is_some(),
-            _ => false,
-        }
+        call.suit().is_some()
     }
 }
 
@@ -80,16 +63,11 @@ impl CallPredicate for IsSuit {
 pub struct IsNewSuit;
 impl CallPredicate for IsNewSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { strain, .. } => {
-                if let Some(suit) = strain.to_suit() {
-                    !auction.partner_hand().has_shown_suit(suit)
-                        && !auction.bidder_hand().has_shown_suit(suit)
-                } else {
-                    false
-                }
-            }
-            _ => false,
+        if let Some(suit) = call.suit() {
+            !auction.partner_hand().has_shown_suit(suit)
+                && !auction.bidder_hand().has_shown_suit(suit)
+        } else {
+            false
         }
     }
 }
@@ -98,10 +76,7 @@ impl CallPredicate for IsNewSuit {
 pub struct IsMajorSuit;
 impl CallPredicate for IsMajorSuit {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { strain, .. } => strain.is_major(),
-            _ => false,
-        }
+        call.strain().map(|s| s.is_major()).unwrap_or(false)
     }
 }
 
@@ -109,10 +84,7 @@ impl CallPredicate for IsMajorSuit {
 pub struct IsMinorSuit;
 impl CallPredicate for IsMinorSuit {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { strain, .. } => strain.is_minor(),
-            _ => false,
-        }
+        call.strain().map(|s| s.is_minor()).unwrap_or(false)
     }
 }
 
@@ -120,10 +92,7 @@ impl CallPredicate for IsMinorSuit {
 pub struct MinLevel(pub u8);
 impl CallPredicate for MinLevel {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { level, .. } => *level >= self.0,
-            _ => false,
-        }
+        call.level().map(|l| l >= self.0).unwrap_or(false)
     }
 }
 
@@ -131,24 +100,16 @@ impl CallPredicate for MinLevel {
 pub struct MaxLevel(pub u8);
 impl CallPredicate for MaxLevel {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
-        match call {
-            Call::Bid { level, .. } => *level <= self.0,
-            _ => false,
-        }
+        call.level().map(|l| l <= self.0).unwrap_or(false)
     }
 }
 
 /// Returns the minimum legal level for a given strain, based on the last bid in the auction.
 /// Returns None if there is no previous bid.
 fn min_level_for_strain(auction: &AuctionModel, strain: Strain) -> Option<u8> {
-    let last_bid = auction.auction.calls.iter().rev().find_map(|c| match c {
-        Call::Bid {
-            level,
-            strain: last_strain,
-        } => Some((*level, *last_strain)),
-        _ => None,
-    })?;
-    let (last_level, last_strain) = last_bid;
+    let (_, last) = auction.auction.last_bid()?;
+    let last_level = last.level().unwrap();
+    let last_strain = last.strain().unwrap();
     Some(if strain > last_strain {
         last_level
     } else {
@@ -161,9 +122,9 @@ fn min_level_for_strain(auction: &AuctionModel, strain: Strain) -> Option<u8> {
 pub struct IsJump;
 impl CallPredicate for IsJump {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
-        if let Call::Bid { level, strain } = call {
-            if let Some(min_level) = min_level_for_strain(auction, *strain) {
-                return *level == min_level + 1;
+        if let (Some(level), Some(strain)) = (call.level(), call.strain()) {
+            if let Some(min_level) = min_level_for_strain(auction, strain) {
+                return level == min_level + 1;
             }
         }
         false
