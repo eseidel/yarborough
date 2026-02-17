@@ -1,4 +1,5 @@
 use crate::strain::Strain;
+use crate::suit::Suit;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -14,6 +15,14 @@ pub enum Call {
 impl Call {
     pub fn is_bid(&self) -> bool {
         matches!(self, Call::Bid { .. })
+    }
+
+    /// Returns the suit of this call, if it's a suited bid.
+    pub fn suit(&self) -> Option<Suit> {
+        match self {
+            Call::Bid { strain, .. } => strain.to_suit(),
+            _ => None,
+        }
     }
 
     pub fn render(self) -> String {

@@ -44,10 +44,8 @@ pub trait Shows: Send + Sync + Debug {
 pub struct ShowTwoOfTopThree;
 impl Shows for ShowTwoOfTopThree {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                return vec![HandConstraint::TwoOfTopThree(suit)];
-            }
+        if let Some(suit) = call.suit() {
+            return vec![HandConstraint::TwoOfTopThree(suit)];
         }
         vec![]
     }
@@ -58,10 +56,8 @@ impl Shows for ShowTwoOfTopThree {
 pub struct ShowThreeOfTopFiveOrBetter;
 impl Shows for ShowThreeOfTopFiveOrBetter {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                return vec![HandConstraint::ThreeOfTopFiveOrBetter(suit)];
-            }
+        if let Some(suit) = call.suit() {
+            return vec![HandConstraint::ThreeOfTopFiveOrBetter(suit)];
         }
         vec![]
     }
@@ -115,10 +111,8 @@ impl Shows for ShowBalanced {
 pub struct ShowMinSuitLength(pub u8);
 impl Shows for ShowMinSuitLength {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                return vec![HandConstraint::MinLength(suit, self.0)];
-            }
+        if let Some(suit) = call.suit() {
+            return vec![HandConstraint::MinLength(suit, self.0)];
         }
         vec![]
     }
@@ -150,11 +144,9 @@ impl Shows for ShowSufficientValues {
 pub struct ShowOpeningSuitLength;
 impl Shows for ShowOpeningSuitLength {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                let length = if suit.is_major() { 5 } else { 4 };
-                return vec![HandConstraint::MinLength(suit, length)];
-            }
+        if let Some(suit) = call.suit() {
+            let length = if suit.is_major() { 5 } else { 4 };
+            return vec![HandConstraint::MinLength(suit, length)];
         }
         vec![]
     }
@@ -164,8 +156,8 @@ impl Shows for ShowOpeningSuitLength {
 pub struct ShowPreemptLength;
 impl Shows for ShowPreemptLength {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { level, strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
+        if let Call::Bid { level, .. } = call {
+            if let Some(suit) = call.suit() {
                 return vec![HandConstraint::MinLength(suit, level + 4)];
             }
         }
@@ -186,10 +178,8 @@ impl Shows for ShowRuleOfFifteen {
 pub struct ShowMaxLength(pub u8);
 impl Shows for ShowMaxLength {
     fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                return vec![HandConstraint::MaxLength(suit, self.0)];
-            }
+        if let Some(suit) = call.suit() {
+            return vec![HandConstraint::MaxLength(suit, self.0)];
         }
         vec![]
     }
@@ -222,13 +212,11 @@ impl Shows for ShowSupportValues {
 pub struct ShowSupportLength;
 impl Shows for ShowSupportLength {
     fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                let needed_len = auction
-                    .partner_hand()
-                    .length_needed_to_reach_target(suit, 8);
-                return vec![HandConstraint::MinLength(suit, needed_len)];
-            }
+        if let Some(suit) = call.suit() {
+            let needed_len = auction
+                .partner_hand()
+                .length_needed_to_reach_target(suit, 8);
+            return vec![HandConstraint::MinLength(suit, needed_len)];
         }
         vec![]
     }
