@@ -1,4 +1,4 @@
-use crate::dsl::auction_predicates::{PartnerLimited, WeOpened};
+use crate::dsl::auction_predicates::{not_auction, PartnerLimited, TheyHaveBid, WeOpened};
 use crate::dsl::call_predicates::{
     not_call, BidderHasShownSuit, IsJump, IsLevel, IsMajorSuit, IsMinorSuit, IsNewSuit, IsNotrump,
     IsPass, IsSuit, MinLevel, PartnerHasShownSuit,
@@ -11,9 +11,16 @@ use crate::rule;
 
 rule! {
     NewSuitAtLevelOne: "New Suit",
-    auction: [WeOpened],
+    auction: [WeOpened, not_auction(TheyHaveBid)],
     call: [IsLevel(1), IsNewSuit],
     shows: [ShowMinSuitLength(4), ShowMinHcp(6)]
+}
+
+rule! {
+    FreeBidAtLevelOne: "Free Bid (New Suit)",
+    auction: [WeOpened, TheyHaveBid],
+    call: [IsLevel(1), IsNewSuit],
+    shows: [ShowMinSuitLength(5), ShowMinHcp(8)]
 }
 
 rule! {

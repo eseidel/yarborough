@@ -17,12 +17,25 @@ impl Call {
         matches!(self, Call::Bid { .. })
     }
 
-    /// Returns the suit of this call, if it's a suited bid.
-    pub fn suit(&self) -> Option<Suit> {
+    /// Returns the level of this call, if it's a bid.
+    pub fn level(&self) -> Option<u8> {
         match self {
-            Call::Bid { strain, .. } => strain.to_suit(),
+            Call::Bid { level, .. } => Some(*level),
             _ => None,
         }
+    }
+
+    /// Returns the strain of this call, if it's a bid.
+    pub fn strain(&self) -> Option<Strain> {
+        match self {
+            Call::Bid { strain, .. } => Some(*strain),
+            _ => None,
+        }
+    }
+
+    /// Returns the suit of this call, if it's a suited bid.
+    pub fn suit(&self) -> Option<Suit> {
+        self.strain().and_then(|s| s.to_suit())
     }
 
     pub fn render(self) -> String {

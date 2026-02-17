@@ -1,5 +1,6 @@
 use crate::dsl::auction_predicates::{
-    LastBidMaxLevel, RhoMadeLastBid, TheyOpened, WeHaveOnlyPassed,
+    not_auction, HasUnbidMajor, IHaveOnlyPassed, LastBidIsSuit, LastBidMaxLevel, RhoMadeLastBid,
+    TheyOpened, WeHaveOnlyPassed, WeOpened,
 };
 use crate::dsl::call_predicates::{
     not_call, IsDouble, IsJump, IsLevel, IsNotrump, IsPass, IsSuit, MaxLevel,
@@ -7,8 +8,9 @@ use crate::dsl::call_predicates::{
 };
 use crate::dsl::planner::TakeoutDoublePlanner;
 use crate::dsl::shows::{
-    ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinSuitLength, ShowPreemptLength,
-    ShowStopperInOpponentSuit, ShowSupportForUnbidSuits, ShowThreeOfTopFiveOrBetter,
+    ShowBalanced, ShowFourInUnbidMajors, ShowHcpRange, ShowMinHcp, ShowMinSuitLength,
+    ShowPreemptLength, ShowStopperInOpponentSuit, ShowSupportForUnbidSuits,
+    ShowThreeOfTopFiveOrBetter,
 };
 use crate::rule;
 
@@ -47,6 +49,20 @@ rule! {
     call: [IsDouble],
     shows: [ShowMinHcp(11), ShowSupportForUnbidSuits],
     planner: TakeoutDoublePlanner
+}
+
+rule! {
+    OneLevelNegativeDouble: "Negative Double",
+    auction: [WeOpened, IHaveOnlyPassed, RhoMadeLastBid, LastBidMaxLevel(1), HasUnbidMajor, LastBidIsSuit],
+    call: [IsDouble],
+    shows: [ShowMinHcp(6), ShowFourInUnbidMajors]
+}
+
+rule! {
+    TwoLevelNegativeDouble: "Negative Double",
+    auction: [WeOpened, IHaveOnlyPassed, RhoMadeLastBid, not_auction(LastBidMaxLevel(1)), LastBidMaxLevel(3), HasUnbidMajor, LastBidIsSuit],
+    call: [IsDouble],
+    shows: [ShowMinHcp(8), ShowFourInUnbidMajors]
 }
 
 rule! {
@@ -367,6 +383,147 @@ mod tests {
             bid,
             Some(Call::Double),
             "Should not double without support for unbid suits"
+        );
+    }
+
+    // --- Negative Double tests ---
+
+    #[test]
+    fn test_negative_double_after_one_level_overcall() {
+        // N opens 1C, E overcalls 1S, S's turn
+        // Negative double should show 4+ hearts (unbid major), 6+ HCP
+        let auction = types::Auction::bidding(Position::North, "1C 1S");
+        let model = AuctionModel::from_auction(&auction);
+        let sem = OneLevelNegativeDouble
+            .get_semantics(&model, &Call::Double)
+            .unwrap();
+
+        assert!(sem.shows.contains(&HandConstraint::MinHcp(6)));
+        // Hearts is the only unbid major (spades shown by opponent)
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MinLength(Suit::Hearts, 4)));
+        assert!(!sem
+            .shows
+            .contains(&HandConstraint::MinLength(Suit::Spades, 4)));
+    }
+
+    #[test]
+    fn test_negative_double_shows_both_majors() {
+        // N opens 1C, E overcalls 1D, S's turn
+        // Both majors are unbid
+        let auction = types::Auction::bidding(Position::North, "1C 1D");
+        let model = AuctionModel::from_auction(&auction);
+        let sem = OneLevelNegativeDouble
+            .get_semantics(&model, &Call::Double)
+            .unwrap();
+
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MinLength(Suit::Hearts, 4)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MinLength(Suit::Spades, 4)));
+    }
+
+    #[test]
+    fn test_negative_double_not_when_they_opened() {
+        // They opened, we didn't — should not match (that's a takeout double)
+        let auction = types::Auction::bidding(Position::North, "1C");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(OneLevelNegativeDouble
+            .get_semantics(&model, &Call::Double)
+            .is_none());
+    }
+
+    #[test]
+    fn test_negative_double_not_when_opener_rebids() {
+        // N: 1C, E: 1S, S: P, W: P, N's turn again
+        // N already bid 1C, so IHaveOnlyPassed is false
+        let auction = types::Auction::bidding(Position::North, "1C 1S P P");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            OneLevelNegativeDouble
+                .get_semantics(&model, &Call::Double)
+                .is_none(),
+            "Opener should not match negative double rule"
+        );
+    }
+
+    #[test]
+    fn test_negative_double_not_over_nt_overcall() {
+        // N: 1C, E: 1N, S's turn — double of 1NT should be penalty, not negative
+        let auction = types::Auction::bidding(Position::North, "1C 1N");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            OneLevelNegativeDouble
+                .get_semantics(&model, &Call::Double)
+                .is_none(),
+            "Should not make negative double over NT overcall"
+        );
+    }
+
+    #[test]
+    fn test_negative_double_not_when_both_majors_shown() {
+        // N: 1H, E: 2S, S's turn — both majors shown, HasUnbidMajor is false
+        let auction = types::Auction::bidding(Position::North, "1H 2S");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            TwoLevelNegativeDouble
+                .get_semantics(&model, &Call::Double)
+                .is_none(),
+            "Should not double when no unbid major exists"
+        );
+    }
+
+    #[test]
+    fn test_two_level_negative_double() {
+        // N: 1D, E: 2C, S's turn — negative double at 2-level needs 8+ HCP
+        let auction = types::Auction::bidding(Position::North, "1D 2C");
+        let model = AuctionModel::from_auction(&auction);
+        let sem = TwoLevelNegativeDouble
+            .get_semantics(&model, &Call::Double)
+            .unwrap();
+
+        assert!(sem.shows.contains(&HandConstraint::MinHcp(8)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MinLength(Suit::Hearts, 4)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MinLength(Suit::Spades, 4)));
+    }
+
+    #[test]
+    fn test_negative_double_integration() {
+        use crate::kernel;
+        // Hand format is C.D.H.S: 4 clubs, 3 diamonds, 4 hearts, 2 spades
+        // After 1C-1S, should double to show 4 hearts
+        let hand = Hand::parse("9872.K64.K875.63");
+        let auction = types::Auction::bidding(Position::North, "1C 1S");
+        let bid = kernel::select_call(&hand, &auction);
+        assert_eq!(
+            bid,
+            Some(Call::Double),
+            "Should negative double with 4 hearts after 1C-1S"
+        );
+    }
+
+    #[test]
+    fn test_negative_double_prefers_suit_with_five() {
+        use crate::kernel;
+        // Hand format is C.D.H.S: 2 clubs, 3 diamonds, 3 hearts, 5 spades
+        // After 1C-1H, with 5 spades should bid 1S, not double
+        let hand = Hand::parse("32.432.432.AKQJ2");
+        let auction = types::Auction::bidding(Position::North, "1C 1H");
+        let bid = kernel::select_call(&hand, &auction);
+        assert_eq!(
+            bid,
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Spades
+            }),
+            "Should bid 1S with 5 spades, not double"
         );
     }
 }

@@ -56,11 +56,9 @@ impl Planner for RuleOfTwentyPlanner {
         }
 
         // Ignore the hand constraints for the shows and instead check the length of the call's suit
-        if let Call::Bid { level: _, strain } = call {
-            if let Some(suit) = strain.to_suit() {
-                let min_len = if suit.is_major() { 5 } else { 3 };
-                return hand.length(suit) >= min_len;
-            }
+        if let Some(suit) = call.suit() {
+            let min_len = if suit.is_major() { 5 } else { 3 };
+            return hand.length(suit) >= min_len;
         }
 
         false

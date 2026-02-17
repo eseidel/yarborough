@@ -1,6 +1,6 @@
 use crate::kernel::AuctionModel;
 use std::fmt::Debug;
-use types::Call;
+use types::Suit;
 
 pub trait AuctionPredicate: Send + Sync + Debug {
     fn check(&self, auction: &AuctionModel) -> bool;
@@ -82,7 +82,7 @@ pub struct RhoMadeLastBid;
 impl AuctionPredicate for RhoMadeLastBid {
     fn check(&self, model: &AuctionModel) -> bool {
         let rho = model.auction.current_player().rho();
-        model.auction.last_bidder() == Some(rho)
+        model.auction.last_bid().map(|(pos, _)| pos) == Some(rho)
     }
 }
 
@@ -91,13 +91,8 @@ impl AuctionPredicate for RhoMadeLastBid {
 pub struct WeHaveOnlyPassed;
 impl AuctionPredicate for WeHaveOnlyPassed {
     fn check(&self, model: &AuctionModel) -> bool {
-        let our_partnership = model.auction.current_partnership();
-        for (position, call) in model.auction.iter() {
-            if position.partnership() == our_partnership && !matches!(call, Call::Pass) {
-                return false;
-            }
-        }
-        true
+        let me = model.auction.current_player();
+        !model.auction.player_has_acted(me) && !model.auction.player_has_acted(me.partner())
     }
 }
 
@@ -106,13 +101,66 @@ impl AuctionPredicate for WeHaveOnlyPassed {
 pub struct LastBidMaxLevel(pub u8);
 impl AuctionPredicate for LastBidMaxLevel {
     fn check(&self, model: &AuctionModel) -> bool {
-        let mut last_level = None;
-        for (_, call) in model.auction.iter() {
-            if let Call::Bid { level, .. } = call {
-                last_level = Some(*level);
-            }
-        }
-        last_level.map(|l| l <= self.0).unwrap_or(false)
+        model
+            .auction
+            .last_bid()
+            .and_then(|(_, call)| call.level())
+            .map(|level| level <= self.0)
+            .unwrap_or(false)
+    }
+}
+
+/// Checks that the current player (not the whole partnership) has only passed.
+/// Unlike `WeHaveOnlyPassed`, this allows partner to have bid.
+/// Used for negative doubles: the responder hasn't bid but partner opened.
+#[derive(Debug)]
+pub struct IHaveOnlyPassed;
+impl AuctionPredicate for IHaveOnlyPassed {
+    fn check(&self, model: &AuctionModel) -> bool {
+        !model
+            .auction
+            .player_has_acted(model.auction.current_player())
+    }
+}
+
+/// Checks that at least one opponent has made a bid (not just passes/doubles).
+/// Distinguishes contested from uncontested auctions.
+#[derive(Debug)]
+pub struct TheyHaveBid;
+impl AuctionPredicate for TheyHaveBid {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model
+            .auction
+            .partnership_has_bid(model.auction.current_partnership().opponent())
+    }
+}
+
+/// Checks that at least one major suit has not been shown by any player.
+/// Safety guard ensuring a negative double has an unbid major to show.
+#[derive(Debug)]
+pub struct HasUnbidMajor;
+impl AuctionPredicate for HasUnbidMajor {
+    fn check(&self, model: &AuctionModel) -> bool {
+        [Suit::Hearts, Suit::Spades].iter().any(|&suit| {
+            !model.bidder_hand().has_shown_suit(suit)
+                && !model.partner_hand().has_shown_suit(suit)
+                && !model.lho_hand().has_shown_suit(suit)
+                && !model.rho_hand().has_shown_suit(suit)
+        })
+    }
+}
+
+/// Checks that the last bid in the auction was a suit bid (not NT).
+/// Negative doubles apply over suit overcalls, not NT overcalls.
+#[derive(Debug)]
+pub struct LastBidIsSuit;
+impl AuctionPredicate for LastBidIsSuit {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model
+            .auction
+            .last_bid()
+            .map(|(_, call)| call.suit().is_some())
+            .unwrap_or(false)
     }
 }
 
@@ -237,6 +285,111 @@ mod tests {
         assert!(!pred.check(&model));
 
         // Empty auction — no bids at all
+        let auction = types::Auction::new(Position::North);
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model));
+    }
+
+    #[test]
+    fn test_i_have_only_passed() {
+        let pred = IHaveOnlyPassed;
+
+        // N opens 1C, E overcalls 1S, S's turn — S hasn't acted yet
+        let auction = types::Auction::bidding(Position::North, "1C 1S");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model), "S hasn't bid yet");
+
+        // N opens 1C, it's E's turn — E hasn't acted yet
+        let auction = types::Auction::bidding(Position::North, "1C");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model), "E hasn't bid yet");
+
+        // N opens 1C, E passes, S passes, W passes, N's turn again
+        // N already bid 1C, so IHaveOnlyPassed is false for N
+        let auction = types::Auction::bidding(Position::North, "1C P P P");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model), "N already opened 1C");
+
+        // Unlike WeHaveOnlyPassed, partner's bid doesn't affect us
+        // N opens 1C, E overcalls 1S — S's turn. Partner (N) bid 1C but S hasn't.
+        let auction = types::Auction::bidding(Position::North, "1C 1S");
+        let model = AuctionModel::from_auction(&auction);
+        let we_pred = WeHaveOnlyPassed;
+        assert!(
+            !we_pred.check(&model),
+            "WeHaveOnlyPassed is false (N bid 1C)"
+        );
+        assert!(pred.check(&model), "IHaveOnlyPassed is true (S hasn't bid)");
+    }
+
+    #[test]
+    fn test_they_have_bid() {
+        let pred = TheyHaveBid;
+
+        // N opens 1C, E passes, S's turn — EW only passed, no bids
+        let auction = types::Auction::bidding(Position::North, "1C P");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model), "EW only passed (S's perspective)");
+
+        // N: 1C, E: 1S, S's turn — EW bid 1S
+        let auction = types::Auction::bidding(Position::North, "1C 1S");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model), "E overcalled 1S (S's perspective)");
+
+        // N: 1C, E: X, S's turn — double is not a bid
+        let auction = types::Auction::bidding(Position::North, "1C X");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model), "Double is not a bid");
+
+        // N: 1C, E's turn — from E's perspective, opponents (NS) DID bid
+        let auction = types::Auction::bidding(Position::North, "1C");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            pred.check(&model),
+            "NS bid 1C (E's perspective, opponents have bid)"
+        );
+    }
+
+    #[test]
+    fn test_has_unbid_major() {
+        let pred = HasUnbidMajor;
+
+        // N: 1C, E: 1S, S's turn — hearts is unbid
+        let auction = types::Auction::bidding(Position::North, "1C 1S");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model), "Hearts is unbid");
+
+        // N: 1H, E: 2S, S's turn — both majors shown
+        let auction = types::Auction::bidding(Position::North, "1H 2S");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model), "Both majors are shown");
+
+        // N: 1D, E: 2C, S's turn — both majors unbid
+        let auction = types::Auction::bidding(Position::North, "1D 2C");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model), "Both majors are unbid");
+    }
+
+    #[test]
+    fn test_last_bid_is_suit() {
+        let pred = LastBidIsSuit;
+
+        // N opens 1C — last bid is clubs (a suit)
+        let auction = types::Auction::bidding(Position::North, "1C");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model));
+
+        // N: 1C, E: 1N — last bid is NT (not a suit)
+        let auction = types::Auction::bidding(Position::North, "1C 1N");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(!pred.check(&model));
+
+        // N: 1C, E: 1S — last bid is spades (a suit)
+        let auction = types::Auction::bidding(Position::North, "1C 1S");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(pred.check(&model));
+
+        // Empty auction — no bids
         let auction = types::Auction::new(Position::North);
         let model = AuctionModel::from_auction(&auction);
         assert!(!pred.check(&model));
