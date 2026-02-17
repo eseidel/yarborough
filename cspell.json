@@ -27,6 +27,7 @@
     "cdhs",
     "cdylib",
     "clap",
+    "clippy",
     "crossterm",
     "codecov",
     "concurrently",
@@ -99,6 +100,7 @@
     "vite",
     "vitejs",
     "vitest",
+    "deque",
     "vuls",
     "wasm",
     "yarborough"
