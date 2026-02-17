@@ -2,8 +2,112 @@ use crate::nbk::{AuctionModel, HandConstraint, PointRanges};
 use std::fmt::Debug;
 use types::{Call, Shape, Suit};
 
+pub trait Shows: Send + Sync + Debug {
+    fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint>;
+}
+
+// ---------------------------------------------------------------------------
+// Macros for common Show patterns
+// ---------------------------------------------------------------------------
+
+/// Show that produces constraints without needing auction or call context.
+macro_rules! const_show {
+    ($(#[$attr:meta])* $name:ident => $body:expr) => {
+        $(#[$attr])*
+        #[derive(Debug)]
+        pub struct $name;
+        impl Shows for $name {
+            fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
+                $body
+            }
+        }
+    };
+    ($(#[$attr:meta])* $name:ident($(pub $ty:ty),+) => |$s:ident| $body:expr) => {
+        $(#[$attr])*
+        #[derive(Debug)]
+        pub struct $name($(pub $ty),+);
+        impl Shows for $name {
+            fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
+                let $s = self;
+                $body
+            }
+        }
+    };
+}
+
+/// Show that extracts the suit from the call and produces constraints for it.
+macro_rules! call_suit_show {
+    ($(#[$attr:meta])* $name:ident => |$suit:ident| $body:expr) => {
+        $(#[$attr])*
+        #[derive(Debug)]
+        pub struct $name;
+        impl Shows for $name {
+            fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
+                if let Some($suit) = call.suit() {
+                    return $body;
+                }
+                vec![]
+            }
+        }
+    };
+    ($(#[$attr:meta])* $name:ident($(pub $ty:ty),+) => |$s:ident, $suit:ident| $body:expr) => {
+        $(#[$attr])*
+        #[derive(Debug)]
+        pub struct $name($(pub $ty),+);
+        impl Shows for $name {
+            fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
+                let $s = self;
+                if let Some($suit) = call.suit() {
+                    return $body;
+                }
+                vec![]
+            }
+        }
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Simple constant shows
+// ---------------------------------------------------------------------------
+
+const_show!(ShowMinHcp(pub u8) => |s| vec![HandConstraint::MinHcp(s.0)]);
+const_show!(ShowMaxHcp(pub u8) => |s| vec![HandConstraint::MaxHcp(s.0)]);
+const_show!(ShowHcpRange(pub u8, pub u8) => |s| vec![
+    HandConstraint::MinHcp(s.0),
+    HandConstraint::MaxHcp(s.1),
+]);
+const_show!(ShowBalanced => vec![HandConstraint::MaxUnbalancedness(Shape::Balanced)]);
+const_show!(ShowSemiBalanced => vec![HandConstraint::MaxUnbalancedness(Shape::SemiBalanced)]);
+const_show!(ShowRuleOfFifteen => vec![HandConstraint::RuleOfFifteen]);
+const_show!(
+    #[allow(dead_code)]
+    ShowMinLength(pub Suit, pub u8) => |s| vec![HandConstraint::MinLength(s.0, s.1)]
+);
+
+// ---------------------------------------------------------------------------
+// Call-suit shows (extract suit from the bid)
+// ---------------------------------------------------------------------------
+
+call_suit_show!(
+    /// Requires 2+ of the top 3 honors {A, K, Q} in the bid suit.
+    #[allow(dead_code)]
+    ShowTwoOfTopThree => |suit| vec![HandConstraint::TwoOfTopThree(suit)]
+);
+call_suit_show!(
+    /// Requires good suit quality: 2 of top 3 OR 3 of top 5 honors in the bid suit.
+    ShowThreeOfTopFiveOrBetter => |suit| vec![HandConstraint::ThreeOfTopFiveOrBetter(suit)]
+);
+call_suit_show!(ShowMinSuitLength(pub u8) => |s, suit| vec![HandConstraint::MinLength(suit, s.0)]);
+call_suit_show!(
+    #[allow(dead_code)]
+    ShowMaxLength(pub u8) => |s, suit| vec![HandConstraint::MaxLength(suit, s.0)]
+);
+
+// ---------------------------------------------------------------------------
+// Complex shows (require custom logic with auction/call context)
+// ---------------------------------------------------------------------------
+
 /// Requires a stopper in each suit the opponents have shown.
-/// Used for notrump overcalls.
 #[derive(Debug)]
 pub struct ShowStopperInOpponentSuit;
 impl Shows for ShowStopperInOpponentSuit {
@@ -19,7 +123,6 @@ impl Shows for ShowStopperInOpponentSuit {
 }
 
 /// Shows 3+ cards in each suit that opponents have NOT shown.
-/// Used for takeout doubles to indicate support for all unbid suits.
 #[derive(Debug)]
 pub struct ShowSupportForUnbidSuits;
 impl Shows for ShowSupportForUnbidSuits {
@@ -31,90 +134,6 @@ impl Shows for ShowSupportForUnbidSuits {
             })
             .map(|&suit| HandConstraint::MinLength(suit, 3))
             .collect()
-    }
-}
-
-pub trait Shows: Send + Sync + Debug {
-    fn show(&self, auction: &AuctionModel, call: &Call) -> Vec<HandConstraint>;
-}
-
-/// Requires 2+ of the top 3 honors {A, K, Q} in the bid suit.
-#[derive(Debug)]
-#[allow(dead_code)]
-pub struct ShowTwoOfTopThree;
-impl Shows for ShowTwoOfTopThree {
-    fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Some(suit) = call.suit() {
-            return vec![HandConstraint::TwoOfTopThree(suit)];
-        }
-        vec![]
-    }
-}
-
-/// Requires good suit quality: 2 of top 3 OR 3 of top 5 honors in the bid suit.
-#[derive(Debug)]
-pub struct ShowThreeOfTopFiveOrBetter;
-impl Shows for ShowThreeOfTopFiveOrBetter {
-    fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Some(suit) = call.suit() {
-            return vec![HandConstraint::ThreeOfTopFiveOrBetter(suit)];
-        }
-        vec![]
-    }
-}
-
-#[derive(Debug)]
-pub struct ShowMinHcp(pub u8);
-impl Shows for ShowMinHcp {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![HandConstraint::MinHcp(self.0)]
-    }
-}
-
-#[derive(Debug)]
-pub struct ShowMaxHcp(pub u8);
-impl Shows for ShowMaxHcp {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![HandConstraint::MaxHcp(self.0)]
-    }
-}
-
-#[derive(Debug)]
-pub struct ShowHcpRange(pub u8, pub u8);
-impl Shows for ShowHcpRange {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![
-            HandConstraint::MinHcp(self.0),
-            HandConstraint::MaxHcp(self.1),
-        ]
-    }
-}
-
-#[derive(Debug)]
-#[allow(dead_code)]
-pub struct ShowMinLength(pub Suit, pub u8);
-impl Shows for ShowMinLength {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![HandConstraint::MinLength(self.0, self.1)]
-    }
-}
-
-#[derive(Debug)]
-pub struct ShowBalanced;
-impl Shows for ShowBalanced {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![HandConstraint::MaxUnbalancedness(Shape::Balanced)]
-    }
-}
-
-#[derive(Debug)]
-pub struct ShowMinSuitLength(pub u8);
-impl Shows for ShowMinSuitLength {
-    fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Some(suit) = call.suit() {
-            return vec![HandConstraint::MinLength(suit, self.0)];
-        }
-        vec![]
     }
 }
 
@@ -162,34 +181,6 @@ impl Shows for ShowPreemptLength {
             }
         }
         vec![]
-    }
-}
-
-#[derive(Debug)]
-pub struct ShowRuleOfFifteen;
-impl Shows for ShowRuleOfFifteen {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![HandConstraint::RuleOfFifteen]
-    }
-}
-
-#[derive(Debug)]
-#[allow(dead_code)]
-pub struct ShowMaxLength(pub u8);
-impl Shows for ShowMaxLength {
-    fn show(&self, _auction: &AuctionModel, call: &Call) -> Vec<HandConstraint> {
-        if let Some(suit) = call.suit() {
-            return vec![HandConstraint::MaxLength(suit, self.0)];
-        }
-        vec![]
-    }
-}
-
-#[derive(Debug)]
-pub struct ShowSemiBalanced;
-impl Shows for ShowSemiBalanced {
-    fn show(&self, _auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
-        vec![HandConstraint::MaxUnbalancedness(Shape::SemiBalanced)]
     }
 }
 
