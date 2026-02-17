@@ -1,3 +1,4 @@
+pub mod annotations;
 pub mod auction_predicates;
 pub mod bidding_rule;
 pub mod call_predicates;

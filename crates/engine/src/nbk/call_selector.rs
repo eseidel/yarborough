@@ -245,6 +245,7 @@ mod tests {
             call: Call::Bid { level, strain },
             semantics: CallSemantics {
                 shows: vec![HandConstraint::MinLength(suit, min_length)],
+                annotations: vec![],
                 rule_name: "test".to_string(),
                 planner: None,
             },
@@ -260,6 +261,7 @@ mod tests {
                     .iter()
                     .map(|(s, l)| HandConstraint::MinLength(*s, *l))
                     .collect(),
+                annotations: vec![],
                 rule_name: "test".to_string(),
                 planner: None,
             },
@@ -272,6 +274,7 @@ mod tests {
             call: Call::Bid { level, strain },
             semantics: CallSemantics {
                 shows: vec![],
+                annotations: vec![],
                 rule_name: "test".to_string(),
                 planner: None,
             },

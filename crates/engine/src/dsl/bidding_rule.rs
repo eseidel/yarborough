@@ -1,3 +1,4 @@
+use crate::dsl::annotations::Annotation;
 use crate::dsl::auction_predicates::AuctionPredicate;
 use crate::dsl::call_predicates::CallPredicate;
 use crate::dsl::planner::Planner;
@@ -19,6 +20,11 @@ pub trait BiddingRule: Send + Sync {
 
     /// What this rule shows about the hand
     fn shows(&self) -> Vec<Box<dyn Shows>>;
+
+    /// Metadata about this bid (not hand constraints)
+    fn annotations(&self) -> Vec<Annotation> {
+        vec![]
+    }
 
     /// Optional planner for this rule
     fn planner(&self) -> Option<Arc<dyn Planner>> {
@@ -55,6 +61,7 @@ pub trait BiddingRule: Send + Sync {
 
         Some(CallSemantics {
             shows: constraints,
+            annotations: self.annotations(),
             rule_name: self.name(call),
             planner: self.planner(),
         })

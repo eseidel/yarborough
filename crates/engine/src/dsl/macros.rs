@@ -5,6 +5,7 @@ macro_rules! bidding_rule {
         auction: [ $( $a_pred:expr ),* $(,)? ],
         call: [ $( $c_pred:expr ),* $(,)? ],
         shows: [ $( $shows_pred:expr ),* $(,)? ]
+        $(, annotations: [ $( $ann:expr ),* $(,)? ] )?
         $(, planner: $planner_expr:ident )?
         $(,)?
     ) => {
@@ -25,6 +26,10 @@ macro_rules! bidding_rule {
 
             fn shows(&self) -> Vec<Box<dyn $crate::dsl::shows::Shows>> {
                 vec![ $( Box::new($shows_pred) ),* ]
+            }
+
+            fn annotations(&self) -> Vec<$crate::dsl::annotations::Annotation> {
+                vec![ $( $( $ann ),* )? ]
             }
 
             fn planner(&self) -> Option<std::sync::Arc<dyn $crate::dsl::planner::Planner>> {
