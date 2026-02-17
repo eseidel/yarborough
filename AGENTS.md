@@ -3,6 +3,8 @@ pnpm test
 pnpm format:check
 cargo test
 cargo fmt --check
+cargo clippy
+npx cspell --no-progress --dot "**"
 ```
 
 Write tests for all code changes. Goal is 90% test coverage.
@@ -19,17 +21,24 @@ Do not use manual testing. Write automated tests instead.
 
 ### Testing Bidding Logic
 
-**Use YAML expectations, not Rust unit tests for specific bids:**
+**YAML test vectors:**
 
-- Specific bidding scenarios are tested via YAML test vectors in `crates/engine/tests/`
+- `sayc_standard.yaml` is from the SAYC book — **never change expected bids**, only annotate failures with reasons
+- Other YAML files (e.g. `sayc_regression.yaml`) are fine to update as bidding logic evolves
 - When changing bidding logic, run `UPDATE_EXPECTATIONS=1 cargo test --test harness` to update expectations
 - Rust unit tests in `inference.rs` should test the inference _mechanism_, not specific bid scenarios
+
+**z3b is a reference implementation, not ground truth:**
+
+- z3b (`sayc.abortz.net`) is the state-of-the-art SAYCBridge implementation — use it as a reference but it has its own bugs
+- kbb (`saycbridge.com`) is the old original implementation, not authoritative
+- Over time yarborough will intentionally diverge from z3b where we're more correct
 
 ### Debugging Bidding Issues
 
 **Use the debugging tools together:**
 
-1. `cargo run --bin bidder_fight` - finds differences with z3b/kbb
+1. `cargo run --bin bidder_fight -- -n 200 -s <seed>` - batch comparison against z3b with categorized statistics
 2. `cargo run --bin bidding-debug -- "<board-id>"` - shows why a bid was chosen
 3. `cargo run --bin bidding-debug -- "<board-id>" --bid N` - detailed trace for specific bid
 
