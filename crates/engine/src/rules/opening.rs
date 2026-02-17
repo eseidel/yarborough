@@ -85,7 +85,7 @@ bidding_rule! {
 mod tests {
     use super::*;
     use crate::dsl::bidding_rule::BiddingRule;
-    use crate::nbk::{AuctionModel, HandConstraint};
+    use crate::kernel::{AuctionModel, HandConstraint};
     use types::{Call, Position, Strain, Suit};
 
     fn make_auction(calls: &str) -> AuctionModel {

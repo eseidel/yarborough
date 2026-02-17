@@ -1,4 +1,4 @@
-//! Point requirement tables for NBK bidding
+//! Point requirement tables for Kernel bidding
 
 /// Point range requirements for bidding
 pub struct PointRanges;
@@ -10,7 +10,7 @@ impl PointRanges {
 
     /// Minimum combined points required for a suited bid at the given level
     ///
-    /// Based on NBK spec Section 3.1:
+    /// Based on Kernel spec Section 3.1:
     /// - Level 1: 16 points
     /// - Level 2: 19 points
     /// - Level 3: 22 points
@@ -33,7 +33,7 @@ impl PointRanges {
 
     /// Minimum combined points required for a notrump bid at the given level
     ///
-    /// Based on NBK spec Section 3.2:
+    /// Based on Kernel spec Section 3.2:
     /// - Level 1: 19 points
     /// - Level 2: 22 points
     /// - Level 3: 25 points

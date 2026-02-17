@@ -1,22 +1,22 @@
 use crate::dsl::planner::GenuinePlanner;
-use crate::nbk::call_menu::{CallMenu, CallMenuItem};
-use crate::nbk::trace::{BidTrace, SelectionStep};
-use crate::nbk::AuctionModel;
-use crate::nbk::HandConstraint;
+use crate::kernel::call_ranker::{CallRankItem, CallRanker};
+use crate::kernel::trace::{BidTrace, SelectionStep};
+use crate::kernel::AuctionModel;
+use crate::kernel::HandConstraint;
 use types::{Call, Hand, Suit};
 
-/// Call selector implementing the NBK priority stack
+/// Call selector implementing the Kernel priority stack
 pub struct CallSelector;
 
 impl CallSelector {
-    /// Select the best call according to NBK priority rules
+    /// Select the best call according to Kernel priority rules
     pub fn select_best_call(hand: &Hand, auction_model: &AuctionModel) -> Option<Call> {
         Self::select_best_call_with_trace(hand, auction_model).selected_call
     }
 
     /// Select the best call and return a detailed trace of the selection process
     pub fn select_best_call_with_trace(hand: &Hand, auction_model: &AuctionModel) -> BidTrace {
-        let menu = CallMenu::from_auction_model(auction_model);
+        let menu = CallRanker::from_auction_model(auction_model);
         let mut selection_steps = Vec::new();
         let mut selected_call = None;
 
@@ -76,13 +76,13 @@ impl CallSelector {
 /// A strategy for choosing among satisfied calls in a group.
 /// Returns `None` if it doesn't apply, deferring to the next chooser.
 trait GroupChooser {
-    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call>;
+    fn choose(&self, items: &[CallRankItem], hand: &Hand) -> Option<Call>;
 }
 
 /// Select the best item from a group of satisfied items.
 ///
 /// Consults choosers in priority order; first to return `Some` wins.
-fn select_best_from_group(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+fn select_best_from_group(items: &[CallRankItem], hand: &Hand) -> Option<Call> {
     let choosers: &[&dyn GroupChooser] = &[
         &UniqueLongestSuit,
         &PreferHigherMinor,
@@ -97,8 +97,8 @@ fn select_best_from_group(items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
 struct UniqueLongestSuit;
 
 impl GroupChooser for UniqueLongestSuit {
-    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
-        let mut best: Option<(&CallMenuItem, u8)> = None;
+    fn choose(&self, items: &[CallRankItem], hand: &Hand) -> Option<Call> {
+        let mut best: Option<(&CallRankItem, u8)> = None;
         let mut tied = false;
 
         for item in items {
@@ -131,7 +131,7 @@ impl GroupChooser for UniqueLongestSuit {
 struct PreferHigherMinor;
 
 impl GroupChooser for PreferHigherMinor {
-    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+    fn choose(&self, items: &[CallRankItem], hand: &Hand) -> Option<Call> {
         let minor_items: Vec<_> = items
             .iter()
             .filter(|item| is_level_1(&item.call))
@@ -163,7 +163,7 @@ impl GroupChooser for PreferHigherMinor {
 struct PreferHigherWithFivePlus;
 
 impl GroupChooser for PreferHigherWithFivePlus {
-    fn choose(&self, items: &[CallMenuItem], hand: &Hand) -> Option<Call> {
+    fn choose(&self, items: &[CallRankItem], hand: &Hand) -> Option<Call> {
         let suit_items: Vec<_> = items
             .iter()
             .filter(|item| is_level_1(&item.call))
@@ -192,14 +192,14 @@ impl GroupChooser for PreferHigherWithFivePlus {
 struct FirstCall;
 
 impl GroupChooser for FirstCall {
-    fn choose(&self, items: &[CallMenuItem], _hand: &Hand) -> Option<Call> {
+    fn choose(&self, items: &[CallRankItem], _hand: &Hand) -> Option<Call> {
         items.first().map(|item| item.call)
     }
 }
 
 /// Check that candidates have 2+ items, all at the same length, with at
 /// least two distinct suits.
-fn has_tied_distinct_suits(candidates: &[(&CallMenuItem, Suit, u8)]) -> bool {
+fn has_tied_distinct_suits(candidates: &[(&CallRankItem, Suit, u8)]) -> bool {
     if candidates.len() < 2 {
         return false;
     }
@@ -214,7 +214,7 @@ fn has_tied_distinct_suits(candidates: &[(&CallMenuItem, Suit, u8)]) -> bool {
 /// Find the longest suit shown by a call's semantics, measured by the hand's
 /// actual length. A bid may show multiple suits via multiple MinLength
 /// constraints; this returns the suit where the hand is longest.
-fn longest_shown_suit(item: &CallMenuItem, hand: &Hand) -> Option<(Suit, u8)> {
+fn longest_shown_suit(item: &CallRankItem, hand: &Hand) -> Option<(Suit, u8)> {
     item.semantics
         .shows
         .iter()
@@ -235,13 +235,13 @@ fn is_level_1(call: &Call) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nbk::CallSemantics;
+    use crate::kernel::CallSemantics;
     use types::Strain;
 
-    /// Create a CallMenuItem showing MinLength for the bid's suit.
-    fn make_item(level: u8, strain: Strain, min_length: u8) -> CallMenuItem {
+    /// Create a CallRankItem showing MinLength for the bid's suit.
+    fn make_item(level: u8, strain: Strain, min_length: u8) -> CallRankItem {
         let suit = strain.to_suit().expect("test items must be suit bids");
-        CallMenuItem {
+        CallRankItem {
             call: Call::Bid { level, strain },
             semantics: CallSemantics {
                 shows: vec![HandConstraint::MinLength(suit, min_length)],
@@ -252,9 +252,9 @@ mod tests {
         }
     }
 
-    /// Create a CallMenuItem showing MinLength for multiple suits.
-    fn make_multi_suit_item(level: u8, strain: Strain, suits: &[(Suit, u8)]) -> CallMenuItem {
-        CallMenuItem {
+    /// Create a CallRankItem showing MinLength for multiple suits.
+    fn make_multi_suit_item(level: u8, strain: Strain, suits: &[(Suit, u8)]) -> CallRankItem {
+        CallRankItem {
             call: Call::Bid { level, strain },
             semantics: CallSemantics {
                 shows: suits
@@ -268,9 +268,9 @@ mod tests {
         }
     }
 
-    /// Create a CallMenuItem with no MinLength constraints (e.g., NT or Pass).
-    fn make_no_suit_item(level: u8, strain: Strain) -> CallMenuItem {
-        CallMenuItem {
+    /// Create a CallRankItem with no MinLength constraints (e.g., NT or Pass).
+    fn make_no_suit_item(level: u8, strain: Strain) -> CallRankItem {
+        CallRankItem {
             call: Call::Bid { level, strain },
             semantics: CallSemantics {
                 shows: vec![],

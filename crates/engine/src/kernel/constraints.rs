@@ -1,5 +1,5 @@
 // cspell:ignore Jxxx
-//! Hand constraints for NBK bidding rules
+//! Hand constraints for Kernel bidding rules
 
 use serde::{Deserialize, Serialize};
 use types::{Hand, Shape, Suit};

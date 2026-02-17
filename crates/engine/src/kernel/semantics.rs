@@ -1,8 +1,8 @@
-//! Semantic meaning of calls in the NBK model
+//! Semantic meaning of calls in the Kernel model
 
 use crate::dsl::annotations::Annotation;
 use crate::dsl::planner::Planner;
-use crate::nbk::HandConstraint;
+use crate::kernel::HandConstraint;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 

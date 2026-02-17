@@ -1,4 +1,4 @@
-use crate::nbk::{AuctionModel, HandConstraint, PointRanges};
+use crate::kernel::{AuctionModel, HandConstraint, PointRanges};
 use std::fmt::Debug;
 use types::{Call, Shape, Suit};
 

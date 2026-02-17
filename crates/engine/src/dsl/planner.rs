@@ -1,4 +1,4 @@
-use crate::nbk::{AuctionModel, HandConstraint};
+use crate::kernel::{AuctionModel, HandConstraint};
 use types::{Call, Hand};
 
 /// A planner decides whether a bidding rule applies to a given hand in a given auction.

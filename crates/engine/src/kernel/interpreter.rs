@@ -1,8 +1,8 @@
-//! Call Interpreter for NBK
+//! Call Interpreter for Kernel
 //!
 //! Interprets the semantic meaning of calls by querying discovery and limit protocols.
 
-use crate::nbk::{AuctionModel, CallSemantics};
+use crate::kernel::{AuctionModel, CallSemantics};
 use crate::rules::registry::RuleRegistry;
 use std::sync::OnceLock;
 use types::Call;

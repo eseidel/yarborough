@@ -1,11 +1,11 @@
-//! Natural Bidding Kernel (NBK)
+//! Kernel
 //!
 //! A priority-based heuristic bidding model with two core protocols:
 //! - Discovery Protocol: Show new 4+ card suits (forcing)
 //! - Limit Protocol: Define hand strength in known fits or NT (non-forcing)
 
 pub mod auction_model;
-pub mod call_menu;
+pub mod call_ranker;
 pub mod call_selector;
 pub mod constraints;
 pub mod hand_model;
@@ -25,9 +25,9 @@ pub use trace::BidTrace;
 
 use types::{Auction, Call, Hand};
 
-/// Main entry point for NBK bid selection
+/// Main entry point for Kernel bid selection
 ///
-/// Given a hand and auction state, returns the best bid according to NBK logic.
+/// Given a hand and auction state, returns the best bid according to Kernel logic.
 /// Returns None if no valid bid can be determined (should be rare - will default to Pass).
 pub fn select_bid(hand: &Hand, auction: &Auction) -> Option<Call> {
     let auction_model = AuctionModel::from_auction(auction);

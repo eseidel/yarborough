@@ -1,9 +1,9 @@
 mod dsl;
-mod nbk;
+mod kernel;
 mod rules;
 
-pub use nbk::{select_bid, select_bid_with_trace};
-pub use nbk::{AuctionModel, BidTrace, CallSemantics, HandConstraint, HandModel};
+pub use kernel::{select_bid, select_bid_with_trace};
+pub use kernel::{AuctionModel, BidTrace, CallSemantics, HandConstraint, HandModel};
 
 use serde::Serialize;
 use types::auction::Auction;
@@ -30,7 +30,7 @@ pub fn parse_calls(calls_string: &str) -> Vec<Call> {
 }
 
 /// Given a call history string, dealer position, and vulnerability, return
-/// possible next calls with their interpretations from the NBK bidding system.
+/// possible next calls with their interpretations from the Kernel bidding system.
 pub fn get_interpretations(
     calls_string: &str,
     dealer: &str,
@@ -46,7 +46,7 @@ pub fn get_interpretations(
         auction.add_call(call);
     }
 
-    let auction_model = nbk::AuctionModel::from_auction(&auction);
+    let auction_model = kernel::AuctionModel::from_auction(&auction);
 
     let mut legal_calls = auction.legal_calls();
     legal_calls.sort();
@@ -54,7 +54,7 @@ pub fn get_interpretations(
     legal_calls
         .into_iter()
         .map(|call| {
-            let semantics = nbk::CallInterpreter::interpret(&auction_model, &call);
+            let semantics = kernel::CallInterpreter::interpret(&auction_model, &call);
             let description = if let Some(semantics) = &semantics {
                 let mut bidder_hand = auction_model.bidder_hand().clone();
                 for constraint in &semantics.shows {
@@ -96,8 +96,8 @@ pub fn get_next_bid(identifier: &str) -> String {
         None => return "P".to_string(), // Should not happen if board is valid
     };
 
-    // Use NBK bidding logic
-    match nbk::select_bid(hand, &auction) {
+    // Use Kernel bidding logic
+    match kernel::select_bid(hand, &auction) {
         Some(call) => call.render(),
         None => "P".to_string(),
     }
@@ -130,7 +130,7 @@ pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
         }
     };
 
-    let trace = nbk::select_bid_with_trace(hand, &auction);
+    let trace = kernel::select_bid_with_trace(hand, &auction);
     match trace.selected_call {
         Some(call) => {
             let step = trace
@@ -151,7 +151,7 @@ pub fn get_suggested_bid(identifier: &str) -> CallInterpretation {
             }
         }
         None => {
-            let auction_model = nbk::AuctionModel::from_auction(&auction);
+            let auction_model = kernel::AuctionModel::from_auction(&auction);
             CallInterpretation {
                 call_name: "P".into(),
                 rule_name: "Pass (Limit)".into(),

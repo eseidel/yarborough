@@ -1,5 +1,5 @@
 use crate::dsl::bidding_rule::BiddingRule;
-use crate::nbk::{AuctionModel, CallSemantics};
+use crate::kernel::{AuctionModel, CallSemantics};
 use crate::rules::{natural, opening, overcalls};
 use types::Call;
 

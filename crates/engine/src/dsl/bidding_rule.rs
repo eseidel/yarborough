@@ -3,11 +3,11 @@ use crate::dsl::auction_predicates::AuctionPredicate;
 use crate::dsl::call_predicates::CallPredicate;
 use crate::dsl::planner::Planner;
 use crate::dsl::shows::Shows;
-use crate::nbk::{AuctionModel, CallSemantics, HandConstraint};
+use crate::kernel::{AuctionModel, CallSemantics, HandConstraint};
 use std::sync::Arc;
 use types::Call;
 
-/// A bidding rule in the NBK DSL
+/// A bidding rule in the Kernel DSL
 pub trait BiddingRule: Send + Sync {
     /// The name of the rule for the given call
     fn name(&self, call: &Call) -> String;

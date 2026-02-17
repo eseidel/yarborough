@@ -1,8 +1,8 @@
-//! Tracing for NBK bid selection
-use crate::nbk::call_menu::CallMenu;
-use crate::nbk::semantics::CallSemantics;
-use crate::nbk::AuctionModel;
-use crate::nbk::HandConstraint;
+//! Tracing for Kernel bid selection
+use crate::kernel::call_ranker::CallRanker;
+use crate::kernel::semantics::CallSemantics;
+use crate::kernel::AuctionModel;
+use crate::kernel::HandConstraint;
 use serde::{Deserialize, Serialize};
 use types::Call;
 
@@ -11,8 +11,8 @@ use types::Call;
 pub struct BidTrace {
     /// The auction state and models of the players
     pub auction_model: AuctionModel,
-    /// The call menu generated
-    pub menu: CallMenu,
+    /// The call ranker generated
+    pub menu: CallRanker,
     /// Detailed steps of the selection process
     pub selection_steps: Vec<SelectionStep>,
     /// The final call selected (if any)

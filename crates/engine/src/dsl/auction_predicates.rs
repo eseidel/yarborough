@@ -1,4 +1,4 @@
-use crate::nbk::AuctionModel;
+use crate::kernel::AuctionModel;
 use std::fmt::Debug;
 use types::Call;
 

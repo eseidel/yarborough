@@ -1,6 +1,6 @@
-//! Auction state analysis for NBK
+//! Auction state analysis for Kernel
 
-use crate::nbk::{CallInterpreter, HandModel};
+use crate::kernel::{CallInterpreter, HandModel};
 use types::Auction;
 
 use serde::{Deserialize, Serialize};

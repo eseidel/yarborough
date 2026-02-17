@@ -1,6 +1,6 @@
 //! Hand profile inference from auction history
 
-use crate::nbk::HandConstraint;
+use crate::kernel::HandConstraint;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use types::{Distribution, Shape, Suit};
@@ -137,7 +137,7 @@ fn update_shape_max(current: Option<Shape>, new: Shape) -> Shape {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nbk::AuctionModel;
+    use crate::kernel::AuctionModel;
     use types::{Auction, Position};
 
     #[test]
