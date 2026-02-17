@@ -23,6 +23,12 @@ pub enum HandConstraint {
     RuleOfTwenty,
     /// Rule of 15: HCP + length of spades >= 15
     RuleOfFifteen,
+    /// 2+ of the top 3 honors {A, K, Q} in the suit
+    TwoOfTopThree(Suit),
+    /// 3+ of the top 5 honors {A, K, Q, J, T} in the suit
+    ThreeOfTopFive(Suit),
+    /// Good suit quality: TwoOfTopThree OR ThreeOfTopFive
+    ThreeOfTopFiveOrBetter(Suit),
 }
 
 impl HandConstraint {
@@ -42,6 +48,11 @@ impl HandConstraint {
                 hand.hcp() + lengths[0] + lengths[1] >= 20
             }
             HandConstraint::RuleOfFifteen => hand.hcp() + dist.length(Suit::Spades) >= 15,
+            HandConstraint::TwoOfTopThree(suit) => hand.top_honors(suit, 3) >= 2,
+            HandConstraint::ThreeOfTopFive(suit) => hand.top_honors(suit, 5) >= 3,
+            HandConstraint::ThreeOfTopFiveOrBetter(suit) => {
+                hand.top_honors(suit, 3) >= 2 || hand.top_honors(suit, 5) >= 3
+            }
         }
     }
 }

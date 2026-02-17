@@ -182,10 +182,8 @@ impl CallPredicate for IsPass {
 pub struct BidderHasShownSuit;
 impl CallPredicate for BidderHasShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                return auction.bidder_hand().has_shown_suit(suit);
-            }
+        if let Some(suit) = call.suit() {
+            return auction.bidder_hand().has_shown_suit(suit);
         }
         false
     }
@@ -195,10 +193,8 @@ impl CallPredicate for BidderHasShownSuit {
 pub struct PartnerHasShownSuit;
 impl CallPredicate for PartnerHasShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                return auction.partner_hand().has_shown_suit(suit);
-            }
+        if let Some(suit) = call.suit() {
+            return auction.partner_hand().has_shown_suit(suit);
         }
         false
     }
@@ -219,11 +215,9 @@ impl CallPredicate for IsDouble {
 pub struct OpponentHasNotShownSuit;
 impl CallPredicate for OpponentHasNotShownSuit {
     fn check(&self, auction: &AuctionModel, call: &Call) -> bool {
-        if let Call::Bid { strain, .. } = call {
-            if let Some(suit) = strain.to_suit() {
-                return !auction.lho_hand().has_shown_suit(suit)
-                    && !auction.rho_hand().has_shown_suit(suit);
-            }
+        if let Some(suit) = call.suit() {
+            return !auction.lho_hand().has_shown_suit(suit)
+                && !auction.rho_hand().has_shown_suit(suit);
         }
         true
     }

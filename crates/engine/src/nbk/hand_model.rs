@@ -50,7 +50,10 @@ impl HandModel {
             }
             HandConstraint::RuleOfTwenty
             | HandConstraint::RuleOfFifteen
-            | HandConstraint::StopperIn(_) => {
+            | HandConstraint::StopperIn(_)
+            | HandConstraint::TwoOfTopThree(_)
+            | HandConstraint::ThreeOfTopFive(_)
+            | HandConstraint::ThreeOfTopFiveOrBetter(_) => {
                 // Complex constraints not currently tracked in hand model
             }
         }
