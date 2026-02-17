@@ -36,19 +36,12 @@ impl CallRanker {
     pub fn from_auction_model(auction_model: &AuctionModel) -> Self {
         let legal_calls = auction_model.auction.legal_calls();
 
-        let mut group_items: [Vec<CallRankItem>; 9] = Default::default();
+        let mut group_items: [Vec<CallRankItem>; CallPurpose::COUNT] = Default::default();
 
         for call in legal_calls {
             if let Some(semantics) = CallInterpreter::interpret(auction_model, &call) {
-                // Doubles/redoubles go to CompetitiveAction — they show values
-                // and general shape but don't commit to a suit.
-                let best_purpose = if matches!(call, Call::Double | Call::Redouble) {
-                    CallPurpose::CompetitiveAction
-                } else {
-                    semantics.get_purpose(auction_model)
-                };
-
-                group_items[best_purpose as usize].push(CallRankItem { call, semantics });
+                let purpose = semantics.get_purpose(auction_model);
+                group_items[purpose as usize].push(CallRankItem { call, semantics });
             }
         }
 

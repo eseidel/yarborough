@@ -8,11 +8,10 @@ pub enum CallPurpose {
     EnterNotrumpSystem = 1,
     MajorDiscovery = 2,
     CharacterizeStrength = 3,
-    CompetitiveAction = 4,
-    SupportMinors = 5,
-    MinorDiscovery = 6,
-    RebidSuit = 7,
-    Miscellaneous = 8,
+    SupportMinors = 4,
+    MinorDiscovery = 5,
+    RebidSuit = 6,
+    Miscellaneous = 7,
 }
 
 impl CallPurpose {
@@ -23,7 +22,6 @@ impl CallPurpose {
             Self::EnterNotrumpSystem => "Enter Notrump System",
             Self::MajorDiscovery => "Major Discovery",
             Self::CharacterizeStrength => "Characterize Strength",
-            Self::CompetitiveAction => "Competitive Action",
             Self::SupportMinors => "Support Minors",
             Self::MinorDiscovery => "Minor Discovery",
             Self::RebidSuit => "Rebid Suit",
@@ -31,13 +29,14 @@ impl CallPurpose {
         }
     }
 
+    pub const COUNT: usize = 8;
+
     /// All available group types in priority order
-    pub const ALL: [Self; 9] = [
+    pub const ALL: [Self; Self::COUNT] = [
         Self::SupportMajors,
         Self::EnterNotrumpSystem,
         Self::MajorDiscovery,
         Self::CharacterizeStrength,
-        Self::CompetitiveAction,
         Self::SupportMinors,
         Self::MinorDiscovery,
         Self::RebidSuit,
