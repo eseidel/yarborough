@@ -1,10 +1,8 @@
 use clap::Parser;
+use cli::reference_bidder::{default_z3b_path, Interpretation, ReferenceBidder};
 use engine::{get_interpretations, CallInterpretation};
-use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::thread;
+use std::path::PathBuf;
 use std::time::Duration;
 
 #[derive(Parser, Debug)]
@@ -45,31 +43,13 @@ struct Args {
     #[arg(long)]
     call: Option<String>,
 
-    /// Only show local (yarborough) interpretations, skip z3b calls
+    /// Only show local (yarborough) interpretations, skip reference bidder calls
     #[arg(long)]
     local_only: bool,
 
     /// Path to saycbridge repo (for local z3b). Defaults to the saycbridge submodule.
     #[arg(long)]
     z3b_path: Option<PathBuf>,
-}
-
-fn default_z3b_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../saycbridge")
-        .canonicalize()
-        .unwrap_or_else(|_| PathBuf::from("saycbridge"))
-}
-
-// ── z3b types ─────────────────────────────────────────────────────────
-
-#[derive(Deserialize, Debug)]
-struct Z3bInterpretation {
-    call_name: String,
-    #[serde(default)]
-    rule_name: Option<String>,
-    #[serde(default)]
-    knowledge_string: Option<String>,
 }
 
 // ── comparison types ──────────────────────────────────────────────────
@@ -84,11 +64,11 @@ enum CallComparison {
         ours_rule: String,
         ours_constraints: String,
     },
-    /// Only z3b recognizes the call
-    Z3bOnly {
+    /// Only the reference bidder recognizes the call
+    RefOnly {
         call: String,
-        z3b_rule: String,
-        z3b_constraints: String,
+        ref_rule: String,
+        ref_constraints: String,
     },
     /// Only yarborough recognizes the call
     OursOnly {
@@ -101,7 +81,7 @@ enum CallComparison {
 impl CallComparison {
     fn call_name(&self) -> &str {
         match self {
-            Self::Both { call, .. } | Self::Z3bOnly { call, .. } | Self::OursOnly { call, .. } => {
+            Self::Both { call, .. } | Self::RefOnly { call, .. } | Self::OursOnly { call, .. } => {
                 call
             }
         }
@@ -116,146 +96,66 @@ struct PositionResult {
 struct Stats {
     positions_explored: usize,
     both_recognized: usize,
-    z3b_only: usize,
+    ref_only: usize,
     ours_only: usize,
-}
-
-// ── z3b source: local CLI or remote HTTP ──────────────────────────────
-
-enum Z3bSource {
-    Local(PathBuf),
-    Remote(reqwest::blocking::Client, String),
-}
-
-fn get_z3b_interpretations_local(
-    z3b_path: &Path,
-    calls_string: &str,
-    dealer: &str,
-    vulnerability: &str,
-) -> Result<Vec<Z3bInterpretation>, String> {
-    let python = z3b_path.join(".venv/bin/python");
-    let cli = z3b_path.join("z3b_cli.py");
-
-    let output = Command::new(&python)
-        .env("PYTHONPATH", z3b_path.join("src"))
-        .arg(&cli)
-        .arg("interpret")
-        .arg("--calls")
-        .arg(calls_string)
-        .arg("--dealer")
-        .arg(dealer)
-        .arg("--vulnerability")
-        .arg(vulnerability)
-        .output()
-        .map_err(|e| format!("Failed to run z3b_cli.py: {e}"))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("z3b_cli.py failed: {stderr}"));
-    }
-
-    serde_json::from_slice(&output.stdout).map_err(|e| format!("JSON: {e}"))
-}
-
-fn get_z3b_interpretations_remote(
-    client: &reqwest::blocking::Client,
-    remote_url: &str,
-    calls_string: &str,
-    dealer: &str,
-    vulnerability: &str,
-    delay: Duration,
-) -> Result<Vec<Z3bInterpretation>, String> {
-    thread::sleep(delay);
-
-    // Build URL manually to avoid reqwest encoding commas in calls_string
-    let url = format!(
-        "{remote_url}?calls_string={calls_string}&dealer={dealer}&vulnerability={vulnerability}"
-    );
-
-    let response = client.get(&url).send().map_err(|e| format!("HTTP: {e}"))?;
-
-    if !response.status().is_success() {
-        return Err(format!("HTTP {}", response.status()));
-    }
-
-    response
-        .json::<Vec<Z3bInterpretation>>()
-        .map_err(|e| format!("JSON: {e}"))
-}
-
-fn get_z3b_interpretations(
-    source: &Z3bSource,
-    calls_string: &str,
-    dealer: &str,
-    vulnerability: &str,
-    delay: Duration,
-) -> Result<Vec<Z3bInterpretation>, String> {
-    match source {
-        Z3bSource::Local(path) => {
-            get_z3b_interpretations_local(path, calls_string, dealer, vulnerability)
-        }
-        Z3bSource::Remote(client, url) => {
-            get_z3b_interpretations_remote(client, url, calls_string, dealer, vulnerability, delay)
-        }
-    }
 }
 
 // ── comparison logic ──────────────────────────────────────────────────
 
 fn compare_position(
-    source: &Z3bSource,
+    ref_bidder: Option<&ReferenceBidder>,
     calls_string: &str,
     dealer: &str,
     vulnerability: &str,
     delay: Duration,
-    local_only: bool,
 ) -> Result<PositionResult, String> {
-    let z3b = if local_only {
-        Vec::new()
-    } else {
-        get_z3b_interpretations(source, calls_string, dealer, vulnerability, delay)?
+    let ref_interps: Vec<Interpretation> = match ref_bidder {
+        Some(bidder) => bidder.interpret(calls_string, dealer, vulnerability, delay)?,
+        None => Vec::new(),
     };
-    let z3b_map: BTreeMap<&str, &Z3bInterpretation> =
-        z3b.iter().map(|i| (i.call_name.as_str(), i)).collect();
+    let ref_map: BTreeMap<&str, &Interpretation> = ref_interps
+        .iter()
+        .map(|i| (i.call_name.as_str(), i))
+        .collect();
 
     let ours: Vec<CallInterpretation> = get_interpretations(calls_string, dealer, vulnerability);
     let ours_map: BTreeMap<&str, &CallInterpretation> =
         ours.iter().map(|i| (i.call_name.as_str(), i)).collect();
 
-    let all_calls: BTreeSet<&str> = z3b_map.keys().chain(ours_map.keys()).copied().collect();
+    let all_calls: BTreeSet<&str> = ref_map.keys().chain(ours_map.keys()).copied().collect();
 
     let mut comparisons = Vec::new();
     for call in all_calls {
-        let z3b_entry = z3b_map.get(call);
+        let ref_entry = ref_map.get(call);
         let ours_entry = ours_map.get(call);
 
-        let z3b_recognized = z3b_entry
+        let ref_recognized = ref_entry
             .and_then(|e| e.rule_name.as_deref())
             .is_some_and(|r| !r.is_empty());
         let ours_recognized = ours_entry.is_some_and(|e| !e.rule_name.is_empty());
 
-        if !z3b_recognized && !ours_recognized {
+        if !ref_recognized && !ours_recognized {
             continue;
         }
 
-        let comparison = match (z3b_recognized, ours_recognized) {
+        let comparison = match (ref_recognized, ours_recognized) {
             (true, true) => {
-                let z3b_e = z3b_entry.unwrap();
+                let ref_e = ref_entry.unwrap();
                 let ours_e = ours_entry.unwrap();
                 CallComparison::Both {
                     call: call.to_string(),
-                    z3b_rule: z3b_e.rule_name.clone().unwrap_or_default(),
-                    z3b_constraints: z3b_e.knowledge_string.clone().unwrap_or_default(),
+                    z3b_rule: ref_e.rule_name.clone().unwrap_or_default(),
+                    z3b_constraints: ref_e.knowledge_string.clone().unwrap_or_default(),
                     ours_rule: ours_e.rule_name.clone(),
                     ours_constraints: ours_e.description.clone(),
                 }
             }
             (true, false) => {
-                let z3b_e = z3b_entry.unwrap();
-                CallComparison::Z3bOnly {
+                let ref_e = ref_entry.unwrap();
+                CallComparison::RefOnly {
                     call: call.to_string(),
-                    z3b_rule: z3b_e.rule_name.clone().unwrap_or_default(),
-                    z3b_constraints: z3b_e.knowledge_string.clone().unwrap_or_default(),
+                    ref_rule: ref_e.rule_name.clone().unwrap_or_default(),
+                    ref_constraints: ref_e.knowledge_string.clone().unwrap_or_default(),
                 }
             }
             (false, true) => {
@@ -284,12 +184,11 @@ fn compare_position(
 // ── tree walking ──────────────────────────────────────────────────────
 
 fn walk_tree(
-    source: &Z3bSource,
+    ref_bidder: Option<&ReferenceBidder>,
     dealer: &str,
     vulnerability: &str,
     max_depth: usize,
     delay: Duration,
-    local_only: bool,
 ) -> Vec<PositionResult> {
     let mut results = Vec::new();
     let mut queue: VecDeque<(String, usize)> = VecDeque::new();
@@ -308,7 +207,7 @@ fn walk_tree(
             }
         );
 
-        match compare_position(source, &history, dealer, vulnerability, delay, local_only) {
+        match compare_position(ref_bidder, &history, dealer, vulnerability, delay) {
             Ok(result) => {
                 if depth < max_depth {
                     // Expand recognized calls + Pass
@@ -352,7 +251,12 @@ fn walk_tree(
 
 // ── display ───────────────────────────────────────────────────────────
 
-fn print_position(result: &PositionResult, verbose: bool, call_filter: Option<&str>) {
+fn print_position(
+    result: &PositionResult,
+    ref_name: &str,
+    verbose: bool,
+    call_filter: Option<&str>,
+) {
     let has_differences = result
         .comparisons
         .iter()
@@ -371,7 +275,11 @@ fn print_position(result: &PositionResult, verbose: bool, call_filter: Option<&s
     println!("History: {}", result.history);
     println!(
         "  {:<6} {:<20} {:<28} {:<20} {:<28}",
-        "Call", "z3b rule", "z3b constraints", "ours rule", "ours constraints"
+        "Call",
+        format!("{ref_name} rule"),
+        format!("{ref_name} constraints"),
+        "ours rule",
+        "ours constraints"
     );
     println!("  {}", "-".repeat(104));
 
@@ -401,16 +309,16 @@ fn print_position(result: &PositionResult, verbose: bool, call_filter: Option<&s
                     );
                 }
             }
-            CallComparison::Z3bOnly {
+            CallComparison::RefOnly {
                 call,
-                z3b_rule,
-                z3b_constraints,
+                ref_rule,
+                ref_constraints,
             } => {
                 println!(
-                    "  {:<6} {:<20} {:<28} {:<20} {:<28}  \x1b[31m← z3b only\x1b[0m",
+                    "  {:<6} {:<20} {:<28} {:<20} {:<28}  \x1b[31m\u{2190} {ref_name} only\x1b[0m",
                     call,
-                    truncate(z3b_rule, 20),
-                    truncate(z3b_constraints, 28),
+                    truncate(ref_rule, 20),
+                    truncate(ref_constraints, 28),
                     "",
                     "",
                 );
@@ -421,7 +329,7 @@ fn print_position(result: &PositionResult, verbose: bool, call_filter: Option<&s
                 ours_constraints,
             } => {
                 println!(
-                    "  {:<6} {:<20} {:<28} {:<20} {:<28}  \x1b[32m← ours only\x1b[0m",
+                    "  {:<6} {:<20} {:<28} {:<20} {:<28}  \x1b[32m\u{2190} ours only\x1b[0m",
                     call,
                     "",
                     "",
@@ -434,24 +342,24 @@ fn print_position(result: &PositionResult, verbose: bool, call_filter: Option<&s
     println!();
 }
 
-fn print_summary(results: &[PositionResult]) {
+fn print_summary(results: &[PositionResult], ref_name: &str) {
     let mut stats = Stats {
         positions_explored: results.len(),
         both_recognized: 0,
-        z3b_only: 0,
+        ref_only: 0,
         ours_only: 0,
     };
 
-    let mut z3b_only_by_history: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut ref_only_by_history: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut ours_only_by_history: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
     for result in results {
         for comp in &result.comparisons {
             match comp {
                 CallComparison::Both { .. } => stats.both_recognized += 1,
-                CallComparison::Z3bOnly { call, .. } => {
-                    stats.z3b_only += 1;
-                    z3b_only_by_history
+                CallComparison::RefOnly { call, .. } => {
+                    stats.ref_only += 1;
+                    ref_only_by_history
                         .entry(result.history.clone())
                         .or_default()
                         .push(call.clone());
@@ -467,7 +375,7 @@ fn print_summary(results: &[PositionResult]) {
         }
     }
 
-    let total = stats.both_recognized + stats.z3b_only + stats.ours_only;
+    let total = stats.both_recognized + stats.ref_only + stats.ours_only;
 
     println!("=== Summary ===");
     println!("Positions explored: {}", stats.positions_explored);
@@ -478,9 +386,9 @@ fn print_summary(results: &[PositionResult]) {
         pct(stats.both_recognized, total)
     );
     println!(
-        "  z3b only:        {:>4} ({:.1}%)",
-        stats.z3b_only,
-        pct(stats.z3b_only, total)
+        "  {ref_name} only:        {:>4} ({:.1}%)",
+        stats.ref_only,
+        pct(stats.ref_only, total)
     );
     println!(
         "  ours only:       {:>4} ({:.1}%)",
@@ -489,16 +397,16 @@ fn print_summary(results: &[PositionResult]) {
     );
     println!();
 
-    if !z3b_only_by_history.is_empty() {
-        println!("Calls z3b recognizes that we don't:");
-        for (history, calls) in &z3b_only_by_history {
+    if !ref_only_by_history.is_empty() {
+        println!("Calls {ref_name} recognizes that we don't:");
+        for (history, calls) in &ref_only_by_history {
             println!("  [{history}] -> {}", calls.join(", "));
         }
         println!();
     }
 
     if !ours_only_by_history.is_empty() {
-        println!("Calls we recognize that z3b doesn't:");
+        println!("Calls we recognize that {ref_name} doesn't:");
         for (history, calls) in &ours_only_by_history {
             println!("  [{history}] -> {}", calls.join(", "));
         }
@@ -511,7 +419,7 @@ fn truncate(s: &str, max: usize) -> String {
         s.to_string()
     } else {
         let truncated: String = s.chars().take(max - 1).collect();
-        format!("{truncated}…")
+        format!("{truncated}\u{2026}")
     }
 }
 
@@ -528,19 +436,16 @@ fn pct(n: usize, total: usize) -> f64 {
 fn main() {
     let args = Args::parse();
 
-    let source = if args.kbb {
-        Z3bSource::Remote(
-            reqwest::blocking::Client::new(),
-            "https://www.saycbridge.com/json/interpret2".into(),
-        )
-    } else if args.local_only {
-        // local_only doesn't need z3b at all, use a dummy
-        Z3bSource::Local(PathBuf::new())
+    let ref_bidder = if args.local_only {
+        None
+    } else if args.kbb {
+        Some(ReferenceBidder::Kbb(reqwest::blocking::Client::new()))
     } else {
         let path = args.z3b_path.clone().unwrap_or_else(default_z3b_path);
-        Z3bSource::Local(path)
+        Some(ReferenceBidder::Z3b(path))
     };
 
+    let ref_name = ref_bidder.as_ref().map(|b| b.name()).unwrap_or("ref");
     let delay = Duration::from_millis(args.delay_ms);
 
     let results = if !args.histories.is_empty() {
@@ -548,12 +453,11 @@ fn main() {
             .iter()
             .filter_map(|h| {
                 match compare_position(
-                    &source,
+                    ref_bidder.as_ref(),
                     h,
                     &args.dealer,
                     &args.vulnerability,
                     delay,
-                    args.local_only,
                 ) {
                     Ok(r) => Some(r),
                     Err(e) => {
@@ -569,20 +473,19 @@ fn main() {
             args.depth, args.dealer, args.vulnerability
         );
         walk_tree(
-            &source,
+            ref_bidder.as_ref(),
             &args.dealer,
             &args.vulnerability,
             args.depth,
             delay,
-            args.local_only,
         )
     };
 
     for result in &results {
-        print_position(result, args.verbose, args.call.as_deref());
+        print_position(result, ref_name, args.verbose, args.call.as_deref());
     }
 
-    print_summary(&results);
+    print_summary(&results, ref_name);
 }
 
 #[cfg(test)]
@@ -601,7 +504,7 @@ mod tests {
 
     #[test]
     fn test_truncate_long() {
-        assert_eq!(truncate("hello world", 8), "hello w…");
+        assert_eq!(truncate("hello world", 8), "hello w\u{2026}");
     }
 
     #[test]
@@ -640,12 +543,12 @@ mod tests {
         };
         assert_eq!(both.call_name(), "1C");
 
-        let z3b = CallComparison::Z3bOnly {
+        let ref_only = CallComparison::RefOnly {
             call: "2N".into(),
-            z3b_rule: "Rule".into(),
-            z3b_constraints: "".into(),
+            ref_rule: "Rule".into(),
+            ref_constraints: "".into(),
         };
-        assert_eq!(z3b.call_name(), "2N");
+        assert_eq!(ref_only.call_name(), "2N");
 
         let ours = CallComparison::OursOnly {
             call: "X".into(),
