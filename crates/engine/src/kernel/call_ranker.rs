@@ -2,8 +2,7 @@
 //!
 //! Provides a way to group legal calls by their semantic meaning.
 
-use crate::dsl::annotations::Annotation;
-use crate::kernel::{AuctionModel, CallInterpreter, CallSemantics, HandConstraint};
+use crate::kernel::{AuctionModel, CallInterpreter, CallPurpose, CallSemantics};
 use serde::{Deserialize, Serialize};
 use types::Call;
 
@@ -32,50 +31,6 @@ pub struct CallRanker {
     pub groups: Vec<CallRankGroup>,
 }
 
-/// Types of predefined call groups in the Kernel model
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum CallPurpose {
-    SupportMajors = 0,
-    EnterNotrumpSystem = 1,
-    MajorDiscovery = 2,
-    CharacterizeStrength = 3,
-    CompetitiveAction = 4,
-    SupportMinors = 5,
-    MinorDiscovery = 6,
-    RebidSuit = 7,
-    Miscellaneous = 8,
-}
-
-impl CallPurpose {
-    /// Get the display name for the group type
-    pub fn name(&self) -> &'static str {
-        match self {
-            Self::SupportMajors => "Support Majors",
-            Self::EnterNotrumpSystem => "Enter Notrump System",
-            Self::MajorDiscovery => "Major Discovery",
-            Self::CharacterizeStrength => "Characterize Strength",
-            Self::CompetitiveAction => "Competitive Action",
-            Self::SupportMinors => "Support Minors",
-            Self::MinorDiscovery => "Minor Discovery",
-            Self::RebidSuit => "Rebid Suit",
-            Self::Miscellaneous => "Miscellaneous",
-        }
-    }
-
-    /// All available group types in priority order
-    pub const ALL: [Self; 9] = [
-        Self::SupportMajors,
-        Self::EnterNotrumpSystem,
-        Self::MajorDiscovery,
-        Self::CharacterizeStrength,
-        Self::CompetitiveAction,
-        Self::SupportMinors,
-        Self::MinorDiscovery,
-        Self::RebidSuit,
-        Self::Miscellaneous,
-    ];
-}
-
 impl CallRanker {
     /// Build a call ranker from an auction model using standard Kernel grouping
     pub fn from_auction_model(auction_model: &AuctionModel) -> Self {
@@ -90,7 +45,7 @@ impl CallRanker {
                 let best_purpose = if matches!(call, Call::Double | Call::Redouble) {
                     CallPurpose::CompetitiveAction
                 } else {
-                    categorize_bid(auction_model, &semantics)
+                    semantics.get_purpose(auction_model)
                 };
 
                 group_items[best_purpose as usize].push(CallRankItem { call, semantics });
@@ -116,65 +71,6 @@ impl CallRanker {
         self
     }
 }
-
-/// Determine the purpose category for a bid based on its annotations and constraints.
-fn categorize_bid(auction_model: &AuctionModel, semantics: &CallSemantics) -> CallPurpose {
-    let mut best_purpose = CallPurpose::Miscellaneous;
-    let mut did_show_length = false;
-    let mut did_characterize_strength = false;
-
-    // Check annotations first
-    if semantics
-        .annotations
-        .contains(&Annotation::NotrumpSystemsOn)
-    {
-        best_purpose = best_purpose.min(CallPurpose::EnterNotrumpSystem);
-    }
-
-    for constraint in &semantics.shows {
-        match *constraint {
-            HandConstraint::MinLength(suit, now_shown) => {
-                if auction_model.partner_hand().has_shown_suit(suit) {
-                    if suit.is_major() {
-                        best_purpose = best_purpose.min(CallPurpose::SupportMajors);
-                    } else if suit.is_minor() {
-                        best_purpose = best_purpose.min(CallPurpose::SupportMinors);
-                    }
-                } else {
-                    let already_known = auction_model.bidder_hand().min_length(suit);
-                    if now_shown > already_known {
-                        if already_known >= 4 {
-                            best_purpose = best_purpose.min(CallPurpose::RebidSuit);
-                        } else if suit.is_major() {
-                            best_purpose = best_purpose.min(CallPurpose::MajorDiscovery);
-                        } else if suit.is_minor() {
-                            best_purpose = best_purpose.min(CallPurpose::MinorDiscovery);
-                        }
-                    }
-                }
-                did_show_length = true;
-            }
-            HandConstraint::MinHcp(now_shown) => {
-                if now_shown > auction_model.bidder_hand().min_hcp.unwrap_or(0) {
-                    did_characterize_strength = true;
-                }
-            }
-            HandConstraint::MaxHcp(now_shown) => {
-                if now_shown < auction_model.bidder_hand().max_hcp.unwrap_or(40) {
-                    did_characterize_strength = true;
-                }
-            }
-            _ => {}
-        }
-    }
-
-    if !did_show_length && did_characterize_strength {
-        best_purpose = best_purpose.min(CallPurpose::CharacterizeStrength);
-    }
-
-    best_purpose
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
