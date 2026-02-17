@@ -165,13 +165,12 @@ impl AuctionPredicate for LastBidIsSuit {
     }
 }
 
-/// Checks that partner's bids have been annotated with the given annotation.
-/// Used to detect when partner has overcalled, opened NT, etc.
+/// Checks that partner has made a suited overcall (annotated with `Overcall`).
 #[derive(Debug)]
-pub struct PartnerBidHasAnnotation(pub Annotation);
-impl AuctionPredicate for PartnerBidHasAnnotation {
+pub struct PartnerOvercalled;
+impl AuctionPredicate for PartnerOvercalled {
     fn check(&self, model: &AuctionModel) -> bool {
-        model.partner_annotations().contains(&self.0)
+        model.partner_annotations().contains(&Annotation::Overcall)
     }
 }
 
@@ -382,8 +381,8 @@ mod tests {
     }
 
     #[test]
-    fn test_partner_bid_has_annotation() {
-        let pred = PartnerBidHasAnnotation(Annotation::Overcall);
+    fn test_partner_overcalled() {
+        let pred = PartnerOvercalled;
 
         // N: 1D, E: 1S (overcall), S: P, W's turn
         // W's partner (E) overcalled — should have Overcall annotation

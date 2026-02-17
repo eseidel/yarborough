@@ -1,5 +1,4 @@
-use crate::dsl::annotations::Annotation;
-use crate::dsl::auction_predicates::{IHaveOnlyPassed, PartnerBidHasAnnotation};
+use crate::dsl::auction_predicates::{IHaveOnlyPassed, PartnerOvercalled};
 use crate::dsl::call_predicates::{IsNewSuit, IsNotrump, IsPass, IsSuit, PartnerHasShownSuit};
 use crate::dsl::shows::{
     ShowMinHcp, ShowMinSuitLength, ShowSemiBalanced, ShowStopperInOpponentSuit,
@@ -9,28 +8,28 @@ use crate::rule;
 
 rule! {
     RaisePartnerOvercall: "Raise Partner's Overcall",
-    auction: [PartnerBidHasAnnotation(Annotation::Overcall), IHaveOnlyPassed],
+    auction: [PartnerOvercalled, IHaveOnlyPassed],
     call: [IsSuit, PartnerHasShownSuit],
     shows: [ShowSupportLength, ShowSupportValues]
 }
 
 rule! {
     NewSuitAdvance: "New Suit (Advance)",
-    auction: [PartnerBidHasAnnotation(Annotation::Overcall), IHaveOnlyPassed],
+    auction: [PartnerOvercalled, IHaveOnlyPassed],
     call: [IsSuit, IsNewSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
 }
 
 rule! {
     NotrumpAdvance: "Notrump Advance",
-    auction: [PartnerBidHasAnnotation(Annotation::Overcall), IHaveOnlyPassed],
+    auction: [PartnerOvercalled, IHaveOnlyPassed],
     call: [IsNotrump],
     shows: [ShowSemiBalanced, ShowStopperInOpponentSuit, ShowSufficientValues]
 }
 
 rule! {
     PassAdvance: "Pass (Advance)",
-    auction: [PartnerBidHasAnnotation(Annotation::Overcall)],
+    auction: [PartnerOvercalled],
     call: [IsPass],
     shows: []
 }
