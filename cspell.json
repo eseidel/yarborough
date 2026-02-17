@@ -27,6 +27,7 @@
     "cdhs",
     "cdylib",
     "clap",
+    "clippy",
     "crossterm",
     "codecov",
     "concurrently",
