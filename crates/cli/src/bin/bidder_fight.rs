@@ -1,15 +1,14 @@
 use clap::Parser;
+use cli::reference_bidder::{default_z3b_path, format_hand_cdhs, ReferenceBidder};
 use engine::{generate_random_board, select_bid};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use serde::Deserialize;
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 use types::auction::Auction;
-use types::board::{Board, Position, Vulnerability};
+use types::board::{Board, Position};
 use types::call::Call;
-use types::hand::Hand;
 use types::io::identifier;
-use types::suit::Suit;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -41,9 +40,13 @@ struct Args {
     #[arg(long)]
     category: Option<String>,
 
-    /// Use kbb (old) instead of z3b
+    /// Use kbb (remote) instead of z3b
     #[arg(long)]
     kbb: bool,
+
+    /// Path to saycbridge repo (for local z3b). Defaults to the saycbridge submodule.
+    #[arg(long)]
+    z3b_path: Option<PathBuf>,
 }
 
 // ── types ──────────────────────────────────────────────────────────────
@@ -64,27 +67,7 @@ enum BoardResult {
     Error(String),
 }
 
-#[derive(Deserialize)]
-struct AutobidResponse {
-    calls_string: String,
-}
-
 // ── helpers ────────────────────────────────────────────────────────────
-
-fn format_hand_cdhs(hand: &Hand) -> String {
-    Suit::ALL
-        .iter()
-        .map(|&suit| {
-            hand.cards
-                .iter()
-                .filter(|c| c.suit == suit)
-                .map(|c| c.rank.to_char().to_string())
-                .collect::<Vec<_>>()
-                .join("")
-        })
-        .collect::<Vec<_>>()
-        .join(".")
-}
 
 fn render_auction(auction: &Auction) -> String {
     auction
@@ -124,84 +107,10 @@ fn categorize(auction: &Auction, bidder: Position) -> String {
     }
 }
 
-// ── remote API ─────────────────────────────────────────────────────────
-
-fn get_remote_auction(
-    client: &reqwest::blocking::Client,
-    remote_url: &str,
-    board: &Board,
-    board_number: u32,
-) -> Result<Vec<Call>, String> {
-    let vulnerability = match board.vulnerability {
-        Vulnerability::None => "NO",
-        Vulnerability::NS => "NS",
-        Vulnerability::EW => "EW",
-        Vulnerability::Both => "BOTH",
-    };
-
-    let params = [
-        ("number", board_number.to_string()),
-        ("vulnerability", vulnerability.to_string()),
-        ("dealer", board.dealer.to_char().to_string()),
-        ("calls_string", String::new()),
-        (
-            "deal[north]",
-            board
-                .hands
-                .get(&Position::North)
-                .map(format_hand_cdhs)
-                .unwrap_or_default(),
-        ),
-        (
-            "deal[east]",
-            board
-                .hands
-                .get(&Position::East)
-                .map(format_hand_cdhs)
-                .unwrap_or_default(),
-        ),
-        (
-            "deal[south]",
-            board
-                .hands
-                .get(&Position::South)
-                .map(format_hand_cdhs)
-                .unwrap_or_default(),
-        ),
-        (
-            "deal[west]",
-            board
-                .hands
-                .get(&Position::West)
-                .map(format_hand_cdhs)
-                .unwrap_or_default(),
-        ),
-    ];
-
-    let response = client
-        .get(remote_url)
-        .query(&params)
-        .send()
-        .map_err(|e| format!("HTTP: {e}"))?;
-
-    let autobid: AutobidResponse = response.json().map_err(|e| format!("JSON: {e}"))?;
-
-    Ok(autobid
-        .calls_string
-        .split_whitespace()
-        .filter_map(|s| s.parse().ok())
-        .collect())
-}
-
 // ── board comparison ───────────────────────────────────────────────────
 
-fn compare_board(
-    client: &reqwest::blocking::Client,
-    remote_url: &str,
-    board: &Board,
-    board_number: u32,
-) -> BoardResult {
-    let remote_calls = match get_remote_auction(client, remote_url, board, board_number) {
+fn compare_board(ref_bidder: &ReferenceBidder, board: &Board, board_number: u32) -> BoardResult {
+    let remote_calls = match ref_bidder.autobid(board, board_number) {
         Ok(c) => c,
         Err(e) => return BoardResult::Error(e),
     };
@@ -242,8 +151,7 @@ fn compare_board(
 
 // ── identifier mode ────────────────────────────────────────────────────
 
-fn run_identifiers(remote_url: &str, ids: &[String]) {
-    let client = reqwest::blocking::Client::new();
+fn run_identifiers(ref_bidder: &ReferenceBidder, ids: &[String]) {
     for id in ids {
         let Some((board, _auction)) = identifier::import_board(id) else {
             eprintln!("Failed to parse: {id}");
@@ -255,7 +163,7 @@ fn run_identifiers(remote_url: &str, ids: &[String]) {
             .and_then(|s| s.parse().ok())
             .unwrap_or(1);
 
-        match compare_board(&client, remote_url, &board, board_number) {
+        match compare_board(ref_bidder, &board, board_number) {
             BoardResult::Agree => println!("{id}: Agree"),
             BoardResult::Differ(d) => {
                 println!("{id}: DIFFER [{}]", d.category);
@@ -269,7 +177,8 @@ fn run_identifiers(remote_url: &str, ids: &[String]) {
                     }
                 );
                 println!(
-                    "  z3b: {} | ours: {}",
+                    "  {} {} | ours: {}",
+                    ref_bidder.name(),
                     d.remote_bid.render(),
                     d.local_bid.render()
                 );
@@ -281,21 +190,19 @@ fn run_identifiers(remote_url: &str, ids: &[String]) {
 
 // ── batch mode ─────────────────────────────────────────────────────────
 
-fn run_batch(args: &Args, remote_url: &str) {
+fn run_batch(args: &Args, ref_bidder: &ReferenceBidder) {
     let seed = args.seed.unwrap_or_else(|| rand::thread_rng().gen());
     eprintln!("Seed: {seed} | Boards: {}", args.count);
 
     // Generate all boards deterministically from the seed.
     let mut rng = StdRng::seed_from_u64(seed);
-    let client = reqwest::blocking::Client::new();
     let total = args.count;
 
-    // Compare sequentially (z3b is a single server, no parallelism benefit).
     let results: Vec<BoardResult> = (0..total)
         .map(|i| {
             let n = rng.gen_range(1..=16);
             let board = generate_random_board(n, &mut rng);
-            let r = compare_board(&client, remote_url, &board, n);
+            let r = compare_board(ref_bidder, &board, n);
             eprint!("\rProgress: {}/{total}", i + 1);
             r
         })
@@ -321,6 +228,7 @@ fn run_batch(args: &Args, remote_url: &str) {
     }
 
     // ── summary line ───────────────────────────────────────────────────
+    let name = ref_bidder.name();
     println!("Seed: {seed}");
     println!(
         "Boards: {total} | Agree: {agrees} ({:.1}%) | Differ: {} ({:.1}%) | Errors: {errors}",
@@ -369,7 +277,7 @@ fn run_batch(args: &Args, remote_url: &str) {
         let mut pairs: BTreeMap<String, usize> = BTreeMap::new();
         for d in *items {
             let key = format!(
-                "ours:{} z3b:{}",
+                "ours:{} {name}:{}",
                 d.local_bid.render(),
                 d.remote_bid.render()
             );
@@ -399,7 +307,7 @@ fn run_batch(args: &Args, remote_url: &str) {
                 &d.auction_so_far
             };
             println!(
-                "    {} {:?}: {} after [{}] \u{2192} z3b: {}, ours: {}",
+                "    {} {:?}: {} after [{}] \u{2192} {name}: {}, ours: {}",
                 d.board_id,
                 d.position,
                 d.hand_str,
@@ -428,16 +336,17 @@ fn pct(n: usize, total: usize) -> f64 {
 fn main() {
     let args = Args::parse();
 
-    let remote_url = if args.kbb {
-        "https://www.saycbridge.com/json/autobid"
+    let ref_bidder = if args.kbb {
+        ReferenceBidder::Kbb(reqwest::blocking::Client::new())
     } else {
-        "https://sayc.abortz.net/json/autobid"
+        let path = args.z3b_path.clone().unwrap_or_else(default_z3b_path);
+        ReferenceBidder::Z3b(path)
     };
 
     if !args.identifiers.is_empty() {
-        run_identifiers(remote_url, &args.identifiers);
+        run_identifiers(&ref_bidder, &args.identifiers);
     } else {
-        run_batch(&args, remote_url);
+        run_batch(&args, &ref_bidder);
     }
 }
 
