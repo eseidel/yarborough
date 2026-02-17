@@ -122,6 +122,24 @@ impl Shows for ShowStopperInOpponentSuit {
     }
 }
 
+/// Shows 4+ cards in each major suit not shown by partner, LHO, or RHO.
+/// Used for negative doubles to show the unbid major(s).
+#[derive(Debug)]
+pub struct ShowFourInUnbidMajors;
+impl Shows for ShowFourInUnbidMajors {
+    fn show(&self, auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
+        [Suit::Hearts, Suit::Spades]
+            .iter()
+            .filter(|&&suit| {
+                !auction.partner_hand().has_shown_suit(suit)
+                    && !auction.lho_hand().has_shown_suit(suit)
+                    && !auction.rho_hand().has_shown_suit(suit)
+            })
+            .map(|&suit| HandConstraint::MinLength(suit, 4))
+            .collect()
+    }
+}
+
 /// Shows 3+ cards in each suit that opponents have NOT shown.
 #[derive(Debug)]
 pub struct ShowSupportForUnbidSuits;

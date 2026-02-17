@@ -85,6 +85,7 @@ trait GroupChooser {
 fn select_best_from_group(items: &[CallRankItem], hand: &Hand) -> Option<Call> {
     let choosers: &[&dyn GroupChooser] = &[
         &UniqueLongestSuit,
+        &PreferSuitBidOverDouble,
         &PreferHigherMinor,
         &PreferHigherWithFivePlus,
         &FirstCall,
@@ -124,6 +125,32 @@ impl GroupChooser for UniqueLongestSuit {
             return None;
         }
         best.map(|(item, _)| item.call)
+    }
+}
+
+/// When a double and a suit bid are both satisfied in the same group,
+/// prefer the suit bid if it shows a 5+ card suit. In SAYC, with 5+ cards
+/// you bid the suit directly; with only 4 you negative-double.
+struct PreferSuitBidOverDouble;
+
+impl GroupChooser for PreferSuitBidOverDouble {
+    fn choose(&self, items: &[CallRankItem], hand: &Hand) -> Option<Call> {
+        let has_double = items.iter().any(|i| i.call == Call::Double);
+        if !has_double {
+            return None;
+        }
+        // Among non-double items, find one with a 5+ card suit
+        items
+            .iter()
+            .filter(|i| i.call != Call::Double)
+            .find_map(|item| {
+                let (_, len) = longest_shown_suit(item, hand)?;
+                if len >= 5 {
+                    Some(item.call)
+                } else {
+                    None
+                }
+            })
     }
 }
 

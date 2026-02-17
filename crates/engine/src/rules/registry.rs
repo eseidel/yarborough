@@ -13,6 +13,7 @@ impl RuleRegistry {
         let rules: Vec<Box<dyn Rule>> = vec![
             // Natural (Discovery, Responses)
             Box::new(natural::NewSuitAtLevelOne),
+            Box::new(natural::FreeBidAtLevelOne),
             Box::new(natural::OneNotrumpResponse),
             Box::new(natural::NewMajorAtLevelTwo),
             Box::new(natural::NewMinorAtLevelTwo),
@@ -27,6 +28,8 @@ impl RuleRegistry {
             Box::new(overcalls::WeakJumpOvercall),
             Box::new(overcalls::OneNotrumpOvercall),
             Box::new(overcalls::OneLevelTakeoutDouble),
+            Box::new(overcalls::OneLevelNegativeDouble),
+            Box::new(overcalls::TwoLevelNegativeDouble),
             Box::new(overcalls::PassOvercall),
             // Opening
             Box::new(opening::Strong2COpening),

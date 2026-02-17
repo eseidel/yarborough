@@ -133,6 +133,14 @@ impl Auction {
             .map(|(position, _)| position)
     }
 
+    // Returns the last bid (not pass/double/redouble) in the auction.
+    pub fn last_bid(&self) -> Option<&Call> {
+        self.iter()
+            .filter(|(_, call)| call.is_bid())
+            .last()
+            .map(|(_, call)| call)
+    }
+
     // Returns the position to last make a bid.  This does not include
     // passes or doubles, which are not bids.
     pub fn last_bidder(&self) -> Option<Position> {
