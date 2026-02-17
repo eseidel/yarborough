@@ -383,7 +383,7 @@ test_preemption:
   3.76.Q843.KQT932::None: "FAIL: step 0, expected P, got 2S"
   QT96.AQT962.T.83:2D P 3D P:Both: "FAIL: step 4, expected P, got 3N"
   4.QT2.AQJ9862.82:3H P 4H P:N-S: "FAIL: step 0, expected 3H, got 2H"
-  63.KQT763.J43.AJ:1C 2S P:N-S: PASS
+  63.KQT763.J43.AJ:1C 2S P:N-S: "FAIL: step 3, expected P, got 3D"
   9.QJ2.AQT984.986:2H P 2S P:None: "FAIL: step 4, expected 3S, got P"
   Q9.QT82.AQT984.2:2H P 2S P:None: "FAIL: step 0, expected 2H, got 1H"
   74.982.AQT984.82:2H P 2S P:None: "FAIL: step 4, expected 3H, got P"
@@ -505,10 +505,10 @@ test_overcalls:
   A3.KQ97.KT3.AK65:1C:None: PASS
   J63.Q843.KT87.J5:1C 1H P:None: "FAIL: step 3, expected 3H, got P"
   J63.Q843.KT8.J75:1C 1H P:None: "FAIL: step 3, expected 2H, got P"
-  63.Q843.AT87.KQ5:1C 1H P:None: "FAIL: step 3, expected 2C, got P"
-  K7.Q876.KJ75.KQ5:1C 1H P:None: "FAIL: step 3, expected 2C, got P"
-  K7.Q876.KJ75.KQ5:1C 1H P 2C P 2H P:None: "FAIL: step 3, expected 2C, got P"
-  43.5432.Q2.AKQ42:1D 1H P:None: "FAIL: step 3, expected 1S, got P"
+  63.Q843.AT87.KQ5:1C 1H P:None: "FAIL: step 3, expected 2C, got 2H"
+  K7.Q876.KJ75.KQ5:1C 1H P:None: "FAIL: step 3, expected 2C, got 2H"
+  K7.Q876.KJ75.KQ5:1C 1H P 2C P 2H P:None: "FAIL: step 3, expected 2C, got 2H"
+  43.5432.Q2.AKQ42:1D 1H P:None: PASS
   J843.4.KQ43.Q842:1D 1H P:None: "FAIL: step 3, expected 2D, got P"
   J63.K43.KQT874.5:1D:None: "FAIL: step 1, expected 2H, got 1H"
   6.Q84.AQT8764.65:1D:None: "FAIL: step 1, expected 3H, got 1H"
@@ -760,7 +760,7 @@ test_balancing:
   J87.T9652.A43.98:1C P P:None: PASS
   K83.K95.K54.QT75:1C P P 1S P:None: "FAIL: step 1, expected P, got X"
   Q973.42.AT95.K87:1C P P 1S P:None: "FAIL: step 5, expected 2S, got P"
-  QJ62.K32.A4.K843:1C P P 1S P:None: "FAIL: step 5, expected 3S, got P"
+  QJ62.K32.A4.K843:1C P P 1S P:None: "FAIL: step 5, expected 3S, got 2S"
   AJ3.864.JT4.KQ73:1D P P X P:None: "FAIL: step 1, expected P, got X"
   AJ3.864.JT4.K873:1D P P X P:None: "FAIL: step 5, expected 1S, got P"
   543.AQT43.KT4.K6:1D P P X P:None: PASS

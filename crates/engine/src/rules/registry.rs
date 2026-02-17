@@ -1,6 +1,6 @@
 use crate::dsl::rule::Rule;
 use crate::kernel::{AuctionModel, CallSemantics};
-use crate::rules::{natural, opening, overcalls};
+use crate::rules::{advance, natural, opening, overcalls};
 use types::Call;
 
 /// Registry of all bidding rules
@@ -31,6 +31,11 @@ impl RuleRegistry {
             Box::new(overcalls::OneLevelNegativeDouble),
             Box::new(overcalls::TwoLevelNegativeDouble),
             Box::new(overcalls::PassOvercall),
+            // Advance (responding to partner's overcall)
+            Box::new(advance::RaisePartnerOvercall),
+            Box::new(advance::NewSuitAdvance),
+            Box::new(advance::NotrumpAdvance),
+            Box::new(advance::PassAdvance),
             // Opening
             Box::new(opening::Strong2COpening),
             Box::new(opening::OneNotrumpOpening),

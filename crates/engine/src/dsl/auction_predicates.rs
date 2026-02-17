@@ -1,3 +1,4 @@
+use crate::dsl::annotations::Annotation;
 use crate::kernel::AuctionModel;
 use std::fmt::Debug;
 use types::Suit;
@@ -161,6 +162,16 @@ impl AuctionPredicate for LastBidIsSuit {
             .last_bid()
             .map(|(_, call)| call.suit().is_some())
             .unwrap_or(false)
+    }
+}
+
+/// Checks that partner's bids have been annotated with the given annotation.
+/// Used to detect when partner has overcalled, opened NT, etc.
+#[derive(Debug)]
+pub struct PartnerBidHasAnnotation(pub Annotation);
+impl AuctionPredicate for PartnerBidHasAnnotation {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model.partner_annotations().contains(&self.0)
     }
 }
 
@@ -368,6 +379,37 @@ mod tests {
         let auction = types::Auction::bidding(Position::North, "1D 2C");
         let model = AuctionModel::from_auction(&auction);
         assert!(pred.check(&model), "Both majors are unbid");
+    }
+
+    #[test]
+    fn test_partner_bid_has_annotation() {
+        let pred = PartnerBidHasAnnotation(Annotation::Overcall);
+
+        // N: 1D, E: 1S (overcall), S: P, W's turn
+        // W's partner (E) overcalled — should have Overcall annotation
+        let auction = types::Auction::bidding(Position::North, "1D 1S P");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            pred.check(&model),
+            "W's partner (E) overcalled 1S — should have Overcall annotation"
+        );
+
+        // N: 1D, E: 1S, S's turn
+        // S's partner (N) opened, not overcalled
+        let auction = types::Auction::bidding(Position::North, "1D 1S");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            !pred.check(&model),
+            "S's partner (N) opened 1D — should NOT have Overcall annotation"
+        );
+
+        // N: 1D, E's turn — partner (W) hasn't bid yet
+        let auction = types::Auction::bidding(Position::North, "1D");
+        let model = AuctionModel::from_auction(&auction);
+        assert!(
+            !pred.check(&model),
+            "E's partner (W) hasn't acted — no annotations"
+        );
     }
 
     #[test]
