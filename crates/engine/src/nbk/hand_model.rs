@@ -92,14 +92,14 @@ impl fmt::Display for HandModel {
         for suit in Suit::ALL {
             let min = self.min_length(suit);
             let max = self.max_length(suit);
-            let symbol = suit.symbol();
+            let ch = suit.to_char();
 
             let s = match (min, max) {
                 (0, 13) => Default::default(),
-                (m, 13) if m > 0 => format!("{}+{}", m, symbol),
-                (0, m) => format!("0-{}{}", m, symbol),
-                (min, max) if min == max => format!("{}{}", min, symbol),
-                (min, max) => format!("{}-{}{}", min, max, symbol),
+                (m, 13) if m > 0 => format!("{}+{}", m, ch),
+                (0, m) => format!("0-{}{}", m, ch),
+                (min, max) if min == max => format!("{}{}", min, ch),
+                (min, max) => format!("{}-{}{}", min, max, ch),
             };
             suit_parts.push(s);
         }
@@ -260,7 +260,7 @@ mod tests {
         assert_eq!(model.to_string(), "10+ hcp");
 
         model.apply_constraint(HandConstraint::MinLength(Suit::Clubs, 4));
-        assert_eq!(model.to_string(), "10+ hcp, 4+♣️");
+        assert_eq!(model.to_string(), "10+ hcp, 4+C");
 
         let mut model2 = HandModel::default();
         model2.apply_constraint(HandConstraint::MinHcp(15));
@@ -273,11 +273,11 @@ mod tests {
         model2.apply_constraint(HandConstraint::MaxLength(Suit::Hearts, 5));
         model2.apply_constraint(HandConstraint::MinLength(Suit::Spades, 2));
         model2.apply_constraint(HandConstraint::MaxLength(Suit::Spades, 3));
-        assert_eq!(model2.to_string(), "15-17 hcp, 2-5♣️ 2-5♦️ 2-5❤️ 2-3♠️");
+        assert_eq!(model2.to_string(), "15-17 hcp, 2-5C 2-5D 2-5H 2-3S");
 
         let mut model3 = HandModel::default();
         model3.apply_constraint(HandConstraint::MaxHcp(5));
         model3.apply_constraint(HandConstraint::MaxLength(Suit::Spades, 4));
-        assert_eq!(model3.to_string(), "0-5 hcp, 0-4♠️");
+        assert_eq!(model3.to_string(), "0-5 hcp, 0-4S");
     }
 }

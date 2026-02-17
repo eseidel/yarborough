@@ -99,6 +99,7 @@
     "vite",
     "vitejs",
     "vitest",
+    "deque",
     "vuls",
     "wasm",
     "yarborough"

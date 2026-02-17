@@ -31,15 +31,6 @@ impl Suit {
         }
     }
 
-    pub fn symbol(self) -> &'static str {
-        match self {
-            Suit::Clubs => "♣️",
-            Suit::Diamonds => "♦️",
-            Suit::Hearts => "❤️",
-            Suit::Spades => "♠️",
-        }
-    }
-
     pub fn is_major(self) -> bool {
         matches!(self, Suit::Hearts | Suit::Spades)
     }
