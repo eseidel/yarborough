@@ -87,7 +87,7 @@ fn select_best_from_group(items: &[CallRankItem], hand: &Hand) -> Option<Call> {
         &UniqueLongestSuit,
         &PreferHigherMinor,
         &PreferHigherWithFivePlus,
-        &PreferShowingLongerLength,
+        &PreferLongerSuit,
         &FirstCall,
     ];
     choosers.iter().find_map(|c| c.choose(items, hand))
@@ -130,9 +130,9 @@ impl GroupChooser for UniqueLongestSuit {
 
 /// When multiple calls are satisfied in the same group, prefer the one
 /// that shows a longer suit.
-struct PreferShowingLongerLength;
+struct PreferLongerSuit;
 
-impl GroupChooser for PreferShowingLongerLength {
+impl GroupChooser for PreferLongerSuit {
     fn choose(&self, items: &[CallRankItem], hand: &Hand) -> Option<Call> {
         let mapped_items = items.iter().map(|item| {
             if let Some((_, length)) = longest_shown_suit(item, hand) {
