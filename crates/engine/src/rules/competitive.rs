@@ -111,7 +111,14 @@ rule! {
 }
 
 rule! {
-    PassAdvance: "Pass (Advance)",
+    LawOfTotalTricks: "Law of Total Tricks",
+    auction: [TheyOpened],
+    call: [IsSuit, PartnerHasShownSuit],
+    shows: [ShowLawOfTotalTricks]
+}
+
+rule! {
+    PassResponseToOvercall: "Pass (Advancer)",
     auction: [PartnerOvercalled],
     call: [IsPass],
     shows: []
@@ -652,7 +659,7 @@ mod tests {
         // N: 1D, E: 1S, S: P, W passes
         let auction = types::Auction::bidding(Position::North, "1D 1S P");
         let model = AuctionModel::from_auction(&auction);
-        let sem = PassAdvance
+        let sem = PassResponseToOvercall
             .get_semantics(&model, &Call::Pass)
             .expect("Should match pass advance");
         assert!(sem.shows.is_empty());

@@ -16,7 +16,7 @@ test_preemptive_openings:
 test_advance_bids:
   AQ4.K64.J82.KT95:1D 1S P:None: "FAIL: step 3, expected 2S, got 2D"
   932.K64.AKJ72.Q8:1C 1S P:None: PASS
-  732.864.J82.T953:1D 1S P:None: PASS
+  732.864.J82.T953:1D 1S P:None: "FAIL: step 3, expected P, got 3S"
 test_partner_profile_inference:
   KJ64.JT.KQT9.KJ9:1D P 1H P 1N P:None: PASS
   .KQJ965.QJT2.A95:1C P 1D P 1H P:None: "FAIL: step 2, expected 1D, got 1H"
