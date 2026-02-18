@@ -184,7 +184,10 @@ impl AuctionPredicate for LastBidIsSuit {
 pub struct PartnerOvercalled;
 impl AuctionPredicate for PartnerOvercalled {
     fn check(&self, model: &AuctionModel) -> bool {
-        model.partner_annotations().contains(&Annotation::Overcall)
+        model
+            .partner_last_call_semantics()
+            .map(|s| s.annotations.contains(&Annotation::Overcall))
+            .unwrap_or(false)
     }
 }
 

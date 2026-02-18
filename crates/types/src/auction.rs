@@ -138,6 +138,21 @@ impl Auction {
         self.iter().filter(|(_, call)| call.is_bid()).last()
     }
 
+    /// Returns the index of the last call made by the given position.
+    pub fn last_call_index_for_position(&self, position: Position) -> Option<usize> {
+        let num_calls = self.calls.len();
+        let dealer_idx = self.dealer.idx();
+        let target_idx = position.idx();
+        let first_call_idx = (target_idx + 4 - dealer_idx) % 4;
+
+        if num_calls <= first_call_idx {
+            return None;
+        }
+
+        let k = (num_calls - first_call_idx - 1) / 4;
+        Some(first_call_idx + 4 * k)
+    }
+
     /// Returns true if a player has made any non-Pass call (bid, double, or redouble).
     pub fn player_has_acted(&self, player: Position) -> bool {
         self.iter()
@@ -641,6 +656,95 @@ mod tests {
     fn test_legal_calls_finished_auction() {
         let auction = Auction::bidding(Position::North, "P P P P");
         assert!(auction.legal_calls().is_empty());
+    }
+
+    #[test]
+    fn test_last_call_index_for_position() {
+        // Dealer is North (idx 0)
+        let mut auction = Auction::new(Position::North);
+        // Empty
+        assert_eq!(auction.last_call_index_for_position(Position::North), None);
+        assert_eq!(auction.last_call_index_for_position(Position::East), None);
+        assert_eq!(auction.last_call_index_for_position(Position::South), None);
+        assert_eq!(auction.last_call_index_for_position(Position::West), None);
+
+        // N: 1C
+        auction.bid("1C");
+        assert_eq!(
+            auction.last_call_index_for_position(Position::North),
+            Some(0)
+        );
+        assert_eq!(auction.last_call_index_for_position(Position::East), None);
+
+        // N: 1C, E: P, S: 1S, W: P, N: 2S
+        auction.bids("P 1S P 2S");
+        assert_eq!(
+            auction.last_call_index_for_position(Position::North),
+            Some(4)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::East),
+            Some(1)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::South),
+            Some(2)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::West),
+            Some(3)
+        );
+
+        // Dealer is East (idx 1)
+        let mut auction = Auction::new(Position::East);
+        // E: 1C
+        auction.bid("1C");
+        assert_eq!(
+            auction.last_call_index_for_position(Position::East),
+            Some(0)
+        );
+        assert_eq!(auction.last_call_index_for_position(Position::North), None);
+
+        // E: 1C, S: P, W: 1S, N: P, E: 2S
+        auction.bids("P 1S P 2S");
+        assert_eq!(
+            auction.last_call_index_for_position(Position::East),
+            Some(4)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::South),
+            Some(1)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::West),
+            Some(2)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::North),
+            Some(3)
+        );
+
+        // Dealer is West (idx 3)
+        let mut auction = Auction::new(Position::West);
+        // W: 1C, N: P, S: P (wait, skip over South?) No, W, N, E, S.
+        // W: 1C, N: 1D, E: 1H, S: 1S
+        auction.bids("1C 1D 1H 1S");
+        assert_eq!(
+            auction.last_call_index_for_position(Position::West),
+            Some(0)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::North),
+            Some(1)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::East),
+            Some(2)
+        );
+        assert_eq!(
+            auction.last_call_index_for_position(Position::South),
+            Some(3)
+        );
     }
 
     #[test]
