@@ -168,9 +168,7 @@ impl GroupChooser for PreferHigherMinor {
         }
 
         // Pick the highest-ranking minor (diamonds > clubs).
-        minor_items
-            .iter()
-            .max_by_key(|(_, suit, _)| *suit as u8)
+        first_max_by_key(minor_items.iter(), |(_, suit, _)| *suit as u8)
             .map(|(item, _, _)| item.call)
     }
 }
@@ -199,9 +197,7 @@ impl GroupChooser for PreferHigherWithFivePlus {
             return None;
         }
 
-        suit_items
-            .iter()
-            .max_by_key(|(_, suit, _)| *suit as u8)
+        first_max_by_key(suit_items.iter(), |(_, suit, _)| *suit as u8)
             .map(|(item, _, _)| item.call)
     }
 }
@@ -233,17 +229,14 @@ fn has_tied_distinct_suits(candidates: &[(&CallRankItem, Suit, u8)]) -> bool {
 /// actual length. A bid may show multiple suits via multiple MinLength
 /// constraints; this returns the suit where the hand is longest.
 fn longest_shown_suit(item: &CallRankItem, hand: &Hand) -> Option<(Suit, u8)> {
-    item.semantics
-        .shows
-        .iter()
-        .filter_map(|c| match c {
-            HandConstraint::MinLength(suit, _) => {
-                let length = hand.length(*suit);
-                Some((*suit, length))
-            }
-            _ => None,
-        })
-        .max_by_key(|(_, length)| *length)
+    let shown_suits = item.semantics.shows.iter().filter_map(|c| match c {
+        HandConstraint::MinLength(suit, _) => {
+            let length = hand.length(*suit);
+            Some((*suit, length))
+        }
+        _ => None,
+    });
+    first_max_by_key(shown_suits, |(_, length)| *length)
 }
 
 fn is_level_1(call: &Call) -> bool {
