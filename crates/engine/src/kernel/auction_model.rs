@@ -20,20 +20,24 @@ pub struct AuctionModel {
 }
 
 impl AuctionModel {
+    pub fn hand(&self, position: Position) -> &HandModel {
+        &self.hands[position.idx()]
+    }
+
     pub fn bidder_hand(&self) -> &HandModel {
-        &self.hands[self.auction.current_player().idx()]
+        self.hand(self.auction.current_player())
     }
 
     pub fn partner_hand(&self) -> &HandModel {
-        &self.hands[self.auction.current_player().partner().idx()]
+        self.hand(self.auction.current_player().partner())
     }
 
     pub fn lho_hand(&self) -> &HandModel {
-        &self.hands[self.auction.current_player().lho().idx()]
+        self.hand(self.auction.current_player().lho())
     }
 
     pub fn rho_hand(&self) -> &HandModel {
-        &self.hands[self.auction.current_player().rho().idx()]
+        self.hand(self.auction.current_player().rho())
     }
 
     pub fn last_call_semantics(&self, position: Position) -> Option<&CallSemantics> {

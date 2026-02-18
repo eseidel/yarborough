@@ -31,6 +31,7 @@ impl RuleRegistry {
             Box::new(competitive::PassOvercall),
             Box::new(competitive::RaiseResponseToOvercall),
             Box::new(competitive::NewSuitResponseToOvercall),
+            Box::new(competitive::CuebidResponseToOvercall),
             Box::new(competitive::NotrumpResponseToOvercall),
             Box::new(competitive::PassAdvance),
             Box::new(opening::Strong2COpening),

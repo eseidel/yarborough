@@ -184,6 +184,27 @@ impl Auction {
         Some(first_call_idx + 4 * k)
     }
 
+    pub fn last_call_for_position(&self, position: Position) -> Option<&Call> {
+        self.last_call_index_for_position(position)
+            .map(|idx| &self.calls[idx])
+    }
+
+    pub fn bidder_last_call(&self) -> Option<&Call> {
+        self.last_call_for_position(self.current_player())
+    }
+
+    pub fn partner_last_call(&self) -> Option<&Call> {
+        self.last_call_for_position(self.current_player().partner())
+    }
+
+    pub fn rho_last_call(&self) -> Option<&Call> {
+        self.last_call_for_position(self.current_player().rho())
+    }
+
+    pub fn lho_last_call(&self) -> Option<&Call> {
+        self.last_call_for_position(self.current_player().lho())
+    }
+
     /// Returns true if a player has made any non-Pass call (bid, double, or redouble).
     pub fn player_has_acted(&self, player: Position) -> bool {
         self.iter()
@@ -461,6 +482,40 @@ mod tests {
             auction.current_contract().unwrap().declarer,
             Position::North
         );
+    }
+
+    #[test]
+    fn test_relative_last_calls() {
+        // North deals. Auction: 1C (N), P (E), 1H (S), P (W)
+        let mut auction = Auction::new(Position::North);
+        auction.bid("1C"); // North
+        auction.bid("P"); // East
+        auction.bid("1H"); // South
+        auction.bid("P"); // West
+
+        // Next to act is North.
+        assert_eq!(auction.current_player(), Position::North);
+
+        // North's last call was 1C
+        assert_eq!(
+            auction.bidder_last_call(),
+            Some(&Call::Bid {
+                level: 1,
+                strain: Strain::Clubs
+            })
+        );
+        // North's partner (South) last call was 1H
+        assert_eq!(
+            auction.partner_last_call(),
+            Some(&Call::Bid {
+                level: 1,
+                strain: Strain::Hearts
+            })
+        );
+        // North's LHO (East) last call was Pass
+        assert_eq!(auction.lho_last_call(), Some(&Call::Pass));
+        // North's RHO (West) last call was Pass
+        assert_eq!(auction.rho_last_call(), Some(&Call::Pass));
     }
 
     #[test]

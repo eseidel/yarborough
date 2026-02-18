@@ -152,6 +152,17 @@ impl Shows for ShowMinLengthInUnbidMajors {
     }
 }
 
+#[derive(Debug)]
+pub struct ShowMinLengthInPartnerLastBidSuit(pub u8);
+impl Shows for ShowMinLengthInPartnerLastBidSuit {
+    fn show(&self, model: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
+        if let Some(suit) = model.auction.partner_last_call().and_then(|c| c.suit()) {
+            return vec![HandConstraint::MinLength(suit, self.0)];
+        }
+        vec![]
+    }
+}
+
 /// Shows 3+ cards in each suit that opponents have NOT shown.
 #[derive(Debug)]
 pub struct ShowSupportForUnbidSuits;

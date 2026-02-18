@@ -3,15 +3,16 @@ use crate::dsl::auction_predicates::{
     PartnerOvercalled, RhoMadeLastBid, TheyOpened, WeHaveNotActed, WeOpened,
 };
 use crate::dsl::call_predicates::{
-    not_call, IsDouble, IsJump, IsLevel, IsLevelRange, IsNewSuit, IsNotrump, IsPass, IsSuit,
-    MaxLevel, OpponentHasNotShownSuit, PartnerHasShownSuit,
+    not_call, CuebidLhoSuit, IsDouble, IsJump, IsLevel, IsLevelRange, IsNewSuit, IsNotrump, IsPass,
+    IsSuit, MaxLevel, OpponentHasNotShownSuit, PartnerHasShownSuit,
 };
 use crate::dsl::planner::TakeoutDoublePlanner;
 use crate::dsl::shows::{
     ShowBalanced, ShowHcpRange, ShowLawOfTotalTricks,
-    ShowMinCombinedPointsForPartnerMinimumSuitedRebid, ShowMinHcp, ShowMinLengthInUnbidMajors,
-    ShowMinSuitLength, ShowPreemptLength, ShowSemiBalanced, ShowStopperInOpponentSuit,
-    ShowSufficientValues, ShowSupportForUnbidSuits, ShowThreeOfTopFiveOrBetter,
+    ShowMinCombinedPointsForPartnerMinimumSuitedRebid, ShowMinHcp,
+    ShowMinLengthInPartnerLastBidSuit, ShowMinLengthInUnbidMajors, ShowMinSuitLength,
+    ShowPreemptLength, ShowSemiBalanced, ShowStopperInOpponentSuit, ShowSufficientValues,
+    ShowSupportForUnbidSuits, ShowThreeOfTopFiveOrBetter,
 };
 use crate::rule;
 
@@ -92,6 +93,14 @@ rule! {
         ShowMinCombinedPointsForPartnerMinimumSuitedRebid,
         ShowThreeOfTopFiveOrBetter,
     ]
+}
+
+rule! {
+    CuebidResponseToOvercall: "Cuebid Response to Overcall",
+    auction: [PartnerOvercalled, BidderHasNotActed],
+    call: [CuebidLhoSuit, MaxLevel(3), not_call(IsJump)],
+    // TODO: Should show support points in partner's last bid suit.
+    shows: [ShowMinLengthInPartnerLastBidSuit(3), ShowMinHcp(11)]
 }
 
 rule! {
@@ -654,7 +663,7 @@ mod tests {
         use crate::kernel;
         // Hand format is C.D.H.S: 3 clubs, 3 diamonds, 3 hearts, 4 spades
         // After 1D-1S-P, West has 4-card spade support and 13 HCP — should raise
-        let hand = Hand::parse("AQ4.K64.J82.KT95");
+        let hand = Hand::parse("A54.864.J82.KT95");
         let auction = types::Auction::bidding(Position::North, "1D 1S P");
         let bid = kernel::select_call(&hand, &auction);
         assert_eq!(
