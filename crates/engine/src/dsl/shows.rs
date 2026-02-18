@@ -125,8 +125,8 @@ impl Shows for ShowStopperInOpponentSuit {
 /// Shows 4+ cards in each major suit not shown by partner, LHO, or RHO.
 /// Used for negative doubles to show the unbid major(s).
 #[derive(Debug)]
-pub struct ShowFourInUnbidMajors;
-impl Shows for ShowFourInUnbidMajors {
+pub struct ShowMinLengthInUnbidMajors(pub u8);
+impl Shows for ShowMinLengthInUnbidMajors {
     fn show(&self, auction: &AuctionModel, _call: &Call) -> Vec<HandConstraint> {
         [Suit::Hearts, Suit::Spades]
             .iter()
@@ -135,7 +135,7 @@ impl Shows for ShowFourInUnbidMajors {
                     && !auction.lho_hand().has_shown_suit(suit)
                     && !auction.rho_hand().has_shown_suit(suit)
             })
-            .map(|&suit| HandConstraint::MinLength(suit, 4))
+            .map(|&suit| HandConstraint::MinLength(suit, self.0))
             .collect()
     }
 }
@@ -269,5 +269,42 @@ impl Shows for ShowBetterContractIsRemote {
         } else {
             vec![]
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::kernel::AuctionModel;
+    use types::{Call, Position, Suit};
+
+    #[test]
+    fn test_show_min_length_in_unbid_majors() {
+        let auction = types::Auction::bidding(Position::North, "1C 1D");
+        let model = AuctionModel::from_auction(&auction);
+        let show = ShowMinLengthInUnbidMajors(4);
+        let call = Call::Double;
+        let constraints = show.show(&model, &call);
+
+        // Both majors are unbid
+        assert_eq!(constraints.len(), 2);
+        assert!(constraints.contains(&HandConstraint::MinLength(Suit::Hearts, 4)));
+        assert!(constraints.contains(&HandConstraint::MinLength(Suit::Spades, 4)));
+    }
+
+    #[test]
+    fn test_show_sufficient_values_no_level() {
+        let auction = types::Auction::new(Position::North);
+        let model = AuctionModel::from_auction(&auction);
+        let show = ShowSufficientValues;
+        let constraints = show.show(&model, &Call::Pass);
+        assert!(constraints.is_empty());
+    }
+
+    #[test]
+    fn test_show_preempt_length_no_level() {
+        let show = ShowPreemptLength;
+        let model = AuctionModel::from_auction(&types::Auction::new(Position::North));
+        assert!(show.show(&model, &Call::Pass).is_empty());
     }
 }

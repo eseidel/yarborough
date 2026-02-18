@@ -108,8 +108,8 @@ impl CallPredicate for MaxLevel {
 /// Returns None if there is no previous bid.
 fn min_level_for_strain(auction: &AuctionModel, strain: Strain) -> Option<u8> {
     let (_, last) = auction.auction.last_bid()?;
-    let last_level = last.level().unwrap();
-    let last_strain = last.strain().unwrap();
+    let last_level = last.level()?;
+    let last_strain = last.strain()?;
     Some(if strain > last_strain {
         last_level
     } else {

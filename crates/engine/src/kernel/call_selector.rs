@@ -85,9 +85,9 @@ trait GroupChooser {
 fn select_best_from_group(items: &[CallRankItem], hand: &Hand) -> Option<Call> {
     let choosers: &[&dyn GroupChooser] = &[
         &UniqueLongestSuit,
-        &PreferSuitBidOverDouble,
         &PreferHigherMinor,
         &PreferHigherWithFivePlus,
+        &PreferShowingLongerLength,
         &FirstCall,
     ];
     choosers.iter().find_map(|c| c.choose(items, hand))
@@ -128,29 +128,20 @@ impl GroupChooser for UniqueLongestSuit {
     }
 }
 
-/// When a double and a suit bid are both satisfied in the same group,
-/// prefer the suit bid if it shows a 5+ card suit. In SAYC, with 5+ cards
-/// you bid the suit directly; with only 4 you negative-double.
-struct PreferSuitBidOverDouble;
+/// When multiple calls are satisfied in the same group, prefer the one
+/// that shows a longer suit.
+struct PreferShowingLongerLength;
 
-impl GroupChooser for PreferSuitBidOverDouble {
+impl GroupChooser for PreferShowingLongerLength {
     fn choose(&self, items: &[CallRankItem], hand: &Hand) -> Option<Call> {
-        let has_double = items.iter().any(|i| i.call == Call::Double);
-        if !has_double {
-            return None;
-        }
-        // Among non-double items, find one with a 5+ card suit
-        items
-            .iter()
-            .filter(|i| i.call != Call::Double)
-            .find_map(|item| {
-                let (_, len) = longest_shown_suit(item, hand)?;
-                if len >= 5 {
-                    Some(item.call)
-                } else {
-                    None
-                }
-            })
+        let mapped_items = items.iter().map(|item| {
+            if let Some((_, length)) = longest_shown_suit(item, hand) {
+                (item, length)
+            } else {
+                (item, 0)
+            }
+        });
+        first_max_by_key(mapped_items, |(_, length)| *length).map(|(item, _)| item.call)
     }
 }
 
@@ -230,8 +221,8 @@ fn has_tied_distinct_suits(candidates: &[(&CallRankItem, Suit, u8)]) -> bool {
     if candidates.len() < 2 {
         return false;
     }
-    let len = candidates[0].2;
-    if !candidates.iter().all(|(_, _, l)| *l == len) {
+    let length = candidates[0].2;
+    if !candidates.iter().all(|(_, _, l)| *l == length) {
         return false;
     }
     let first_suit = candidates[0].1;
@@ -247,16 +238,38 @@ fn longest_shown_suit(item: &CallRankItem, hand: &Hand) -> Option<(Suit, u8)> {
         .iter()
         .filter_map(|c| match c {
             HandConstraint::MinLength(suit, _) => {
-                let len = hand.length(*suit);
-                Some((*suit, len))
+                let length = hand.length(*suit);
+                Some((*suit, length))
             }
             _ => None,
         })
-        .max_by_key(|(_, len)| *len)
+        .max_by_key(|(_, length)| *length)
 }
 
 fn is_level_1(call: &Call) -> bool {
     call.level() == Some(1)
+}
+
+/// Find the first element that yields the maximum value of a key.
+/// Similar to Iterator::max_by_key, but returns the first max in case of ties.
+fn first_max_by_key<I, B, F>(iter: I, mut f: F) -> Option<I::Item>
+where
+    I: IntoIterator,
+    B: Ord,
+    F: FnMut(&I::Item) -> B,
+{
+    let mut iter = iter.into_iter();
+    let mut max_item = iter.next()?;
+    let mut max_key = f(&max_item);
+
+    for item in iter {
+        let key = f(&item);
+        if key > max_key {
+            max_item = item;
+            max_key = key;
+        }
+    }
+    Some(max_item)
 }
 
 #[cfg(test)]
@@ -496,5 +509,31 @@ mod tests {
                 strain: Strain::Notrump
             })
         );
+    }
+
+    #[test]
+    fn test_prefer_showing_longer_length() {
+        // C.D.H.S: 2 clubs, 3 diamonds, 3 hearts, 5 spades
+        let hand = Hand::parse("32.432.432.AKQJ2");
+        let items = vec![
+            CallRankItem {
+                call: Call::Double,
+                semantics: CallSemantics {
+                    shows: vec![
+                        HandConstraint::MinLength(Suit::Spades, 4),
+                        HandConstraint::MinLength(Suit::Hearts, 4),
+                    ],
+                    annotations: vec![],
+                    rule_name: "test".to_string(),
+                    planner: None,
+                },
+            },
+            make_item(1, Strain::Spades, 5),
+        ];
+
+        let result = select_best_from_group(&items, &hand);
+        // Both show length 5 (actual), so they tie at UniqueLongestSuit.
+        // PreferShowingLongerLength should pick Double (the first item).
+        assert_eq!(result, Some(Call::Double));
     }
 }

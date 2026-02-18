@@ -89,8 +89,8 @@ impl AuctionPredicate for RhoMadeLastBid {
 
 /// Checks that our partnership has only passed (no bids, doubles, or redoubles).
 #[derive(Debug)]
-pub struct WeHaveOnlyPassed;
-impl AuctionPredicate for WeHaveOnlyPassed {
+pub struct WeHaveNotActed;
+impl AuctionPredicate for WeHaveNotActed {
     fn check(&self, model: &AuctionModel) -> bool {
         let me = model.auction.current_player();
         !model.auction.player_has_acted(me) && !model.auction.player_has_acted(me.partner())
@@ -111,12 +111,26 @@ impl AuctionPredicate for LastBidMaxLevel {
     }
 }
 
+/// Checks that the last bid in the auction is within the given level range (inclusive).
+#[derive(Debug)]
+pub struct LastBidLevelRange(pub u8, pub u8);
+impl AuctionPredicate for LastBidLevelRange {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model
+            .auction
+            .last_bid()
+            .and_then(|(_, call)| call.level())
+            .map(|level| level >= self.0 && level <= self.1)
+            .unwrap_or(false)
+    }
+}
+
 /// Checks that the current player (not the whole partnership) has only passed.
-/// Unlike `WeHaveOnlyPassed`, this allows partner to have bid.
+/// Unlike `WeHaveNotActed`, this allows partner to have bid.
 /// Used for negative doubles: the responder hasn't bid but partner opened.
 #[derive(Debug)]
-pub struct IHaveOnlyPassed;
-impl AuctionPredicate for IHaveOnlyPassed {
+pub struct BidderHasNotActed;
+impl AuctionPredicate for BidderHasNotActed {
     fn check(&self, model: &AuctionModel) -> bool {
         !model
             .auction
@@ -251,8 +265,8 @@ mod tests {
     }
 
     #[test]
-    fn test_we_have_only_passed() {
-        let pred = WeHaveOnlyPassed;
+    fn test_we_have_not_acted() {
+        let pred = WeHaveNotActed;
 
         // Empty auction — no one has bid
         let auction = types::Auction::new(Position::North);
@@ -301,8 +315,8 @@ mod tests {
     }
 
     #[test]
-    fn test_i_have_only_passed() {
-        let pred = IHaveOnlyPassed;
+    fn test_bidder_has_not_acted() {
+        let pred = BidderHasNotActed;
 
         // N opens 1C, E overcalls 1S, S's turn — S hasn't acted yet
         let auction = types::Auction::bidding(Position::North, "1C 1S");
@@ -315,21 +329,21 @@ mod tests {
         assert!(pred.check(&model), "E hasn't bid yet");
 
         // N opens 1C, E passes, S passes, W passes, N's turn again
-        // N already bid 1C, so IHaveOnlyPassed is false for N
+        // N already bid 1C, so BidderHasNotActed is false for N
         let auction = types::Auction::bidding(Position::North, "1C P P P");
         let model = AuctionModel::from_auction(&auction);
         assert!(!pred.check(&model), "N already opened 1C");
 
-        // Unlike WeHaveOnlyPassed, partner's bid doesn't affect us
+        // Unlike WeHaveNotActed, partner's bid doesn't affect us
         // N opens 1C, E overcalls 1S — S's turn. Partner (N) bid 1C but S hasn't.
         let auction = types::Auction::bidding(Position::North, "1C 1S");
         let model = AuctionModel::from_auction(&auction);
-        let we_pred = WeHaveOnlyPassed;
+        let we_pred = WeHaveNotActed;
+        assert!(!we_pred.check(&model), "WeHaveNotActed is false (N bid 1C)");
         assert!(
-            !we_pred.check(&model),
-            "WeHaveOnlyPassed is false (N bid 1C)"
+            pred.check(&model),
+            "BidderHasNotActed is true (S hasn't bid)"
         );
-        assert!(pred.check(&model), "IHaveOnlyPassed is true (S hasn't bid)");
     }
 
     #[test]

@@ -1,6 +1,6 @@
 use crate::dsl::auction_predicates::{
-    not_auction, HasUnbidMajor, IHaveOnlyPassed, LastBidIsSuit, LastBidMaxLevel, RhoMadeLastBid,
-    TheyOpened, WeHaveOnlyPassed, WeOpened,
+    BidderHasNotActed, HasUnbidMajor, LastBidIsSuit, LastBidLevelRange, LastBidMaxLevel,
+    RhoMadeLastBid, TheyOpened, WeHaveNotActed, WeOpened,
 };
 use crate::dsl::call_predicates::{
     not_call, IsDouble, IsJump, IsLevel, IsNotrump, IsPass, IsSuit, MaxLevel,
@@ -8,7 +8,7 @@ use crate::dsl::call_predicates::{
 };
 use crate::dsl::planner::TakeoutDoublePlanner;
 use crate::dsl::shows::{
-    ShowBalanced, ShowFourInUnbidMajors, ShowHcpRange, ShowMinHcp, ShowMinSuitLength,
+    ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinLengthInUnbidMajors, ShowMinSuitLength,
     ShowPreemptLength, ShowStopperInOpponentSuit, ShowSupportForUnbidSuits,
     ShowThreeOfTopFiveOrBetter,
 };
@@ -16,7 +16,7 @@ use crate::rule;
 
 rule! {
     OneLevelOvercall: "Suited Overcall",
-    auction: [TheyOpened, WeHaveOnlyPassed],
+    auction: [TheyOpened, WeHaveNotActed],
     call: [IsLevel(1), IsSuit, OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(8), ShowThreeOfTopFiveOrBetter],
     annotations: [Overcall]
@@ -24,7 +24,7 @@ rule! {
 
 rule! {
     TwoLevelOvercall: "Suited Overcall",
-    auction: [TheyOpened, WeHaveOnlyPassed],
+    auction: [TheyOpened, WeHaveNotActed],
     call: [IsLevel(2), IsSuit, not_call(IsJump), OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10), ShowThreeOfTopFiveOrBetter],
     annotations: [Overcall]
@@ -32,7 +32,7 @@ rule! {
 
 rule! {
     WeakJumpOvercall: "Weak Jump Overcall",
-    auction: [TheyOpened, WeHaveOnlyPassed],
+    auction: [TheyOpened, WeHaveNotActed],
     call: [IsSuit, IsJump, MaxLevel(4), OpponentHasNotShownSuit],
     shows: [ShowPreemptLength, ShowHcpRange(5, 10), ShowThreeOfTopFiveOrBetter],
     annotations: [Overcall]
@@ -40,7 +40,7 @@ rule! {
 
 rule! {
     OneNotrumpOvercall: "Notrump Overcall",
-    auction: [TheyOpened, WeHaveOnlyPassed],
+    auction: [TheyOpened, WeHaveNotActed],
     call: [IsLevel(1), IsNotrump],
     shows: [ShowHcpRange(15, 18), ShowBalanced, ShowStopperInOpponentSuit],
     annotations: [NotrumpSystemsOn]
@@ -48,7 +48,7 @@ rule! {
 
 rule! {
     OneLevelTakeoutDouble: "Takeout Double",
-    auction: [TheyOpened, WeHaveOnlyPassed, RhoMadeLastBid, LastBidMaxLevel(1)],
+    auction: [TheyOpened, WeHaveNotActed, RhoMadeLastBid, LastBidMaxLevel(1)],
     call: [IsDouble],
     shows: [ShowMinHcp(11), ShowSupportForUnbidSuits],
     planner: TakeoutDoublePlanner
@@ -56,16 +56,16 @@ rule! {
 
 rule! {
     OneLevelNegativeDouble: "Negative Double",
-    auction: [WeOpened, IHaveOnlyPassed, RhoMadeLastBid, LastBidMaxLevel(1), HasUnbidMajor, LastBidIsSuit],
+    auction: [WeOpened, BidderHasNotActed, RhoMadeLastBid, LastBidMaxLevel(1), HasUnbidMajor, LastBidIsSuit],
     call: [IsDouble],
-    shows: [ShowMinHcp(6), ShowFourInUnbidMajors]
+    shows: [ShowMinHcp(6), ShowMinLengthInUnbidMajors(4)]
 }
 
 rule! {
     TwoLevelNegativeDouble: "Negative Double",
-    auction: [WeOpened, IHaveOnlyPassed, RhoMadeLastBid, not_auction(LastBidMaxLevel(1)), LastBidMaxLevel(3), HasUnbidMajor, LastBidIsSuit],
+    auction: [WeOpened, BidderHasNotActed, RhoMadeLastBid, LastBidLevelRange(2, 3), HasUnbidMajor, LastBidIsSuit],
     call: [IsDouble],
-    shows: [ShowMinHcp(8), ShowFourInUnbidMajors]
+    shows: [ShowMinHcp(8), ShowMinLengthInUnbidMajors(4)]
 }
 
 rule! {
@@ -248,14 +248,14 @@ mod tests {
     #[test]
     fn test_overcall_blocked_when_partner_has_bid() {
         // N opens 1D, E overcalls 1H, S passes, W's turn
-        // WeHaveOnlyPassed should be false for W since E (partner) already bid
+        // WeHaveNotActed should be false for W since E (partner) already bid
         let auction = types::Auction::bidding(Position::North, "1D 1H P");
         let model = AuctionModel::from_auction(&auction);
         let call = Call::Bid {
             level: 1,
             strain: Strain::Spades,
         };
-        // OneLevelOvercall should NOT match (WeHaveOnlyPassed is false)
+        // OneLevelOvercall should NOT match (WeHaveNotActed is false)
         assert!(OneLevelOvercall.get_semantics(&model, &call).is_none());
     }
 
@@ -323,7 +323,7 @@ mod tests {
     #[test]
     fn test_takeout_double_not_when_partner_bid() {
         // N opens 1D, E overcalls 1H, S passes, W's turn
-        // WeHaveOnlyPassed should be false for W since E (partner) already bid
+        // WeHaveNotActed should be false for W since E (partner) already bid
         let auction = types::Auction::bidding(Position::North, "1D 1H P");
         let model = AuctionModel::from_auction(&auction);
         assert!(OneLevelTakeoutDouble
@@ -442,7 +442,7 @@ mod tests {
     #[test]
     fn test_negative_double_not_when_opener_rebids() {
         // N: 1C, E: 1S, S: P, W: P, N's turn again
-        // N already bid 1C, so IHaveOnlyPassed is false
+        // N already bid 1C, so BidderHasNotActed is false
         let auction = types::Auction::bidding(Position::North, "1C 1S P P");
         let model = AuctionModel::from_auction(&auction);
         assert!(

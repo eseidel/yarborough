@@ -14,6 +14,26 @@
       },
       "args": ["--test-case", "${input:testCase}"],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Engine Tests",
+      "cargo": {
+        "args": ["test", "--no-run", "-p", "engine", "--lib"]
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Integration Tests",
+      "cargo": {
+        "args": ["test", "--no-run", "-p", "engine", "--test", "harness"]
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
     }
   ],
   "inputs": [
