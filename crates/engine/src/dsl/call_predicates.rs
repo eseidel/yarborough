@@ -27,6 +27,16 @@ impl CallPredicate for IsLevel {
 }
 
 #[derive(Debug)]
+pub struct IsLevelRange(pub u8, pub u8);
+impl CallPredicate for IsLevelRange {
+    fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {
+        call.level()
+            .map(|l| l >= self.0 && l <= self.1)
+            .unwrap_or(false)
+    }
+}
+
+#[derive(Debug)]
 pub struct IsCall(pub u8, pub Strain);
 impl CallPredicate for IsCall {
     fn check(&self, _auction: &AuctionModel, call: &Call) -> bool {

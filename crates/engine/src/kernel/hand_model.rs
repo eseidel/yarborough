@@ -63,6 +63,14 @@ impl HandModel {
         self.min_distribution.length(suit) > 0
     }
 
+    pub fn shown_suits(&self) -> Vec<Suit> {
+        Suit::ALL
+            .iter()
+            .filter(|&&s| self.has_shown_suit(s))
+            .cloned()
+            .collect()
+    }
+
     pub fn min_length(&self, suit: Suit) -> u8 {
         self.min_distribution.length(suit)
     }
@@ -209,6 +217,19 @@ mod tests {
         let model = auction_model.partner_hand().clone();
         // Partner (East) only passed — no suit info should be present
         assert!(!model.has_shown_suit(Suit::Clubs));
+    }
+
+    #[test]
+    fn test_shown_suits() {
+        let mut model = HandModel::default();
+        assert!(model.shown_suits().is_empty());
+
+        model.apply_constraint(HandConstraint::MinLength(Suit::Spades, 5));
+        assert_eq!(model.shown_suits(), vec![Suit::Spades]);
+
+        model.apply_constraint(HandConstraint::MinLength(Suit::Hearts, 4));
+        // Suit::ALL is C, D, H, S, so shown_suits should be [Hearts, Spades]
+        assert_eq!(model.shown_suits(), vec![Suit::Hearts, Suit::Spades]);
     }
 
     #[test]

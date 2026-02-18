@@ -3,14 +3,15 @@ use crate::dsl::auction_predicates::{
     PartnerOvercalled, RhoMadeLastBid, TheyOpened, WeHaveNotActed, WeOpened,
 };
 use crate::dsl::call_predicates::{
-    not_call, IsDouble, IsJump, IsLevel, IsNewSuit, IsNotrump, IsPass, IsSuit, MaxLevel,
-    OpponentHasNotShownSuit, PartnerHasShownSuit,
+    not_call, IsDouble, IsJump, IsLevel, IsLevelRange, IsNewSuit, IsNotrump, IsPass, IsSuit,
+    MaxLevel, OpponentHasNotShownSuit, PartnerHasShownSuit,
 };
 use crate::dsl::planner::TakeoutDoublePlanner;
 use crate::dsl::shows::{
-    ShowBalanced, ShowHcpRange, ShowMinHcp, ShowMinLengthInUnbidMajors, ShowMinSuitLength,
-    ShowPreemptLength, ShowSemiBalanced, ShowStopperInOpponentSuit, ShowSufficientValues,
-    ShowSupportForUnbidSuits, ShowSupportLength, ShowSupportValues, ShowThreeOfTopFiveOrBetter,
+    ShowBalanced, ShowHcpRange, ShowLawOfTotalTricks,
+    ShowMinCombinedPointsForPartnerMinimumSuitedRebid, ShowMinHcp, ShowMinLengthInUnbidMajors,
+    ShowMinSuitLength, ShowPreemptLength, ShowSemiBalanced, ShowStopperInOpponentSuit,
+    ShowSufficientValues, ShowSupportForUnbidSuits, ShowThreeOfTopFiveOrBetter,
 };
 use crate::rule;
 
@@ -75,24 +76,26 @@ rule! {
     shows: []
 }
 
-// --- Advance Rules (Responding to partner's overcall) ---
-
 rule! {
-    RaisePartnerOvercall: "Raise Partner's Overcall",
+    RaiseResponseToOvercall: "Raise Response to Overcall",
     auction: [PartnerOvercalled, BidderHasNotActed],
-    call: [IsSuit, PartnerHasShownSuit],
-    shows: [ShowSupportLength, ShowSupportValues]
+    call: [PartnerHasShownSuit, IsLevelRange(2, 3), not_call(IsJump)],
+    shows: [ShowLawOfTotalTricks, ShowMinHcp(6)]
 }
 
 rule! {
-    NewSuitAdvance: "New Suit (Advance)",
+    NewSuitResponseToOvercall: "New Suit Response to Overcall",
     auction: [PartnerOvercalled, BidderHasNotActed],
-    call: [IsSuit, IsNewSuit],
-    shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
+    call: [IsNewSuit, MaxLevel(3), not_call(IsJump)],
+    shows: [
+        ShowMinSuitLength(5),
+        ShowMinCombinedPointsForPartnerMinimumSuitedRebid,
+        ShowThreeOfTopFiveOrBetter,
+    ]
 }
 
 rule! {
-    NotrumpAdvance: "Notrump Advance",
+    NotrumpResponseToOvercall: "Notrump Response to Overcall",
     auction: [PartnerOvercalled, BidderHasNotActed],
     call: [IsNotrump],
     shows: [ShowSemiBalanced, ShowStopperInOpponentSuit, ShowSufficientValues]
@@ -571,7 +574,7 @@ mod tests {
             level: 2,
             strain: Strain::Spades,
         };
-        let sem = RaisePartnerOvercall
+        let sem = RaiseResponseToOvercall
             .get_semantics(&model, &call)
             .expect("Should match raise of partner's overcall suit");
 
@@ -590,7 +593,9 @@ mod tests {
             strain: Strain::Spades,
         };
         assert!(
-            RaisePartnerOvercall.get_semantics(&model, &call).is_none(),
+            RaiseResponseToOvercall
+                .get_semantics(&model, &call)
+                .is_none(),
             "Should not match when partner opened"
         );
     }
@@ -604,14 +609,14 @@ mod tests {
             level: 2,
             strain: Strain::Hearts,
         };
-        let sem = NewSuitAdvance
+        let sem = NewSuitResponseToOvercall
             .get_semantics(&model, &call)
             .expect("Should match new suit advance");
 
         assert!(sem
             .shows
             .contains(&HandConstraint::MinLength(Suit::Hearts, 5)));
-        assert!(sem.shows.contains(&HandConstraint::MinHcp(10)));
+        assert!(sem.shows.contains(&HandConstraint::MinHcp(11)));
     }
 
     #[test]
@@ -623,7 +628,7 @@ mod tests {
             level: 1,
             strain: Strain::Notrump,
         };
-        let sem = NotrumpAdvance
+        let sem = NotrumpResponseToOvercall
             .get_semantics(&model, &call)
             .expect("Should match NT advance");
 

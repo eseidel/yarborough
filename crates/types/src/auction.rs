@@ -138,6 +138,37 @@ impl Auction {
         self.iter().filter(|(_, call)| call.is_bid()).last()
     }
 
+    /// Returns the minimum legal bid for the given strain.
+    pub fn minimum_bid_in(&self, strain: Strain) -> Option<Call> {
+        if self.is_finished() {
+            return None;
+        }
+        let Some((_, last_call)) = self.last_bid() else {
+            return Some(Call::Bid { level: 1, strain });
+        };
+        match last_call {
+            Call::Bid {
+                level,
+                strain: last_strain,
+            } => {
+                let min_level = if strain > *last_strain {
+                    *level
+                } else {
+                    *level + 1
+                };
+                if min_level <= 7 {
+                    Some(Call::Bid {
+                        level: min_level,
+                        strain,
+                    })
+                } else {
+                    None
+                }
+            }
+            _ => unreachable!("last_bid returned non-bid"),
+        }
+    }
+
     /// Returns the index of the last call made by the given position.
     pub fn last_call_index_for_position(&self, position: Position) -> Option<usize> {
         let num_calls = self.calls.len();
@@ -211,7 +242,7 @@ impl Auction {
                 Call::Double => {
                     let bi = match last_bid_index {
                         Some(idx) => idx,
-                        None => return false,
+                        Option::None => return false,
                     };
                     if last_double_index.is_some() || is_redoubled {
                         return false;
@@ -224,7 +255,7 @@ impl Auction {
                 Call::Redouble => {
                     let di = match last_double_index {
                         Some(idx) => idx,
-                        None => return false,
+                        Option::None => return false,
                     };
                     if is_redoubled {
                         return false;
@@ -430,6 +461,48 @@ mod tests {
             auction.current_contract().unwrap().declarer,
             Position::North
         );
+    }
+
+    #[test]
+    fn test_minimum_bid_in() {
+        let mut auction = Auction::new(Position::North);
+        assert_eq!(
+            auction.minimum_bid_in(Strain::Clubs),
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Clubs
+            })
+        );
+
+        auction.bid("1D");
+        // Minimum bid in Clubs must be 2C because C < D
+        assert_eq!(
+            auction.minimum_bid_in(Strain::Clubs),
+            Some(Call::Bid {
+                level: 2,
+                strain: Strain::Clubs
+            })
+        );
+        // Minimum bid in Hearts is 1H because H > D
+        assert_eq!(
+            auction.minimum_bid_in(Strain::Hearts),
+            Some(Call::Bid {
+                level: 1,
+                strain: Strain::Hearts
+            })
+        );
+        // Minimum bid in Diamonds is 2D because D == D
+        assert_eq!(
+            auction.minimum_bid_in(Strain::Diamonds),
+            Some(Call::Bid {
+                level: 2,
+                strain: Strain::Diamonds
+            })
+        );
+
+        auction.bids("P P P");
+        // Auction finished
+        assert_eq!(auction.minimum_bid_in(Strain::Spades), None);
     }
 
     #[test]
