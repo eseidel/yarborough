@@ -142,6 +142,18 @@ impl CallPredicate for IsJump {
     }
 }
 
+/// Checks if a bid is at the minimum legal level for its strain.
+#[derive(Debug)]
+pub struct IsMinLevelForStrain;
+impl CallPredicate for IsMinLevelForStrain {
+    fn check(&self, model: &AuctionModel, call: &Call) -> bool {
+        if let (Some(level), Some(strain)) = (call.level(), call.strain()) {
+            return level == min_level_for_strain(model, strain).unwrap_or(1);
+        }
+        false
+    }
+}
+
 #[derive(Debug)]
 pub struct IsPass;
 impl CallPredicate for IsPass {
@@ -246,5 +258,45 @@ mod tests {
         assert!(!CuebidRhoSuit.check(&model, &call_2s));
 
         assert!(!CuebidLhoSuit.check(&model, &call_2d));
+    }
+
+    #[test]
+    fn test_is_min_level_for_strain() {
+        // No bids yet
+        let auction = types::Auction::new(Position::North);
+        let model = AuctionModel::from_auction(&auction);
+
+        let call_1c = Call::Bid {
+            level: 1,
+            strain: types::Strain::Clubs,
+        };
+        let call_2c = Call::Bid {
+            level: 2,
+            strain: types::Strain::Clubs,
+        };
+
+        assert!(IsMinLevelForStrain.check(&model, &call_1c));
+        assert!(!IsMinLevelForStrain.check(&model, &call_2c));
+
+        // North opens 1D
+        let auction = types::Auction::bidding(Position::North, "1D");
+        let model = AuctionModel::from_auction(&auction);
+
+        let call_1s = Call::Bid {
+            level: 1,
+            strain: types::Strain::Spades,
+        };
+        let call_2c = Call::Bid {
+            level: 2,
+            strain: types::Strain::Clubs,
+        };
+        let call_2s = Call::Bid {
+            level: 2,
+            strain: types::Strain::Spades,
+        };
+
+        assert!(IsMinLevelForStrain.check(&model, &call_1s));
+        assert!(IsMinLevelForStrain.check(&model, &call_2c));
+        assert!(!IsMinLevelForStrain.check(&model, &call_2s));
     }
 }

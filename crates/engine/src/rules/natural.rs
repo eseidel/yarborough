@@ -1,7 +1,7 @@
 use crate::dsl::auction_predicates::{not_auction, PartnerLimited, TheyHaveBid, WeOpened};
 use crate::dsl::call_predicates::{
-    not_call, BidderHasShownSuit, IsJump, IsLevel, IsMajorSuit, IsMinorSuit, IsNewSuit, IsNotrump,
-    IsPass, IsSuit, MinLevel, PartnerHasShownSuit,
+    not_call, BidderHasShownSuit, IsJump, IsLevel, IsMajorSuit, IsMinLevelForStrain, IsMinorSuit,
+    IsNewSuit, IsNotrump, IsPass, IsSuit, MinLevel, PartnerHasShownSuit,
 };
 use crate::dsl::shows::{
     ShowBetterContractIsRemote, ShowMinHcp, ShowMinSuitLength, ShowSemiBalanced,
@@ -33,14 +33,14 @@ rule! {
 rule! {
     NewMajorAtLevelTwo: "New Major",
     auction: [WeOpened],
-    call: [IsLevel(2), not_call(IsJump), IsNewSuit, IsMajorSuit],
+    call: [IsLevel(2), IsMinLevelForStrain, IsNewSuit, IsMajorSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10)]
 }
 
 rule! {
     NewMinorAtLevelTwo: "New Minor",
     auction: [WeOpened],
-    call: [IsLevel(2), not_call(IsJump), IsNewSuit, IsMinorSuit],
+    call: [IsLevel(2), IsMinLevelForStrain, IsNewSuit, IsMinorSuit],
     shows: [ShowMinSuitLength(4), ShowMinHcp(10)]
 }
 

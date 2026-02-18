@@ -3,8 +3,8 @@ use crate::dsl::auction_predicates::{
     PartnerOvercalled, RhoMadeLastBid, TheyOpened, WeHaveNotActed, WeOpened,
 };
 use crate::dsl::call_predicates::{
-    not_call, CuebidLhoSuit, IsDouble, IsJump, IsLevel, IsLevelRange, IsNewSuit, IsNotrump, IsPass,
-    IsSuit, MaxLevel, OpponentHasNotShownSuit, PartnerHasShownSuit,
+    CuebidLhoSuit, IsDouble, IsJump, IsLevel, IsLevelRange, IsMinLevelForStrain, IsNewSuit,
+    IsNotrump, IsPass, IsSuit, MaxLevel, OpponentHasNotShownSuit, PartnerHasShownSuit,
 };
 use crate::dsl::planner::TakeoutDoublePlanner;
 use crate::dsl::shows::{
@@ -27,7 +27,7 @@ rule! {
 rule! {
     TwoLevelOvercall: "Suited Overcall",
     auction: [TheyOpened, WeHaveNotActed],
-    call: [IsLevel(2), IsSuit, not_call(IsJump), OpponentHasNotShownSuit],
+    call: [IsLevel(2), IsSuit, IsMinLevelForStrain, OpponentHasNotShownSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(10), ShowThreeOfTopFiveOrBetter],
     annotations: [Overcall]
 }
@@ -80,14 +80,14 @@ rule! {
 rule! {
     RaiseResponseToOvercall: "Raise Response to Overcall",
     auction: [PartnerOvercalled, BidderHasNotActed],
-    call: [PartnerHasShownSuit, IsLevelRange(2, 3), not_call(IsJump)],
+    call: [PartnerHasShownSuit, IsLevelRange(2, 3), IsMinLevelForStrain],
     shows: [ShowLawOfTotalTricks, ShowMinHcp(6)]
 }
 
 rule! {
     NewSuitResponseToOvercall: "New Suit Response to Overcall",
     auction: [PartnerOvercalled, BidderHasNotActed],
-    call: [IsNewSuit, MaxLevel(3), not_call(IsJump)],
+    call: [IsNewSuit, MaxLevel(3), IsMinLevelForStrain],
     shows: [
         ShowMinSuitLength(5),
         ShowMinCombinedPointsForPartnerMinimumSuitedRebid,
@@ -98,7 +98,7 @@ rule! {
 rule! {
     CuebidResponseToOvercall: "Cuebid Response to Overcall",
     auction: [PartnerOvercalled, BidderHasNotActed],
-    call: [CuebidLhoSuit, MaxLevel(3), not_call(IsJump)],
+    call: [CuebidLhoSuit, MaxLevel(3), IsMinLevelForStrain],
     // TODO: Should show support points in partner's last bid suit.
     shows: [ShowMinLengthInPartnerLastBidSuit(3), ShowMinHcp(11)]
 }
@@ -106,7 +106,7 @@ rule! {
 rule! {
     NotrumpResponseToOvercall: "Notrump Response to Overcall",
     auction: [PartnerOvercalled, BidderHasNotActed],
-    call: [IsNotrump],
+    call: [IsNotrump, IsMinLevelForStrain],
     shows: [ShowSemiBalanced, ShowStopperInOpponentSuit, ShowSufficientValues]
 }
 
@@ -249,7 +249,7 @@ mod tests {
             level: 2,
             strain: Strain::Hearts,
         };
-        // TwoLevelOvercall requires not_call(IsJump), so this should be None
+        // TwoLevelOvercall requires IsMinLevelForStrain, so this should be None
         assert!(TwoLevelOvercall.get_semantics(&model, &call).is_none());
     }
 
