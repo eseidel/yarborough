@@ -16,7 +16,7 @@ impl RuleRegistry {
             Box::new(natural::OneNotrumpResponse),
             Box::new(natural::NewMajorAtLevelTwo),
             Box::new(natural::NewMinorAtLevelTwo),
-            Box::new(natural::JumpShiftResponse),
+            Box::new(natural::JumpShift),
             Box::new(natural::TwoNotrumpJumpResponse),
             Box::new(natural::ThreeNotrumpJumpResponse),
             Box::new(natural::SupportPartner),

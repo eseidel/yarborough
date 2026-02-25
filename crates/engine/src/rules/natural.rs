@@ -49,7 +49,7 @@ rule! {
 }
 
 rule! {
-    JumpShiftResponse: "Jump Shift Response",
+    JumpShift: "Jump Shift",
     auction: [WeOpened],
     call: [IsJump, IsNewSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(19)]
