@@ -158,20 +158,20 @@ test_game_forcing_response_to_one_of_a_major:
   QJ52.AKQ7.97.KJ2:1H P:Both: "FAIL: step 2, expected 3N, got 1N"
 test_jacoby_two_nt_response_to_one_of_a_major:
   QJ5.A75.KT8.AT42:1S P:None: "FAIL: step 2, expected 2N, got 2S"
-  87.AQJT9.8.AKJT9:1S P 2N P:None: "FAIL: step 4, expected 4D, got 3N"
-  AQ.Q9763.8.AKQJ8:1S P 2N P:None: "FAIL: step 4, expected 3H, got 3N"
-  J32.K7.KQT83.A75:1H P 2N P:None: "FAIL: step 4, expected 4H, got P"
-  2.KJ72.KQT83.A75:1H P 2N P:None: "FAIL: step 4, expected 3C, got P"
+  87.AQJT9.8.AKJT9:1S P 2N P:None: PASS
+  AQ.Q9763.8.AKQJ8:1S P 2N P:None: PASS
+  J32.K7.KQT83.A75:1H P 2N P:None: PASS
+  2.KJ72.KQT83.A75:1H P 2N P:None: PASS
   AJ2.K7.KQT853.A5:1H P 2N P:None: "FAIL: step 4, expected 3H, got 3N"
   K3.KJ.KQT83.A754:1H P 2N P:None: PASS
-  8.KQJ72.AJ973.K9:1H P 2N P:None: "FAIL: step 4, expected 4D, got P"
-  2.AQ976.98.AKJT8:1S P 2N P:None: "FAIL: step 4, expected 4D, got P"
+  8.KQJ72.AJ973.K9:1H P 2N P:None: PASS
+  2.AQ976.98.AKJT8:1S P 2N P:None: PASS
   432.432.AK32.AK2:1S P:None: "FAIL: step 2, expected 2N, got 2S"
   A82.AK8.Q874.T42:1S P:Both: "FAIL: step 2, expected 2N, got 2S"
   5432.43.AK32.AK2:1S P:None: "FAIL: step 2, expected 2C, got 2S"
   K.K7.KJ98542.QT8:1H P:Both: "FAIL: step 2, expected 2N, got 2H"
-  K.A743.K.AJ65432:1S P 2N P:E-W: "FAIL: step 4, expected 3C, got 3S"
-  K.K932.7.AK97653:P 1S P 2N P:E-W: "FAIL: step 5, expected 3C, got 3S"
+  K.A743.K.AJ65432:1S P 2N P:E-W: PASS
+  K.K932.7.AK97653:P 1S P 2N P:E-W: PASS
 test_slam_zone_responses_to_one_of_a_major:
   AKJ95.65.KQ3.AKJ:1S P:None: "FAIL: step 2, expected 3C, got 2S"
   AQ.AKJ76.A32.KQJ:1S P:None: "FAIL: step 2, expected 3D, got 2S"
@@ -778,4 +778,4 @@ test_slam_biding:
   .AQ753.AJ5.K8762:1S P 5N P:None: "FAIL: step 4, expected 6S, got P"
   AKQJT987...QJT43:1S P 5N P 6S P:None: "FAIL: step 2, expected 5N, got 2S"
   .AQ753.J5.AK8762:1S P 5N P:None: "FAIL: step 4, expected 7S, got P"
-  A63.J43.AKQJT.A2:1H P 2N P 3H P 4N P:None: "FAIL: step 4, expected 3H, got 3N"
+  A63.J43.AKQJT.A2:1H P 2N P 3H P 4N P:None: "FAIL: step 8, expected 5S, got 5N"

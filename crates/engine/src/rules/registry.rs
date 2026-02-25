@@ -1,6 +1,6 @@
 use crate::dsl::rule::Rule;
 use crate::kernel::{AuctionModel, CallSemantics};
-use crate::rules::{competitive, natural, opening};
+use crate::rules::{competitive, jacoby_2nt, natural, opening};
 use types::Call;
 
 /// Registry of all bidding rules
@@ -11,6 +11,12 @@ pub struct RuleRegistry {
 impl RuleRegistry {
     pub fn new_natural() -> Self {
         let rules: Vec<Box<dyn Rule>> = vec![
+            Box::new(jacoby_2nt::Jacoby2NTResponse),
+            Box::new(jacoby_2nt::Jacoby2NTRebidNewSuitLevel3),
+            Box::new(jacoby_2nt::Jacoby2NTRebidNewSuitLevel4),
+            Box::new(jacoby_2nt::Jacoby2NTRebidMajorLevel3),
+            Box::new(jacoby_2nt::Jacoby2NTRebidMajorLevel4),
+            Box::new(jacoby_2nt::Jacoby2NTRebid3NT),
             Box::new(natural::NewSuitAtLevelOne),
             Box::new(natural::FreeBidAtLevelOne),
             Box::new(natural::OneNotrumpResponse),

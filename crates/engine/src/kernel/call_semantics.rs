@@ -28,7 +28,9 @@ impl CallSemantics {
         let mut did_characterize_strength = false;
 
         // Check annotations first
-        if self.annotations.contains(&Annotation::NotrumpSystemsOn) {
+        if self.annotations.contains(&Annotation::ConventionalResponse) {
+            best_purpose = best_purpose.min(CallPurpose::ConventionalResponse);
+        } else if self.annotations.contains(&Annotation::NotrumpSystemsOn) {
             best_purpose = best_purpose.min(CallPurpose::EnterNotrumpSystem);
         }
 

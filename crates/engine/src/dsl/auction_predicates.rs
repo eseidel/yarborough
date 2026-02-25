@@ -185,6 +185,34 @@ impl AuctionPredicate for OpenerBidMinorAtLevel {
     }
 }
 
+/// Checks that the opening bid of the auction was in a major suit at the given level.
+#[derive(Debug)]
+pub struct OpenerBidMajorAtLevel(pub u8);
+impl AuctionPredicate for OpenerBidMajorAtLevel {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model
+            .auction
+            .iter()
+            .find(|(_, call)| call.is_bid())
+            .map(|(_, call)| {
+                call.level() == Some(self.0) && call.strain().map(|s| s.is_major()).unwrap_or(false)
+            })
+            .unwrap_or(false)
+    }
+}
+
+/// Checks that partner's last call has the specified annotation.
+#[derive(Debug)]
+pub struct PartnerLastCallHasAnnotation(pub Annotation);
+impl AuctionPredicate for PartnerLastCallHasAnnotation {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model
+            .partner_last_call_semantics()
+            .map(|s| s.annotations.contains(&self.0))
+            .unwrap_or(false)
+    }
+}
+
 /// Checks that at least one major suit has not been shown by any player.
 /// Safety guard ensuring a negative double has an unbid major to show.
 #[derive(Debug)]
