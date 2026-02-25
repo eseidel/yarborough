@@ -1,7 +1,7 @@
 use crate::dsl::annotations::Annotation;
 use crate::kernel::AuctionModel;
 use std::fmt::Debug;
-use types::Suit;
+use types::{Call, Suit};
 
 pub trait AuctionPredicate: Send + Sync + Debug {
     fn check(&self, auction: &AuctionModel) -> bool;
@@ -138,15 +138,16 @@ impl AuctionPredicate for BidderHasNotActed {
     }
 }
 
-/// Checks that at least one opponent has made a bid (not just passes/doubles).
-/// Distinguishes contested from uncontested auctions.
+/// Checks that RHO made a bid/double/redouble (resetting the pass counter).
 #[derive(Debug)]
-pub struct TheyHaveBid;
-impl AuctionPredicate for TheyHaveBid {
+pub struct RhoBid;
+impl AuctionPredicate for RhoBid {
     fn check(&self, model: &AuctionModel) -> bool {
         model
             .auction
-            .partnership_has_bid(model.auction.current_partnership().opponent())
+            .rho_last_call()
+            .map(|c| !matches!(c, Call::Pass))
+            .unwrap_or(false)
     }
 }
 
@@ -380,34 +381,6 @@ mod tests {
         assert!(
             pred.check(&model),
             "BidderHasNotActed is true (S hasn't bid)"
-        );
-    }
-
-    #[test]
-    fn test_they_have_bid() {
-        let pred = TheyHaveBid;
-
-        // N opens 1C, E passes, S's turn — EW only passed, no bids
-        let auction = types::Auction::bidding(Position::North, "1C P");
-        let model = AuctionModel::from_auction(&auction);
-        assert!(!pred.check(&model), "EW only passed (S's perspective)");
-
-        // N: 1C, E: 1S, S's turn — EW bid 1S
-        let auction = types::Auction::bidding(Position::North, "1C 1S");
-        let model = AuctionModel::from_auction(&auction);
-        assert!(pred.check(&model), "E overcalled 1S (S's perspective)");
-
-        // N: 1C, E: X, S's turn — double is not a bid
-        let auction = types::Auction::bidding(Position::North, "1C X");
-        let model = AuctionModel::from_auction(&auction);
-        assert!(!pred.check(&model), "Double is not a bid");
-
-        // N: 1C, E's turn — from E's perspective, opponents (NS) DID bid
-        let auction = types::Auction::bidding(Position::North, "1C");
-        let model = AuctionModel::from_auction(&auction);
-        assert!(
-            pred.check(&model),
-            "NS bid 1C (E's perspective, opponents have bid)"
         );
     }
 

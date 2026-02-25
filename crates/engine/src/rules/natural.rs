@@ -1,6 +1,6 @@
 use crate::dsl::auction_predicates::{
     not_auction, BidderHasNotActed, BidderOpened, OpenerBidMinorAtLevel, PartnerLimited,
-    PartnerOpened, TheyHaveBid, WeOpened,
+    PartnerOpened, RhoBid, WeOpened,
 };
 use crate::dsl::call_predicates::{
     not_call, BidderHasShownSuit, IsAtLeastJump, IsGameLevelOrBelow, IsJump, IsLevel, IsMajorSuit,
@@ -15,14 +15,14 @@ use crate::rule;
 
 rule! {
     NewSuitAtLevelOne: "New Suit",
-    auction: [WeOpened, not_auction(TheyHaveBid)],
+    auction: [WeOpened, not_auction(RhoBid)],
     call: [IsLevel(1), IsNewSuit],
     shows: [ShowMinSuitLength(4), ShowMinHcp(6)]
 }
 
 rule! {
     FreeBidAtLevelOne: "Free Bid (New Suit)",
-    auction: [WeOpened, TheyHaveBid],
+    auction: [WeOpened, RhoBid],
     call: [IsLevel(1), IsNewSuit],
     shows: [ShowMinSuitLength(5), ShowMinHcp(8)]
 }
@@ -114,6 +114,40 @@ mod tests {
     fn make_auction(calls: &str) -> AuctionModel {
         let auction = types::Auction::bidding(Position::North, calls);
         AuctionModel::from_auction(&auction)
+    }
+
+    #[test]
+    fn test_new_suit_vs_free_bid() {
+        // Partner opens 1C, RHO passes. (Uncontested)
+        let model_uncontested = make_auction("1C P");
+        let call_1s = "1S".parse::<Call>().unwrap();
+
+        // Should match NewSuitAtLevelOne (6+ HCP)
+        let sem_u = NewSuitAtLevelOne
+            .get_semantics(&model_uncontested, &call_1s)
+            .expect("Should match NewSuitAtLevelOne");
+        assert!(sem_u.shows.contains(&HandConstraint::MinHcp(6)));
+        assert!(FreeBidAtLevelOne
+            .get_semantics(&model_uncontested, &call_1s)
+            .is_none());
+
+        // Partner opens 1C, RHO bids 1H. (Contested/Free Bid situation)
+        let model_contested = make_auction("1C 1H");
+
+        // Should match FreeBidAtLevelOne (8+ HCP)
+        let sem_c = FreeBidAtLevelOne
+            .get_semantics(&model_contested, &call_1s)
+            .expect("Should match FreeBidAtLevelOne");
+        assert!(sem_c.shows.contains(&HandConstraint::MinHcp(8)));
+        assert!(NewSuitAtLevelOne
+            .get_semantics(&model_contested, &call_1s)
+            .is_none());
+
+        // Partner opens 1C, RHO bids 1D. (Also a Free Bid situation)
+        let model_contested_d = make_auction("1C 1D");
+        assert!(FreeBidAtLevelOne
+            .get_semantics(&model_contested_d, &call_1s)
+            .is_some());
     }
 
     #[test]
