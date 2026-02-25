@@ -115,6 +115,22 @@ impl CallPredicate for MaxLevel {
     }
 }
 
+#[derive(Debug)]
+pub struct IsGameLevelOrBelow;
+impl CallPredicate for IsGameLevelOrBelow {
+    fn check(&self, _model: &AuctionModel, call: &Call) -> bool {
+        if let (Some(level), Some(strain)) = (call.level(), call.strain()) {
+            let game_level = match strain {
+                Strain::Notrump => 3,
+                Strain::Hearts | Strain::Spades => 4,
+                Strain::Clubs | Strain::Diamonds => 5,
+            };
+            return level <= game_level;
+        }
+        true
+    }
+}
+
 /// Returns the minimum legal level for a given strain, based on the last bid in the auction.
 /// Returns None if there is no previous bid.
 fn min_level_for_strain(model: &AuctionModel, strain: Strain) -> Option<u8> {
