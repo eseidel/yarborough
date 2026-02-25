@@ -4,10 +4,10 @@ use crate::dsl::auction_predicates::IsSeat;
 use crate::dsl::call_predicates::not_call;
 use crate::dsl::call_predicates::IsCall;
 use crate::dsl::call_predicates::IsLevel;
+use crate::dsl::call_predicates::IsLevelRange;
 use crate::dsl::call_predicates::IsPass;
 use crate::dsl::call_predicates::IsStrain;
 use crate::dsl::call_predicates::IsSuit;
-use crate::dsl::call_predicates::MinLevel;
 use crate::dsl::planner::RuleOfTwentyPlanner;
 use crate::dsl::shows::ShowBalanced;
 use crate::dsl::shows::ShowHcpRange;
@@ -69,7 +69,7 @@ rule! {
 rule! {
     PreemptiveOpening: "Preemptive Opening",
     auction: [IsNotOpen],
-    call: [MinLevel(3), IsSuit],
+    call: [IsLevelRange(3, 4), IsSuit],
     shows: [ShowPreemptLength, ShowMaxHcp(10), ShowThreeOfTopFiveOrBetter]
 }
 
@@ -121,5 +121,21 @@ mod tests {
         assert!(sem
             .shows
             .contains(&HandConstraint::ThreeOfTopFiveOrBetter(Suit::Spades)));
+    }
+
+    #[test]
+    fn test_preemptive_opening_max_level_four() {
+        let model = make_auction("");
+        let call_4s = Call::Bid {
+            level: 4,
+            strain: Strain::Spades,
+        };
+        assert!(PreemptiveOpening.get_semantics(&model, &call_4s).is_some());
+
+        let call_5s = Call::Bid {
+            level: 5,
+            strain: Strain::Spades,
+        };
+        assert!(PreemptiveOpening.get_semantics(&model, &call_5s).is_none());
     }
 }
