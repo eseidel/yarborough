@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
@@ -18,14 +18,14 @@ export function ExplorePage() {
   const { exploreId } = useParams<{ exploreId: string }>();
   const navigate = useNavigate();
 
-  const [history, setHistory] = useState<CallHistory>(() => {
+  const history = useMemo<CallHistory>(() => {
     if (!exploreId) return { dealer: "N", calls: [] };
     const parts = exploreId.split(":");
     const boardNum = parseInt(parts[0], 10) || 1;
     const callsStr = parts[1];
     const calls = callsStr ? callsStr.split(",").map(stringToCall) : [];
     return { dealer: dealerFromBoardNumber(boardNum), calls };
-  });
+  }, [exploreId]);
 
   const boardNumber = parseInt(exploreId?.split(":")[0] || "1", 10) || 1;
   const vulnerability = vulnerabilityFromBoardNumber(boardNumber);
@@ -35,6 +35,16 @@ export function ExplorePage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [prevHistory, setPrevHistory] = useState(history);
+  const [prevVuln, setPrevVuln] = useState(vulnerability);
+
+  if (history !== prevHistory || vulnerability !== prevVuln) {
+    setPrevHistory(history);
+    setPrevVuln(vulnerability);
+    setLoading(true);
+    setError(null);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -62,22 +72,16 @@ export function ExplorePage() {
 
   const handleSelect = useCallback(
     (interp: CallInterpretation) => {
-      setLoading(true);
       const newCalls = [...history.calls, interp.call];
       const callsStr = newCalls.map(callToString).join(",");
-      setHistory({ ...history, calls: newCalls });
-      navigate(`/explore/${boardNumber}${callsStr ? `:${callsStr}` : ""}`, {
-        replace: true,
-      });
+      navigate(`/explore/${boardNumber}${callsStr ? `:${callsStr}` : ""}`);
     },
     [history, boardNumber, navigate],
   );
 
   const handleClear = useCallback(() => {
-    setLoading(true);
-    setHistory({ dealer: "N", calls: [] });
-    navigate("/explore/1", { replace: true });
-  }, [navigate]);
+    navigate(`/explore/${boardNumber}`);
+  }, [navigate, boardNumber]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
