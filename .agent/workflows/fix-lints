@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Fix all linting issues automatically
+
+set -e
+
+echo "🔧 Fixing TypeScript formatting..."
+pnpm prettier --write .
+
+echo "🦀 Fixing Rust formatting..."
+cargo fmt
+
+echo "✅ All formatting fixed!"
+echo ""
+echo "Run '.agent/workflows/check-lints' to verify"
