@@ -158,6 +158,20 @@ impl CallPredicate for IsJump {
     }
 }
 
+/// Checks if a bid is at least a jump (at least one level higher than necessary).
+#[derive(Debug)]
+pub struct IsAtLeastJump;
+impl CallPredicate for IsAtLeastJump {
+    fn check(&self, model: &AuctionModel, call: &Call) -> bool {
+        if let (Some(level), Some(strain)) = (call.level(), call.strain()) {
+            if let Some(min_level) = min_level_for_strain(model, strain) {
+                return level > min_level;
+            }
+        }
+        false
+    }
+}
+
 /// Checks if a bid is at the minimum legal level for its strain.
 #[derive(Debug)]
 pub struct IsMinLevelForStrain;

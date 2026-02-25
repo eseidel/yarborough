@@ -1,8 +1,9 @@
 use crate::dsl::auction_predicates::{
-    not_auction, BidderOpened, OpenerBidMinor, PartnerLimited, TheyHaveBid, WeOpened,
+    not_auction, BidderHasNotActed, BidderOpened, OpenerBidMinorAtLevel, PartnerLimited,
+    PartnerOpened, TheyHaveBid, WeOpened,
 };
 use crate::dsl::call_predicates::{
-    not_call, BidderHasShownSuit, IsGameLevelOrBelow, IsJump, IsLevel, IsMajorSuit,
+    not_call, BidderHasShownSuit, IsAtLeastJump, IsGameLevelOrBelow, IsJump, IsLevel, IsMajorSuit,
     IsMinLevelForStrain, IsMinorSuit, IsNewSuit, IsNotrump, IsPass, IsSuit, MinLevel,
     PartnerHasShownSuit,
 };
@@ -56,10 +57,23 @@ rule! {
 
 rule! {
     TwoNotrumpJumpRebid: "2NT Jump Rebid",
-    auction: [BidderOpened, OpenerBidMinor],
+    auction: [BidderOpened, OpenerBidMinorAtLevel(1)],
     call: [IsLevel(2), IsNotrump, IsJump],
     shows: [ShowHcpRange(18, 19), ShowBalanced],
-    annotations: [NotrumpSystemsOn]
+}
+
+rule! {
+    TwoNotrumpJumpResponse: "2NT Jump Response",
+    auction: [PartnerOpened, OpenerBidMinorAtLevel(1), BidderHasNotActed],
+    call: [IsLevel(2), IsNotrump, IsJump],
+    shows: [ShowHcpRange(13, 15), ShowBalanced],
+}
+
+rule! {
+    ThreeNotrumpJumpResponse: "3NT Jump Response",
+    auction: [PartnerOpened, OpenerBidMinorAtLevel(1), BidderHasNotActed],
+    call: [IsLevel(3), IsNotrump, IsAtLeastJump],
+    shows: [ShowMinHcp(16), ShowBalanced],
 }
 
 rule! {
@@ -140,6 +154,47 @@ mod tests {
     }
 
     #[test]
+    fn test_2nt_jump_response() {
+        // North opens 1C.
+        let model = make_auction("1C P");
+
+        // South jumps to 2NT.
+        let call_2nt = Call::Bid {
+            level: 2,
+            strain: Strain::Notrump,
+        };
+        let sem = TwoNotrumpJumpResponse
+            .get_semantics(&model, &call_2nt)
+            .unwrap();
+
+        assert!(sem.shows.contains(&HandConstraint::MinHcp(13)));
+        assert!(sem.shows.contains(&HandConstraint::MaxHcp(15)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MaxUnbalancedness(types::Shape::Balanced)));
+    }
+
+    #[test]
+    fn test_3nt_jump_response() {
+        // North opens 1D.
+        let model = make_auction("1D P");
+
+        // South double jumps to 3NT.
+        let call_3nt = Call::Bid {
+            level: 3,
+            strain: Strain::Notrump,
+        };
+        let sem = ThreeNotrumpJumpResponse
+            .get_semantics(&model, &call_3nt)
+            .unwrap();
+
+        assert!(sem.shows.contains(&HandConstraint::MinHcp(16)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MaxUnbalancedness(types::Shape::Balanced)));
+    }
+
+    #[test]
     fn test_2nt_jump_rebid() {
         // North opens 1C. South bids 1H.
         let model = make_auction("1C P 1H P");
@@ -158,9 +213,6 @@ mod tests {
         assert!(sem
             .shows
             .contains(&HandConstraint::MaxUnbalancedness(types::Shape::Balanced)));
-        assert!(sem
-            .annotations
-            .contains(&crate::dsl::annotations::Annotation::NotrumpSystemsOn));
     }
 
     #[test]
@@ -176,6 +228,22 @@ mod tests {
         };
         assert!(TwoNotrumpJumpRebid
             .get_semantics(&model, &call_2nt)
+            .is_none());
+    }
+
+    #[test]
+    fn test_2nt_response_after_two_level_minor_opening() {
+        // Partner opens 2D (e.g., a weak two).
+        let model = make_auction("2D P");
+
+        // 3NT is a jump here (min level for NT is 3).
+        // But it should not match ThreeNotrumpJumpResponse because opening was level 2.
+        let call_3nt = Call::Bid {
+            level: 3,
+            strain: Strain::Notrump,
+        };
+        assert!(ThreeNotrumpJumpResponse
+            .get_semantics(&model, &call_3nt)
             .is_none());
     }
 }

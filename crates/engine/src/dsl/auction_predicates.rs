@@ -159,16 +159,27 @@ impl AuctionPredicate for BidderOpened {
     }
 }
 
-/// Checks that the opening bid of the auction was in a minor suit.
+/// Checks that partner was the one who opened the auction.
 #[derive(Debug)]
-pub struct OpenerBidMinor;
-impl AuctionPredicate for OpenerBidMinor {
+pub struct PartnerOpened;
+impl AuctionPredicate for PartnerOpened {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model.auction.opener() == Some(model.auction.current_player().partner())
+    }
+}
+
+/// Checks that the opening bid of the auction was in a minor suit at the given level.
+#[derive(Debug)]
+pub struct OpenerBidMinorAtLevel(pub u8);
+impl AuctionPredicate for OpenerBidMinorAtLevel {
     fn check(&self, model: &AuctionModel) -> bool {
         model
             .auction
             .iter()
             .find(|(_, call)| call.is_bid())
-            .map(|(_, call)| call.strain().map(|s| s.is_minor()).unwrap_or(false))
+            .map(|(_, call)| {
+                call.level() == Some(self.0) && call.strain().map(|s| s.is_minor()).unwrap_or(false)
+            })
             .unwrap_or(false)
     }
 }
