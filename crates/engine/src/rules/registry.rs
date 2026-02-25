@@ -18,6 +18,7 @@ impl RuleRegistry {
             Box::new(natural::NewMinorAtLevelTwo),
             Box::new(natural::JumpShiftResponse),
             Box::new(natural::SupportPartner),
+            Box::new(natural::TwoNotrumpJumpRebid),
             Box::new(natural::NaturalNotrump),
             Box::new(natural::RebidOwnSuit),
             Box::new(natural::BetterContractRemote),

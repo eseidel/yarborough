@@ -1,12 +1,14 @@
-use crate::dsl::auction_predicates::{not_auction, PartnerLimited, TheyHaveBid, WeOpened};
+use crate::dsl::auction_predicates::{
+    not_auction, BidderOpened, OpenerBidMinor, PartnerLimited, TheyHaveBid, WeOpened,
+};
 use crate::dsl::call_predicates::{
     not_call, BidderHasShownSuit, IsGameLevelOrBelow, IsJump, IsLevel, IsMajorSuit,
     IsMinLevelForStrain, IsMinorSuit, IsNewSuit, IsNotrump, IsPass, IsSuit, MinLevel,
     PartnerHasShownSuit,
 };
 use crate::dsl::shows::{
-    ShowBetterContractIsRemote, ShowMinHcp, ShowMinSuitLength, ShowSemiBalanced,
-    ShowSufficientValues, ShowSupportLength, ShowSupportValues,
+    ShowBalanced, ShowBetterContractIsRemote, ShowHcpRange, ShowMinHcp, ShowMinSuitLength,
+    ShowSemiBalanced, ShowSufficientValues, ShowSupportLength, ShowSupportValues,
 };
 use crate::rule;
 
@@ -53,6 +55,14 @@ rule! {
 }
 
 rule! {
+    TwoNotrumpJumpRebid: "2NT Jump Rebid",
+    auction: [BidderOpened, OpenerBidMinor],
+    call: [IsLevel(2), IsNotrump, IsJump],
+    shows: [ShowHcpRange(18, 19), ShowBalanced],
+    annotations: [NotrumpSystemsOn]
+}
+
+rule! {
     SupportPartner: "Support Partner",
     auction: [WeOpened],
     call: [IsSuit, PartnerHasShownSuit, IsGameLevelOrBelow],
@@ -84,7 +94,7 @@ rule! {
 mod tests {
     use super::*;
     use crate::dsl::rule::Rule;
-    use crate::kernel::AuctionModel;
+    use crate::kernel::{AuctionModel, HandConstraint};
     use types::{Call, Position, Strain};
 
     fn make_auction(calls: &str) -> AuctionModel {
@@ -127,5 +137,45 @@ mod tests {
             strain: Strain::Diamonds,
         };
         assert!(SupportPartner.get_semantics(&model_d, &call_6d).is_none());
+    }
+
+    #[test]
+    fn test_2nt_jump_rebid() {
+        // North opens 1C. South bids 1H.
+        let model = make_auction("1C P 1H P");
+
+        // North jumps to 2NT.
+        let call_2nt = Call::Bid {
+            level: 2,
+            strain: Strain::Notrump,
+        };
+        let sem = TwoNotrumpJumpRebid
+            .get_semantics(&model, &call_2nt)
+            .unwrap();
+
+        assert!(sem.shows.contains(&HandConstraint::MinHcp(18)));
+        assert!(sem.shows.contains(&HandConstraint::MaxHcp(19)));
+        assert!(sem
+            .shows
+            .contains(&HandConstraint::MaxUnbalancedness(types::Shape::Balanced)));
+        assert!(sem
+            .annotations
+            .contains(&crate::dsl::annotations::Annotation::NotrumpSystemsOn));
+    }
+
+    #[test]
+    fn test_2nt_rebid_after_major_opening() {
+        // North opens 1S. South bids 1NT.
+        let model = make_auction("1S P 1N P");
+
+        // 2NT is NOT a jump here (min level for NT is 2).
+        // Even if it were a jump, OpenerBidMinor should fail it.
+        let call_2nt = Call::Bid {
+            level: 2,
+            strain: Strain::Notrump,
+        };
+        assert!(TwoNotrumpJumpRebid
+            .get_semantics(&model, &call_2nt)
+            .is_none());
     }
 }

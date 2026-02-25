@@ -150,6 +150,29 @@ impl AuctionPredicate for TheyHaveBid {
     }
 }
 
+/// Checks that the current bidder was the one who opened the auction.
+#[derive(Debug)]
+pub struct BidderOpened;
+impl AuctionPredicate for BidderOpened {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model.auction.opener() == Some(model.auction.current_player())
+    }
+}
+
+/// Checks that the opening bid of the auction was in a minor suit.
+#[derive(Debug)]
+pub struct OpenerBidMinor;
+impl AuctionPredicate for OpenerBidMinor {
+    fn check(&self, model: &AuctionModel) -> bool {
+        model
+            .auction
+            .iter()
+            .find(|(_, call)| call.is_bid())
+            .map(|(_, call)| call.strain().map(|s| s.is_minor()).unwrap_or(false))
+            .unwrap_or(false)
+    }
+}
+
 /// Checks that at least one major suit has not been shown by any player.
 /// Safety guard ensuring a negative double has an unbid major to show.
 #[derive(Debug)]
