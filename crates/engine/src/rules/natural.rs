@@ -4,7 +4,7 @@ use crate::dsl::auction_predicates::{
 };
 use crate::dsl::call_predicates::{
     not_call, BidderHasShownSuit, IsAtLeastJump, IsGameLevelOrBelow, IsJump, IsLevel, IsMajorSuit,
-    IsMinLevelForStrain, IsMinorSuit, IsNewSuit, IsNotrump, IsPass, IsSuit, MinLevel,
+    IsMinLevelForStrain, IsMinorSuit, IsNewSuit, IsNotrump, IsPass, IsSuit, LevelRange,
     PartnerHasShownSuit,
 };
 use crate::dsl::shows::{
@@ -86,7 +86,7 @@ rule! {
 rule! {
     NaturalNotrump: "Natural Notrump",
     auction: [WeOpened],
-    call: [MinLevel(2), IsNotrump],
+    call: [LevelRange(2, 3), IsNotrump],
     shows: [ShowSemiBalanced, ShowSufficientValues]
 }
 

@@ -36,18 +36,23 @@ impl CallRanker {
     pub fn from_auction_model(auction_model: &AuctionModel) -> Self {
         let legal_calls = auction_model.auction.legal_calls();
 
-        let mut group_items: [Vec<CallRankItem>; CallPurpose::COUNT] = Default::default();
+        let mut standard_group_items: [Vec<CallRankItem>; CallPurpose::COUNT] = Default::default();
 
         for call in legal_calls {
             if let Some(semantics) = CallInterpreter::interpret(auction_model, &call) {
                 let purpose = semantics.get_purpose(auction_model);
-                group_items[purpose as usize].push(CallRankItem { call, semantics });
+                standard_group_items[purpose as usize].push(CallRankItem { call, semantics });
             }
         }
 
         let mut ranker = Self::default();
+
+        // Add standard groups
         for group_type in CallPurpose::ALL {
-            ranker = ranker.with_group(group_type.name(), group_items[group_type as usize].clone());
+            ranker = ranker.with_group(
+                group_type.name(),
+                standard_group_items[group_type as usize].clone(),
+            );
         }
 
         ranker

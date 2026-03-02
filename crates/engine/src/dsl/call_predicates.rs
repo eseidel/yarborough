@@ -116,6 +116,16 @@ impl CallPredicate for MaxLevel {
 }
 
 #[derive(Debug)]
+pub struct LevelRange(pub u8, pub u8);
+impl CallPredicate for LevelRange {
+    fn check(&self, _model: &AuctionModel, call: &Call) -> bool {
+        call.level()
+            .map(|l| l >= self.0 && l <= self.1)
+            .unwrap_or(false)
+    }
+}
+
+#[derive(Debug)]
 pub struct IsGameLevelOrBelow;
 impl CallPredicate for IsGameLevelOrBelow {
     fn check(&self, _model: &AuctionModel, call: &Call) -> bool {

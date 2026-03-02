@@ -12,11 +12,11 @@ impl RuleRegistry {
     pub fn new_natural() -> Self {
         let rules: Vec<Box<dyn Rule>> = vec![
             Box::new(jacoby_2nt::Jacoby2NTResponse),
-            Box::new(jacoby_2nt::Jacoby2NTRebidNewSuitLevel3),
-            Box::new(jacoby_2nt::Jacoby2NTRebidNewSuitLevel4),
-            Box::new(jacoby_2nt::Jacoby2NTRebidMajorLevel3),
-            Box::new(jacoby_2nt::Jacoby2NTRebidMajorLevel4),
-            Box::new(jacoby_2nt::Jacoby2NTRebid3NT),
+            Box::new(jacoby_2nt::SingletonResponseToJacoby2NT),
+            Box::new(jacoby_2nt::SolidSuitResponseToJacoby2NT),
+            Box::new(jacoby_2nt::SlamResponseToJacoby2NT),
+            Box::new(jacoby_2nt::MinimumResponseToJacoby2NT),
+            Box::new(jacoby_2nt::NotrumpResponseToJacoby2NT),
             Box::new(natural::NewSuitAtLevelOne),
             Box::new(natural::FreeBidAtLevelOne),
             Box::new(natural::OneNotrumpResponse),
