@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Check formatting and linting (no tests)
+
+set -e
+
+echo "✨ Checking TypeScript formatting..."
+pnpm format:check
+
+echo "🔍 Running TypeScript linter..."
+pnpm lint
+
+echo "🦀 Checking Rust formatting..."
+cargo fmt --check
+
+echo "🔍 Running Rust linter (clippy)..."
+cargo clippy --all-targets -- -D warnings
+
+echo "✅ All lints passed!"

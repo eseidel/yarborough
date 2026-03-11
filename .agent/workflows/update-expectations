@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Update Rust test expectations after making changes
+
+set -e
+
+echo "🔄 Updating test expectations..."
+UPDATE_EXPECTATIONS=1 cargo test --test harness
+
+echo "✅ Expectations updated!"
+echo ""
+echo "Review changes with: git diff crates/bridge-engine/tests/*.expectations.yaml"
