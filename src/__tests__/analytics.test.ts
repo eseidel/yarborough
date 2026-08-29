@@ -94,6 +94,24 @@ describe("analytics", () => {
     // Automatic page views fire once per document. This app is client-routed,
     // so every route after the first would be lost, and the first would be
     // double counted against the explicit call.
+    // The bug this guards: gtag.js walks dataLayer and acts only on entries
+    // that are Arguments objects. Pushing plain arrays queues events that look
+    // correct in every other assertion here, loads gtag.js successfully, and
+    // then silently sends nothing to Google.
+    it("queues Arguments objects rather than arrays", async () => {
+      const a = await loadAnalytics("saycbridge.com");
+      a.initAnalytics();
+      a.trackPageView("/explore");
+      a.trackEvent("Bidding", "Help", "Suggest Bid");
+
+      expect(dataLayer().length).toBeGreaterThan(0);
+      for (const entry of dataLayer()) {
+        expect(Object.prototype.toString.call(entry)).toBe(
+          "[object Arguments]",
+        );
+      }
+    });
+
     it("configures gtag without automatic page views", async () => {
       const a = await loadAnalytics("saycbridge.com");
       a.initAnalytics();

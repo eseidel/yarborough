@@ -24,11 +24,16 @@ function isAnalyticsEnabled(): boolean {
   return PRODUCTION_HOSTS.includes(window.location?.hostname ?? "");
 }
 
-function gtag(...args: unknown[]): void {
-  // gtag.js requires the raw `arguments` object, so push the array-like value
-  // itself rather than a spread copy.
-  window.dataLayer?.push(args);
-}
+// gtag.js walks dataLayer and processes only entries that are `Arguments`
+// objects; a plain array is pushed without complaint and then ignored, so
+// nothing reaches Google. Hence a function expression that forwards its own
+// `arguments` — an arrow function has none, and rest parameters would rebuild
+// the array this exists to avoid. The signature lives on the binding so call
+// sites stay typed.
+const gtag: (...args: unknown[]) => void = function () {
+  // eslint-disable-next-line prefer-rest-params
+  window.dataLayer?.push(arguments);
+};
 
 let initialized = false;
 
