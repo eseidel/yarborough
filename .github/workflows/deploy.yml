@@ -1,21 +1,30 @@
-name: Deploy to GitHub Pages
+name: Deploy preview
 
+# Publishes every commit on main to the preview Worker and keeps the built
+# `dist` as an artifact. "Promote to production" later redeploys that same
+# artifact, so production ships the bytes you previewed.
+#
+# Deliberately not triggered by pull_request: this repository is public, and
+# fork pull requests do not receive secrets, so such runs could only fail.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-preview
+  cancel-in-progress: true
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
+    name: Preview
     runs-on: ubuntu-latest
+    # Add `url: https://dev.saycbridge.com` once the domain is cut over.
+    environment:
+      name: preview
     steps:
       - uses: actions/checkout@v4
 
@@ -30,19 +39,16 @@ jobs:
 
       - run: pnpm build
 
-      - name: Copy index.html to 404.html for SPA routing
-        run: cp dist/index.html dist/404.html
-
-      - uses: actions/upload-pages-artifact@v3
+      # Retained so a promotion can reuse this exact build rather than rebuild.
+      - uses: actions/upload-artifact@v4
         with:
+          name: dist
           path: dist
+          retention-days: 90
+          if-no-files-found: error
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to Cloudflare
+        run: pnpm exec wrangler deploy --env preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

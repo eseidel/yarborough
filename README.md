@@ -4,7 +4,8 @@ A client-only bridge bidding tutor using the SAYCBridge z3b engine. Bidding,
 Python execution, and Z3 solving run in a browser Web Worker; board data and
 auction state are never sent to a server.
 
-**Try it:** <https://eseidel.github.io/yarborough/>
+**Try it:** <https://eseidel.github.io/yarborough/> (moving to
+<https://saycbridge.com> — see [docs/deployment.md](docs/deployment.md))
 
 ## Getting started
 
@@ -19,8 +20,8 @@ pnpm dev
 ```
 
 `pnpm dev` prepares checksum-verified Pyodide and Z3 assets in ignored
-`vendor/` before starting Vite. Use `pnpm build` for a GitHub Pages-compatible
-production build.
+`vendor/` before starting Vite. Use `pnpm build` for a production build, which
+is served from the domain root by Cloudflare.
 
 ## Architecture
 

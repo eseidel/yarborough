@@ -61,8 +61,6 @@ async function main() {
     [
       viteCli,
       "preview",
-      "--base",
-      "/yarborough/",
       "--host",
       HOST,
       "--port",
@@ -73,7 +71,7 @@ async function main() {
   );
 
   try {
-    await waitForServer(`${origin}/yarborough/`);
+    await waitForServer(`${origin}/`);
     const browser = await chromium.launch();
     try {
       const page = await browser.newPage();
@@ -104,9 +102,7 @@ async function main() {
         }
       });
 
-      const response = await page.goto(
-        `${origin}/yarborough/bid/${PASSING_BOARD}`,
-      );
+      const response = await page.goto(`${origin}/bid/${PASSING_BOARD}`);
       assert.equal(response?.status(), 200);
       try {
         await page.locator('[data-testid="call-table"]').waitFor();

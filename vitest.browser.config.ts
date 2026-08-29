@@ -5,7 +5,6 @@ import { defineConfig } from "vitest/config";
 import { pyodideAssets } from "./vite.pyodide-assets";
 
 export default defineConfig({
-  base: "/yarborough/",
   optimizeDeps: { exclude: ["pyodide"] },
   plugins: [pyodideAssets(), react(), tailwindcss()],
   worker: { format: "es" },
