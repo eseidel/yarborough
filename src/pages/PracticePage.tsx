@@ -25,10 +25,13 @@ import {
 import { callToString } from "../bridge/types";
 import { getSuggestedCall, getCallInterpretations } from "../bridge/engine";
 import { initAnalytics, trackPageView, trackEvent } from "../analytics";
+import { setCanonical, setTitle } from "../seo";
 import type { CallHistory } from "../bridge";
 
-export function PracticePage() {
-  const { boardId } = useParams<{ boardId: string }>();
+export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
+  const { boardId: boardIdParam } = useParams<{ boardId: string }>();
+  // The root route has no :boardId in the URL and supplies one instead.
+  const boardId = boardIdParam ?? boardIdProp;
   const navigate = useNavigate();
 
   const parsed = useMemo(
@@ -127,10 +130,13 @@ export function PracticePage() {
 
   useEffect(() => {
     if (auctionDone) {
-      document.title = "Bidding Results - SAYC Bridge";
+      setTitle("Bidding Results - SAYC Bridge");
     } else {
-      document.title = "Bidding Practice - SAYC Bridge";
+      setTitle("Bidding Practice - SAYC Bridge");
     }
+    // Every board is the same page with different cards; "/" is the one that
+    // should be indexed.
+    setCanonical("/");
   }, [auctionDone]);
 
   useEffect(() => {
@@ -300,7 +306,9 @@ export function PracticePage() {
   );
 
   if (!parsed) {
-    return <Navigate to="/" replace />;
+    // Only reachable from a hand-edited /bid/<board> URL; the id the root
+    // route generates always parses.
+    return boardIdParam ? <Navigate to="/" replace /> : null;
   }
 
   const { deal, vulnerability } = parsed;

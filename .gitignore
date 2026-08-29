@@ -117,3 +117,6 @@ MANIFEST
 
 # Generated browser runtime assets
 vendor/
+
+# Wrangler local state (miniflare caches, dev sessions)
+.wrangler/

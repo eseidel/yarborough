@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Only the canonical URLs. Board permalinks are canonicalized to / and are
+     not listed. Change-frequency and priority hints are omitted: Google
+     ignores both. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://saycbridge.com/</loc>
+  </url>
+  <url>
+    <loc>https://saycbridge.com/explore</loc>
+  </url>
+</urlset>
