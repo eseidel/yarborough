@@ -15,30 +15,28 @@
     "not_found_handling": "single-page-application",
   },
 
-  // Until saycbridge.com is served by Cloudflare, production lives at
-  // saycbridge.<subdomain>.workers.dev. Custom Domains require an active zone
-  // on Cloudflare nameservers, so adding them before the DNS move would only
-  // make deploys fail. See docs/deployment.md for the cutover, which adds:
-  //
-  //   "routes": [
-  //     { "pattern": "saycbridge.com", "custom_domain": true },
-  //     { "pattern": "www.saycbridge.com", "custom_domain": true }
-  //   ],
-  //
-  // and flips workers_dev to false here.
-  "workers_dev": true,
+  // Cloudflare creates the DNS records and certificates for these. The apex was
+  // previously a dead A record; www previously served the legacy App Engine site
+  // via ghs.google.com. Both are replaced by this Worker.
+  "routes": [
+    { "pattern": "saycbridge.com", "custom_domain": true },
+    { "pattern": "www.saycbridge.com", "custom_domain": true },
+  ],
+
+  // saycbridge.com is the canonical origin, so no *.workers.dev twin for prod.
+  "workers_dev": false,
   "observability": { "enabled": true },
 
   "env": {
     // Preview, deployed on every push to main. Wrangler names this Worker
-    // "saycbridge-preview", so it publishes to
-    // saycbridge-preview.<subdomain>.workers.dev until dev.saycbridge.com
-    // is attached at cutover.
+    // "saycbridge-preview".
     "preview": {
       "assets": {
         "directory": "./dist",
         "not_found_handling": "single-page-application",
       },
+      "routes": [{ "pattern": "dev.saycbridge.com", "custom_domain": true }],
+      // Kept as a fallback URL; preview has no canonical-origin concerns.
       "workers_dev": true,
       "observability": { "enabled": true },
     },

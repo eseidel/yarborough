@@ -67,60 +67,105 @@ which pulls ~22 MB of Pyodide and Z3 assets.
 
 ## Stage 2: cutting saycbridge.com over
 
-Only start this once stage 1 is verified.
+Stage 1 is live and verified, so this is the remaining work.
 
-### 1. Move the zone to Cloudflare
+Custom Domains require Cloudflare to be authoritative for the zone. That means
+changing the nameservers at GoDaddy, not editing records there, which moves all
+DNS at once. Email is the real risk; the website is not.
 
-saycbridge.com is currently on GoDaddy nameservers
-(`ns35`/`ns36.domaincontrol.com`), with the apex at `192.241.239.197` and `www`
-at `ghs.google.com`. Workers Custom Domains require the zone to be active on
-Cloudflare nameservers.
+### What is on the domain today
 
-1. Add saycbridge.com as a zone in the Cloudflare dashboard.
-2. Let Cloudflare import the existing DNS records, then confirm what you still
-   need came across — MX and any mail-related TXT records especially, plus
-   every `google-site-verification=` TXT at the apex. Losing one of those
-   drops Search Console verification in the middle of the migration, which is
-   exactly when you need the data. There is already an old one there
-   (`4Bw3qJjVic…`), predating this work; leave it alone. `www` points at
-   `ghs.google.com`, a Google-hosted domain mapping, and those historically
-   required domain verification to stay attached.
-3. Update the nameservers at GoDaddy to the pair Cloudflare assigns.
-4. Wait for the zone to show as active.
+Re-run this immediately before flipping, rather than trusting the list below.
+The zone is being actively edited: its SOA serial went from `2016050300` to
+`2026082902` in a single day.
 
-The imported records keep the old site serving throughout, so this step alone
-changes nothing a visitor sees.
+```bash
+dig saycbridge.com ANY +noall +answer @ns35.domaincontrol.com
+```
 
-### 2. Widen the API token
+As last measured:
 
-Add to the existing token, both scoped to saycbridge.com:
+| Record                  | Value                                  | Notes                                   |
+| ----------------------- | -------------------------------------- | --------------------------------------- |
+| Apex `A`                | `192.241.239.197`                      | **Dead** — does not respond. Delete it. |
+| `www` CNAME             | `ghs.google.com`                       | The live legacy site                    |
+| `mail` CNAME            | `ghs.google.com`                       | Redirect to Google Mail login           |
+| `MX` ×7                 | `aspmx.l.google.com` and friends       | **Live Google Workspace mail**          |
+| `google._domainkey` TXT | DKIM key                               | Must survive                            |
+| Apex TXT                | `google-site-verification=4Bw3qJjVic…` | Search Console; predates this work      |
+
+There is no SPF and no DMARC record. That is a pre-existing gap, not something
+the migration introduces, but it is worth fixing while you are in the DNS.
+
+Because the apex is already dead, pointing it at the Worker carries no
+regression risk. `www` is the only hostname where users notice anything.
+
+### 1. Add the zone to Cloudflare
+
+Add saycbridge.com in account `5ea3476b…` — the same account as the Workers,
+since Custom Domains cannot cross accounts. Let Cloudflare import the records.
+
+Set `www` and `mail` to **DNS-only (grey cloud)**. Proxying Google-hosted
+hostnames through Cloudflare breaks their certificate handling.
+
+### 2. Verify the imported zone before touching GoDaddy
+
+Cloudflare answers on its assigned nameservers as soon as the zone exists,
+while GoDaddy is still authoritative and live traffic is untouched. This proves
+the new zone is correct with nobody exposed, and it is the gate that protects
+email:
+
+```bash
+NS=<an-assigned-cloudflare-nameserver>
+dig @$NS saycbridge.com MX +short                       # expect all 7 Google hosts
+dig @$NS google._domainkey.saycbridge.com TXT +short    # expect the DKIM key
+dig @$NS saycbridge.com TXT +short                      # expect google-site-verification
+dig @$NS www.saycbridge.com +short                      # expect ghs.google.com
+```
+
+Mail routing is only MX data, and Cloudflare cannot proxy MX, so there is no
+Cloudflare-specific way for mail to break. The only failure mode is a record
+the importer missed, which the above catches.
+
+### 3. Change the nameservers at GoDaddy
+
+Point them at the pair Cloudflare assigns. Usually under an hour, formally up
+to 48. Once the zone is active, send yourself a test email before continuing.
+
+### 4. Widen the API token
+
+Add one permission, scoped to saycbridge.com. Editing a token in place does not
+change its value, so the GitHub secret does not need rotating.
 
 - Zone → Workers Routes → Edit
-- Zone → DNS → Edit (so Wrangler can create the records itself)
 
-### 3. Attach the domains
+Deliberately **not** Zone → DNS → Edit. Custom Domains are attached server-side:
+Cloudflare creates the DNS record and issues the certificate itself, so the
+client never writes DNS and should not need permission to. Cloudflare's own
+generated Workers Builds CI token grants Workers Routes but not DNS for exactly
+this reason.
 
-In `wrangler.jsonc`, add to the top-level (production) config:
+This matters because the token lives in a public repository's secrets and the
+zone carries live Google Workspace mail. With Workers Routes alone, the worst a
+leaked token can do is redeploy the site. With DNS edit, it could rewrite the MX
+records and intercept mail. If a deploy ever fails on the custom domain step
+with a permissions error, add DNS edit then — but do not grant it pre-emptively.
 
-```jsonc
-"routes": [
-  { "pattern": "saycbridge.com", "custom_domain": true },
-  { "pattern": "www.saycbridge.com", "custom_domain": true }
-],
-```
+### 5. Attach the domains
 
-and to `env.preview`:
+Delete the dead apex `A` record and the `www` CNAME first, or the deploy will
+conflict with them. Then merge the routes in `wrangler.jsonc`, let preview
+deploy, and promote. Cloudflare creates the records and certificates.
 
-```jsonc
-"routes": [{ "pattern": "dev.saycbridge.com", "custom_domain": true }],
-```
+### Rolling back
 
-Set the production `workers_dev` to `false` so the apex is the only canonical
-origin. Delete the imported apex and `www` records first, or the deploy will
-conflict with them. Cloudflare then creates the records and certificates.
+Reversible, but not instantly: repoint the nameservers at GoDaddy and wait out
+propagation. This only stays true if the old side is left intact — keep the
+GoDaddy zone and the Google domain mapping for `www`. Delete the Google
+mapping and restoring the CNAME will not bring the legacy site back.
 
-Merge, let preview deploy, then promote. Keep the old host running until
-production is confirmed on Cloudflare.
+To give up only the website while keeping the DNS move, remove the `www` route
+and restore its CNAME to `ghs.google.com`.
 
 ## Deploying by hand
 

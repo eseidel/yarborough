@@ -29,9 +29,9 @@ jobs:
   promote:
     name: Production
     runs-on: ubuntu-latest
-    # Add `url: https://saycbridge.com` once the domain is cut over.
     environment:
       name: production
+      url: https://saycbridge.com
     steps:
       # Resolved before checkout so that the Wrangler config and the assets
       # both come from the commit being promoted, never from a newer main.
@@ -57,7 +57,7 @@ jobs:
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           {
-            echo "### Promoting to production"
+            echo "### Promoting to saycbridge.com"
             echo ""
             echo "- Commit: \`${sha}\` — ${subject}"
             echo "- From run: [${run_id}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${run_id})"

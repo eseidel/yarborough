@@ -22,9 +22,9 @@ jobs:
   deploy:
     name: Preview
     runs-on: ubuntu-latest
-    # Add `url: https://dev.saycbridge.com` once the domain is cut over.
     environment:
       name: preview
+      url: https://dev.saycbridge.com
     steps:
       - uses: actions/checkout@v4
 
