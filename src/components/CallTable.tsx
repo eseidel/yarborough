@@ -10,6 +10,7 @@ import {
 } from "../bridge";
 import { isAuctionComplete } from "../bridge/auction";
 import { CallDisplay } from "./CallDisplay";
+import { ConstraintsDisplay } from "./ConstraintsDisplay";
 
 function isVulnerable(pos: string, vulnerability: Vulnerability): boolean {
   if (vulnerability === "Both") return true;
@@ -101,13 +102,20 @@ export function CallTable({
                   ) : callExplanation?.ruleName ? (
                     <div className="flex justify-between items-start gap-2">
                       <div>
-                        <span className="font-semibold text-blue-900">
+                        <div className="font-semibold text-blue-900">
                           {callExplanation.ruleName}
-                        </span>
+                        </div>
+                        {callExplanation.constraints && (
+                          <div className="text-blue-800 text-xs mt-0.5">
+                            <ConstraintsDisplay
+                              constraints={callExplanation.constraints}
+                            />
+                          </div>
+                        )}
                         {callExplanation.description && (
-                          <span className="text-blue-700 text-xs ml-1">
+                          <div className="text-blue-700 text-xs mt-0.5">
                             {callExplanation.description}
-                          </span>
+                          </div>
                         )}
                       </div>
                       {exploreLink && (

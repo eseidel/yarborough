@@ -7,6 +7,7 @@ import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
 import { type Call, type CallInterpretation, handForPosition } from "../bridge";
 import { CallDisplay } from "../components/CallDisplay";
+import { ConstraintsDisplay } from "../components/ConstraintsDisplay";
 import { AboutFooter } from "../components/AboutFooter";
 import {
   parseBoardId,
@@ -341,8 +342,15 @@ export function PracticePage() {
                       Autobidder says: <CallDisplay call={suggestion.call} />
                     </div>
                     {suggestion.ruleName && (
-                      <div className="text-amber-800 mt-1">
+                      <div className="text-amber-800 mt-1 font-semibold">
                         {suggestion.ruleName}
+                      </div>
+                    )}
+                    {suggestion.constraints && (
+                      <div className="text-amber-800 text-xs mt-0.5">
+                        <ConstraintsDisplay
+                          constraints={suggestion.constraints}
+                        />
                       </div>
                     )}
                     {suggestion.description && (

@@ -44,6 +44,7 @@ vi.mock("../../bridge/engine", async (importOriginal) => {
 const mockAddRobotBids = vi.mocked(auction.addRobotBids);
 const mockIsAuctionComplete = vi.mocked(auction.isAuctionComplete);
 const mockParseBoardId = vi.mocked(identifier.parseBoardId);
+const mockGetSuggestedCall = vi.mocked(engine.getSuggestedCall);
 const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
 const mockGenerateFilteredBoard = vi.mocked(engine.generateFilteredBoard);
 
@@ -174,6 +175,33 @@ describe("PracticePage", () => {
       expect(
         screen.getByText(/No interpretation available/),
       ).toBeInTheDocument();
+    });
+  });
+
+  it("shows suggested bid with formatted rule name and constraints", async () => {
+    mockGetSuggestedCall.mockResolvedValue({
+      call: { type: "bid", level: 1, strain: "H" },
+      ruleName: "One Level Suit Opening",
+      description: "12-21 HCP, 5+ hearts",
+      constraints: "12-21 hcp, 5+H",
+    });
+
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
+    );
+
+    const suggestButton = await screen.findByRole("button", {
+      name: /suggest bid/i,
+    });
+    fireEvent.click(suggestButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Autobidder says:/)).toBeInTheDocument();
+      expect(screen.getByText("One Level Suit Opening")).toBeInTheDocument();
+      expect(screen.getByText("12-21 hcp, 5+")).toBeInTheDocument();
+      expect(screen.getByText("12-21 HCP, 5+ hearts")).toBeInTheDocument();
     });
   });
 

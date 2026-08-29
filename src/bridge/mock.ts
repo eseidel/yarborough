@@ -77,35 +77,46 @@ export const MOCK_CALL_HISTORY: CallHistory = {
 };
 
 export const MOCK_INTERPRETATIONS: CallInterpretation[] = [
-  { call: { type: "pass" }, ruleName: "Pass", description: "Nothing to say" },
+  {
+    call: { type: "pass" },
+    ruleName: "Default Pass",
+    description: "Nothing to say",
+    constraints: "0-12 hcp",
+  },
   {
     call: { type: "bid", level: 1, strain: "C" },
-    ruleName: "Opening 1\u2663",
+    ruleName: "One Level Suit Opening",
     description: "12-21 HCP, 3+ clubs",
+    constraints: "12-21 hcp, 3+C",
   },
   {
     call: { type: "bid", level: 1, strain: "D" },
-    ruleName: "Opening 1\u2666",
+    ruleName: "One Level Suit Opening",
     description: "12-21 HCP, 3+ diamonds",
+    constraints: "12-21 hcp, 3+D",
   },
   {
     call: { type: "bid", level: 1, strain: "H" },
-    ruleName: "Opening 1\u2665",
+    ruleName: "One Level Suit Opening",
     description: "12-21 HCP, 5+ hearts",
+    constraints: "12-21 hcp, 5+H",
   },
   {
     call: { type: "bid", level: 1, strain: "S" },
-    ruleName: "Opening 1\u2660",
+    ruleName: "One Level Suit Opening",
     description: "12-21 HCP, 5+ spades",
+    constraints: "12-21 hcp, 5+S",
   },
   {
     call: { type: "bid", level: 1, strain: "N" },
-    ruleName: "Opening 1NT",
+    ruleName: "Notrump Opening",
     description: "15-17 HCP, balanced",
+    constraints: "15-17 hcp, 2-5C 2-5D 2-5H 2-5S NotrumpSystemsOn",
   },
   {
     call: { type: "bid", level: 2, strain: "C" },
-    ruleName: "Strong 2\u2663",
+    ruleName: "Strong Two Clubs",
     description: "22+ HCP or 9+ tricks",
+    constraints: "22+ hcp",
   },
 ];

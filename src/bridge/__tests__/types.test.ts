@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   cardsBySuit,
+  formatRuleName,
   vulnerabilityFromBoardNumber,
   vulnerabilityLabel,
 } from "../types";
@@ -88,5 +89,18 @@ describe("cardsBySuit", () => {
     expect(bySuit.H).toHaveLength(3);
     expect(bySuit.D).toHaveLength(3);
     expect(bySuit.C).toHaveLength(3);
+  });
+});
+
+describe("formatRuleName", () => {
+  it("formats PascalCase rule names into spaced titles", () => {
+    expect(formatRuleName("OneLevelSuitOpening")).toBe(
+      "One Level Suit Opening",
+    );
+    expect(formatRuleName("StrongTwoClubs")).toBe("Strong Two Clubs");
+    expect(formatRuleName("Jacoby2N")).toBe("Jacoby 2NT");
+    expect(formatRuleName("Opening1N")).toBe("Opening 1NT");
+    expect(formatRuleName("RHOOpeningPreempt")).toBe("RHO Opening Preempt");
+    expect(formatRuleName("LHOPreempt")).toBe("LHO Preempt");
   });
 });

@@ -32,11 +32,13 @@ describe("parseCallInterpretation", () => {
         call_name: "1N",
         rule_name: "Notrump Opening",
         description: "15-17 HCP",
+        knowledge_string: "15-17 hcp, 2-5C 2-5D 2-5H 2-5S NotrumpSystemsOn",
       }),
     ).toEqual({
       call: { type: "bid", level: 1, strain: "N" },
       ruleName: "Notrump Opening",
       description: "15-17 HCP",
+      constraints: "15-17 hcp, 2-5C 2-5D 2-5H 2-5S NotrumpSystemsOn",
     });
   });
 

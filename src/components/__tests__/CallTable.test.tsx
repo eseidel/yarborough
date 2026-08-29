@@ -95,15 +95,17 @@ describe("CallTable", () => {
         selectedCallIndex={0}
         callExplanation={{
           call: { type: "bid", level: 1, strain: "C" },
-          ruleName: "Opening 1C",
+          ruleName: "One Level Suit Opening",
           description: "12-21 HCP, 3+ clubs",
+          constraints: "12-21 hcp, 3+C",
         }}
       />,
     );
 
     const explanation = screen.getByTestId("call-explanation");
     expect(explanation).toBeInTheDocument();
-    expect(explanation.textContent).toContain("Opening 1C");
+    expect(explanation.textContent).toContain("One Level Suit Opening");
+    expect(explanation.textContent).toContain("12-21 hcp, 3+");
     expect(explanation.textContent).toContain("12-21 HCP, 3+ clubs");
     expect(explanation.className).toContain("col-span-4");
   });

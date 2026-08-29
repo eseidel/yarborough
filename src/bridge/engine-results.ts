@@ -44,6 +44,10 @@ export function parseCallInterpretation(value: unknown): CallInterpretation {
     call: parseCallName(interpretation.call_name),
     ruleName: optionalString(interpretation.rule_name, "rule name"),
     description: optionalString(interpretation.description, "description"),
+    constraints: optionalString(
+      interpretation.knowledge_string ?? interpretation.constraints,
+      "constraints",
+    ),
   };
 }
 

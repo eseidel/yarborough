@@ -1,5 +1,6 @@
 import type { CallInterpretation } from "../bridge";
 import { CallDisplay } from "./CallDisplay";
+import { ConstraintsDisplay } from "./ConstraintsDisplay";
 
 export function CallMenu({
   interpretations,
@@ -23,10 +24,15 @@ export function CallMenu({
             {interp.ruleName && (
               <div className="font-semibold text-sm">{interp.ruleName}</div>
             )}
+            {interp.constraints && (
+              <div className="text-sm text-gray-700">
+                <ConstraintsDisplay constraints={interp.constraints} />
+              </div>
+            )}
             {interp.description && (
               <div className="text-sm text-gray-500">{interp.description}</div>
             )}
-            {!interp.ruleName && !interp.description && (
+            {!interp.ruleName && !interp.constraints && !interp.description && (
               <div className="text-sm text-gray-400">Unknown</div>
             )}
           </div>

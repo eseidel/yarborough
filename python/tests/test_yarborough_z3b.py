@@ -43,6 +43,29 @@ class YarboroughZ3bTest(unittest.TestCase):
         with self.assertRaises(api.BiddingInputError):
             api.get_next_call("not-a-board")
 
+    def test_format_rule_name(self):
+        self.assertEqual(
+            api._format_rule_name("OneLevelSuitOpening"),
+            "One Level Suit Opening",
+        )
+        self.assertEqual(
+            api._format_rule_name("StrongTwoClubs"),
+            "Strong Two Clubs",
+        )
+        self.assertEqual(
+            api._format_rule_name("Jacoby2N"),
+            "Jacoby 2NT",
+        )
+        self.assertEqual(
+            api._format_rule_name("Opening1N"),
+            "Opening 1NT",
+        )
+        self.assertEqual(
+            api._format_rule_name("RHOOpeningPreempt"),
+            "RHO Opening Preempt",
+        )
+        self.assertIsNone(api._format_rule_name(None))
+
     def test_interpretations_include_legal_opening_calls(self):
         interpretations = api.get_call_interpretations("", "N", "None")
 
@@ -55,8 +78,20 @@ class YarboroughZ3bTest(unittest.TestCase):
                 "call_name": "3N",
                 "rule_name": None,
                 "description": None,
+                "knowledge_string": None,
             },
             interpretations,
+        )
+
+        open_1h = next(i for i in interpretations if i["call_name"] == "1H")
+        self.assertEqual(open_1h["rule_name"], "One Level Suit Opening")
+        self.assertEqual(open_1h["knowledge_string"], "12-21 hcp, 5+H")
+
+        open_1nt = next(i for i in interpretations if i["call_name"] == "1N")
+        self.assertEqual(open_1nt["rule_name"], "Notrump Opening")
+        self.assertEqual(
+            open_1nt["knowledge_string"],
+            "15-17 hcp, 2-5C 2-5D 2-5H 2-5S NotrumpSystemsOn",
         )
 
     def test_suggestion_matches_next_call(self):
@@ -66,10 +101,14 @@ class YarboroughZ3bTest(unittest.TestCase):
 
         self.assertEqual(api.get_next_call(identifier), suggestion["call_name"])
         self.assertIsInstance(suggestion["description"], (str, type(None)))
+        self.assertIn("knowledge_string", suggestion)
 
-    def test_unresolved_selection_is_an_error(self):
-        with self.assertRaisesRegex(api.BiddingInputError, "unique call"):
-            api._selection_result(None)
+    def test_unresolved_selection_defaults_to_pass(self):
+        result = api._selection_result(None)
+        self.assertEqual(result["call_name"], "P")
+        self.assertIsNone(result["rule_name"])
+        self.assertIsNone(result["description"])
+        self.assertIsNone(result["knowledge_string"])
 
     def test_focus_matching_uses_z3b_rule_classes(self):
         self.assertTrue(

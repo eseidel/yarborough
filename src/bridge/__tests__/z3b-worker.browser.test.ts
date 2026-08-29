@@ -14,8 +14,9 @@ describe("z3b browser worker", () => {
     const interpretations = await getCallInterpretations("", "N", "None");
     expect(interpretations).toContainEqual({
       call: { type: "pass" },
-      ruleName: "DefaultPass",
+      ruleName: "Default Pass",
       description: undefined,
+      constraints: "0-12 hcp",
     });
 
     for (const goldenCase of goldenCases) {
@@ -26,6 +27,7 @@ describe("z3b browser worker", () => {
         call: nextCall,
         ruleName: goldenCase.rule_name ?? undefined,
         description: goldenCase.description ?? undefined,
+        constraints: goldenCase.knowledge_string ?? undefined,
       });
     }
 
@@ -35,9 +37,9 @@ describe("z3b browser worker", () => {
 
   it("generates each named practice focus using its z3b opening rule", async () => {
     const focusedRules = {
-      Notrump: "NotrumpOpening",
-      Preempt: "PreemptiveOpen",
-      Strong2C: "StrongTwoClubs",
+      Notrump: "Notrump Opening",
+      Preempt: "Preemptive Open",
+      Strong2C: "Strong Two Clubs",
     };
 
     for (const [focus, expectedRule] of Object.entries(focusedRules)) {

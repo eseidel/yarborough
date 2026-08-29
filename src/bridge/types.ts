@@ -208,6 +208,16 @@ export interface CallInterpretation {
   call: Call;
   ruleName?: string;
   description?: string;
+  constraints?: string;
+}
+
+export function formatRuleName(ruleName: string): string {
+  return ruleName
+    .replace(/([1-9A-Z])/g, " $1")
+    .replace(/R H O/g, "RHO")
+    .replace(/L H O/g, "LHO")
+    .replace(/\sN$/g, "NT")
+    .trim();
 }
 
 const HCP_VALUES: Partial<Record<RankName, number>> = {
