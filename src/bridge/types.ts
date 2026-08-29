@@ -224,7 +224,7 @@ export function highCardPoints(hand: Hand): number {
   );
 }
 
-/** Serialize a Call to the short string format the Rust engine uses. */
+/** Serialize a Call to the compact z3b identifier format. */
 export function callToString(call: Call): string {
   if (call.type === "pass") return "P";
   if (call.type === "double") return "X";

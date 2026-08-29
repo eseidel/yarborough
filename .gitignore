@@ -70,17 +70,11 @@ coverage/
 .yarn/install-state.gz
 .pnp.*
 
-# Rust
-target/
-**/*.rs.bk
-crates/*/pkg
-
 # IDE / Editors
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/tasks.json
-!.vscode/launch.json
 .idea/
 *.swp
 *.swo
@@ -120,3 +114,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# Generated browser runtime assets
+vendor/

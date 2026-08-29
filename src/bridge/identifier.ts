@@ -10,6 +10,7 @@ import type {
 } from "./types";
 import { vulnerabilityFromBoardNumber, stringToCall } from "./types";
 import { randomDeal } from "./mock";
+import { generateFilteredBoard } from "./engine";
 
 const SUIT_INDEX: Record<SuitName, number> = { C: 0, D: 1, H: 2, S: 3 };
 const RANK_INDEX: Record<RankName, number> = {
@@ -170,8 +171,6 @@ export function parseBoardId(id: string): {
   };
 }
 
-import { generateFilteredBoard } from "./engine";
-
 export type DealType = "Random" | "Notrump" | "Preempt" | "Strong2C";
 
 export async function generateFilteredBoardId(type: DealType): Promise<{
@@ -183,8 +182,7 @@ export async function generateFilteredBoardId(type: DealType): Promise<{
   const id = await generateFilteredBoard(type);
   const parsed = parseBoardId(id);
   if (!parsed) {
-    // Should not happen if engine is correct
-    return generateBoardId();
+    throw new Error("The bidding engine returned an invalid board identifier");
   }
   return {
     boardNumber: parsed.boardNumber,

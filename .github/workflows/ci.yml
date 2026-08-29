@@ -12,9 +12,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: pnpm/action-setup@v4
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm format:check
+
+      - run: pnpm lint
+
+      - run: pnpm assets:prepare && pnpm exec vitest run --coverage
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/lcov.info
+          flags: typescript
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - run: python -m venv .venv
+
+      - run: .venv/bin/python -m pip install --upgrade pip
+
+      - run: .venv/bin/python -m pip install -e ./python
+
+      - run: pnpm test:python
+
+  browser:
+    name: Browser worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
 
@@ -23,44 +64,10 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
 
-      - run: pnpm wasm:dev
+      - run: pnpm exec playwright install --with-deps chromium
 
-      - run: pnpm format:check
+      - run: pnpm test:browser
 
-      - run: pnpm lint
-
-      - run: pnpm exec vitest run --coverage
-
-      - uses: codecov/codecov-action@v5
-        with:
-          files: ./coverage/lcov.info
-          flags: typescript
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  rust:
-    name: Rust
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: llvm-tools-preview
-
-      - uses: Swatinem/rust-cache@v2
-
-      - uses: taiki-e/install-action@cargo-llvm-cov
-
-      - run: cargo fmt --check
-
-      - run: cargo clippy --all-targets -- -D warnings
-
-      - run: cargo llvm-cov --workspace --lcov --output-path rust-coverage.lcov
-
-      - uses: codecov/codecov-action@v5
-        with:
-          files: ./rust-coverage.lcov
-          flags: types,engine,cli
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - run: pnpm test:production

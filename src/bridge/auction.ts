@@ -80,13 +80,13 @@ export function isCallLegal(call: Call, history: CallHistory): boolean {
   return false;
 }
 
-/** Build the identifier string for the Rust engine: "<board>-<hex>:<calls>". */
+/** Build the z3b identifier string: "<board>-<hex>:<calls>". */
 function buildIdentifier(boardId: string, calls: Call[]): string {
   if (calls.length === 0) return boardId;
   return `${boardId}:${calls.map(callToString).join(",")}`;
 }
 
-/** Add robot bids (via WASM engine) until it's the user's turn or the auction completes. */
+/** Add robot bids until it is the user's turn or the auction completes. */
 export async function addRobotBids(
   history: CallHistory,
   userPosition: Position,

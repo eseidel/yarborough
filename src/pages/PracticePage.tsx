@@ -130,9 +130,16 @@ export function PracticePage() {
   );
 
   const handleRedeal = useCallback(() => {
-    generateFilteredBoardId(dealType).then(({ id }) => {
-      navigate(`/bid/${id}`);
-    });
+    setLoading(true);
+    setError(null);
+    generateFilteredBoardId(dealType)
+      .then(({ id }) => {
+        navigate(`/bid/${id}`);
+      })
+      .catch((err) => {
+        setError(String(err));
+        setLoading(false);
+      });
   }, [navigate, dealType]);
 
   const handleDealTypeChange = useCallback(
@@ -140,9 +147,14 @@ export function PracticePage() {
       setLoading(true);
       setDealType(newType);
       sessionStorage.setItem("yarborough_deal_type", newType);
-      generateFilteredBoardId(newType).then(({ id }) => {
-        navigate(`/bid/${id}`);
-      });
+      generateFilteredBoardId(newType)
+        .then(({ id }) => {
+          navigate(`/bid/${id}`);
+        })
+        .catch((err) => {
+          setError(String(err));
+          setLoading(false);
+        });
     },
     [navigate],
   );

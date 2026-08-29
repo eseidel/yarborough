@@ -3,12 +3,5 @@
     {
       "path": ".",
     },
-    {
-      "path": "../saycbridge",
-    },
   ],
-  "settings": {
-    "dart.analysisExcludedFolders": ["../saycbridge"],
-    "python.analysis.exclude": ["../saycbridge"],
-  },
 }

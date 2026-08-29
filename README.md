@@ -1,135 +1,58 @@
 # Yarborough
 
-A modern bridge bidding tool and tutor. Successor to [saycbridge](https://github.com/eseidel/saycbridge).
+A client-only bridge bidding tutor using the SAYCBridge z3b engine. Bidding,
+Python execution, and Z3 solving run in a browser Web Worker; board data and
+auction state are never sent to a server.
 
-**Try it now:** https://eseidel.github.io/yarborough/
+**Try it:** <https://eseidel.github.io/yarborough/>
 
-## Getting Started
+## Getting started
 
-### Prerequisites
-
-To build and run this project, you will need:
-
-- [Node.js](https://nodejs.org/) (Latest LTS recommended)
-- [pnpm](https://pnpm.io/)
-- [Rust](https://www.rust-lang.org/)
-
-Note: `wasm-pack` is handled automatically as a development dependency via `pnpm install`.
-
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/eseidel/yarborough.git
-   cd yarborough
-   ```
-
-2. Install JavaScript dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-### Running Locally
-
-To start the development server (this will also build and watch the WASM engine):
+The application needs Node.js 22+ and pnpm. Native engine tests additionally
+need Python 3.9+.
 
 ```bash
+pnpm install
+python3 -m venv .venv
+.venv/bin/python -m pip install -e ./python
 pnpm dev
 ```
 
-The application will be available at `http://localhost:5173`. Rust and YAML files in the `crates` directory will automatically trigger a WASM rebuild on change.
+`pnpm dev` prepares checksum-verified Pyodide and Z3 assets in ignored
+`vendor/` before starting Vite. Use `pnpm build` for a GitHub Pages-compatible
+production build.
 
-### Building for Production
+## Architecture
 
-To create a production build:
+The React frontend calls the four async functions in `src/bridge/engine.ts`.
+They communicate with one module worker, which initializes Pyodide, installs
+the local pinned Z3 wheel, and dispatches requests to
+`python/yarborough_z3b.py`. The worker serializes requests because z3b keeps
+mutable solver and history caches.
+
+The practice presets are selected by the actual z3b opening rule:
+`NotrumpOpening`, `PreemptiveOpen`, and `StrongTwoClubs`. Asset preparation
+downloads only pinned artifacts and verifies their SHA-256 digests; the built
+site does not download packages at runtime.
+
+## Testing
 
 ```bash
+pnpm test
+pnpm test:browser
+pnpm test:python
+pnpm format:check
+pnpm lint
+npx cspell --no-progress --dot "**"
 pnpm build
 ```
 
-## Development Tools
+Run `pnpm exec playwright install chromium` once to install the browser used
+by the real-worker test. `tests/bidding/sayc_standard.yaml` is retained as a
+SAYC reference corpus; its expected bids must not be rewritten. The curated
+native z3b regression suite is `python/tests/test_z3b_expectations.py`.
 
-### Bidding Debugger
+## Third-party software
 
-The `bidding-debug` tool shows the complete bidding sequence for any board with detailed information about which rules fired and why. This is essential for:
-
-- Understanding why the engine makes specific bids
-- Debugging bidding logic and rule priorities
-- Seeing which constraints are satisfied or failed
-- Learning how the bidding system works
-
-**Usage:**
-
-```bash
-# Show complete bidding sequence for a board
-cargo run --bin bidding-debug -- "1-decde22e0d283f55b36244ab45"
-
-# Show detailed trace for a specific bid (e.g., bid #3)
-cargo run --bin bidding-debug -- "1-decde22e0d283f55b36244ab45" --bid 3
-```
-
-**Basic output includes:**
-
-- Board details (dealer, vulnerability)
-- All four hands displayed in a table
-- Complete auction with rule names and descriptions
-
-**Example:**
-
-```
-Idx | Pos | Call  | Rule Name                 | Description
-----+-----+-------+---------------------------+---------------------------
-1   | N   | 1N    | Opening 1NT               | 15-17 HCP, Balanced
-2   | E   | Pass  | No rule matched           |
-3   | S   | 2C    | Stayman (4S)              | 8+ HCP, 4 Spades
-```
-
-**Detailed trace (--bid flag) shows:**
-
-- Partner profile (HCP range, suit lengths, stoppers inferred from prior bids)
-- All rules considered, sorted by priority
-- For each rule: which constraints passed (✓) or failed (✗)
-
-This helps you understand exactly why a specific bid was chosen over alternatives.
-
-### Bidder Comparison Tool
-
-The `bidder_fight` tool compares the yarborough bidder against previous bidders (z3b or kbb) to find differences. This is useful for:
-
-- Finding missing rules in yarborough
-- Regression testing against established bidders
-- Understanding where yarborough's bidding differs from z3b/kbb
-
-**Usage:**
-
-```bash
-# Compare against z3b (default)
-cargo run --bin bidder_fight
-
-# Compare against kbb
-cargo run --bin bidder_fight --kbb
-
-# Test a specific board identifier
-cargo run --bin bidder_fight 15-e46a3ab1d0b8664c5f053639cf
-```
-
-The tool will continuously generate random boards and report the first difference found on each board, including:
-
-- Board identifier (for reproducing the scenario)
-- Position and hand where the difference occurred
-- Auction history up to that point
-- Both bidders' suggested bids
-
-**Example output:**
-
-```
-Difference found!
-Board: 15-e46a3ab1d0b8664c5f053639cf
-Position: West
-Hand: J2.25T.TJ6.48KAJ
-Auction so far: 1C
-Remote bid: 1S
-Yarborough bid: P
-```
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the vendored
+SAYCBridge sources and browser runtime dependencies.

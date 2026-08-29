@@ -1,0 +1,26 @@
+[
+  {
+    "identifier": "8-0622931ecfe9993de30355dae4",
+    "call_name": "P",
+    "rule_name": "DefaultPass",
+    "description": null
+  },
+  {
+    "identifier": "16-547572f278c9ca70b07a9a4bc3",
+    "call_name": "1N",
+    "rule_name": "NotrumpOpening",
+    "description": null
+  },
+  {
+    "identifier": "11-e81b64590737c483ae68d8ed37",
+    "call_name": "2H",
+    "rule_name": "PreemptiveOpen",
+    "description": null
+  },
+  {
+    "identifier": "1-0ba4f09f6fd45e79600f6ad680",
+    "call_name": "2C",
+    "rule_name": "StrongTwoClubs",
+    "description": null
+  }
+]

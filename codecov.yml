@@ -12,15 +12,3 @@ flags:
     paths:
       - src/
     carryforward: true
-  types:
-    paths:
-      - crates/types/
-    carryforward: true
-  engine:
-    paths:
-      - crates/engine/
-    carryforward: true
-  cli:
-    paths:
-      - crates/cli/
-    carryforward: true

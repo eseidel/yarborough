@@ -37,6 +37,7 @@ vi.mock("../../bridge/engine", async (importOriginal) => {
     ...actual,
     getSuggestedCall: vi.fn(),
     getCallInterpretations: vi.fn(),
+    generateFilteredBoard: vi.fn(),
   };
 });
 
@@ -44,6 +45,7 @@ const mockAddRobotBids = vi.mocked(auction.addRobotBids);
 const mockIsAuctionComplete = vi.mocked(auction.isAuctionComplete);
 const mockParseBoardId = vi.mocked(identifier.parseBoardId);
 const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
+const mockGenerateFilteredBoard = vi.mocked(engine.generateFilteredBoard);
 
 describe("PracticePage", () => {
   const boardId = "1-00000000000000000000000000";
@@ -229,6 +231,21 @@ describe("PracticePage", () => {
     expect(nIndex).toBeLessThan(eIndex);
     expect(wIndex).toBeLessThan(sIndex);
     expect(eIndex).toBeLessThan(sIndex);
+  });
+
+  it("shows a generation error instead of silently changing the requested practice deal", async () => {
+    mockIsAuctionComplete.mockReturnValue(true);
+    mockGenerateFilteredBoard.mockRejectedValue(
+      new Error("worker unavailable"),
+    );
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /next hand/i }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/worker unavailable/i)).toBeInTheDocument(),
+    );
   });
 
   it("loads initial calls from URL", async () => {
