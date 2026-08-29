@@ -45,7 +45,7 @@ jobs:
           run_id="$RUN_ID_INPUT"
           if [ -z "$run_id" ]; then
             run_id=$(gh run list --repo "$GITHUB_REPOSITORY" \
-              --workflow "Deploy preview" --branch main --status success \
+              --workflow deploy.yml --branch main --status success \
               --limit 1 --json databaseId --jq '.[0].databaseId // empty')
           fi
           if [ -z "$run_id" ]; then
