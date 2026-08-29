@@ -173,3 +173,10 @@ class YarboroughZ3bTest(unittest.TestCase):
     def test_json_dispatch_rejects_unknown_method(self):
         with self.assertRaises(api.BiddingInputError):
             api.dispatch_json(json.dumps({"method": "missing", "arguments": {}}))
+
+    def test_get_full_autobid(self):
+        board = Board.random()
+        calls = api.get_full_autobid(board.identifier)
+        self.assertIsInstance(calls, list)
+        self.assertGreaterEqual(len(calls), 4)
+        self.assertEqual(calls[-3:], ["P", "P", "P"])

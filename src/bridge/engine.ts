@@ -26,6 +26,7 @@ export interface BiddingEngine {
   getNextCall(identifier: string): Promise<Call>;
   getSuggestedCall(identifier: string): Promise<CallInterpretation>;
   generateFilteredBoard(type: string): Promise<string>;
+  getFullAutobid(identifier: string): Promise<Call[]>;
 }
 
 function engineClient(): WorkerRpcClient {
@@ -75,6 +76,17 @@ export function createBiddingEngine(requester: EngineRequester): BiddingEngine {
       });
       return parseStringResult(result, "board identifier");
     },
+
+    /** Simulate a complete autobidder auction for the entire board. */
+    async getFullAutobid(identifier: string): Promise<Call[]> {
+      const result = await requester.request("get_full_autobid", {
+        identifier,
+      });
+      if (!Array.isArray(result)) {
+        throw new Error("Invalid autobid calls returned by engine");
+      }
+      return result.map((c) => parseCallName(String(c)));
+    },
   };
 }
 
@@ -88,3 +100,4 @@ export const getCallInterpretations = biddingEngine.getCallInterpretations;
 export const getNextCall = biddingEngine.getNextCall;
 export const getSuggestedCall = biddingEngine.getSuggestedCall;
 export const generateFilteredBoard = biddingEngine.generateFilteredBoard;
+export const getFullAutobid = biddingEngine.getFullAutobid;

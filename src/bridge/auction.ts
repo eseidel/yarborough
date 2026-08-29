@@ -1,6 +1,6 @@
 import type { Call, CallHistory, Position, StrainName } from "./types";
 import { callToString } from "./types";
-import { getNextCall } from "./engine";
+import { getNextCall, getFullAutobid } from "./engine";
 
 const POSITION_ORDER: Position[] = ["N", "E", "S", "W"];
 const STRAIN_RANK: StrainName[] = ["C", "D", "H", "S", "N"];
@@ -168,11 +168,6 @@ export async function getFullAutobidAuction(
   baseBoardId: string,
   dealer: Position,
 ): Promise<CallHistory> {
-  let h: CallHistory = { dealer, calls: [] };
-  while (!isAuctionComplete(h)) {
-    const identifier = buildIdentifier(baseBoardId, h.calls);
-    const call = await getNextCall(identifier);
-    h = { ...h, calls: [...h.calls, call] };
-  }
-  return h;
+  const calls = await getFullAutobid(baseBoardId);
+  return { dealer, calls };
 }

@@ -16,10 +16,12 @@ import { callToString } from "../types";
 
 vi.mock("../engine", () => ({
   getNextCall: vi.fn(),
+  getFullAutobid: vi.fn(),
 }));
 
-import { getNextCall } from "../engine";
+import { getNextCall, getFullAutobid } from "../engine";
 const mockGetNextCall = vi.mocked(getNextCall);
+const mockGetFullAutobid = vi.mocked(getFullAutobid);
 
 const pass: Call = { type: "pass" };
 const oneClub: Call = { type: "bid", level: 1, strain: "C" };
@@ -376,12 +378,8 @@ describe("getContract and getDeclarer", () => {
 });
 
 describe("getFullAutobidAuction", () => {
-  it("simulates full auction until isAuctionComplete", async () => {
-    mockGetNextCall
-      .mockResolvedValueOnce(oneNT)
-      .mockResolvedValueOnce(pass)
-      .mockResolvedValueOnce(pass)
-      .mockResolvedValueOnce(pass);
+  it("returns full auction calls from engine", async () => {
+    mockGetFullAutobid.mockResolvedValueOnce([oneNT, pass, pass, pass]);
 
     const result = await getFullAutobidAuction(
       "1-00000000000000000000000000",
@@ -389,6 +387,7 @@ describe("getFullAutobidAuction", () => {
     );
     expect(result.calls).toHaveLength(4);
     expect(result.calls[0]).toEqual(oneNT);
+    expect(result.dealer).toBe("N");
     expect(isAuctionComplete(result)).toBe(true);
   });
 });

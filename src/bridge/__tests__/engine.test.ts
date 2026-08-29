@@ -95,4 +95,21 @@ describe("createBiddingEngine", () => {
       "Pyodide initialization failed",
     );
   });
+
+  it("parses full autobid calls array", async () => {
+    const rpc = requester(["P", "1H", "4H", "P", "P", "P"]);
+    const engine = createBiddingEngine(rpc);
+
+    await expect(engine.getFullAutobid("board")).resolves.toEqual([
+      { type: "pass" },
+      { type: "bid", level: 1, strain: "H" },
+      { type: "bid", level: 4, strain: "H" },
+      { type: "pass" },
+      { type: "pass" },
+      { type: "pass" },
+    ]);
+    expect(rpc.request).toHaveBeenCalledWith("get_full_autobid", {
+      identifier: "board",
+    });
+  });
 });

@@ -2,7 +2,8 @@ export type EngineMethod =
   | "get_next_call"
   | "get_suggested_call"
   | "get_call_interpretations"
-  | "generate_filtered_board";
+  | "generate_filtered_board"
+  | "get_full_autobid";
 
 export interface EngineRequest {
   id: number;
@@ -40,6 +41,7 @@ export function isEngineRequest(value: unknown): value is EngineRequest {
       "get_suggested_call",
       "get_call_interpretations",
       "generate_filtered_board",
+      "get_full_autobid",
     ].includes(value.method) &&
     isRecord(value.arguments)
   );

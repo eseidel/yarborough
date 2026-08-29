@@ -276,6 +276,19 @@ def generate_filtered_board(
     )
 
 
+def get_full_autobid(identifier):
+    """Simulate a full autobidder auction for a board until complete."""
+    board = _board(identifier)
+    bidder = Bidder()
+    while not board.call_history.is_complete():
+        position = board.call_history.position_to_call()
+        hand = board.deal.hand_for(position)
+        selection = bidder.call_selection_for(hand, board.call_history)
+        call = selection.call if selection and selection.call else Pass()
+        board.call_history.calls.append(call)
+    return [c.name for c in board.call_history.calls]
+
+
 def dispatch(method, arguments):
     """Dispatch an RPC request after validating its primitive JSON shape."""
 
@@ -295,6 +308,8 @@ def dispatch(method, arguments):
         )
     if method == "generate_filtered_board":
         return generate_filtered_board(arguments.get("focus"))
+    if method == "get_full_autobid":
+        return get_full_autobid(arguments.get("identifier"))
     raise BiddingInputError("unknown engine method: %s" % method)
 
 

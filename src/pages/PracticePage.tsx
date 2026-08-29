@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
@@ -31,7 +31,10 @@ export function PracticePage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
 
-  const parsed = boardId ? parseBoardId(boardId) : null;
+  const parsed = useMemo(
+    () => (boardId ? parseBoardId(boardId) : null),
+    [boardId],
+  );
 
   const [history, setHistory] = useState<CallHistory>({
     dealer: parsed?.dealer ?? "N",
@@ -56,6 +59,8 @@ export function PracticePage() {
   const [fullAutobid, setFullAutobid] = useState<CallHistory | null>(null);
   const trackedResultRef = useRef<string | null>(null);
 
+  const auctionDone = isAuctionComplete(history);
+
   // Initialize analytics on mount
   useEffect(() => {
     initAnalytics();
@@ -66,9 +71,9 @@ export function PracticePage() {
     trackPageView();
   }, [boardId]);
 
-  // Pre-load full autobidder auction for this board
+  // Fetch full autobidder auction when auction is complete
   useEffect(() => {
-    if (!boardId || !parsed) return;
+    if (!auctionDone || !boardId || !parsed) return;
     let cancelled = false;
     const baseId = boardId.split(":")[0];
     getFullAutobidAuction(baseId, parsed.dealer)
@@ -78,12 +83,12 @@ export function PracticePage() {
         }
       })
       .catch(() => {
-        // Pre-load failures are non-fatal
+        // Failures are non-fatal
       });
     return () => {
       cancelled = true;
     };
-  }, [boardId, parsed]);
+  }, [auctionDone, boardId, parsed]);
 
   // On mount, run robot bids for the opening if calls are empty
   useEffect(() => {
@@ -119,8 +124,6 @@ export function PracticePage() {
       cancelled = true;
     };
   }, [boardId, parsed, history.calls.length, navigate]); // boardId changed means a new hand or a manual URL edit
-
-  const auctionDone = isAuctionComplete(history);
 
   useEffect(() => {
     if (auctionDone) {
