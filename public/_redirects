@@ -1,6 +1,9 @@
-# Two modes of the old site have no home here yet. 302, not 301: these are
-# ports we have not done, not pages we have retired, and a 302 keeps the old
-# URLs in the index while that is still true.
-/scoring    /    302
+# /scoring is retired: the flashcards were never ported and will not be. 301,
+# so the URL leaves the index rather than lingering as a page Google keeps
+# rechecking, and so a fifteen-year-old bookmark lands somewhere real.
+/scoring    /    301
+
+# /play is still undecided — it exists on the old site, bids the auction and
+# plays the hand out. 302 keeps the URL in the index while that is true.
 /play       /    302
 /play/*     /    302

@@ -183,10 +183,11 @@ worth turning on at the same time; `src/analytics.ts` still calls the dead
   site's `Disallow: /explore` is deliberately gone: it existed to keep crawlers
   off a JSON endpoint per candidate bid, and the explorer is computed in the
   browser now.
-- `public/_redirects` 302s `/scoring` and `/play` to `/`. Without it,
+- `public/_redirects` sends `/scoring` and `/play` to `/`. Without it,
   `not_found_handling: "single-page-application"` answers 200 with the app
-  shell, which is a soft 404 on two URLs that are live and indexed today. They
-  are 302 rather than 301 because neither mode has been ported yet.
+  shell, which is a soft 404 on two URLs that are live and indexed today.
+  `/scoring` is a 301: the scoring flashcards are retired and the URL should
+  leave the index. `/play` is a 302, because card play has not been ruled on.
 - `index.html` ships the site description inside `#root`, which React replaces
   on boot. A crawler that does not execute 12 MB of WebAssembly still gets the
   page's copy.

@@ -78,12 +78,18 @@ describe("sitemap.xml", () => {
 describe("_redirects", () => {
   const redirects = read("public/_redirects");
 
-  it("redirects the unported modes instead of soft-404ing them", () => {
+  it("redirects the old modes instead of soft-404ing them", () => {
     // SPA not_found_handling answers 200 for unmatched paths, so without
     // these /scoring and /play would return the app shell to a crawler.
-    expect(redirects).toMatch(/^\/scoring\s+\/\s+302$/m);
+    expect(redirects).toMatch(/^\/scoring\s+\/\s+301$/m);
     expect(redirects).toMatch(/^\/play\s+\/\s+302$/m);
     expect(redirects).toMatch(/^\/play\/\*\s+\/\s+302$/m);
+  });
+
+  it("keeps /scoring permanent and /play temporary", () => {
+    // The distinction is the decision: the flashcards are retired, card play
+    // has not been ruled on.
+    expect(redirects).not.toMatch(/^\/scoring\s+\/\s+302$/m);
   });
 });
 
