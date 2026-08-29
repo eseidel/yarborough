@@ -19,6 +19,7 @@ vi.mock("../../bridge/auction", async (importOriginal) => {
     ...actual,
     addRobotBids: vi.fn(),
     isAuctionComplete: vi.fn(),
+    getFullAutobidAuction: vi.fn(),
   };
 });
 
@@ -43,6 +44,7 @@ vi.mock("../../bridge/engine", async (importOriginal) => {
 
 const mockAddRobotBids = vi.mocked(auction.addRobotBids);
 const mockIsAuctionComplete = vi.mocked(auction.isAuctionComplete);
+const mockGetFullAutobidAuction = vi.mocked(auction.getFullAutobidAuction);
 const mockParseBoardId = vi.mocked(identifier.parseBoardId);
 const mockGetSuggestedCall = vi.mocked(engine.getSuggestedCall);
 const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
@@ -71,6 +73,15 @@ describe("PracticePage", () => {
       calls: [{ type: "pass" }],
     });
     mockIsAuctionComplete.mockReturnValue(false);
+    mockGetFullAutobidAuction.mockResolvedValue({
+      dealer: "N",
+      calls: [
+        { type: "pass" },
+        { type: "pass" },
+        { type: "pass" },
+        { type: "pass" },
+      ],
+    });
   });
 
   const renderPage = () => {
@@ -391,6 +402,31 @@ describe("PracticePage", () => {
       },
       { timeout: 3000 },
     );
+  });
+
+  it("sets document title to 'Bidding Practice - SAYC Bridge' while auction is active", async () => {
+    mockIsAuctionComplete.mockReturnValue(false);
+    renderPage();
+    await waitFor(() => {
+      expect(document.title).toBe("Bidding Practice - SAYC Bridge");
+    });
+  });
+
+  it("sets document title to 'Bidding Results - SAYC Bridge' and renders AutobidResult and DealStats when auction is complete", async () => {
+    mockIsAuctionComplete.mockReturnValue(true);
+    mockGetFullAutobidAuction.mockResolvedValue({
+      dealer: "N",
+      calls: [{ type: "pass" }],
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(document.title).toBe("Bidding Results - SAYC Bridge");
+      expect(screen.getByTestId("deal-stats-ns")).toBeInTheDocument();
+      expect(screen.getByTestId("deal-stats-ew")).toBeInTheDocument();
+      expect(screen.getByTestId("autobid-result-match")).toBeInTheDocument();
+    });
   });
 });
 

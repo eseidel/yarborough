@@ -13,10 +13,17 @@ import {
 } from "../bridge";
 import { getCallInterpretations } from "../bridge/engine";
 import { dealerFromBoardNumber } from "../bridge/identifier";
+import { initAnalytics, trackPageView } from "../analytics";
 
 export function ExplorePage() {
   const { exploreId } = useParams<{ exploreId: string }>();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    initAnalytics();
+    document.title = "Explore - SAYC Bridge";
+    trackPageView();
+  }, [exploreId]);
 
   const history = useMemo<CallHistory>(() => {
     if (!exploreId) return { dealer: "N", calls: [] };

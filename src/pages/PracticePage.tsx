@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
@@ -9,15 +9,22 @@ import { type Call, type CallInterpretation, handForPosition } from "../bridge";
 import { CallDisplay } from "../components/CallDisplay";
 import { ConstraintsDisplay } from "../components/ConstraintsDisplay";
 import { AboutFooter } from "../components/AboutFooter";
+import { DealStats } from "../components/DealStats";
+import { AutobidResult } from "../components/AutobidResult";
 import {
   parseBoardId,
   generateFilteredBoardId,
   type DealType,
 } from "../bridge/identifier";
 import { DealSelector } from "../components/DealSelector";
-import { isAuctionComplete, addRobotBids } from "../bridge/auction";
+import {
+  isAuctionComplete,
+  addRobotBids,
+  getFullAutobidAuction,
+} from "../bridge/auction";
 import { callToString } from "../bridge/types";
 import { getSuggestedCall, getCallInterpretations } from "../bridge/engine";
+import { initAnalytics, trackPageView, trackEvent } from "../analytics";
 import type { CallHistory } from "../bridge";
 
 export function PracticePage() {
@@ -46,6 +53,37 @@ export function PracticePage() {
     const saved = sessionStorage.getItem("yarborough_deal_type");
     return (saved as DealType) || "Random";
   });
+  const [fullAutobid, setFullAutobid] = useState<CallHistory | null>(null);
+  const trackedResultRef = useRef<string | null>(null);
+
+  // Initialize analytics on mount
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  // Track pageview on boardId change
+  useEffect(() => {
+    trackPageView();
+  }, [boardId]);
+
+  // Pre-load full autobidder auction for this board
+  useEffect(() => {
+    if (!boardId || !parsed) return;
+    let cancelled = false;
+    const baseId = boardId.split(":")[0];
+    getFullAutobidAuction(baseId, parsed.dealer)
+      .then((res) => {
+        if (!cancelled) {
+          setFullAutobid(res);
+        }
+      })
+      .catch(() => {
+        // Pre-load failures are non-fatal
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, parsed]);
 
   // On mount, run robot bids for the opening if calls are empty
   useEffect(() => {
@@ -84,8 +122,34 @@ export function PracticePage() {
 
   const auctionDone = isAuctionComplete(history);
 
+  useEffect(() => {
+    if (auctionDone) {
+      document.title = "Bidding Results - SAYC Bridge";
+    } else {
+      document.title = "Bidding Practice - SAYC Bridge";
+    }
+  }, [auctionDone]);
+
+  useEffect(() => {
+    if (auctionDone && fullAutobid && boardId) {
+      const userCallsStr = history.calls.map(callToString).join(",");
+      const key = `${boardId}:${userCallsStr}`;
+      if (trackedResultRef.current !== key) {
+        trackedResultRef.current = key;
+        const autobidCallsStr = fullAutobid.calls.map(callToString).join(",");
+        const matched = userCallsStr === autobidCallsStr;
+        trackEvent(
+          "Bidding",
+          "Result",
+          matched ? "matched autobidder" : "differed from autobidder",
+        );
+      }
+    }
+  }, [auctionDone, fullAutobid, boardId, history.calls]);
+
   const handleSuggest = useCallback(() => {
     if (!boardId) return;
+    trackEvent("Bidding", "Help", "Suggest Bid");
     setSuggestLoading(true);
     const baseId = boardId.split(":")[0];
     const callsStr = history.calls.map(callToString).join(",");
@@ -131,6 +195,7 @@ export function PracticePage() {
   );
 
   const handleRedeal = useCallback(() => {
+    trackEvent("Bidding", "Boards", auctionDone ? "next hand" : "skip hand");
     setLoading(true);
     setError(null);
     generateFilteredBoardId(dealType)
@@ -141,7 +206,7 @@ export function PracticePage() {
         setError(String(err));
         setLoading(false);
       });
-  }, [navigate, dealType]);
+  }, [navigate, dealType, auctionDone]);
 
   const handleDealTypeChange = useCallback(
     (newType: DealType) => {
@@ -162,6 +227,7 @@ export function PracticePage() {
 
   const handleRebid = useCallback(() => {
     if (!boardId || !parsed) return;
+    trackEvent("Bidding", "Boards", "rebid board");
     setLoading(true);
     setSuggestion(null);
     setSelectedCallIndex(null);
@@ -194,6 +260,7 @@ export function PracticePage() {
         setCallExplanation(null);
         return;
       }
+      trackEvent("Bidding", "Help", "Explain Bid");
       setSelectedCallIndex(callIndex);
       setCallExplanation(null);
       setExplanationLoading(true);
@@ -275,6 +342,12 @@ export function PracticePage() {
             <div className="text-center text-sm font-semibold text-gray-600">
               Auction Complete
             </div>
+            <AutobidResult
+              userHistory={history}
+              autobidHistory={fullAutobid}
+              loading={!fullAutobid}
+              vulnerability={vulnerability}
+            />
             <div className="flex flex-col gap-4">
               <CardFan hand={handForPosition(deal, "N")} position="N" />
               <div className="grid grid-cols-2 gap-4">
@@ -291,6 +364,7 @@ export function PracticePage() {
               </div>
               <CardFan hand={southHand} position="S" />
             </div>
+            <DealStats deal={deal} />
             <div className="flex gap-2">
               <button
                 onClick={handleRedeal}

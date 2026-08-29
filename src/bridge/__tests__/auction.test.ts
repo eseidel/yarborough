@@ -5,6 +5,11 @@ import {
   lastBidCall,
   addRobotBids,
   isCallLegal,
+  isPassOut,
+  getContract,
+  getDeclarer,
+  formatContractAndDeclarer,
+  getFullAutobidAuction,
 } from "../auction";
 import type { CallHistory, Call } from "../types";
 import { callToString } from "../types";
@@ -269,5 +274,121 @@ describe("isCallLegal", () => {
     // No double — cannot redouble
     const noDbl: CallHistory = { dealer: "N", calls: [oneClub] };
     expect(isCallLegal(rdbl, noDbl)).toBe(false);
+  });
+});
+
+describe("isPassOut", () => {
+  it("returns true only for 4 passes from start", () => {
+    expect(isPassOut({ dealer: "N", calls: [pass, pass, pass, pass] })).toBe(
+      true,
+    );
+    expect(isPassOut({ dealer: "N", calls: [oneClub, pass, pass, pass] })).toBe(
+      false,
+    );
+    expect(isPassOut({ dealer: "N", calls: [pass, pass] })).toBe(false);
+  });
+});
+
+describe("getContract and getDeclarer", () => {
+  it("handles pass out", () => {
+    const passOut: CallHistory = {
+      dealer: "N",
+      calls: [pass, pass, pass, pass],
+    };
+    expect(getContract(passOut)).toBeNull();
+    expect(getDeclarer(passOut)).toBeNull();
+    expect(formatContractAndDeclarer(passOut)).toBe("Pass Out");
+  });
+
+  it("handles simple opening and passes", () => {
+    const history: CallHistory = {
+      dealer: "N",
+      calls: [oneHeart, pass, pass, pass],
+    };
+    expect(getContract(history)).toEqual({ level: 1, strain: "H" });
+    expect(getDeclarer(history)).toBe("N");
+    expect(formatContractAndDeclarer(history)).toBe("1H N");
+  });
+
+  it("identifies the first partner to bid the strain as declarer", () => {
+    const history: CallHistory = {
+      dealer: "N",
+      calls: [
+        oneHeart, // N (Hearts)
+        pass, // E
+        { type: "bid", level: 4, strain: "H" }, // S (Hearts)
+        pass, // W
+        pass, // N
+        pass, // E
+      ],
+    };
+    expect(getContract(history)).toEqual({ level: 4, strain: "H" });
+    expect(getDeclarer(history)).toBe("N");
+    expect(formatContractAndDeclarer(history)).toBe("4H N");
+  });
+
+  it("identifies responder as declarer if responder bid the strain first", () => {
+    const history: CallHistory = {
+      dealer: "N",
+      calls: [
+        oneClub, // N (Clubs)
+        pass, // E
+        oneHeart, // S (Hearts)
+        pass, // W
+        { type: "bid", level: 4, strain: "H" }, // N (Hearts)
+        pass, // E
+        pass, // S
+        pass, // W
+      ],
+    };
+    expect(getContract(history)).toEqual({ level: 4, strain: "H" });
+    expect(getDeclarer(history)).toBe("S");
+    expect(formatContractAndDeclarer(history)).toBe("4H S");
+  });
+
+  it("handles doubled contracts", () => {
+    const history: CallHistory = {
+      dealer: "N",
+      calls: [oneHeart, dbl, pass, pass, pass],
+    };
+    expect(getContract(history)).toEqual({
+      level: 1,
+      strain: "H",
+      doubled: "X",
+    });
+    expect(getDeclarer(history)).toBe("N");
+    expect(formatContractAndDeclarer(history)).toBe("1HX N");
+  });
+
+  it("handles redoubled contracts", () => {
+    const history: CallHistory = {
+      dealer: "N",
+      calls: [oneHeart, dbl, rdbl, pass, pass, pass],
+    };
+    expect(getContract(history)).toEqual({
+      level: 1,
+      strain: "H",
+      doubled: "XX",
+    });
+    expect(getDeclarer(history)).toBe("N");
+    expect(formatContractAndDeclarer(history)).toBe("1HXX N");
+  });
+});
+
+describe("getFullAutobidAuction", () => {
+  it("simulates full auction until isAuctionComplete", async () => {
+    mockGetNextCall
+      .mockResolvedValueOnce(oneNT)
+      .mockResolvedValueOnce(pass)
+      .mockResolvedValueOnce(pass)
+      .mockResolvedValueOnce(pass);
+
+    const result = await getFullAutobidAuction(
+      "1-00000000000000000000000000",
+      "N",
+    );
+    expect(result.calls).toHaveLength(4);
+    expect(result.calls[0]).toEqual(oneNT);
+    expect(isAuctionComplete(result)).toBe(true);
   });
 });

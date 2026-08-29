@@ -81,9 +81,71 @@ export function isCallLegal(call: Call, history: CallHistory): boolean {
 }
 
 /** Build the z3b identifier string: "<board>-<hex>:<calls>". */
-function buildIdentifier(boardId: string, calls: Call[]): string {
+export function buildIdentifier(boardId: string, calls: Call[]): string {
   if (calls.length === 0) return boardId;
   return `${boardId}:${calls.map(callToString).join(",")}`;
+}
+
+/** True when the board passed out (4 passes). */
+export function isPassOut(history: CallHistory): boolean {
+  return (
+    history.calls.length === 4 && history.calls.every((c) => c.type === "pass")
+  );
+}
+
+export interface ContractInfo {
+  level: number;
+  strain: StrainName;
+  doubled?: "X" | "XX";
+}
+
+/** Determine the final contract for a completed auction. */
+export function getContract(history: CallHistory): ContractInfo | null {
+  if (isPassOut(history)) return null;
+  const lastBid = lastBidCall(history);
+  if (!lastBid || lastBid.type !== "bid" || !lastBid.level || !lastBid.strain) {
+    return null;
+  }
+  const lastBidIdx = history.calls.lastIndexOf(lastBid);
+  const callsAfter = history.calls.slice(lastBidIdx + 1);
+  const lastNonPass = [...callsAfter].reverse().find((c) => c.type !== "pass");
+  let doubled: "X" | "XX" | undefined;
+  if (lastNonPass?.type === "double") doubled = "X";
+  if (lastNonPass?.type === "redouble") doubled = "XX";
+  return { level: lastBid.level, strain: lastBid.strain, doubled };
+}
+
+/** Determine the declarer for a completed auction. */
+export function getDeclarer(history: CallHistory): Position | null {
+  if (isPassOut(history)) return null;
+  const lastBid = lastBidCall(history);
+  if (!lastBid || lastBid.type !== "bid" || !lastBid.strain) return null;
+  const lastBidIdx = history.calls.lastIndexOf(lastBid);
+  const dealerIdx = POSITION_ORDER.indexOf(history.dealer);
+  const winningBidder = POSITION_ORDER[(dealerIdx + lastBidIdx) % 4];
+  const winningSideParity = POSITION_ORDER.indexOf(winningBidder) % 2;
+
+  for (let i = 0; i < history.calls.length; i++) {
+    const call = history.calls[i];
+    const bidder = POSITION_ORDER[(dealerIdx + i) % 4];
+    if (
+      POSITION_ORDER.indexOf(bidder) % 2 === winningSideParity &&
+      call.type === "bid" &&
+      call.strain === lastBid.strain
+    ) {
+      return bidder;
+    }
+  }
+  return null;
+}
+
+/** Return human readable contract and declarer summary (e.g. "3NT S" or "Pass Out"). */
+export function formatContractAndDeclarer(history: CallHistory): string {
+  if (isPassOut(history)) return "Pass Out";
+  const contract = getContract(history);
+  const declarer = getDeclarer(history);
+  if (!contract || !declarer) return "";
+  return `${contract.level}${contract.strain}${contract.doubled ?? ""} ${declarer}`;
 }
 
 /** Add robot bids until it is the user's turn or the auction completes. */
@@ -95,6 +157,20 @@ export async function addRobotBids(
   let h = history;
   while (!isAuctionComplete(h) && currentPlayer(h) !== userPosition) {
     const identifier = buildIdentifier(boardId, h.calls);
+    const call = await getNextCall(identifier);
+    h = { ...h, calls: [...h.calls, call] };
+  }
+  return h;
+}
+
+/** Simulate a full autobidder auction from the beginning of the deal. */
+export async function getFullAutobidAuction(
+  baseBoardId: string,
+  dealer: Position,
+): Promise<CallHistory> {
+  let h: CallHistory = { dealer, calls: [] };
+  while (!isAuctionComplete(h)) {
+    const identifier = buildIdentifier(baseBoardId, h.calls);
     const call = await getNextCall(identifier);
     h = { ...h, calls: [...h.calls, call] };
   }
