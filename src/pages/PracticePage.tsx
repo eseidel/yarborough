@@ -134,10 +134,10 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
     } else {
       setTitle("Bidding Practice - SAYC Bridge");
     }
-    // Every board is the same page with different cards; "/" is the one that
-    // should be indexed.
-    setCanonical("/");
-  }, [auctionDone]);
+    // Board permalinks canonicalize to themselves; eleven of them are indexed
+    // and earn traffic. See src/seo.ts.
+    setCanonical(boardIdParam ? `/bid/${boardIdParam}` : "/");
+  }, [auctionDone, boardIdParam]);
 
   useEffect(() => {
     if (auctionDone && fullAutobid && boardId) {

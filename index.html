@@ -13,9 +13,9 @@
          the per-board permalinks. Those are canonicalized to / now, so links
          can be followed. -->
     <meta name="robots" content="index, follow" />
-    <!-- Overwritten per route by src/seo.ts; the static value is what a
-         crawler sees if it never executes the app. -->
-    <link rel="canonical" href="https://saycbridge.com/" />
+    <!-- No canonical tag: one file serves every route, so any static value
+         would be wrong for all but one of them. src/seo.ts sets a
+         self-referential one per route. See the comment there. -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="SAYCBridge.com" />
@@ -24,7 +24,6 @@
       property="og:description"
       content="Practice bridge bidding using the Standard American Yellow Card (SAYC) convention system."
     />
-    <meta property="og:url" content="https://saycbridge.com/" />
     <meta name="twitter:card" content="summary" />
     <title>Bidding Practice - SAYC Bridge</title>
   </head>
@@ -34,7 +33,7 @@
          description of the site that AboutFooter renders, rather than an
          empty document. Keep it in sync with src/components/AboutFooter.tsx. -->
     <div id="root">
-      <h1>SAYCBridge.com</h1>
+      <h1>Practice Bridge Bidding &mdash; SAYC</h1>
       <p>
         Practice bidding
         <a href="https://en.wikipedia.org/wiki/Standard_American"
