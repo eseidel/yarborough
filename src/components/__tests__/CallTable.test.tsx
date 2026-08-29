@@ -1,7 +1,13 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { CallTable } from "../CallTable";
-import type { CallHistory, Call } from "../../bridge/types";
+import {
+  CALL_TABLE_ORDER,
+  POSITION_NAMES,
+  type Call,
+  type CallHistory,
+  type Vulnerability,
+} from "../../bridge/types";
 
 describe("CallTable", () => {
   const makeHistory = (calls: Call[], dealer = "N" as const): CallHistory => ({
@@ -173,5 +179,48 @@ describe("CallTable", () => {
     expect(explanationIndex).not.toBe(-1);
     // "?" should come before the explanation in the DOM order (to be in its grid cell)
     expect(questionIndex).toBeLessThan(explanationIndex);
+  });
+
+  // Vulnerability highlighting had no test of its own. It was reached only
+  // when a randomly drawn board number happened to produce a given
+  // vulnerability, so which arms of isVulnerable ran varied between identical
+  // runs and moved the coverage total with it.
+  describe("vulnerability highlighting", () => {
+    const vulnerablePositions = (vulnerability: Vulnerability): string[] =>
+      CALL_TABLE_ORDER.filter((pos) => {
+        const header = screen.getByText(POSITION_NAMES[pos]);
+        return header.className.includes("bg-red-100");
+      }).map((pos) => pos as string);
+
+    const cases: [Vulnerability, string[]][] = [
+      ["None", []],
+      ["NS", ["N", "S"]],
+      ["EW", ["W", "E"]],
+      ["Both", ["W", "N", "E", "S"]],
+    ];
+
+    it.each(cases)(
+      "marks the right seats vulnerable at %s",
+      (vul, expected) => {
+        render(
+          <CallTable
+            callHistory={makeHistory([{ type: "pass" }])}
+            vulnerability={vul}
+          />,
+        );
+
+        expect(vulnerablePositions(vul)).toEqual(expected);
+      },
+    );
+
+    it("marks nobody vulnerable when vulnerability is unknown", () => {
+      render(<CallTable callHistory={makeHistory([{ type: "pass" }])} />);
+
+      for (const pos of CALL_TABLE_ORDER) {
+        expect(screen.getByText(POSITION_NAMES[pos]).className).not.toContain(
+          "bg-red-100",
+        );
+      }
+    });
   });
 });
