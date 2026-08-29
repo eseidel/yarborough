@@ -186,11 +186,10 @@ describe("CallTable", () => {
   // vulnerability, so which arms of isVulnerable ran varied between identical
   // runs and moved the coverage total with it.
   describe("vulnerability highlighting", () => {
-    const vulnerablePositions = (vulnerability: Vulnerability): string[] =>
-      CALL_TABLE_ORDER.filter((pos) => {
-        const header = screen.getByText(POSITION_NAMES[pos]);
-        return header.className.includes("bg-red-100");
-      }).map((pos) => pos as string);
+    const vulnerableSeats = (): string[] =>
+      CALL_TABLE_ORDER.filter((pos) =>
+        screen.getByText(POSITION_NAMES[pos]).className.includes("bg-red-100"),
+      );
 
     const cases: [Vulnerability, string[]][] = [
       ["None", []],
@@ -209,7 +208,7 @@ describe("CallTable", () => {
           />,
         );
 
-        expect(vulnerablePositions(vul)).toEqual(expected);
+        expect(vulnerableSeats()).toEqual(expected);
       },
     );
 
