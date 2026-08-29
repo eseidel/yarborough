@@ -149,7 +149,7 @@ This matters because the token lives in a public repository's secrets and the
 zone carries live Google Workspace mail. With Workers Routes alone, the worst a
 leaked token can do is redeploy the site. With DNS edit, it could rewrite the MX
 records and intercept mail. If a deploy ever fails on the custom domain step
-with a permissions error, add DNS edit then — but do not grant it pre-emptively.
+with a permissions error, add DNS edit then — but do not grant it in advance.
 
 ### 5. Attach the domains
 
@@ -194,7 +194,8 @@ zone is on Cloudflare) and add both the `http://www.saycbridge.com` and
 `https://saycbridge.com` properties. Search Console history starts at
 verification, not retroactively, so doing this while the old site is still
 serving is the only way to have a before-and-after to compare. There is no
-other baseline: the old analytics is `ga.js`, which Google shut off in 2023.
+other baseline: the site ran on `ga.js` until this move, and Google shut that
+off in 2023, so no analytics data exists for the years before the cutover.
 
 ### At the cutover
 
@@ -218,9 +219,10 @@ other baseline: the old analytics is `ga.js`, which Google shut off in 2023.
 Submit `https://saycbridge.com/sitemap.xml` in Search Console, then watch the
 Coverage report for `/bid/` URLs. They are canonicalized to `/`, so they should
 report as "Alternate page with proper canonical tag" rather than as duplicates.
-Cloudflare Web Analytics (free, cookieless, and the zone is already there) is
-worth turning on at the same time; `src/analytics.ts` still calls the dead
-`ga.js` and reports nothing.
+`src/analytics.ts` now reports to GA4 (`G-V8KS5372FL`), replacing the `ga.js`
+call that had reported nothing since 2023. It is restricted to the production
+hostnames: preview is promoted as the very same build artifact, so the hostname
+is the only thing that can keep `dev.saycbridge.com` out of the property.
 
 ### What the app already does
 
