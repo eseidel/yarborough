@@ -134,11 +134,22 @@ to 48. Once the zone is active, send yourself a test email before continuing.
 
 ### 4. Widen the API token
 
-Add to the existing token, both scoped to saycbridge.com. Editing a token in
-place does not change its value, so the GitHub secret does not need rotating.
+Add one permission, scoped to saycbridge.com. Editing a token in place does not
+change its value, so the GitHub secret does not need rotating.
 
 - Zone → Workers Routes → Edit
-- Zone → DNS → Edit (so Wrangler can create the records itself)
+
+Deliberately **not** Zone → DNS → Edit. Custom Domains are attached server-side:
+Cloudflare creates the DNS record and issues the certificate itself, so the
+client never writes DNS and should not need permission to. Cloudflare's own
+generated Workers Builds CI token grants Workers Routes but not DNS for exactly
+this reason.
+
+This matters because the token lives in a public repository's secrets and the
+zone carries live Google Workspace mail. With Workers Routes alone, the worst a
+leaked token can do is redeploy the site. With DNS edit, it could rewrite the MX
+records and intercept mail. If a deploy ever fails on the custom domain step
+with a permissions error, add DNS edit then — but do not grant it pre-emptively.
 
 ### 5. Attach the domains
 
