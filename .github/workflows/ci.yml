@@ -49,7 +49,7 @@ jobs:
 
       - run: .venv/bin/python -m pip install -e ./python
 
-      - run: pnpm test:python
+      - run: .venv/bin/python -m unittest discover -s python -p 'test_*.py'
 
   browser:
     name: Browser worker
