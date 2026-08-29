@@ -1,0 +1,100 @@
+name: Promote to production
+
+# Publishes an already-previewed build to production.
+#
+# Triggering a workflow_dispatch requires write access to the repository, so
+# any collaborator can promote from the Actions tab -> "Promote to production"
+# -> "Run workflow". There is no reviewer list to maintain.
+#
+# This never rebuilds. It downloads the artifact produced by a "Deploy preview"
+# run and deploys those exact files, so production is byte-identical to what
+# was verified on preview.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Deploy preview run to promote (blank = latest successful main build)"
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read # required to read artifacts from another workflow run
+
+jobs:
+  promote:
+    name: Production
+    runs-on: ubuntu-latest
+    # Add `url: https://saycbridge.com` once the domain is cut over.
+    environment:
+      name: production
+    steps:
+      # Resolved before checkout so that the Wrangler config and the assets
+      # both come from the commit being promoted, never from a newer main.
+      - name: Resolve the build to promote
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID_INPUT: ${{ inputs.run_id }}
+        run: |
+          set -euo pipefail
+          run_id="$RUN_ID_INPUT"
+          if [ -z "$run_id" ]; then
+            run_id=$(gh run list --repo "$GITHUB_REPOSITORY" \
+              --workflow deploy.yml --branch main --status success \
+              --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          fi
+          if [ -z "$run_id" ]; then
+            echo "::error::No successful 'Deploy preview' run found to promote." >&2
+            exit 1
+          fi
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" --jq '.head_sha')
+          subject=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha" --jq '.commit.message' | head -n 1)
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Promoting to production"
+            echo ""
+            echo "- Commit: \`${sha}\` — ${subject}"
+            echo "- From run: [${run_id}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${run_id})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.build.outputs.sha }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+          run-id: ${{ steps.build.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify the downloaded build
+        run: |
+          set -euo pipefail
+          test -f dist/index.html || {
+            echo "::error::dist/index.html missing from the promoted artifact." >&2
+            exit 1
+          }
+          echo "Promoting $(find dist -type f | wc -l | tr -d ' ') files."
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Installs Wrangler only; the site itself is already built.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy to Cloudflare
+        run: pnpm exec wrangler deploy --env=""
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
