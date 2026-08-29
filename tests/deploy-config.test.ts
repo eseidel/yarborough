@@ -131,6 +131,21 @@ describe("wrangler configuration", () => {
     }
   });
 
+  it("serves production from the apex and www", () => {
+    expect((wrangler.routes ?? []).map((route) => route.pattern)).toEqual([
+      "saycbridge.com",
+      "www.saycbridge.com",
+    ]);
+    // The apex is canonical, so production has no *.workers.dev twin.
+    expect(wrangler.workers_dev).toBe(false);
+  });
+
+  it("serves preview from dev.saycbridge.com", () => {
+    expect(
+      (wrangler.env?.preview?.routes ?? []).map((route) => route.pattern),
+    ).toEqual(["dev.saycbridge.com"]);
+  });
+
   it("attaches any configured hostnames as Cloudflare custom domains", () => {
     for (const [label, environment] of environments) {
       for (const route of environment?.routes ?? []) {
