@@ -29,9 +29,16 @@ describe("seo", () => {
     expect(canonicalHref()).toBe("https://saycbridge.com/");
   });
 
+  it("lets a board permalink canonicalize to itself", () => {
+    // Eleven of these are indexed and earn 4.4% of the site's clicks; folding
+    // them into / would discard them.
+    setCanonical("/bid/13-8415fab0e7e28874f7549bc26c:P,1H");
+    expect(canonicalHref()).toBe(
+      "https://saycbridge.com/bid/13-8415fab0e7e28874f7549bc26c:P,1H",
+    );
+  });
+
   it("keeps og:url in step with the canonical URL", () => {
-    document.head.innerHTML =
-      '<meta property="og:url" content="https://saycbridge.com/">';
     setCanonical("/explore");
     expect(
       document.querySelector<HTMLMetaElement>('meta[property="og:url"]')

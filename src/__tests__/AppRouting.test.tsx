@@ -35,11 +35,11 @@ describe("routing", () => {
     expect(document.title).toBe("Bidding Practice - SAYC Bridge");
   });
 
-  it("canonicalizes a board permalink to the root, not to itself", () => {
+  it("canonicalizes a board permalink to itself, not to the root", () => {
     window.history.replaceState({}, "", "/bid/1-00000000000000000000000000");
     render(<App />);
     expect(
       document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href,
-    ).toBe("https://saycbridge.com/");
+    ).toBe("https://saycbridge.com/bid/1-00000000000000000000000000");
   });
 });
