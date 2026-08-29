@@ -129,14 +129,71 @@ Because this repository defines multiple Wrangler environments, production must
 be named explicitly as `--env=""`. A bare `wrangler deploy` is ambiguous and
 warns.
 
+## Search
+
+saycbridge.com has been indexed since 2011 and every inbound link points at
+`http://www.saycbridge.com/...`. The cutover changes both the scheme and the
+canonical hostname, which is a site move as far as a search engine is
+concerned. These steps are what keep it from reading as a new site.
+
+### Before the cutover
+
+Verify `saycbridge.com` in Google Search Console (DNS TXT is easiest once the
+zone is on Cloudflare) and add both the `http://www.saycbridge.com` and
+`https://saycbridge.com` properties. Search Console history starts at
+verification, not retroactively, so doing this while the old site is still
+serving is the only way to have a before-and-after to compare. There is no
+other baseline: the old analytics is `ga.js`, which Google shut off in 2023.
+
+### At the cutover
+
+1. **Always Use HTTPS** on (SSL/TLS → Edge Certificates). Every existing link
+   is `http://`, and this is what turns them into a 301 to `https://`.
+2. **A Redirect Rule for `www`**, 301, preserving path and query:
+   - When: `http.host eq "www.saycbridge.com"`
+   - Then: dynamic redirect to
+     `concat("https://saycbridge.com", http.request.uri.path)`, preserve query
+     string, status 301.
+
+   Both hostnames answering with the same content would split the link equity
+   between them, and the canonical tag that would otherwise settle it is set by
+   the app after render rather than in the served HTML.
+
+3. Keep the `www` custom domain route in `wrangler.jsonc` regardless — the
+   Redirect Rule needs a proxied record on the hostname to run at all.
+
+### After the cutover
+
+Submit `https://saycbridge.com/sitemap.xml` in Search Console, then watch the
+Coverage report for `/bid/` URLs. They are canonicalized to `/`, so they should
+report as "Alternate page with proper canonical tag" rather than as duplicates.
+Cloudflare Web Analytics (free, cookieless, and the zone is already there) is
+worth turning on at the same time; `src/analytics.ts` still calls the dead
+`ga.js` and reports nothing.
+
+### What the app already does
+
+- `public/robots.txt` allows everything and points at the sitemap. The old
+  site's `Disallow: /explore` is deliberately gone: it existed to keep crawlers
+  off a JSON endpoint per candidate bid, and the explorer is computed in the
+  browser now.
+- `public/_redirects` 302s `/scoring` and `/play` to `/`. Without it,
+  `not_found_handling: "single-page-application"` answers 200 with the app
+  shell, which is a soft 404 on two URLs that are live and indexed today. They
+  are 302 rather than 301 because neither mode has been ported yet.
+- `index.html` ships the site description inside `#root`, which React replaces
+  on boot. A crawler that does not execute 12 MB of WebAssembly still gets the
+  page's copy.
+- `/` renders a board rather than redirecting to `/bid/<board>`, and every
+  board permalink carries `<link rel="canonical">` back to `/`.
+
 ## Notes
 
 - `not_found_handling: "single-page-application"` is what makes deep links work
   on a cold load. It replaces the `404.html` copy the old GitHub Pages workflow
   needed.
-- After cutover, `www.saycbridge.com` serves the same content as the apex. If
-  you would rather it redirect, drop the `www` route and add a Cloudflare
-  Redirect Rule.
+- `www.saycbridge.com` must keep resolving — fifteen years of inbound links
+  point at it — but it must not _serve_ the site. See "Search" below.
 - Cloudflare's static asset limits are 25 MiB per file and 20,000 files. The
   current build is ~22 MB across 14 files, the largest being `pyodide.asm.wasm`
   at ~9 MB.

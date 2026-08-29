@@ -9,11 +9,47 @@
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="robots" content="index, nofollow" />
+    <!-- `nofollow` was inherited from the old site, where it kept crawlers off
+         the per-board permalinks. Those are canonicalized to / now, so links
+         can be followed. -->
+    <meta name="robots" content="index, follow" />
+    <!-- Overwritten per route by src/seo.ts; the static value is what a
+         crawler sees if it never executes the app. -->
+    <link rel="canonical" href="https://saycbridge.com/" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SAYCBridge.com" />
+    <meta property="og:title" content="Bidding Practice - SAYC Bridge" />
+    <meta
+      property="og:description"
+      content="Practice bridge bidding using the Standard American Yellow Card (SAYC) convention system."
+    />
+    <meta property="og:url" content="https://saycbridge.com/" />
+    <meta name="twitter:card" content="summary" />
     <title>Bidding Practice - SAYC Bridge</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- React replaces this on boot. It is here so that a crawler (or a
+         visitor whose engine download has not finished) gets the same
+         description of the site that AboutFooter renders, rather than an
+         empty document. Keep it in sync with src/components/AboutFooter.tsx. -->
+    <div id="root">
+      <h1>SAYCBridge.com</h1>
+      <p>
+        Practice bidding
+        <a href="https://en.wikipedia.org/wiki/Standard_American"
+          >Standard American Yellow Card</a
+        >
+        (SAYC). Bid a hand against the autobidder, or use the
+        <a href="/explore">bid explorer</a> to see what every call in an auction
+        would mean.
+      </p>
+      <p>
+        The autobidder follows the official ACBL pamphlet as well as
+        <i>Standard Bidding With SAYC</i> by Ned Downey and Ellen Pomer.
+      </p>
+      <p>Loading the bidding engine&hellip;</p>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

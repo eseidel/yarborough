@@ -14,6 +14,7 @@ import {
 import { getCallInterpretations } from "../bridge/engine";
 import { dealerFromBoardNumber } from "../bridge/identifier";
 import { initAnalytics, trackPageView } from "../analytics";
+import { setCanonical, setTitle } from "../seo";
 
 export function ExplorePage() {
   const { exploreId } = useParams<{ exploreId: string }>();
@@ -21,7 +22,10 @@ export function ExplorePage() {
 
   useEffect(() => {
     initAnalytics();
-    document.title = "Explore - SAYC Bridge";
+    // "Bid Explorer" is what the old site titled this page, and what it is
+    // known by in search results.
+    setTitle("Bid Explorer - SAYC Bridge");
+    setCanonical("/explore");
     trackPageView();
   }, [exploreId]);
 

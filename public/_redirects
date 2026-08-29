@@ -1,0 +1,6 @@
+# Two modes of the old site have no home here yet. 302, not 301: these are
+# ports we have not done, not pages we have retired, and a 302 keeps the old
+# URLs in the index while that is still true.
+/scoring    /    302
+/play       /    302
+/play/*     /    302

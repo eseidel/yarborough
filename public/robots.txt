@@ -1,0 +1,7 @@
+# Per-board permalinks are an unbounded space of near-identical pages, so they
+# carry <link rel="canonical"> back to / rather than being blocked here: that
+# keeps the fifteen years of inbound /bid/ links flowing to the homepage.
+User-agent: *
+Allow: /
+
+Sitemap: https://saycbridge.com/sitemap.xml
