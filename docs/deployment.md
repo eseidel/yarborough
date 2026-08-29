@@ -78,7 +78,13 @@ Cloudflare nameservers.
 
 1. Add saycbridge.com as a zone in the Cloudflare dashboard.
 2. Let Cloudflare import the existing DNS records, then confirm what you still
-   need came across — MX and any mail-related TXT records especially.
+   need came across — MX and any mail-related TXT records especially, plus
+   every `google-site-verification=` TXT at the apex. Losing one of those
+   drops Search Console verification in the middle of the migration, which is
+   exactly when you need the data. There is already an old one there
+   (`4Bw3qJjVic…`), predating this work; leave it alone. `www` points at
+   `ghs.google.com`, a Google-hosted domain mapping, and those historically
+   required domain verification to stay attached.
 3. Update the nameservers at GoDaddy to the pair Cloudflare assigns.
 4. Wait for the zone to show as active.
 
