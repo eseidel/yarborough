@@ -2296,16 +2296,16 @@ class SuitResponseToTakeoutDouble(ResponseToTakeoutDouble):
     # Need conditional priorities to disambiguate cases like being 1.4.4.4 with 0 points after 1C X P
     # Similarly after 1H X P, with 4 spades and 4 clubs, but with xxxx spades and AKQx clubs, do we bid clubs or spades?
     priorities_per_call = {
-        (      '2C', '3C'): takeout_double_responses.ThreeCardClubResonseToTakeoutDouble,
-        ('1D', '2D', '3D'): takeout_double_responses.ThreeCardDiamondResonseToTakeoutDouble,
+        (      '2C', '3C', '4C'): takeout_double_responses.ThreeCardClubResonseToTakeoutDouble,
+        ('1D', '2D', '3D', '4D'): takeout_double_responses.ThreeCardDiamondResonseToTakeoutDouble,
         ('1H', '2H', '3H'): takeout_double_responses.ThreeCardHeartResonseToTakeoutDouble,
-        ('1S', '2S'      ): takeout_double_responses.ThreeCardSpadeResonseToTakeoutDouble,
+        ('1S', '2S', '3S'): takeout_double_responses.ThreeCardSpadeResonseToTakeoutDouble,
     }
     conditional_priorities_per_call = {
-        (      '2C', '3C'): [(clubs >= 4, takeout_double_responses.ClubResonseToTakeoutDouble)],
-        ('1D', '2D', '3D'): [(diamonds >= 4, takeout_double_responses.DiamondResonseToTakeoutDouble)],
+        (      '2C', '3C', '4C'): [(clubs >= 4, takeout_double_responses.ClubResonseToTakeoutDouble)],
+        ('1D', '2D', '3D', '4D'): [(diamonds >= 4, takeout_double_responses.DiamondResonseToTakeoutDouble)],
         ('1H', '2H', '3H'): [(hearts >= 4, takeout_double_responses.HeartResonseToTakeoutDouble)],
-        ('1S', '2S'      ): [(spades >= 4, takeout_double_responses.SpadeResonseToTakeoutDouble)],
+        ('1S', '2S', '3S'): [(spades >= 4, takeout_double_responses.SpadeResonseToTakeoutDouble)],
     }
 
 
