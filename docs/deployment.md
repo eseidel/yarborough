@@ -4,24 +4,24 @@ saycbridge.com is a static site served from Cloudflare Workers static assets.
 There is no server-side component: the bidding engine runs in the browser via
 Pyodide and Z3.
 
-| Environment | Worker               | Trigger                          |
-| ----------- | -------------------- | -------------------------------- |
-| Preview     | `saycbridge-preview` | Every push to `main`, automatic  |
-| Production  | `saycbridge`         | "Promote to production", by hand |
+| Environment | Hostname             | Worker               | Trigger                          |
+| ----------- | -------------------- | -------------------- | -------------------------------- |
+| Preview     | `dev.saycbridge.com` | `saycbridge-preview` | Every push to `main`, automatic  |
+| Production  | `saycbridge.com`     | `saycbridge`         | "Promote to production", by hand |
 
-This is rolling out in two stages. **Stage 1** (this change) deploys both
-environments to their `workers.dev` hostnames, which need no DNS, so the whole
-pipeline can be verified before saycbridge.com is touched. **Stage 2** moves
-the domain to Cloudflare and attaches it.
+`www.saycbridge.com` 301s to the apex, and plain HTTP 301s to HTTPS, so
+`https://saycbridge.com/...` is the single canonical address.
 
 ## How a change reaches production
 
 1. Merge to `main`. **Deploy preview** builds the site, uploads `dist` as a
-   workflow artifact, and deploys it to the preview Worker.
-2. Check the preview URL.
+   workflow artifact, and deploys it to dev.saycbridge.com.
+2. Check dev.saycbridge.com.
 3. Actions tab → **Promote to production** → **Run workflow**. Leave the input
    blank to promote the most recent successful `main` build, or paste a run ID
    to promote — or roll back to — an older one.
+
+From the command line, step 3 is `gh workflow run promote.yml --ref main`.
 
 Promotion never rebuilds. It downloads the artifact from the preview run and
 deploys those exact files, so production ships the bytes that were verified on
@@ -36,193 +36,104 @@ write-level permission, so there is no separate approver list to maintain.
 Promote an older run ID. Cloudflare also retains prior versions, so
 `wrangler rollback --env=""` works as an emergency path.
 
-## Stage 1 setup
+### Deploying by hand
 
-Needed before the first deploy can succeed.
-
-### Create the API token
-
-Cloudflare dashboard → My Profile → API Tokens → Create Token, from the **Edit
-Cloudflare Workers** template. For stage 1 it needs only:
-
-- Account → Workers Scripts → Edit
-
-Stage 2 adds two zone-scoped permissions, below.
-
-### Add the repository secrets
-
-Settings → Secrets and variables → Actions:
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID` (Cloudflare dashboard sidebar, or `wrangler whoami`)
-
-Both workflows read these. They are repository-level rather than
-environment-scoped so either workflow can use them.
-
-Once these exist, push to `main` and the preview deploy publishes to
-`saycbridge-preview.<subdomain>.workers.dev`. Promote once to bring up
-`saycbridge.<subdomain>.workers.dev`. Verify both — especially a deep link such
-as `/bid/<board>`, which exercises SPA routing, and the bidding engine itself,
-which pulls ~22 MB of Pyodide and Z3 assets.
-
-## Stage 2: cutting saycbridge.com over
-
-Stage 1 is live and verified, so this is the remaining work.
-
-Custom Domains require Cloudflare to be authoritative for the zone. That means
-changing the nameservers at GoDaddy, not editing records there, which moves all
-DNS at once. Email is the real risk; the website is not.
-
-### What is on the domain today
-
-Re-run this immediately before flipping, rather than trusting the list below.
-The zone is being actively edited: its SOA serial went from `2016050300` to
-`2026082902` in a single day.
+Requires `wrangler login`, or `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID` in the environment.
 
 ```bash
-dig saycbridge.com ANY +noall +answer @ns35.domaincontrol.com
-```
-
-As last measured:
-
-| Record                  | Value                                  | Notes                                   |
-| ----------------------- | -------------------------------------- | --------------------------------------- |
-| Apex `A`                | `192.241.239.197`                      | **Dead** — does not respond. Delete it. |
-| `www` CNAME             | `ghs.google.com`                       | The live legacy site                    |
-| `mail` CNAME            | `ghs.google.com`                       | Redirect to Google Mail login           |
-| `MX` ×7                 | `aspmx.l.google.com` and friends       | **Live Google Workspace mail**          |
-| `google._domainkey` TXT | DKIM key                               | Must survive                            |
-| Apex TXT                | `google-site-verification=4Bw3qJjVic…` | Search Console; predates this work      |
-
-There is no SPF and no DMARC record. That is a pre-existing gap, not something
-the migration introduces, but it is worth fixing while you are in the DNS.
-
-Because the apex is already dead, pointing it at the Worker carries no
-regression risk. `www` is the only hostname where users notice anything.
-
-### 1. Add the zone to Cloudflare
-
-Add saycbridge.com in account `5ea3476b…` — the same account as the Workers,
-since Custom Domains cannot cross accounts. Let Cloudflare import the records.
-
-Set `www` and `mail` to **DNS-only (grey cloud)**. Proxying Google-hosted
-hostnames through Cloudflare breaks their certificate handling.
-
-### 2. Verify the imported zone before touching GoDaddy
-
-Cloudflare answers on its assigned nameservers as soon as the zone exists,
-while GoDaddy is still authoritative and live traffic is untouched. This proves
-the new zone is correct with nobody exposed, and it is the gate that protects
-email:
-
-```bash
-NS=<an-assigned-cloudflare-nameserver>
-dig @$NS saycbridge.com MX +short                       # expect all 7 Google hosts
-dig @$NS google._domainkey.saycbridge.com TXT +short    # expect the DKIM key
-dig @$NS saycbridge.com TXT +short                      # expect google-site-verification
-dig @$NS www.saycbridge.com +short                      # expect ghs.google.com
-```
-
-Mail routing is only MX data, and Cloudflare cannot proxy MX, so there is no
-Cloudflare-specific way for mail to break. The only failure mode is a record
-the importer missed, which the above catches.
-
-### 3. Change the nameservers at GoDaddy
-
-Point them at the pair Cloudflare assigns. Usually under an hour, formally up
-to 48. Once the zone is active, send yourself a test email before continuing.
-
-### 4. Widen the API token
-
-Add one permission, scoped to saycbridge.com. Editing a token in place does not
-change its value, so the GitHub secret does not need rotating.
-
-- Zone → Workers Routes → Edit
-
-Deliberately **not** Zone → DNS → Edit. Custom Domains are attached server-side:
-Cloudflare creates the DNS record and issues the certificate itself, so the
-client never writes DNS and should not need permission to. Cloudflare's own
-generated Workers Builds CI token grants Workers Routes but not DNS for exactly
-this reason.
-
-This matters because the token lives in a public repository's secrets and the
-zone carries live Google Workspace mail. With Workers Routes alone, the worst a
-leaked token can do is redeploy the site. With DNS edit, it could rewrite the MX
-records and intercept mail. If a deploy ever fails on the custom domain step
-with a permissions error, add DNS edit then — but do not grant it in advance.
-
-### 5. Attach the domains
-
-Delete the dead apex `A` record and the `www` CNAME first, or the deploy will
-conflict with them. Then merge the routes in `wrangler.jsonc`, let preview
-deploy, and promote. Cloudflare creates the records and certificates.
-
-### Rolling back
-
-Reversible, but not instantly: repoint the nameservers at GoDaddy and wait out
-propagation. This only stays true if the old side is left intact — keep the
-GoDaddy zone and the Google domain mapping for `www`. Delete the Google
-mapping and restoring the CNAME will not bring the legacy site back.
-
-To give up only the website while keeping the DNS move, remove the `www` route
-and restore its CNAME to `ghs.google.com`.
-
-## Deploying by hand
-
-Requires `wrangler login`, or the same two environment variables.
-
-```bash
-pnpm deploy:preview   # build and publish to the preview Worker
-pnpm deploy           # build and publish to production
+pnpm deploy:preview   # build and publish to dev.saycbridge.com
+pnpm deploy           # build and publish to saycbridge.com
 ```
 
 Because this repository defines multiple Wrangler environments, production must
 be named explicitly as `--env=""`. A bare `wrangler deploy` is ambiguous and
 warns.
 
+## Configuration
+
+Everything below already exists. It is recorded so it can be understood,
+audited, or rebuilt — not as steps to follow.
+
+### Cloudflare
+
+The zone and both Workers live in a personal Cloudflare account kept
+single-purpose. Custom Domains cannot cross accounts, so the zone has to stay
+wherever the Workers are.
+
+Two zone settings do work that is not in this repository:
+
+- **Always Use HTTPS** (SSL/TLS → Edge Certificates) turns the fifteen years of
+  `http://` inbound links into 301s.
+- **A Redirect Rule** sends `https://www.*` to `https://${1}`, 301, preserving
+  the query string. Host-level redirects cannot live in `public/_redirects`,
+  which is path-only, and doing it in Worker code would mean running the Worker
+  on every asset request rather than serving assets directly.
+
+The Redirect Rule's editor warns that `www` may not be proxied. It is: the
+`www` Custom Domain is inherently proxied, it just is not the conventional
+orange-clouded record the check looks for. Adding a DNS record for `www` would
+collide with the Custom Domain and break it.
+
+### Credentials
+
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are repository secrets, so
+either workflow can read them. The token is scoped to:
+
+- Account → Workers Scripts → Edit
+- Zone → Workers Routes → Edit, on saycbridge.com
+
+Deliberately **not** Zone → DNS → Edit. Custom Domains are attached
+server-side: Cloudflare creates the DNS record and issues the certificate
+itself, so the client never writes DNS. Cloudflare's own generated Workers
+Builds CI token grants Workers Routes but not DNS for the same reason.
+
+This matters because the token lives in a public repository's secrets and the
+zone carries the domain's MX records. Scoped this way, the worst a leaked token
+can do is redeploy the site; with DNS edit it could rewrite MX and intercept
+mail. If a deploy ever fails on the custom domain step for permissions, add DNS
+edit then — not in advance.
+
+## DNS
+
+Cloudflare is authoritative. The apex, `www`, and `dev` are Custom Domain
+records that Wrangler manages; do not create records for them by hand.
+
+The rest of the zone is mail and verification:
+
+| Record                  | Purpose                                         |
+| ----------------------- | ----------------------------------------------- |
+| `MX` ×7                 | Google Workspace                                |
+| `google._domainkey` TXT | DKIM                                            |
+| Apex TXT                | `google-site-verification=…` for Search Console |
+
+**Mail does not currently reach anyone.** The MX records point at a Google
+Workspace whose sole super admin account is locked out by an enforced 2-Step
+Verification policy, with no second admin and no backup codes. Google accepts
+the mail and delivers it normally, so senders get no bounce and believe they
+have reached us. Cloudflare Email Routing, with a catch-all forwarding to an
+address that is actually read, is the intended fix; recovering the Workspace is
+a separate errand for the archive.
+
+There is no SPF and no DMARC record. Worth adding whenever mail is sorted out.
+
 ## Search
 
-saycbridge.com has been indexed since 2011 and every inbound link points at
-`http://www.saycbridge.com/...`. The cutover changes both the scheme and the
-canonical hostname, which is a site move as far as a search engine is
-concerned. These steps are what keep it from reading as a new site.
+The site has been indexed since 2011 and its inbound links point at
+`http://www.saycbridge.com/...`, which the redirects above consolidate onto the
+canonical HTTPS apex.
 
-### Before the cutover
+Still outstanding: verify the `https://saycbridge.com` property in Google
+Search Console and submit `https://saycbridge.com/sitemap.xml`. Search Console
+history starts at verification rather than retroactively, so this only gets
+more expensive to postpone. Afterwards, watch the Coverage report for `/bid/`
+URLs — they are canonicalized to `/`, so they should report as "Alternate page
+with proper canonical tag" rather than as duplicates.
 
-Verify `saycbridge.com` in Google Search Console (DNS TXT is easiest once the
-zone is on Cloudflare) and add both the `http://www.saycbridge.com` and
-`https://saycbridge.com` properties. Search Console history starts at
-verification, not retroactively, so doing this while the old site is still
-serving is the only way to have a before-and-after to compare. There is no
-other baseline: the site ran on `ga.js` until this move, and Google shut that
-off in 2023, so no analytics data exists for the years before the cutover.
-
-### At the cutover
-
-1. **Always Use HTTPS** on (SSL/TLS → Edge Certificates). Every existing link
-   is `http://`, and this is what turns them into a 301 to `https://`.
-2. **A Redirect Rule for `www`**, 301, preserving path and query:
-   - When: `http.host eq "www.saycbridge.com"`
-   - Then: dynamic redirect to
-     `concat("https://saycbridge.com", http.request.uri.path)`, preserve query
-     string, status 301.
-
-   Both hostnames answering with the same content would split the link equity
-   between them, and the canonical tag that would otherwise settle it is set by
-   the app after render rather than in the served HTML.
-
-3. Keep the `www` custom domain route in `wrangler.jsonc` regardless — the
-   Redirect Rule needs a proxied record on the hostname to run at all.
-
-### After the cutover
-
-Submit `https://saycbridge.com/sitemap.xml` in Search Console, then watch the
-Coverage report for `/bid/` URLs. They are canonicalized to `/`, so they should
-report as "Alternate page with proper canonical tag" rather than as duplicates.
-`src/analytics.ts` now reports to GA4 (`G-V8KS5372FL`), replacing the `ga.js`
-call that had reported nothing since 2023. It is restricted to the production
-hostnames: preview is promoted as the very same build artifact, so the hostname
-is the only thing that can keep `dev.saycbridge.com` out of the property.
+`src/analytics.ts` reports to GA4 (`G-V8KS5372FL`). It is restricted to the
+production hostnames: preview is promoted as the very same build artifact, so
+the hostname is the only thing that can keep dev.saycbridge.com out of the
+property.
 
 ### What the app already does
 
@@ -238,16 +149,11 @@ is the only thing that can keep `dev.saycbridge.com` out of the property.
 - `index.html` ships the site description inside `#root`, which React replaces
   on boot. A crawler that does not execute 12 MB of WebAssembly still gets the
   page's copy.
-- `/` renders a board rather than redirecting to `/bid/<board>`, and every
-  board permalink carries `<link rel="canonical">` back to `/`.
 
 ## Notes
 
 - `not_found_handling: "single-page-application"` is what makes deep links work
-  on a cold load. It replaces the `404.html` copy the old GitHub Pages workflow
-  needed.
-- `www.saycbridge.com` must keep resolving — fifteen years of inbound links
-  point at it — but it must not _serve_ the site. See "Search" below.
+  on a cold load.
 - Cloudflare's static asset limits are 25 MiB per file and 20,000 files. The
-  current build is ~22 MB across 14 files, the largest being `pyodide.asm.wasm`
-  at ~9 MB.
+  build is ~22 MB across 14 files, the largest being `pyodide.asm.wasm` at
+  ~9 MB.
