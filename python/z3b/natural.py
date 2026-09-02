@@ -138,9 +138,15 @@ points_for_sound_suited_bid_at_level = [
 ]
 
 
+# A notrump grand slam wants 37 HIGH-CARD points (the slam chapter, p156: "notrump slams require power -- generally
+# 32+ HCP for a small slam and 37 HCP for a grand slam").  Partner's minimum here is total
+# points, and whenever partner has shown a five-card suit it carries a length point that takes
+# no trick in notrump, so the entry is 38: 37 high cards plus that point.  Opposite a balanced
+# partner (a 1N opener's minimum has no length) it is a point strict, and those hands reach a
+# grand through Gerber or a quantitative raise anyway.
 points_for_sound_notrump_bid_at_level = [
     #  0   1   2   3   4   5   6   7
-    None, 19, 22, 25, 28, 30, 33, 37,
+    None, 19, 22, 25, 28, 30, 33, 38,
 ]
 
 
@@ -150,14 +156,20 @@ class WeHaveShownMorePointsThanThem(Precondition):
 
 
 class SufficientCombinedPoints(Constraint):
+    """Partner's minimum (total points: with length or, after a raise, support points) plus this
+    hand's high-card points reach the table's number -- the booklet's own arithmetic for the hand
+    that has not revalued (a raise counts support points through MinimumCombinedSupportPoints)."""
+    def tables(self):
+        return points_for_sound_suited_bid_at_level, points_for_sound_notrump_bid_at_level
+
     def expr(self, history, call):
         strain = call.strain
-        min_points = None
+        suited, notrump = self.tables()
         if strain == suit.NOTRUMP:
-            min_points = points_for_sound_notrump_bid_at_level[call.level]
+            min_points = notrump[call.level]
         else:
             assert strain in suit.SUITS, "%s not in %s" % (strain, suit.SUITS)
-            min_points = points_for_sound_suited_bid_at_level[call.level]
+            min_points = suited[call.level]
         return points >= max(0, min_points - history.partner.min_points)
 
 
@@ -282,7 +294,7 @@ class SuitSlamIsRemote(NaturalPassWithFit):
         LastBidWasBelowSlam(),
         InvertedPrecondition(LastBidHasStrain(positions.Partner, suit.NOTRUMP))
     ]
-    shared_constraints = MaximumCombinedPoints(32)
+    shared_constraints = MaximumCombinedPointsOppositeMinimum(32)
 
 
 class NotrumpSlamIsRemote(NaturalPass):
@@ -290,8 +302,10 @@ class NotrumpSlamIsRemote(NaturalPass):
         LastBidHasStrain(positions.Partner, suit.NOTRUMP),
         LastBidWasGameOrAbove(),
         LastBidWasBelowSlam(),
+        # Partner's 5N (pick a slam / grand slam invitation) is forcing: never pass it.
+        InvertedPrecondition(LastBidWas(positions.Partner, '5N')),
     ]
-    shared_constraints = MaximumCombinedPoints(32)
+    shared_constraints = MaximumCombinedPointsOppositeMinimum(32)
 
 
 game_is_remote_passes = set([
@@ -308,8 +322,16 @@ natural_passses = game_is_remote_passes | slam_is_remote_passes
 
 
 rule_order.order(DefaultPass, natural_passses)
-# Suited games are much easier to make, we should prefer those when available.
+# Suited games are much easier to make, we should prefer those when available: partner's
+# 3N is pulled to a major game that fits.
 rule_order.order(NotrumpSlamIsRemote, natural_exact_major_games)
+# But partner's SUIT game is the game to play, like the minors below: no correcting 4H to
+# 4S when both fit (2026-08-31: the pair was unordered and the bidder had no call).
+rule_order.order(natural_exact_major_games, SuitSlamIsRemote)
+# ... but partner's game (3N, 4H, 4S) is the game to play rather than eleven tricks in a
+# minor: the passes outrank a natural 5C/5D over it (they were unordered, and with partner's
+# minimum now counting length the minor game was often reachable: a coin toss between P and 5m).
+rule_order.order(natural_exact_minor_games, slam_is_remote_passes)
 rule_order.order(natural_suited_part_scores, natural_passses)
 rule_order.order(
     SuitGameIsRemote,

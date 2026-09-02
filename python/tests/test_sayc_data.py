@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# FIXME: This doesn't need to be in python anymore, and could just be a text file?
 sayc_expectations = {
     "test_open_one_nt": [
         ["KQ4.AQ8.K9873.K2", "1N"],  #p2
@@ -12,6 +11,15 @@ sayc_expectations = {
         ["T74.QT8.AKQ86.A5", "1N"],  #p3, h3
         ["AJ763.Q32.K8.A65", "1C"],  #p3, h4
         ["AKT92.T98.AQ9.AT", "1N"],  #p3, h5 - Too "big", plan to do 1C, 2N
+    ],
+
+    "test_three_nt_open": [
+        # 25-27 balanced opens 3N; 28-29 opens 2C and rebids 3N; 30-31 rebids 4N
+        # (round-18 review, C1: everything from 25 up was compressed into 2C-then-3N).
+        ["AKQ2.KQ4.AQJ.A32", "3N"],
+        ["AKQ2.AKQ4.KQJ.A4", "2C"],
+        ["AKQ2.AKQ4.KQJ.A4", "3N", "2C P 2D P"],
+        ["AKQJ.AKQ4.AQJ.A4", "4N", "2C P 2D P"],
     ],
 
     "test_open_two_nt": [
@@ -80,10 +88,9 @@ sayc_expectations = {
         ["J97.Q2.KJ9832.65", "3H", "1N P 2D P 2H P"],  # h18, p10
         # Jacoby with game-force hands
         ["A9.532.K32.KJ865", "3N", "1N P 2H P 2S P"],  # h19, p11
-        # FIXME: It's unclear if h20 should have slam interest (thus 3H instead of 4H).
-        ["A.32.KJ832.QT765", "4H", "1N P 2H P 2S P"],  # h20, p11
+        ["A.32.KJ832.QT765", "4H", "1N P 2H P 2S P"],  # h20, p11 (5-5, no slam interest: the book's 4H)
 
-        # FIXME: This sequence is awkward and likely to confuse many partners.
+        # 3H here is the slam-interest version of h20; the sequence is awkward for human partners.
         ["A.32.AKJ82.QT765", "3H", "1N P 2H P 2S P"],  # 29-31 combined hcp. Looks slammy.
 
         ["A.3.KJ8532.JT764", "4H", "1N P 2D P 2H P"],  # With 6-5 and weak, no need to explore spades?
@@ -103,9 +110,9 @@ sayc_expectations = {
 
         # Transfers are on over higher level NT as well:
         ['K83.852.5.QT9752', '3H', '2N P', 'Both'],  # 4-1bc6c9d271a2f39a0ef106751b, E
-        ['83.852.5.KQT9752', '4H', '2C P 2D P 3N P'],
+        ['83.852.5.QT97542', '4H', '2C P 2D P 3N P'],  # weakened 2026-09-01: the 3N rebid now shows 28-29, so the old 5-count has slam math and bids 6N by design (games < NT responses < slams)
         ['K83.852.QT9752.5', '3D', '2N P', 'Both'],  # 4-1bc6c9d271a2f39a0ef106751b, E
-        ['83.852.KQT9752.5', '4D', '2C P 2D P 3N P'],
+        ['83.852.QT97542.5', '4D', '2C P 2D P 3N P'],  # weakened likewise
 
         # Needs SpadesRebidAfterHeartsTransfer defined for higher-level transfers to not be None:
         ['972.T872.97653.J', 'P', 'P 2C P 2D P 2N P 3D P 3H P', 'Both'],  # 10-19847dc6f0cba48049a7f75f2a, N
@@ -196,6 +203,10 @@ sayc_expectations = {
     ],
 
     "test_rule_of_twenty_open": [
+        # Third seat shades to the rule of NINETEEN (round-18 review, C6; the booklet's
+        # light third-seat openings): 11 with a good five-card suit opens there, not first.
+        ["84.KQJT9.A93.J52", "P"],
+        ["84.KQJT9.A93.J52", "1D", "P P"],
         # Rule of 20 openings
         ["KT64.6.A873.KQ54", "1C"],  # p26, h1
         ["K953.972..AQJ987", "1S"],  # p26, h2
@@ -239,6 +250,9 @@ sayc_expectations = {
         ["KQ975.7532.K7.98", "1N", "1H P"],  # p36, h5
         ["753.97.Q753.K982", "2H", "1H P"],  # p36, h6
         ["753.97.Q753.K982", "2S", "1S P"],  # p36, h6
+        # Support points (hcp + shortness) justify a raise hcp alone would not
+        # (p36: "count your points ... including distribution"; total-point model 2026-08-30).
+        ["J853.T7642.8.K53", "2S", "1S P"],  # 4 hcp, but a singleton heart and 3-card support
         ["742.J98.AT874.T6", "1N", "1S P"],  # p36, h7
         ["742.J98.AT874.T6", "4H", "1H P"],  # p36, h7
 
@@ -270,9 +284,7 @@ sayc_expectations = {
         # Jacoby 2N
         ["QJ5.A75.KT8.AT42", "2N", "1S P"],  # p39, h15
         ["87.AQJT9.8.AKJT9", "4D", "1S P 2N P"],  # p40, h16
-        # FIXME: The book favors 3H instead of 3S for h17, even though 3S shows 18+ points
-        # and slam interest.  Maybe features are higher priority than slam interest?
-        ["AQ.Q9763.8.AKQJ8", "3H", "1S P 2N P"],  # p40, h17
+        ["AQ.Q9763.8.AKQJ8", "3H", "1S P 2N P"],  # p40, h17 (the singleton first, slam interest later)
         ["J32.K7.KQT83.A75", "4H", "1H P 2N P"],  # p40, h18
         ["2.KJ72.KQT83.A75", "3C", "1H P 2N P"],  # p40, h19
         # FIXME: For h20, the book suggests 3H to show slam interest, even though
@@ -303,9 +315,14 @@ sayc_expectations = {
 
     "test_slam_zone_responses_to_one_of_a_major": [
         # Slam zone bids by responder
-        # FIXME:  Need a additional tests to validate a spade raise following jumps in h23, h24
+        # The book continues "followed by a spade raise" but does not print opener's rebid; a
+        # continuation line needs an invented rebid (today the engine jumps to 6N instead of
+        # raising spades after 1S P 3C P 3S P).
         ["AKJ95.65.KQ3.AKJ", "3C", "1S P"],  # p41, h23
-        ["AQ.AKJ76.A32.KQJ", "3D", "1S P"],  # p41, h24 (FIXME: 4NT may also be correct)
+        ["AQ.AKJ76.A32.KQJ", "3D", "1S P"],  # p41, h24 (the book: "hard to quarrel with an immediate 4NT")
+        # The continuation with an invented 3S rebid by opener (the book prints none): the spade raise.
+        ["AKJ95.65.KQ3.AKJ", "4S", "1S P 3C P 3S P"],  # p41, h23
+        ["AQ.AKJ76.A32.KQJ", "4S", "1S P 3D P 3S P"],  # p41, h24
     ],
 
     "test_minimum_response_to_one_of_a_minor": [
@@ -317,8 +334,8 @@ sayc_expectations = {
         ["KQ975.753.K7.987", "2C", "1C P"],  # p45, h3
         ["KQ975.753.K7.987", "1N", "1D P"],  # p45, h3
 
-        ["863.KJ76.T8.K975", "1D", "1C P"],  # p46, h4 (FIXME: 1S may be preferred)
-        ["98.KJ752.84.KT95", "1D", "1C P"],  # p46, h5 (FIXME: 1S may be preferred)
+        ["863.KJ76.T8.K975", "1D", "1C P"],  # p46, h4 (up the line with 4-4)
+        ["98.KJ752.84.KT95", "1D", "1C P"],  # p46, h5 (longer suit first)
         ["42.652.8643.KQJ4", "1H", "1C P"],  # p46, h6
 
         ["AQ87.AT9.K7.T973", "1S", "1C P 1H P"],  # p47
@@ -329,8 +346,8 @@ sayc_expectations = {
         # Too weak, pass.
         ['954.5.QJT8.J9853', 'P', '1D P', 'Both'],  # 4-85c1fb3f6ca8b02c657077964a, E
 
-        # FIXME: Should we count partner for 4 clubs and support?
-        ['5432.KQ2.32.5432', 'P', '1C P'], # Make sure we don't have a hole with 5 hcp and 6 support points.
+        # Hole guard: 5 hcp with 6 support points passes (SAYC responds with 6+).
+        ['5432.KQ2.32.5432', 'P', '1C P'],
 
         # YOLO.  Hope partner doesn't have 3 diamond losers.
         ['AK9842.953.K86.A', '5C', 'P 1C P', 'Both'],  # 7-4725fd646f6238c44adabbb00d, E
@@ -349,7 +366,7 @@ sayc_expectations = {
         # FIXME: How does this interact with length points?
         [".KT953.Q863.T742", "2D", "1D P"],
 
-        # FIXME: I think this result is wrong.  Should we mention a second minor or raise partner?
+        # 3N is right at matchpoints opposite 18-19 balanced: the running club suit makes nine tricks.
         ['AKQJ6.T863.9.J54', '3N', 'P 1C P 1D P 2N P', 'N-S'],  # deal 4285488505698364167172343412243, S should prefer 3N over 5C.
 
         # With no major to explore, the best we can do is bid 1N?  Or should we play our partner for 4 clubs?
@@ -360,7 +377,6 @@ sayc_expectations = {
 
     "test_game_forcing_response_to_one_of_a_minor": [
         # Responding with game-forcing values
-        # FIXME: The book recommends bidding 2NT over 1C here, however 1D is equally forcing.  (Partner could be 6-5 and reversing, no?)
         ["Q73.KJ65.KJ3.K75", "2N", "1C P"],  # p49, h11 (Some partners respond 3N! may need option.)
         ["Q73.KJ65.KJ3.K75", "2N", "1D P"],  # p49, h11 (Some partners respond 3N! may need option.)
         ["98.J732.AQJ74.AQ", "1H", "1C P"],  # p49, h12
@@ -398,6 +414,9 @@ sayc_expectations = {
     ],
 
     "test_minimum_rebid_by_opener": [
+        # A passed-hand RAISE is passed with a minimum like any other raise (the passed-hand
+        # new-suit Gadget once owned this pass and no 13+ opener fit it, 2026-08-31).
+        ["54.AJ3.AT87.AJ82", "P", "P P 1D P 2D P"],  # 14 balanced: game is remote opposite 6-9
         ["KQ8.AJ.9765.A987", "2H", "1C P 1H P"],  # p51, h1
         ["KQ87.AJ.976.A987", "1S", "1C P 1H P"],  # p51, h2
         ["KQ875.AJ.976.A98", "1N", "1C P 1H P"],  # p51, h3
@@ -456,8 +475,8 @@ sayc_expectations = {
     ],
 
     "test_game_forcing_rebid_by_opener": [
-        ["KQ9.AJ98.A4.A987", "4S", "1D P 1S P"],  # p54, h16, FIXME: Would be fixed by using support points in fallback bidder.
-        ["K7.AK875.K4.AK87", "2S", "1D P 1H P"],  # p54, h17, FIXME: Teach bot how to bid Reverses.
+        ["KQ9.AJ98.A4.A987", "4S", "1D P 1S P"],  # p54, h16
+        ["K7.AK875.K4.AK87", "2S", "1D P 1H P"],  # p54, h17 (over 1D-1H the 2S rebid is a jump shift, not a reverse)
         ["KQ.AJT.K87.A9876", "4H", "1S P 2H P"],  # p54, h18
         ["K5.AJ9.AKJ984.A9", "4H", "1H P 1N P"],  # p54, h19 (Maybe 3H?)
         ["K765.AK87.KQ.A98", "2N", "1D P 1H P"],  # p54, h20
@@ -521,11 +540,11 @@ sayc_expectations = {
         ["AQT542.AQJ.A.987", "2D", "1C P 1S P"],  # p60, h6
         ["AQT542.AQJ.A.987", "3S", "1C P 1S P 2D P 3D P"],  # p60, h6
 
-        # FIXME: Need bid-history-only test for "Another type of reverse"
+        # "Another type of reverse" (1H P 1N P 2S: the book's experts call it a reverse, game
+        # forcing, "perhaps 15+") is the p60 h2 line above.
 
         # Responder's rebid after the reverse
         # "Lebensohl after opener's reverse" aka "Ingberman 2N"
-        # FIXME: We pass this for the wrong reasons.  Retreating to 2N after a forcing bid.
         ["J932.QJ7.Q83.JT3", "2N", "1C P 1N P 2D P"],  # p62, h7
 
         # Rebidding a 5-card major when forced to.
@@ -535,13 +554,19 @@ sayc_expectations = {
         ["AQJ76.AK72.J.K75", "3S", "1C P 1S P 2D P 2S P"],  # p63
 
         ["87632.8.T86.AQ98", "2N", "1D P 1S P 2H P"],  # p64, h9
-        # FIXME: Should have a test of opener re-bidding his diamond over 2N
+        # Opener rebids his first suit over the 2N (our example, in the shape of h9's auction).
+        ["5.KQJ62.AK72.KJ8", "3D", "1D P 1N P 2H P 2N P"],
+        # The book prints no minimum opener rebidding 3D over the 2N; the only p64 opener is
+        # the 5440 monster below, which bids 4H over it.
 
-        # FIXME: Why open this 1D?  Seems likely to miss the 5-3 heart fit?
         # BOOK_ERROR: Ignoring this test.  Should open 1H planning to Jump-Shift to 3D.
         # [".AKJ974.AKQJ7.J7", "4H", "1D P 1S P 2H P 2N P"],  # p64
-        # FIXME: Need bid-history-only tests for reverse responses p64, p65
-        # May need tests for h10, h11, h12, h13 on p66.
+        # TODO: construct prototype boards matching the book's context and auction for
+        # responder's rebids after a reverse "with more than minimum values" (p64-66, auctions
+        # only, no hands printed): 1C P 1N P 2D P 2H/2S (game forcing, a stopper in the bid
+        # major); 1D P 1N P 2H P 3N (to play); 1C P 1S P 2D P 3S (game forcing, 6+ spades);
+        # 1D P 1S P 2H P 4D (game forcing / slam invitational, no 3N); 1C P 1S P 2D P 2H*
+        # (artificial: bid notrump with a heart stopper).
 
         # Partner didn't use Ingberman, so we definitely have game, no fit, so 3N it is.
         ['KQT965.A5.KQ76.A', '3N', 'P 1C P 1S P 2H P 3S P', 'N-S'],  # 15-5bc3ef62e10530af9af2685543, W
@@ -550,6 +575,13 @@ sayc_expectations = {
     ],
 
     "test_subsequent_bidding_by_responder": [ # Chap 8
+        # Partner's game is the game to play: no natural 5C over the 3N jump rebid
+        # (the slam-is-remote pass outranks the minor game, 2026-08-30; both calls fit this hand).
+        ["AJT864.42.7.KQT8", "P", "1C P 1S P 3N P"],
+        # Without the values to insist opposite partner's minimum, 3N is passed -- the pass
+        # ceiling is judged against partner's MINIMUM (2026-09-01: against the maximum, a
+        # wide range made this pass impossible and a 14-count had NO call over partner's 3N).
+        ["KJT.AKJ93.93.Q82", "P", "1C P 2N P 3N P"],
         # Subsequent bidding by responder
         # Rebids with weak hands
         ["T64.652.KT54.A54", "P", "1D P 1H P 2H P"], # p69, h1
@@ -694,6 +726,9 @@ sayc_expectations = {
     ],
 
     "test_preemption": [ # Chap 10
+        # The 2N feature ask (p86-88): a maximum with no outside feature rebids 3N
+        # (round-18 review, A1: the engine could only rebid the suit).
+        ["32.32.432.AKQJ97", "3N", "2S P 2N P"],
         # Preemption
         ["4.Q765.83.KQT932", "2S", ""], # p83, h1
         ["4.Q765.83.KQT932", "2S", "P"], # p83, h1
@@ -898,9 +933,9 @@ sayc_expectations = {
         ["QJT2.76.AQ953.K8", "P", "1S", 'Both'],  # p99 (vulnerable)
 
         ["53.A8.KQJ873.975", "2H", "1S"], # p99, h7
-        # I think the book is wrong here and this should just be michaels:
-        ["KQ8765.8.AQT95.9", "2H", "1S"], # p99, h8
-        # FIXME: Ideally would test a clubs rebid by h8 here.
+        # The book bids 2H "and mentions the clubs at your next turn if the auction permits";
+        # we chose Michaels 2S on this 6-5 eleven-count (2026-08-29), so the line is not run.
+        # ["KQ8765.8.AQT95.9", "2H", "1S"], # p99, h8
 
         ["KQ873.85.32.AKQT", "1S", "1H"], # Prefer 1S over 2C?
 
@@ -961,11 +996,11 @@ sayc_expectations = {
         # Regardless of which minor he has, we want to be in it.
         ['QJT9763.AQ43.A4.', '4C', '2H 3H P'],  # 11-125d5625bef1d842faa60c0cbf, E
 
-        # FIXME: If we have a max-michaels, partner likely doesn't have much, jump to show him we want this?
-        # I can't find this in the book.  Maybe we invented it for the KBB?
-        ['KJ984.93.KJ986.2', '4C', '1S 2S P 2N P'],
+        # The jump reply to the minor request shows a maximum Michaels hand (standard practice,
+        # not in the book; agreed 2026-08-29); a minimum names the minor at the three level.
+        ['KJ984.93.KJ986.2', '3C', '1S 2S P 2N P'],
         ['Q3.AKJ94.AKJ86.2', '4D', '1S 2S P 2N P'],
-        ['K9874.3.AQ.AKQ72', '4C', 'P 1H 2H P 2N P'],  # 14-0e3f5b9e514a9894a6cf10c93f, W should jump to show his max-michaels?
+        ['K9874.3.AQ.AKQ72', '4C', 'P 1H 2H P 2N P'],  # 14-0e3f5b9e514a9894a6cf10c93f, W jumps to show the maximum
 
         # Unusual notrump
         ["QJ9864..KQT87.86", "2N", "1D"],  # p106, h12
@@ -1009,7 +1044,7 @@ sayc_expectations = {
         ['KJ984.93.KJ986.2', '5C', '1S 2S 4S 4N P'],
         ['93.KJ984.KJ986.2', '5D', '1S 2S 4S 4N P'],
 
-        # FIXME: Maybe we should use michaels minor request to get his point-range first?
+        # FIXME: Maybe we should use the Michaels minor request to get his point range first? (MichaelsMinorRequest is requires_planning and never fires -- see docs/saycbridge-misses-plan.md, logged for discussion.)
         ['K75.AQ5.542.T763', '3H', 'P 1S 2S P'],  # 11-c66f5e1c834268a144ccb69edf, S
 
         # 2N is to play in response to a minor michaels.
@@ -1060,6 +1095,12 @@ sayc_expectations = {
     ],
 
     "test_doubles": [ # Chap 15
+        # Doubles of opening bids at game or higher are penalty, 3N included (round-18
+        # review, A2: the takeout reading ran to any level and FORCED a 0-count advance).
+        ["A93.KQ42.KJ54.A2", "X", "4S"],
+        ["KQT4.A93.A2.KQ85", "X", "3N"],
+        # A two-level takeout double needs opening values with shape, not 15 (2026-08-28).
+        ["KJ83.Q75.72.AQ98", "X", "1D P 1H P 2H"],  # 12 hcp, 4-4 in the unbid suits (passed 1D: no shape for a 1-level double)
         # Penalty Double
         ["T98.KQ4.863.Q875", "P", "1N X P"],  # p116, h1
         ["J7.872.53.QJ9874", "2S", "1N X P"],  # p116, h2
@@ -1136,9 +1177,12 @@ sayc_expectations = {
         ["A.AK.AK9876.QJ84", "3S", "1C X P 1S P"],
         ["AJ.KQ.AQJ832.KJ9", "2H", "1C X P 1D P"],
 
-        # FIXME: Should big-hand jump raises really take us to game?
+        # The doubler's rebid ladder (p125): a jump raise shows 19-21 with four-card support, so
+        # over a forced 2S the jump to 4S is the book's call with this 20-count.  Over a forced 3D
+        # the same ladder would say 5D, an eleven-trick minor game opposite a possible bust; the
+        # cuebid (forcing, asking for a heart stopper for 3N) is the practical call.
         ["98.KQJ9.AQ7.AKQ4", "4S", "2D X P 2S P"],
-        ["98.KQJ9.AQ7.AKQ4", "5D", "2H X P 3D P"],
+        ["98.KQJ9.AQ7.AKQ4", "3H", "2H X P 3D P"],
 
         # Responding to a takeout double
         # Responding with no intervening bid
@@ -1149,6 +1193,14 @@ sayc_expectations = {
         ["J783.AJ64.K76.Q8", "2N", "1D X P"],  # p120, h18
         ["QJ83.AQ64.K76.Q8", "3N", "1D X P"],  # p120 (modified h18 to have 13-16hcp)
         ["Q86.J32.K7.AQT65", "4S", "1D X P"],  # p120, h19
+        # Responding to a takeout double of a preempt (the booklet stops at one-level
+        # doubles; ch15's principles applied upward: bid your best suit even when broke,
+        # cuebid with a game-going hand).
+        ["Q84.72.853.QT942", "3S", "3D X P"],  # forced: cheapest spade advance over a doubled preempt
+        ["KQ9842.72.973.85", "4C", "3D X P"],  # forced: no major, the club advance sits at the four level
+        ["842.853.QT9642.8", "4H", "3S X P"],  # forced: pulling with a singleton in their suit beats sitting
+        ["KQ98642.T72.53.8", "P", "4S X P"],  # X of a game opening is penalty: no forced advance
+        ["A642.2.AQ64.KQ52", "4D", "3D X P"],  # cuebid: 14 with both majors, partner picks the game
         # Responding with an intervening bid
         ["T874.876.6.AK863", "3S", "1D X 1H"],  # p120, h20
         ["A73.7642.K7.Q986", "1S", "1D X 1H"],  # p120, h21
@@ -1161,10 +1213,18 @@ sayc_expectations = {
         ["9874.QJ6.J7432.A", "4H", "1H X"],  # p122, h25
         ["Q3.KQT632.32.J86", "3D", "1H X"],  # p122, h26
         ["9864.A65.87.KQ74", "1S", "1H X"],  # p122, h27
+        # A new suit at the two level over their double is natural and weak (6-9) with a
+        # five-plus suit, not the uncontested force (round-18 review, A4); 10+ redoubles
+        # (h23 above) and with real support Jordan still comes first.
+        ["985.KQJ85.963.52", "2D", "1S X"],  # 6 with five diamonds: natural and weak
+        ["A85.A3.KQJ85.752", "2N", "1S X"],  # 12 with three spades: Jordan, not 2H
 
         # Jordan/Truscott 2NT
         ["K743.QJ96.Q865.5", "2N", "1H X"],  # p123, h28
         ["Q864.A653.T987.5", "3H", "1H X"],  # p123, h29
+        # Opener's minimum signoff after Jordan is passed: the 2N bidder already limited
+        # his hand (2026-09-01: no pass rule fit and an 11-count had NO call over 3H).
+        ["963.A62.QJ97.A42", "P", "1H X 2N P 3H P"],
 
         # Depends on the vulenerability?  This looks like a 50% game or so?
         ['K4.J3.KQ3.AK7642', 'P', 'P 1S X 3S P'],  # 14-795dc2f94c38f2cdd4a626843a, S
@@ -1173,13 +1233,25 @@ sayc_expectations = {
         ["74.876.AKJ987.63", "X", "1N P 2H"],  # p124, h30
         ["AKQ83.95.97.Q986", "X", "1N P 2C"],  # p124, h31
         ["T986542..A7.6532", "X", "1H P 3H P 4N P 5D"],  # p124, h32
-        # FIXME: A bunch of bid-only hands we could test from p126.
+        # TODO: construct prototype boards matching the book's context and auction for the
+        # p126 redoubles (auctions only, no hands printed): 1N (P) 2D* (X) XX = to play;
+        # 1S (X) XX = a good hand; 1N (2S) X (XX) = SOS.
     ],
 
     "test_negative_double": [ # Chap 16
         ["74.876.KQ73.A863", "X", "1D 2C"],  # p127, h1
+        # "Two places to play" is the unbid major plus EITHER minor, and five of the major
+        # qualifies alone (round-18 review, A3: the unbid minor was hard-required).
+        ["Q4.942.KJ765.T83", "X", "1D 1S"],  # five hearts, six points
+        ["84.QJ42.KJ76.842", "X", "1D 1S"],  # four hearts with diamond support, two clubs
+        # The FREE 1N over their overcall promises a stopper (round-18 review, B12); with
+        # the shape for a negative double, double first.
+        ["T83.Q42.KJ7.A642", "1N", "1D 1S"],  # spade ace, only three hearts: 1N
         ["87.A864.K9653.76", "X", "1C 1S"],  # p127, h2
-        # FIXME: A bunch of bid-only hands we could test from p129.
+        # TODO: construct prototype boards matching the book's context and auction for the
+        # p129 negative-double promises (auctions only, no hands printed): 1C (1S) X = 4+
+        # hearts, not necessarily diamonds; 1D (1H) X = exactly four spades (1S = five);
+        # 1C (1D) X = both majors; 1D (2C) X = at least one four-card major.
         ["9872.K64.K875.63", "X", "1C 1S"],  # p130, h3
         ["73.J986.J53.A864", "P", "1C 2H"],  # p130, h4
         ["64.Q965.984.KQ75", "X", "1C 1H"],  # p130, h5
@@ -1205,7 +1277,8 @@ sayc_expectations = {
         ['KT964.QJ874.53.A', '3C', 'P P 1D 1S X 2S', 'N-S'],  # 15-d2381cacd0b0d88e797add66d4, N
 
         # Showing a 6-card suit seems better than just showing points:
-        ['AKQJT2.QJ5.Q4.A3', '3C', '1C 1S X P'],  # 8-e814ffd1ea2f99d681d2c91423, W
+        ['AKQJT2.QJ5.Q4.A3', '3C', '1C 1S X P'],
+        ['AKQ63.KQJ5.A5.87', '2S', '1C 1S X P'],  # 19+: the cuebid outranks a jump shift (which used to tie with a duplicate rule and bid nothing)  # 8-e814ffd1ea2f99d681d2c91423, W
 
         # Minimum NT responses only show shape, not more points.
         ['AT76.K63.Q98.KJ8', '2N', 'P 1C 2S X P', 'Both'],  # 13-3e5b4b44d80b70f05a7ce29e66, E
@@ -1342,7 +1415,9 @@ sayc_expectations = {
         ["K83.K95.K54.QT75", "2S", "1C P P 1S P"],  # p144, h16
         ["Q973.42.AT95.K87", "2S", "1C P P 1S P"],  # p144, h17
         ["QJ62.K32.A4.K843", "3S", "1C P P 1S P"],  # p144, h18
-        # FIXME: Need tests for NT responses (none given in the book).
+        # TODO: construct prototype boards for the book's notrump advances of a balancing
+        # overcall (p144, ranges only, no hands printed): 1N 9-12, 2N 12-14, 3N 15+, with a
+        # stopper in their suit and tolerance for partner's.
 
         # Responding to a balancing double
         ["AJ3.864.JT4.KQ73", "2S", "1D P P X P"],  # p145, h19
@@ -1356,11 +1431,15 @@ sayc_expectations = {
     ],
 
     "test_slam_biding": [
-        # FIXME: The slam bidding chapter has no hands, but does have more sequences we could test.
+        # The slam chapter's printed sequences are at the end of this group (RKC / control
+        # bids, commented out until those are decided).
 
         # 4NT Quantitative (invitational)
         ["QT64.AK8.KT6.A62", "4N", "1N P"],  # p156, East
-        ["KJ.QJT9.A873.KQ3", "6N", "1N P 4N P"], # p156, West, # FIXME: Why is 16 the "top end" of the 15-17 range?
+        # BOOK_QUIRK: the book's own rule is 6N with 17 (or 16 and a five-card suit), else pass,
+        # "another sensible arrangement" being pass 15 / 5N 16 / 6N 17 -- which is what the engine
+        # plays; its worked example then bids 6N on this flat 16.  Not expected to pass.
+        # ["KJ.QJT9.A873.KQ3", "6N", "1N P 4N P"], # p156, West
         ["JT64.AK8.KQ6.A62", "4N", "1N P"],  # p156, East
         ["KQ.QJT9.A87.QJ73", "P", "1N P 4N P"], # p156, West
 
@@ -1377,7 +1456,32 @@ sayc_expectations = {
         # If we had 2o3 in trump we would have gone to grand:
         [".AQ753.J5.AK8762", "7S", "1S P 5N P"],
 
-        # FIXME: Missing tests for p158+
+        # The book's ace-ask is Roman Keycard 0314; the engine plays plain Blackwood.  Its
+        # printed sequences (report/saycbridge_booklet_gaps.md), commented out until RKC is decided:
+        # RKC ["Q3.KQ.KJ832.AKT8", "5H", "1H P 1S P 3S P 4N P"]  # two keycards, no trump queen
+        # RKC ["Q3.KQ.KJ832.AKT8", "6H", "1H P 1S P 3S P 4N P 5H P 5N P"]  # two outside kings
+        # RKC ["QJT97.KQJ.3.KQ43", "5D", "1C P 1S P 3S P 4N P"]  # one keycard (the trump king)
+        # Gerber over 1N and after a 2C auction (all systems on after the 2N rebid):
+        # Gerber ["KQJT987.2.K2.AKQ", "4C", "1N P"]
+        # Gerber ["KQJT987.2.K2.AKQ", "7N", "1N P 4C P 4N P"]
+        # Gerber ["QJT.K2.QJT9876.2", "2H", "2C P"]
+        # Gerber ["K84.AQJ6.AK.KQJ3", "2N", "2C P 2H P"]
+        # Gerber ["QJT.K2.QJT9876.2", "4C", "2C P 2H P 2N P"]
+        # Gerber ["K84.AQJ6.AK.KQJ3", "P", "2C P 2H P 2N P 4C P 4S P 4N P"]
+        # Control bids (the engine has none): first-round controls up the line, a return to
+        # the agreed suit says no more.
+        # control bids ["A.KQJ3.AK8753.73", "4C", "1H P 3H P"]
+        # control bids ["KQ4.A62.Q964.J82", "4D", "1H P 3H P 4C P"]
+        # control bids ["A.KQJ3.AK8753.73", "5D", "1H P 3H P 4C P 4D P"]
+        # control bids ["KQ4.A62.Q964.J82", "5H", "1H P 3H P 4C P 4D P 5D P"]
+        # control bids ["987.T932.Q8.AT43", "4D", "1H P 1S P 3D P"]
+        # control bids [".AKQJ7.AK9762.K5", "4H", "1H P 1S P 3D P 4D P"]
+        # control bids ["987.T932.Q8.AT43", "4S", "1H P 1S P 3D P 4D P 4H P"]
+        # control bids [".AKQJ7.AK9762.K5", "7D", "1H P 1S P 3D P 4D P 4H P 4S P"]
+        # control bids [".AQ753.QJ5.AK876", "4C", "1S P 3S P"]
+        # control bids ["AJ73.K82.83.Q943", "4S", "1S P 3S P 4C P"]
+        # control bids [".AQ753.QJ5.AK876", "5D", "1S P 3S P 4C P 4S P"]
+        # control bids ["AJ73.K82.83.Q943", "5S", "1S P 3S P 4C P 4S P 5D P"]
 
         ["A63.J43.AKQJT.A2", "5S", "1H P 2N P 3H P 4N P"], # 4N is blackwood after Jacoby2N
     ],
@@ -1430,7 +1534,7 @@ sayc_expectations = {
         ['KT76.98.K8754.94', 'P', 'P 1H X 3H P 4H X P', 'N-S'],  # deal 8382037091299794628457966133495, N bid 4N after S's game double!
         ['KQ742.T.QT542.T2', 'P', 'P 1C P 1H P 2H P', 'N-S'],  # deal 983851022516199954010479458001, E should mention delayed club support, but only once.
         ['KJ9.AK832.T987.5', '2D', '1S P 1N', 'E-W'],  # Slightly modified W from deal 8087525203290005445964033020522
-        ['74.AQ752.KJ5.J85', '2C', 'P P P 1C 1H 1S', 'N-S'],  # 15-10222479319156695433645509043224-W:NS: E should have competed for part score.
+        ['742.AQ75.KJ5.J85', '2C', 'P P P 1C 1H 1S', 'N-S'],  # 15-10222479319156695433645509043224-W:NS: E should have competed for part score.  # reshaped 2026-09-01 to 4-3-3-3: 11 with AQ752 now opens third seat (rule of nineteen)
         ['87.754.K54.AK754', 'P', 'P P 1N P 2C P 2D P 2N P 3N', 'N-S'],  # deal 1062232275178304430354351375273, N shouldn't overcall, unlikely to find a fit.
         ['A642.53.973.AT98', 'P', 'P 1D P 1S P 1N P', 'Both'],  # deal 4517066310038174380006179757260, N was incorrectly bidding 2N
         ['A8.AJ854.K7.AT62', '1S', '1D P 1H P', 'E-W'],  # deal 2951009855043816914734430995830, N needs to mention his 4 card spade suit.
@@ -1561,3 +1665,56 @@ sayc_expectations = {
         ['QJ86.K7.AKT53.T6', '2H', '1H P 2D P', 'E-W'], # Not enough points to say 3C, but we can't pass partner.
     ],
 }
+
+
+# Balancing over a 1N opening (previously a rule desert: every balancing rule required a
+# one-level suit opening, so 1N-P-P was always passed out).  Same Cappelletti schedule as
+# the direct seat, slightly lighter.  Hands are C.D.H.S.
+sayc_expectations["test_balancing_cappelletti"] = [
+    ["65.T65.AQ9876.K5", "2C", "1N P P"],    # 11 hcp, 6-card suit: bid 2C then show hearts
+    ["AQ54.Q54.A87.K54", "X", "1N P P"],      # 15 balanced: penalty-oriented double
+    ["KJ765.T5.AQ987.6", "2H", "1N P P"],    # hearts + a minor two-suiter
+    ["Q65.J65.Q876.A54", "P", "1N P P"],     # 9 balanced, no shape: nothing to say
+    ["J942.AK7.K.KQ986", "P", "1N P P"],     # 16 but unbalanced: the X shows a 1N hand
+    ["8765.943.976.432", "2D", "1N P P 2C P"],  # advancer relays to hear the suit
+]
+
+# The pass-out seat doubles a dying two-level partscore after the opponents' 1N opening
+# (1N-P-2D-P-2H-P-P etc. were never contested by any rule).
+sayc_expectations["test_passout_double_after_notrump_auction"] = [
+    ["Q765.AJ65.KJ54.9", "X", "1N P 2H P 2S P P"],   # 11, short in their spades, support
+    ["Q76.AJ65.KJ5.984", "P", "1N P 2H P 2S P P"],   # 3-card spades, no shape: pass it out
+    # Advancing the double: no jumping past 3N on invitational values.
+    ["T954.Q54.AQ7.KJ4", "2N", "1N P 2H P 2S P P X P"],   # balanced 11-12 with their suit stopped
+    ["A54.K54.KJ54.T54", "3H", "1N P 2H P 2S P P X P"],   # 11 with 4 hearts: 3H, not 4H
+]
+
+# Auctions the booklet is silent on: these pin the engine's current behavior so gap fixes
+# and refactors are visible in review, not because the calls are endorsed.  When an
+# interpretation question is settled, the expectation moves to a regular group with a
+# page cite.
+sayc_expectations["test_sayc_gaps"] = [
+    # Overcall, then takeout double: before 2026-08-30 (SupportForPartnersSuits) compiling
+    # the cuebid over this auction crashed the interpreter for EVERY hand, so this line is
+    # the crash regression.  The bank hand that exposed it (K952.AQ85.KQ73.2 cdhs, 14 hcp)
+    # cannot be pinned: it cuebids 2C at the 1C 1D X prefix, so the full auction is only
+    # noise-reachable, where its one candidate call was an absurd NaturalSuited 6D (the
+    # overcaller-then-doubler's minimum stacks to slam range; the interpretation of the
+    # second double deserves a look).  A 5-heart advancer (97532.85.QT873.2) finds NO
+    # call here at all.
+    ["9753.852.QT873.4", "2D", "1C 1D X P 2C X P"],
+    # The overcaller's reply to the cuebid advance (limit raise or better, p137): game in
+    # our suit with more than a minimum, else the cheapest rebid, which advancer passes
+    # holding only the limit raise.  Structured like ResponseToJordan; the booklet shows
+    # the cuebid, not the continuations.  Before 2026-09-01 NO call was covered here (the
+    # cuebid is forcing, so the overcaller was simply stuck).
+    ["T32.AJ3.82.AQ752", "2S", "1H 1S P 2H P"],  # minimum: retreat
+    ["AKT965.75.Q98.87", "4C", "1D 2C 2D 3D P"],  # minimum: retreat over the three-level cuebid
+    ["KQ4.A93.8.AQJ752", "4S", "1H 1S P 2H P"],  # maximum: game opposite the promised eleven
+    ["T32.AJ3.82.KQ752", "P", "1H 2C P 2H P 3C P"],  # advancer passes the retreat with a bare limit raise
+    # Partner's suit game is the game to play: no correcting 4H to 4S when both fit
+    # (2026-08-31: the pass and the 4S were unordered and the bidder had no call; partner's
+    # 3N is still pulled to a fitting major game).  Worth revisiting alongside
+    # requires_planning: 4N Blackwood also fit this hand and was filtered.
+    ["3.KJ.J987654.AQT", "P", "1S P 2H P 4H P"],
+]

@@ -31,6 +31,14 @@ T8753 hearts, and JT432 spades.
 - Browser assets are prepared by `pnpm assets:prepare`, checksum-verified, and
   served locally. Do not add a server-side bidding fallback.
 - `tests/bidding/sayc_standard.yaml` is a source reference from the SAYC book:
-  never change expected bids. The curated executable z3b regression corpus is
-  `python/tests/test_z3b_expectations.py`; explicitly classify unsupported
-  historical cases rather than rewriting expectations.
+  never change expected bids. The executable corpus is
+  `python/tests/test_sayc_data.py` (hand, expected call, auction); every hand in
+  it is bid by `python -m tests.harness` and compared with the accepted output
+  in `python/tests/baselines/` by `python/tests/test_z3b_baseline.py`. Any
+  behavior change of the bidder fails that test with a diff. When the change is
+  intended, commit it and run `python -m tests.check_baseline --accept` (it
+  refuses a dirty tree) so the reviewed artifact is the baseline diff. Fix a
+  known miss by making its FAIL line disappear; never edit the baselines by
+  hand. When you fix a bidding bug, add the hand and auction that exposed it to
+  `test_sayc_data.py` first. `python/tests/test_z3b_expectations.py` keeps one
+  pinned hand per corpus group; classify a new group there.

@@ -75,7 +75,7 @@ class YarboroughZ3bTest(unittest.TestCase):
         self.assertIn("1N", names)
         self.assertIn(
             {
-                "call_name": "3N",
+                "call_name": "4N",
                 "rule_name": None,
                 "description": None,
                 "knowledge_string": None,

@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 # Copyright (c) 2013 The SAYCBridge Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -12,7 +11,8 @@ class Board(object):
     def __init__(self, number=None, deal=None, call_history=None):
         self.number = number or 1
         self.deal = deal or Deal.random()
-        self.call_history = call_history or CallHistory.empty_for_board_number(number)
+        # An empty CallHistory is falsy (it has __len__), so test for None explicitly.
+        self.call_history = call_history if call_history is not None else CallHistory.empty_for_board_number(self.number)
 
     @property
     def identifier(self):

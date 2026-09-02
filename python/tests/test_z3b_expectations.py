@@ -16,6 +16,7 @@ class Z3bExpectationTest(unittest.TestCase):
     CASES = {
         "test_3c_stayman": 0,
         "test_balancing": 1,
+        "test_balancing_cappelletti": 0,
         "test_doubles": 0,
         "test_escape_route_stayman": 0,
         "test_fourth_suit_forcing": 0,
@@ -42,12 +43,14 @@ class Z3bExpectationTest(unittest.TestCase):
         "test_opener_rebid_after_a_limit_raise": 0,
         "test_overcalling_one_notrump": 0,
         "test_overcalls": 0,
+        "test_passout_double_after_notrump_auction": 0,
         "test_preemption": 0,
         "test_preemptive_overcalls": 0,
         "test_reopening_double": 0,
         "test_responses_to_michaels": 0,
         "test_reverses": 0,
         "test_rule_of_twenty_open": 0,
+        "test_sayc_gaps": 0,
         "test_slam_biding": 0,
         "test_slam_invitations_over_one_nt": 0,
         "test_slam_zone_response_to_one_of_a_minor": 0,
@@ -55,6 +58,7 @@ class Z3bExpectationTest(unittest.TestCase):
         "test_strong_two_club": 0,
         "test_subsequent_bidding_by_responder": 0,
         "test_third_and_fourth_seat_opens": 1,
+        "test_three_nt_open": 0,
         "test_three_level_calls_over_one_nt": 0,
     }
     UNSUPPORTED_GROUPS = {"test_weak_game_jump_over_one_nt"}

@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 # Copyright (c) 2013 The SAYCBridge Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -27,6 +26,7 @@ annotations = enum.Enum(
     "BidSpades",
 
     "LimitRaise",
+    "JumpShiftResponse",  # responder's strong jump shift over a one-level opening (19+ or the booklet's special hands)
     "OpenerReverse",
 
     # Not all Cappelletti bids are artificial, some can be treated as to-play.
@@ -34,6 +34,16 @@ annotations = enum.Enum(
 
     # Quantitiative 4N is odd, but not artificial. :)
     "QuantitativeFourNotrumpJump",
+    # A suited overcall in the pass-out seat (lighter than a direct overcall; advancer's
+    # raises and notrump bids read it that way, p144).
+    "BalancingOvercall",
+
+    # Advancer's cuebid of the opponents' suit over our overcall (a limit raise or
+    # better of our suit, p137): the overcaller's rebids anchor on it.
+    "CuebidAdvance",
+    # A minimum, non-forcing decline of partner's invitation (ResponseToJordan's cheapest
+    # rebid): partner passes it rather than proving combined points he cannot have.
+    "Signoff",
 
     "Artificial",
     # NOTE: RuleCompiler._compile_annotations will automatically imply
@@ -53,6 +63,9 @@ annotations = enum.Enum(
     "Transfer",
     "Unusual2N",
     "GrandSlamForce",
+    "Jordan",
+    "Lebensohl",
+    "LeadDirectingDouble",
 )
 
 # Used by RuleCompiler._compile_annotations.
@@ -140,6 +153,28 @@ class Opened(Precondition):
         return annotations.Opening in history.annotations_for_position(self.position)
 
 
+class PassedHand(Precondition):
+    """The position had a turn before the opening bid and passed (a passed hand: its later
+    calls are limited)."""
+    def __init__(self, position):
+        self.position = position
+
+    @property
+    def repr_args(self):
+        return [self.position.key]
+
+    def fits(self, history, call):
+        ch = history.call_history
+        calls = ch.calls
+        opening = next((i for i, c in enumerate(calls) if not c.is_pass()), None)
+        if opening is None:
+            return False
+        my_seat = ch.dealer.position_after_n_calls(len(calls)).index
+        # positions: RHO=0, Partner=1, LHO=2, Me=3 -> seats me+3, me+2, me+1, me.
+        seat = (my_seat + 3 - self.position.index) % 4
+        return any(ch.dealer.position_after_n_calls(i).index == seat for i in range(opening))
+
+
 class TheyOpened(Precondition):
     def fits(self, history, call):
         return annotations.Opening in history.them.annotations
@@ -192,7 +227,7 @@ class IsGame(Precondition):
         return 3
 
     def fits(self, history, call):
-        return call.is_contract() and call.level == self._game_level(bid.strain)
+        return call.is_contract() and call.level == self._game_level(call.strain)
 
 
 class LastBidWasBelowGame(IsGame):
@@ -213,6 +248,44 @@ class LastBidWasBelowSlam(Precondition):
         return last_contract.level < 6
 
 
+class OpeningBidWas(Precondition):
+    """The auction's opening call (first non-pass) was call_name, by whoever made it.
+    Combine with TheyOpened()/Opened(position) to constrain which side opened."""
+    def __init__(self, call_name):
+        self.call_name = call_name
+
+    @property
+    def repr_args(self):
+        return [self.call_name]
+
+    def fits(self, history, call):
+        for caller_call in history.call_history.calls:
+            if not caller_call.is_pass():
+                return caller_call.name == self.call_name
+        return False
+
+
+class TheyRaisedToTwoAndStopped(Precondition):
+    """The opponents opened a suit and the auction is dying at two of it: the opening suit
+    is the last contract, at level two, bid by LHO (responder's raise of RHO's opening, or
+    opener's own rebid after partner's response), and partner and RHO have just passed.  The
+    balancing seat."""
+    def fits(self, history, call):
+        opening = next((c for c in history.call_history.calls if not c.is_pass()), None)
+        last_contract = history.last_contract
+        if not opening or not last_contract or opening.strain not in suit.SUITS:
+            return False
+        # A one-level opening raised or rebid to two, not a weak two that everyone passed
+        # (that is TakeoutDoubleAfterPreempt's spot).
+        if opening.level != 1:
+            return False
+        if last_contract.level != 2 or last_contract.strain != opening.strain:
+            return False
+        return (history.lho.last_call == last_contract and
+                history.partner.last_call and history.partner.last_call.is_pass() and
+                history.rho.last_call and history.rho.last_call.is_pass())
+
+
 class LastBidHasAnnotation(Precondition):
     def __init__(self, position, annotation):
         self.position = position
@@ -226,6 +299,15 @@ class LastBidHasAnnotation(Precondition):
 
     def fits(self, history, call):
         return self.annotation in history.view_for(self.position).annotations_for_last_call
+
+
+class FourthSeatOpensPreemptsAtGameOnly(Precondition):
+    """In fourth seat (three passes to us) a preempt is only worth making at the four level
+    (p88 h27: 4H in every seat); lower preempts give the opponents nothing to preempt."""
+    def fits(self, history, call):
+        from z3b.model import positions  # model imports this module; keep the import local
+        fourth_seat = LastBidWas(positions.LHO, 'P').fits(history, call)
+        return not fourth_seat or call.level >= 4
 
 
 class LastBidHasStrain(Precondition):
@@ -318,9 +400,21 @@ class SuitLowerThanMyLastSuit(Precondition):
         if call.strain not in suit.SUITS:
             return False
         last_call = history.me.last_call
-        if last_call.strain not in suit.SUITS:
+        if not last_call or last_call.strain not in suit.SUITS:
             return False
         return call.strain < last_call.strain
+
+
+class RebidFirstSuit(Precondition):
+    """The call is a rebid of the first suit we bid (opener's original suit after a reverse)."""
+    def fits(self, history, call):
+        if call.strain not in suit.SUITS:
+            return False
+        first_call = None
+        for view in history.me.walk:
+            if view.last_call:
+                first_call = view.last_call
+        return bool(first_call) and first_call.strain == call.strain
 
 
 class RebidSameSuit(Precondition):
@@ -367,6 +461,19 @@ class DidBidSuit(Precondition):
         if call.strain not in suit.SUITS:
             return False
         return history.is_bid_suit(call.strain, self.position)
+
+
+class LastContractSuitBidBy(Precondition):
+    """The suit of the last contract bid has been shown by `position` (by bidding it or by a
+    call that promises it).  For calls that are not suits, such as a double of RHO's bid."""
+    def __init__(self, position):
+        self.position = position
+
+    def fits(self, history, call):
+        last_contract = history.last_contract
+        if not last_contract or last_contract.strain not in suit.SUITS:
+            return False
+        return history.is_bid_suit(last_contract.strain, self.position)
 
 
 class UnbidSuit(Precondition):

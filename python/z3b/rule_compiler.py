@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Copyright (c) 2013 The SAYCBridge Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -14,9 +13,11 @@ from z3b.preconditions import implies_artificial, annotations
 import z3
 
 
-# returns whether the given not empty and not None
 def _is_not_empty_or_none(x):
-    return x is not None and x is not []
+    # x may be a z3 expression, which must not be compared with ==.
+    if isinstance(x, (list, tuple, dict)):
+        return len(x) > 0
+    return x is not None
 
 
 categories = enum.Enum(
@@ -79,8 +80,9 @@ class CompiledRule(object):
 
     @property
     def all_priorities(self):
-        conditional_priorities = [priority for _, priority in list(
-            self.conditional_priorities_per_call.values())]
+        # conditional_priorities_per_call maps a call to a LIST of (condition, priority) pairs.
+        conditional_priorities = [priority for pairs in self.conditional_priorities_per_call.values()
+                                  for _, priority in pairs]
         return set([self.default_priority] + list(self.priorities_per_call.values()) + conditional_priorities)
 
     @property
@@ -89,7 +91,9 @@ class CompiledRule(object):
 
     def annotations_for_call(self, call):
         if self.dsl_rule.annotations_per_call:
-            per_call_annotations = self.dsl_rule.annotations_per_call.get(
+            # Tuple keys name several calls, as in constraints (Cappelletti's ('2C', '2D', '2N')
+            # was never matched before this flattening, so those calls read as natural).
+            per_call_annotations = RuleCompiler._flatten_tuple_keyed_dict(self.dsl_rule.annotations_per_call).get(
                 call.name)
             if per_call_annotations:
                 return self._annotations | set(RuleCompiler._ensure_list(per_call_annotations))
@@ -182,15 +186,17 @@ class CompiledRule(object):
         assert len(constraints_tuple) == 2
         # FIXME: Is it possible to not end up with a priority anymore?
         assert constraints_tuple[1], "" + self.name + " is missing priority"
+        # A per-call value that is a two-element list of constraints would silently become
+        # (constraint, priority=constraint): priorities are enum values or rule classes.
+        assert isinstance(constraints_tuple[1], (enum.Enum.EnumValue, type)), \
+            "%s: %r is not a priority" % (self.name, constraints_tuple[1])
         return constraints_tuple
 
 
 class RuleCompiler(object):
     @classmethod
     def exprs_from_constraints(cls, constraints, history, call):
-        if constraints is None or (
-            isinstance(constraints, (list, tuple)) and len(constraints) == 0
-        ):
+        if constraints is None or (isinstance(constraints, (list, tuple)) and not constraints):
             return [model.NO_CONSTRAINTS]
 
         if isinstance(constraints, Constraint):
@@ -203,9 +209,11 @@ class RuleCompiler(object):
 
     @classmethod
     def _collect_from_ancestors(cls, dsl_class, property_name):
-        def getter(ancestor): return getattr(ancestor, property_name, [])
-        # The DSL expects that parent preconditions, etc. apply before child ones.
-        return list(map(getter, reversed(dsl_class.__mro__)))
+        # The DSL expects that parent preconditions, etc. apply before child ones.  Only the
+        # class that DEFINES the property contributes it: getattr would also return a parent's
+        # value for every child that inherits it, listing the same objects several times.
+        return [vars(ancestor)[property_name] for ancestor in reversed(dsl_class.__mro__)
+                if property_name in vars(ancestor)]
 
     @classmethod
     def _ensure_list(cls, value_or_list):

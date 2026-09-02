@@ -35,8 +35,8 @@ ace_of_diamonds, king_of_diamonds, queen_of_diamonds, jack_of_diamonds, ten_of_d
 ace_of_clubs, king_of_clubs, queen_of_clubs, jack_of_clubs, ten_of_clubs = _honor_vars(
     suit.CLUBS)
 
-high_card_points, points, playing_points = z3.Ints(
-    'high_card_points points playing_points')
+high_card_points, points, playing_points, length_points = z3.Ints(
+    'high_card_points points playing_points length_points')
 
 points_supporting_spades, points_supporting_hearts, points_supporting_diamonds, points_supporting_clubs = z3.Ints(
     'points_supporting_spades points_supporting_hearts points_supporting_diamonds points_supporting_clubs')
@@ -90,8 +90,11 @@ axioms = [
     clubs >= 0,
     0 <= high_card_points, high_card_points <= 37,
     points == high_card_points,
-    high_card_points <= playing_points,
-    playing_points <= 55,  # Just to make the model finite.
+    # Length points: one per card beyond four in each suit (p26).  Playing points are hcp plus
+    # length points, the hand's value for a suit contract with no fit known yet.
+    length_points == z3.Sum([z3.If(suit_count > 4, suit_count - 4, 0)
+                             for suit_count in (spades, hearts, diamonds, clubs)]),
+    playing_points == high_card_points + length_points,
 
     named_count_expr('void', 0),
     named_count_expr('singleton', 1),
@@ -160,7 +163,7 @@ rule_of_nineteen = _expr_for_point_rule(19)
 
 # FIXME: This rule probably needs to consider min_hcp_for_open
 rule_of_fifteen = z3.And(spades + high_card_points >= 15,
-                         high_card_points >= min_hcp_for_open, playing_points >= 12)
+                         high_card_points >= min_hcp_for_open)
 
 two_of_the_top_three_spades = ace_of_spades + \
     king_of_spades + queen_of_spades >= 2
@@ -169,6 +172,12 @@ two_of_the_top_three_hearts = ace_of_hearts + \
 two_of_the_top_three_diamonds = ace_of_diamonds + \
     king_of_diamonds + queen_of_diamonds >= 2
 two_of_the_top_three_clubs = ace_of_clubs + king_of_clubs + queen_of_clubs >= 2
+
+# Two of the top five: the suit quality a weak two-suiter (Michaels) needs in each suit.
+two_of_the_top_five_spades = ace_of_spades + king_of_spades + queen_of_spades + jack_of_spades + ten_of_spades >= 2
+two_of_the_top_five_hearts = ace_of_hearts + king_of_hearts + queen_of_hearts + jack_of_hearts + ten_of_hearts >= 2
+two_of_the_top_five_diamonds = ace_of_diamonds + king_of_diamonds + queen_of_diamonds + jack_of_diamonds + ten_of_diamonds >= 2
+two_of_the_top_five_clubs = ace_of_clubs + king_of_clubs + queen_of_clubs + jack_of_clubs + ten_of_clubs >= 2
 
 three_of_the_top_five_spades = ace_of_spades + king_of_spades + \
     queen_of_spades + jack_of_spades + ten_of_spades >= 3
@@ -202,6 +211,10 @@ number_of_kings = king_of_spades + \
     king_of_hearts + king_of_diamonds + king_of_clubs
 
 balanced = z3.And(doubletons <= 1, singletons == 0, voids == 0)
+
+a_five_card_suit = z3.Or(spades >= 5, hearts >= 5, diamonds >= 5, clubs >= 5)
+
+at_most_one_five_card_suit = z3.Sum([z3.If(suit_count >= 5, 1, 0) for suit_count in (spades, hearts, diamonds, clubs)]) <= 1
 
 stopper_spades = z3.Or(ace_of_spades == 1, z3.And(king_of_spades == 1, spades >= 2), z3.And(
     queen_of_spades == 1, spades >= 3), z3.And(jack_of_spades == 1, ten_of_spades == 1, spades >= 4))

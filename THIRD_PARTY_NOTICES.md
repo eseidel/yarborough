@@ -2,12 +2,15 @@
 
 ## SAYCBridge / z3b
 
-`python/core/`, `python/z3b/`, and the historical expectation data in
-`python/tests/test_sayc_data.py` are derived from
-[SAYCBridge](https://github.com/eseidel/saycbridge) revision `f058f1f`.
-They are Copyright (c) 2013 The SAYCBridge Authors and are distributed under
-the BSD 3-Clause License. The copied files retain their original license
-headers.
+`python/core/`, `python/z3b/`, the expectation data in
+`python/tests/test_sayc_data.py`, and the test harness under `python/tests/`
+are derived from [SAYCBridge](https://github.com/eseidel/saycbridge) revision
+`f058f1f`, as continued in Andrew Bortz's SAYCBridge fork through revision
+`fba188e`. They are Copyright (c) 2013 The SAYCBridge Authors and are
+distributed under the BSD 3-Clause License. The copied files retain their
+original license headers. `python/tests/outputcapture.py` comes from WebKit's
+webkitpy (Copyright (c) 2009 Google Inc., BSD 3-Clause License; the file
+carries its license text).
 
 ```text
 Copyright (c) 2013 The SAYCBridge Authors. All rights reserved.

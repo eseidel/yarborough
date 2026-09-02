@@ -1,6 +1,3 @@
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import division
 # Copyright (c) 2013 The SAYCBridge Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -121,7 +118,7 @@ class Deal(object):
 
     def to_json(self, **kwargs):
         deal_dict = dict([(position.name.lower(), hand.cdhs_dot_string())
-                         for position, hand in enumerate(self.hands)])
+                         for position, hand in zip(POSITIONS, self.hands)])
         return json.dumps(deal_dict, **kwargs)
 
     def pretty_one_line(self):
