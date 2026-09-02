@@ -553,8 +553,12 @@ class Bidder(object):
             # we don't make without a planner.
             def no_planning_filter(call_priority_tuple): return not rule_selector.rule_for_call(
                 call_priority_tuple[0]).requires_planning
-            maximal_calls_and_priorities = list(
-                filter(no_planning_filter, maximal_calls_and_priorities))
+            # Sorted by call name so the WARNING below reads the same on every Python
+            # (set order of the maximal calls depends on the string hash, which changed
+            # between versions); with one call the order is moot.
+            maximal_calls_and_priorities = sorted(
+                filter(no_planning_filter, maximal_calls_and_priorities),
+                key=lambda call_and_priority: call_and_priority[0].name)
             if not maximal_calls_and_priorities:
                 return None  # If we failed to find any call, this is an error.
             maximal_calls, maximal_priorities = list(
