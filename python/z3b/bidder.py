@@ -1,6 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-from __future__ import division
 # Copyright (c) 2013 The SAYCBridge Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -12,10 +9,9 @@ from itertools import chain
 from z3b import enum
 from third_party.memoized import memoized
 from z3b.model import positions, expr_for_suit, is_possible, is_certain
-from z3b.preconditions import did_bid_annotation
+from z3b.preconditions import did_bid_annotation, annotations
 import collections
 import copy
-from functools import cache
 import core.suit as suit
 import z3
 import z3b.model as model
@@ -44,7 +40,7 @@ class SolverPool(object):
         solver.push()
         return solver
 
-    # This cannot be @cache, or we would leak a solver on every call if
+    # This cannot be @memoized, or we would leak a solver on every call if
     # the caller fails to restore it, or worse, corrupt the solver if they do.
     def borrow_solver_for_hand(self, hand):
         solver = self.borrow()
@@ -155,17 +151,29 @@ class PositionView(object):
 # This class is immutable.
 class History(object):
     # FIXME: Unclear if Rule should be stored on History at all.
-    def __init__(self, previous_history=None, call=None, annotations=None, constraints=None, rule=None):
+    # call_history: for a root History, an EMPTY CallHistory carrying the dealer and
+    # vulnerability of the auction being interpreted (defaults to North, none vulnerable).
+    def __init__(self, previous_history=None, call=None, annotations=None, constraints=None, rule=None, call_history=None):
         self._previous_history = previous_history
         self._annotations_for_last_call = annotations if annotations else []
-        self._constraints_for_last_call = (
-            constraints if constraints is not None else []
-        )
+        self._constraints_for_last_call = constraints if constraints is not None else []
         self._rule_for_last_call = rule
-        self.call_history = copy.deepcopy(
-            self._previous_history.call_history) if self._previous_history else CallHistory()
+        if self._previous_history:
+            self.call_history = self._copy_call_history(self._previous_history.call_history)
+        elif call_history is not None:
+            assert not call_history.calls, "a root History starts with an empty CallHistory"
+            self.call_history = self._copy_call_history(call_history)
+        else:
+            self.call_history = CallHistory()
         if call:
             self.call_history.calls.append(call)
+
+    @staticmethod
+    def _copy_call_history(call_history):
+        # Not deepcopy: that would clone the Position/Call singletons (dealer identity breaks).
+        copied = copy.copy(call_history)
+        copied.calls = list(call_history.calls)
+        return copied
 
     def extend_with(self, call, annotations, constraints, rule):
         return History(
@@ -338,14 +346,39 @@ class History(object):
             return self._lower_bound(predicate, lo, pos)
         return self._lower_bound(predicate, pos + 1, hi)
 
+    def bid_suit_naturally(self, strain, position):
+        """Has `position` made a natural (non-Artificial) contract call in `strain`?"""
+        for history in self._walk_history_for(position):
+            call = history.call_history.last_call
+            if (call is not None and call.is_contract() and call.strain == strain and
+                    annotations.Artificial not in history._annotations_for_last_call):
+                return True
+        return False
+
+    @property
+    def _points_shown_by_last_call(self):
+        """The value of the last caller's hand for what partner will bid on.  Before a fit is
+        known that is hcp plus length points; a natural bid of a suit partner has bid naturally
+        agrees it, and the hand is revalued in support points for that suit instead (the
+        booklet: do not count both long-suit points and support points in the same hand)."""
+        call = self.call_history.last_call  # made by RHO, whose partner is LHO
+        if (call is not None and call.is_contract() and call.strain in suit.SUITS and
+                annotations.Artificial not in self._annotations_for_last_call and
+                self.bid_suit_naturally(call.strain, positions.LHO)):
+            return model.support_points_expr_for_suit(call.strain)
+        return model.playing_points
+
     @memoized
     def _solve_for_min_points(self):
         solver = self._solver()
+        points_expr = self._points_shown_by_last_call
+        # "<=" keeps the predicate monotone for the binary search: a hand with exactly N
+        # points may be impossible while N-1 and N+1 are not.
         def predicate(points): return is_possible(
-            solver, model.playing_points == points)
+            solver, points_expr <= points)
         if predicate(0):
             return 0
-        return self._lower_bound(predicate, 1, 37)
+        return self._lower_bound(predicate, 1, 60)
 
     def min_points_for_position(self, position):
         history = self._history_after_last_call_for(position)
@@ -355,6 +388,8 @@ class History(object):
 
     @memoized
     def _solve_for_max_points(self):
+        # High-card points: the ceilings (MaximumCombinedPoints, the "game is remote" passes)
+        # are written in hcp, while min_points is the total the hand has shown.
         solver = self._solver()
         for cap in range(37, 0, -1):
             if is_possible(solver, cap == model.points):
@@ -377,19 +412,46 @@ class History(object):
             return history._solve_for_more_points_than(points)
         return True
 
-    @memoized
-    def is_bid_suit(self, suit, position):
+    def _history_after_last_contract_call_for(self, position):
+        """The history right after this position's most recent bid of a contract, skipping
+        its passes, doubles and redoubles (None when it has never bid a contract)."""
+        history = self._history_after_last_call_for(position)
+        while history:
+            last_call = history.call_history.last_call
+            if last_call and last_call.is_contract():
+                return history
+            # The same player's previous call is four calls back.
+            for _ in range(4):
+                history = history._previous_history if history else None
+        return None
+
+    def _has_shown_suit(self, suit, position, contracts_only):
         # Look for the annotation of bidding a suit.
         if did_bid_annotation(suit) in self.annotations_for_position(position):
             return True
-        previous_history = self._history_after_last_call_for(position)
+        if contracts_only:
+            previous_history = self._history_after_last_contract_call_for(position)
+        else:
+            previous_history = self._history_after_last_call_for(position)
         if not previous_history:
             return False
         # Check for the a length of 4 or more.
         return is_certain(previous_history._solver(), expr_for_suit(suit) >= 4)
 
+    @memoized
+    def is_bid_suit(self, suit, position):
+        return self._has_shown_suit(suit, position, contracts_only=False)
+
+    @memoized
     def is_unbid_suit(self, suit):
-        return not any(self.is_bid_suit(suit, position) for position in positions)
+        # A suit our side has shown, by bidding it or by a double that promises it (partner's
+        # negative double shows the unbid major: we raise it, we do not "bid" it), is not
+        # unbid.  A suit an opponent has only promised with a double is still unbid for us:
+        # after 1C P 1D X opener may bid 1H or 1S (the double promised both majors, and
+        # before this opener could only rebid 1N).
+        return not any(
+            self._has_shown_suit(suit, position, contracts_only=position in (positions.LHO, positions.RHO))
+            for position in positions)
 
     @property
     def unbid_suits(self):
@@ -532,7 +594,7 @@ class RuleSelector(object):
         print("WARNING: No rule can make: %s" % self.expected_call)
 
     @property
-    @cache
+    @memoized
     def _call_to_rule(self):
         maximal = {}
         for rule in self.system.rules:
@@ -568,7 +630,7 @@ class RuleSelector(object):
     def rule_for_call(self, call):
         return self._call_to_rule.get(call)
 
-    @cache
+    @memoized
     def constraints_for_call(self, call):
         situations = []
         rule = self.rule_for_call(call)
@@ -611,32 +673,42 @@ class InconsistentHistoryException(Exception):
         self.rule = rule
 
 
+# Keyed by dealer + calls: the same calls dealt by a different seat are a different auction
+# (who bid what), even though SAYC itself reads nothing from the dealer.  Vulnerability is
+# deliberately not in the key: no rule reads it, and it would only cut cache hits.
 class HistoryCache(object):
     # FIXME: size_limit has not been tuned at all.
     def __init__(self, size_limit=100):
         self.lru = collections.deque(maxlen=size_limit)
 
-    # Python 3.2's functools has an @lru_cache decorator, but we can't use that yet.
+    # A key is a prefix of another only when its calls are a prefix of the other's: calls are
+    # space-separated and the only call names sharing a prefix, X and XX, are never both legal
+    # at the same point of an auction.
+    @staticmethod
+    def _key(call_history):
+        return call_history.dealer.char + "|" + call_history.calls_string()
+
     def lookup(self, call_history):
-        calls_string = call_history.calls_string()
+        """Returns (history, remaining_calls): the longest cached History that is a prefix of
+        call_history, and the calls still to be interpreted on top of it."""
+        empty_key = self._key(call_history.copy_with_partial_history(0))
+        wanted_key = self._key(call_history)
         best_match = ""
         best_history = None
-        for call_string_and_history in self.lru:
-            key = call_string_and_history[0]
-            if len(key) > len(best_match) and calls_string.startswith(key):
+        for key, history in self.lru:
+            if len(key) > len(best_match) and wanted_key.startswith(key):
                 best_match = key
-                best_history = call_string_and_history[1]
+                best_history = history
 
-        if len(best_match):
+        if len(best_match) > len(empty_key):
             calls_matched = best_match.count(' ') + 1
             return best_history, call_history.calls[calls_matched:]
 
-        return History(), call_history.calls
+        root = History(call_history=call_history.copy_with_partial_history(0))
+        return root, call_history.calls
 
     def add(self, history):
-        call_string_and_history = (
-            history.call_history.calls_string(), history)
-        self.lru.append(call_string_and_history)
+        self.lru.append((self._key(history.call_history), history))
 
 
 history_cache = HistoryCache()

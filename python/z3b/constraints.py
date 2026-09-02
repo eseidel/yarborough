@@ -74,8 +74,18 @@ class MinimumCombinedSupportPoints(Constraint):
         if self.use_partners_last_suit:
             assert annotations.Artificial not in history.partner.annotations_for_last_call
             suit = history.partner.last_call.strain
-        return z3.And(model.support_points_expr_for_suit(suit) >= implied_min_points,
-                      model.playing_points >= implied_min_points)
+        return model.support_points_expr_for_suit(suit) >= implied_min_points
+
+
+class MinimumSupportPointsForSuitOfCall(Constraint):
+    """Support points counted for the suit of the call being made (a rebid of our own
+    suit opposite partner's promised support, where partner's generic min_points does not
+    carry his support-point promise)."""
+    def __init__(self, min_points):
+        self.min_points = min_points
+
+    def expr(self, history, call):
+        return model.support_points_expr_for_suit(call.strain) >= self.min_points
 
 
 class MinimumSupportPointsForPartnersLastSuit(Constraint):
@@ -105,6 +115,19 @@ class MaximumCombinedPoints(Constraint):
         return model.points <= max(0, self.max_points - history.partner.max_points)
 
 
+class MaximumCombinedPointsOppositeMinimum(Constraint):
+    """The slam-is-remote passes: the combined total stays under the threshold OPPOSITE
+    PARTNER'S MINIMUM -- we lack the values to insist opposite a minimum.  Judged against
+    partner's maximum (as MaximumCombinedPoints still is for the game-zone pass), a wide
+    range made the pass impossible and hands were left with NO call: a 14-count could not
+    pass partner's 3N (2026-09-01, autobid-for-none)."""
+    def __init__(self, max_points):
+        self.max_points = max_points
+
+    def expr(self, history, call):
+        return model.points <= max(0, self.max_points - history.partner.min_points)
+
+
 class MinLength(Constraint):
     def __init__(self, min_length, suits=None):
         self.min_length = min_length
@@ -121,6 +144,46 @@ class MaxLength(Constraint):
 
     def expr(self, history, call):
         return expr_for_suit(call.strain) <= self.max_length
+
+
+class MinLengthInLastContractSuit(Constraint):
+    def __init__(self, min_length):
+        self.min_length = min_length
+
+    def expr(self, history, call):
+        return expr_for_suit(history.last_contract.strain) >= self.min_length
+
+
+class ThreeOfTheTopFiveInLastContractSuit(Constraint):
+    """Three of the top five honors in the suit the opponents just bid: the holding a trap
+    pass wants (KJT865 is the booklet's example), trump tricks against their suit and not
+    just length."""
+    def expr(self, history, call):
+        return (
+            model.three_of_the_top_five_clubs_or_better,
+            model.three_of_the_top_five_diamonds_or_better,
+            model.three_of_the_top_five_hearts_or_better,
+            model.three_of_the_top_five_spades_or_better,
+        )[history.last_contract.strain.index]
+
+
+class VoidOrAceKingInLastContractSuit(Constraint):
+    """The holding that doubles an artificial ace-asking response for the lead (p124 h32): a
+    void (a ruff is coming) or the ace and king."""
+    def expr(self, history, call):
+        strain = history.last_contract.strain
+        ace = (model.ace_of_clubs, model.ace_of_diamonds, model.ace_of_hearts, model.ace_of_spades)[strain.index]
+        king = (model.king_of_clubs, model.king_of_diamonds, model.king_of_hearts, model.king_of_spades)[strain.index]
+        return z3.Or(expr_for_suit(strain) == 0, z3.And(ace == 1, king == 1))
+
+
+class ShortnessInASuitTheyBid(Constraint):
+    """At most a singleton in one of the opponents' suits: the shape that lets a takeout
+    double be light (p118 h9: 10 hcp with a singleton club after 1C P 1D)."""
+    def expr(self, history, call):
+        their_suits = history.them.bid_suits
+        assert their_suits, "%s: they bid no suit: %s" % (self.__class__, history.call_history)
+        return z3.Or([expr_for_suit(suit) <= 1 for suit in their_suits])
 
 
 class MaxLengthInLastContractSuit(Constraint):
@@ -170,7 +233,9 @@ class SupportForMultipleSuits(Constraint):
             return z3.And(three_card_support_expr, four_card_support_expr)
         if len(suits) == 2:
             return z3.And([expr_for_suit(suit) >= 4 for suit in suits])
-        assert False, "%s only supports 2 or 3 unbid suits, found %d: %s" % (
+        if len(suits) == 1:  # one suit left for partner: four of it
+            return expr_for_suit(list(suits)[0]) >= 4
+        assert False, "%s only supports 1 to 3 unbid suits, found %d: %s" % (
             self.__class__, len(suits), history.call_history)
 
 
@@ -180,14 +245,78 @@ class SupportForUnbidSuits(SupportForMultipleSuits):
         return self._support_for_suits(history.unbid_suits, history)
 
 
+class LightSupportForUnbidSuits(Constraint):
+    """Balancing, reopening and after a preempt the double is lighter in shape: three cards
+    in every unbid suit, four in at least one, and at most a doubleton in their suit."""
+    def expr(self, history, call):
+        unbid_suits = history.unbid_suits
+        assert len(unbid_suits) in (2, 3), "%s: %d unbid suits: %s" % (self.__class__, len(unbid_suits), history.call_history)
+        return z3.And(
+            z3.And([expr_for_suit(suit) >= 3 for suit in unbid_suits]),
+            z3.Or([expr_for_suit(suit) >= 4 for suit in unbid_suits]),
+            expr_for_suit(history.last_contract.strain) <= 2,
+        )
+
+
+class SupportForTransferOverInterference(Constraint):
+    """Completing partner's transfer is automatic, except over RHO's suit overcall, where the
+    completion at the three level promises three-card support (p17 h47), and over RHO's double
+    of the transfer (p17 h46)."""
+    def expr(self, history, call):
+        rho_overcalled = history.rho.last_call and history.rho.last_call.strain in suit.SUITS
+        rho_doubled = history.rho.last_call and history.rho.last_call.is_double()
+        if not rho_overcalled and not rho_doubled:
+            return model.NO_CONSTRAINTS
+        # Over a (lead-directing) double of the transfer the completion also promises three
+        # cards: with a doubleton opener passes, with five good ones he redoubles (p17-18).
+        return expr_for_suit(call.strain) >= 3
+
+
+class ReopeningSupport(Constraint):
+    """Opener's reopening double (1x (1y) P P: X): three cards in every unbid suit and at most a
+    doubleton in theirs (p136-137: 3-3 shapes double; shortness in their suit is what matters).
+    The direct-seat takeout double keeps its stricter shape."""
+    def expr(self, history, call):
+        unbid_suits = history.unbid_suits
+        assert len(unbid_suits) in (2, 3), "%s: %d unbid suits: %s" % (self.__class__, len(unbid_suits), history.call_history)
+        return z3.And(
+            z3.And([expr_for_suit(suit) >= 3 for suit in unbid_suits]),
+            expr_for_suit(history.last_contract.strain) <= 2,
+        )
+
+
+class MaxLengthInUnbidSuits(Constraint):
+    def __init__(self, max_length):
+        self.max_length = max_length
+
+    def expr(self, history, call):
+        return z3.And([expr_for_suit(suit) <= self.max_length for suit in history.unbid_suits])
+
+
+class SupportForSuitsOtherThanLastContract(SupportForMultipleSuits):
+    """Support for the three suits other than the last contract's suit.  Unlike
+    SupportForUnbidSuits this never depends on history.unbid_suits bookkeeping (which can
+    report 4 unbid suits mid-auction, e.g. after an artificial or unrecognized 2C, and then
+    _support_for_suits asserts): a takeout action over a one-suit contract just needs the
+    other three suits."""
+    def expr(self, history, call):
+        contract_suit = history.last_contract.strain
+        return self._support_for_suits(set(suit.SUITS) - set([contract_suit]), history)
+
+
 # We support any suit partner has shown life in.  Used for cuebid responses to doubles.
 class SupportForPartnersSuits(SupportForMultipleSuits):
     def expr(self, history, call):
         # This is kinda a hack.  Because TakeoutDouble can be either 17+ hcp or shape
         # we don't know that partner has necessarily bid a suit yet, so we can't just:
         # partners_suits = filter(lambda strain: history.partner.min_length(strain) > 1, suit.SUITS)
-        # Instead we take the inverse of suits which ops have bid, which should be the same:
-        partners_suits = set(suit.SUITS) - set(history.them.bid_suits)
+        # Instead we take the inverse of suits which ops have bid, which should be the same.
+        # Suits the opponents only PROMISED with a double (a negative double shows the majors)
+        # do not count: after 1C 1D X P 2C X the doubler's partner supports hearts and spades
+        # (them.bid_suits would leave one suit; bank U, 2026-08-30).
+        their_contract_suits = set(s for s in suit.SUITS
+                                   if any(history._has_shown_suit(s, p, contracts_only=True) for p in history.them.positions))
+        partners_suits = set(suit.SUITS) - their_contract_suits
         return self._support_for_suits(partners_suits, history)
 
 
@@ -278,11 +407,18 @@ class ThirdRoundStopper(Constraint):
 
 class OpeningRuleConstraint(Constraint):
     def expr(self, history, call):
-        if history.rho.last_call is None or history.partner.last_call is None or history.lho.last_call is None:
+        if history.partner.last_call is None:  # first or second seat
             return model.rule_of_twenty
-        # FIXME: We play rule-of-nineteen, but it's inconsistent with some test cases
-        # if history.lho.last_call is None:
-        #    return model.rule_of_nineteen
+        if history.lho.last_call is None:
+            # Third seat shades a point: rule of nineteen (the booklet's light third-seat
+            # openings; round-18 review, C6 -- this was written and commented out long ago
+            # as "inconsistent with some test cases", re-adjudicated by the harness).  Not
+            # with a seven-card suit: those hands preempt, and the shading was stealing
+            # them into one-level openings.
+            return z3.Or(model.rule_of_twenty,
+                          z3.And(model.rule_of_nineteen,
+                                 model.clubs <= 6, model.diamonds <= 6,
+                                 model.hearts <= 6, model.spades <= 6))
         return model.rule_of_fifteen
 
 

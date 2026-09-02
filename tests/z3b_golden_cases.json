@@ -18,13 +18,13 @@
     "call_name": "2H",
     "rule_name": "Preemptive Open",
     "description": null,
-    "knowledge_string": "5-11 hcp, 1-5C 1-5D 6H 1-3S"
+    "knowledge_string": "7-10 hcp, 1-5C 1-5D 6H 1-3S"
   },
   {
     "identifier": "1-0ba4f09f6fd45e79600f6ad680",
     "call_name": "2C",
     "rule_name": "Strong Two Clubs",
     "description": null,
-    "knowledge_string": "22+ hcp"
+    "knowledge_string": "22+ hcp Artificial Forcing"
   }
 ]

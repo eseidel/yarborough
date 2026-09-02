@@ -17,12 +17,9 @@ cappelletti_calls = enum.Enum(
 rule_order.order(*reversed(cappelletti_calls))
 
 
-# Cappelletti may promise < 15 hcp, since 3-level overcalls are also on and may be preferred.
-class Cappelletti(Rule):
-    preconditions = [
-        LastBidHasAnnotation(positions.RHO, annotations.Opening),
-        LastBidWas(positions.RHO, '1N'),
-    ]
+# Shared call schedule for defending against a 1N opening, direct or balancing seat
+# (mixin pattern, like MichaelsCuebid): the responses key off annotations.Cappelletti either way.
+class CappellettiEntries(object):
     constraints = {
         '2C': [z3.Or(clubs >= 6, diamonds >= 6, hearts >= 6, spades >= 6), cappelletti_calls.LongSuit],
         '2D': [z3.And(hearts >= 5, spades >= 5), cappelletti_calls.TwoSuits],
@@ -41,12 +38,35 @@ class Cappelletti(Rule):
     # The book bids Cappelletti with 11 hcp, but seems to want 12 hcp when responding.
     # Wikipedia says Cappelletti is 9-14 hcp.
     # playing_points here is sorta compensating for us not using length_points?
-    shared_constraints = points >= 10, playing_points >= 12
     explanations_per_call = {
         'X': """Indicates a 1NT opening hand.  NT conventional responses are off.
 Responder can pass with enough points to penalize opener, but more likely should escape to a suit fit.""",
         '2C': "Indicates one-suited hand (6+ cards in an un-named suit).",
     }
+
+
+# Cappelletti may promise < 15 hcp, since 3-level overcalls are also on and may be preferred.
+class Cappelletti(CappellettiEntries, Rule):
+    preconditions = [
+        LastBidHasAnnotation(positions.RHO, annotations.Opening),
+        LastBidWas(positions.RHO, '1N'),
+    ]
+    shared_constraints = points >= 10, playing_points >= 12
+
+
+class BalancingCappelletti(CappellettiEntries, Rule):
+    """1N-P-P was previously a rule desert: every balancing rule requires a one-level SUIT
+    opening, so classic balance hands passed out 1N.  Same schedule as Cappelletti, slightly
+    lighter (the direct seat's pass has shown weakness, so the points are marked)."""
+    preconditions = [
+        balancing_precondition,
+        LastBidWas(positions.LHO, '1N'),
+    ]
+    # The double still shows a 1N-opening HAND, not just 15+ points: with an unbalanced 15+
+    # we bid a suit or pass and defend (test_sayc "1N P P" expects P on KQ986.K.AK7.J942).
+    constraints = dict(CappellettiEntries.constraints,
+                       X=[z3.And(points >= 15, balanced), cappelletti_calls.PenaltyDouble])
+    shared_constraints = points >= 9, playing_points >= 11
 
 
 rule_order.order(
@@ -55,6 +75,8 @@ rule_order.order(
     # p112, h14 seems to imply we'd rather preempt than cappelletti when available.
     set([weak_preemptive_overcalls.WeakFourLevel, weak_preemptive_overcalls.WeakThreeLevel]),
 )
+# ... and the same with a 7-card suit that is not weak.
+rule_order.order(cappelletti_calls, preemptive_overcalls)
 
 
 class ResponseToCappelletti(Rule):
@@ -71,18 +93,21 @@ class PassResponseToOneNotrumpPenaltyDouble(ResponseToCappelletti):
     }
 
 
+new_suit_responses_to_penalty_double = SuitPreference(['2C', '2D', '2H', '2S'])
+
 class NewSuitResponseToOneNotrumpPenaltyDouble(ResponseToCappelletti):
     preconditions = [
         LastBidWas(positions.Partner, 'X'),
         UnbidSuit(),
         NotJumpFromLastContract(),
     ]
-    call_names = ['2C', '2D', '2H', '2S']
+    priorities_per_call = new_suit_responses_to_penalty_double.per_call
+    conditional_priorities_per_call = new_suit_responses_to_penalty_double.conditional
     shared_constraints = [MinLength(4), LongestSuitExceptOpponentSuits()]
 
 
 rule_order.order(
-    NewSuitResponseToOneNotrumpPenaltyDouble,
+    new_suit_responses_to_penalty_double.all,
     PassResponseToOneNotrumpPenaltyDouble,
 )
 
@@ -129,6 +154,10 @@ class SuitRebidAfterCappellettiTwoClubs(RebidAfterCappelleti):
     # FIXME: What if they interfere?
     call_names = ('2H', '2S', '3C', '3D')
     shared_constraints = MinLength(6)
+
+
+# With a real suit, run from the doubled 2C rather than sit.
+rule_order.order(DefaultPass, SuitRebidAfterCappellettiTwoClubs)
 
 
 
