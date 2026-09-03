@@ -22,6 +22,7 @@ import {
   type DealType,
 } from "../bridge/identifier";
 import { DealSelector } from "../components/DealSelector";
+import { ShareButton } from "../components/ShareButton";
 import {
   isAuctionComplete,
   isPassOut,
@@ -35,7 +36,7 @@ import { getSuggestedCall, getOpeningLead } from "../bridge/engine";
 import { useCallExplanation } from "../hooks/useCallExplanation";
 import { getDoubleDummyTable, getTricksAfterLead } from "../dds/dds";
 import { initAnalytics, trackPageView, trackEvent } from "../analytics";
-import { setCanonical, setTitle } from "../seo";
+import { setCanonical, setTitle, CANONICAL_ORIGIN } from "../seo";
 import type { CallHistory } from "../bridge";
 
 export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
@@ -353,6 +354,14 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
       <NavBar />
       {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
+        <div className="flex justify-end">
+          <ShareButton
+            url={`${CANONICAL_ORIGIN}/bid/${boardId}`}
+            title="SAYC Bridge Practice Hand"
+            text={`Board ${parsed.boardNumber} — try this bridge bidding hand`}
+          />
+        </div>
+
         {/* Auction table */}
         <CallTable
           callHistory={history}
