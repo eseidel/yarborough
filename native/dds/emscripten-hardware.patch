@@ -1,0 +1,18 @@
+diff --git a/src/System.cpp b/src/System.cpp
+index 3deb518..d9a087e 100644
+--- a/src/System.cpp
++++ b/src/System.cpp
+@@ -184,6 +184,13 @@ void System::GetHardware(
+   ncores = 1;
+   (void) System::GetCores(ncores);
+ 
++#ifdef __EMSCRIPTEN__
++  // No /proc or sysctl in WebAssembly: report one core and enough memory for
++  // one thread's transposition table (SetResources caps the real budget).
++  kilobytesFree = 1024ULL * 1024ULL;
++  return;
++#endif
++
+ #if defined(_WIN32) || defined(__CYGWIN__)
+   // Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
+   // was suggested by Lorne Anderson.

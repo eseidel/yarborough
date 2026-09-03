@@ -1,4 +1,12 @@
-import type { Call, CallInterpretation, StrainName } from "./types";
+import type {
+  Call,
+  CallInterpretation,
+  OpeningLead,
+  Position,
+  StrainName,
+  SuitName,
+} from "./types";
+import { parseCardName } from "../dds/dds-core";
 
 function record(value: unknown, description: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null) {
@@ -63,4 +71,31 @@ export function parseStringResult(value: unknown, description: string): string {
     throw new Error(`The bidding engine returned an invalid ${description}`);
   }
   return value;
+}
+
+function suitList(value: unknown, description: string): SuitName[] {
+  if (
+    !Array.isArray(value) ||
+    !value.every((suit) => typeof suit === "string" && /^[CDHS]$/.test(suit))
+  ) {
+    throw new Error(`The bidding engine returned invalid ${description}`);
+  }
+  return value as SuitName[];
+}
+
+export function parseOpeningLead(value: unknown): OpeningLead {
+  const lead = record(value, "opening lead");
+  if (typeof lead.leader !== "string" || !/^[NESW]$/.test(lead.leader)) {
+    throw new Error("The bidding engine returned an invalid leader");
+  }
+  if (typeof lead.card !== "string") {
+    throw new Error("The bidding engine returned an invalid lead card");
+  }
+  return {
+    leader: lead.leader as Position,
+    card: parseCardName(lead.card),
+    reason: optionalString(lead.reason, "lead reason") ?? "",
+    partnerSuits: suitList(lead.partner_suits, "partner suits"),
+    theirSuits: suitList(lead.their_suits, "declaring side suits"),
+  };
 }

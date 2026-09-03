@@ -1,0 +1,251 @@
+{
+  "tables": [
+    {
+      "pbn": "N:AK4.QJ9.KQT64.T8 J2.AK863.A.65432 T98753.75.753.A9 Q6.T42.J982.KQJ7",
+      "table": [
+        [9, 3, 9, 3],
+        [4, 9, 4, 9],
+        [9, 3, 9, 3],
+        [4, 9, 4, 9],
+        [7, 3, 7, 3]
+      ]
+    },
+    {
+      "pbn": "N:A654.A93.K6.AJT5 Q8.QT65.JT942.Q9 K9732.K87.A3.K63 JT.J42.Q875.8742",
+      "table": [
+        [13, 0, 13, 0],
+        [10, 2, 10, 2],
+        [8, 5, 8, 5],
+        [13, 0, 13, 0],
+        [13, 0, 13, 0]
+      ]
+    },
+    {
+      "pbn": "N:AKJ6.JT63.AQT.72 5.9752.KJ53.QT98 T842.K4..AKJ6543 Q973.AQ8.987642.",
+      "table": [
+        [10, 2, 10, 3],
+        [7, 6, 7, 5],
+        [4, 8, 5, 8],
+        [10, 2, 11, 2],
+        [10, 3, 7, 3]
+      ]
+    },
+    {
+      "pbn": "N:A42.AQ97.K875.A8 875.JT.AJ6.KQ653 KQJT63.432.42.92 9.K865.QT93.JT74",
+      "table": [
+        [10, 3, 10, 3],
+        [8, 3, 8, 5],
+        [5, 7, 5, 7],
+        [4, 9, 4, 9],
+        [9, 3, 9, 4]
+      ]
+    }
+  ],
+  "after_lead": {
+    "pbn": "N:AK4.QJ9.KQT64.T8 J2.AK863.A.65432 T98753.75.753.A9 Q6.T42.J982.KQJ7",
+    "cases": [
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "SJ",
+        "tricks": 10
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "S2",
+        "tricks": 10
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "HA",
+        "tricks": 9
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "HK",
+        "tricks": 9
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "H8",
+        "tricks": 11
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "H6",
+        "tricks": 11
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "H3",
+        "tricks": 11
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "DA",
+        "tricks": 10
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "C6",
+        "tricks": 9
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "C5",
+        "tricks": 9
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "C4",
+        "tricks": 9
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "C3",
+        "tricks": 9
+      },
+      {
+        "strain": "S",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "C2",
+        "tricks": 9
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "SQ",
+        "tricks": 10
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "S6",
+        "tricks": 10
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "HT",
+        "tricks": 7
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "H4",
+        "tricks": 7
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "H2",
+        "tricks": 7
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "DJ",
+        "tricks": 10
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "D9",
+        "tricks": 10
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "D8",
+        "tricks": 10
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "D2",
+        "tricks": 10
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "CK",
+        "tricks": 7
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "CQ",
+        "tricks": 7
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "CJ",
+        "tricks": 7
+      },
+      {
+        "strain": "N",
+        "declarer": "S",
+        "leader": "W",
+        "lead": "C7",
+        "tricks": 10
+      }
+    ]
+  },
+  "after_lead_singleton": {
+    "comment": "South must follow with a singleton diamond: DDS mode 0 would report -2 here instead of searching.",
+    "pbn": "N:AKQ.KQJT.Q.KQ932 983.874.AKJT52.8 JT654.963.6.A764 72.A52.98743.JT5",
+    "cases": [
+      {
+        "strain": "C",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "DK",
+        "tricks": 11
+      },
+      {
+        "strain": "N",
+        "declarer": "N",
+        "leader": "E",
+        "lead": "DK",
+        "tricks": 6
+      }
+    ]
+  }
+}

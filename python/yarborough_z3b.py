@@ -3,10 +3,12 @@
 import json
 import re
 
+import leads
 from core.board import Board
 from core.call import Pass
 from core.callexplorer import CallExplorer
 from core.callhistory import CallHistory
+from core.position import Position
 from core.suit import SUITS
 from z3b import rules
 from z3b.bidder import Bidder, InconsistentHistoryException, Interpreter
@@ -289,6 +291,44 @@ def get_full_autobid(identifier):
     return [c.name for c in board.call_history.calls]
 
 
+def _opening_lead_for_board(board):
+    history = board.call_history
+    if not history.is_complete():
+        raise BiddingInputError("the auction is not complete")
+    if history.is_passout():
+        raise BiddingInputError("the board was passed out")
+    contract = history.last_contract()
+    declarer = history.declarer()
+    leader = Position.from_index((declarer.index + 1) % 4)
+    with Interpreter().create_history(history) as interpreted:
+        artificial = [
+            annotations.Artificial in call_annotations
+            for call_annotations in interpreted.annotations_by_call()
+        ]
+    partner_suits, their_suits = leads.bid_suits(
+        [call.name for call in history.calls], history.dealer.index, leader.index, artificial
+    )
+    hand = board.deal.hand_for(leader).shdc_dot_string()
+    card, reason = leads.choose(hand, contract.name[1], partner_suits, their_suits)
+    return {
+        "leader": leader.char,
+        "card": card,
+        "reason": reason,
+        "partner_suits": partner_suits,
+        "their_suits": their_suits,
+    }
+
+
+def get_opening_lead(identifier):
+    """The textbook opening lead against the contract a completed auction reached.
+
+    Returns the leader ("W"), the card ("D4": suit then rank), why, and the suits the
+    lead was chosen around: partner's natural suits and the declaring side's.
+    """
+
+    return _opening_lead_for_board(_board(identifier))
+
+
 def dispatch(method, arguments):
     """Dispatch an RPC request after validating its primitive JSON shape."""
 
@@ -310,6 +350,8 @@ def dispatch(method, arguments):
         return generate_filtered_board(arguments.get("focus"))
     if method == "get_full_autobid":
         return get_full_autobid(arguments.get("identifier"))
+    if method == "get_opening_lead":
+        return get_opening_lead(arguments.get("identifier"))
     raise BiddingInputError("unknown engine method: %s" % method)
 
 

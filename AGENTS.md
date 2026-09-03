@@ -42,3 +42,17 @@ T8753 hearts, and JT432 spades.
   hand. When you fix a bidding bug, add the hand and auction that exposed it to
   `test_sayc_data.py` first. `python/tests/test_z3b_expectations.py` keeps one
   pinned hand per corpus group; classify a new group there.
+
+## Double dummy
+
+- `src/dds/wasm/dds.mjs` is DDS (Bo Haglund's double-dummy solver) compiled to
+  WebAssembly, single-threaded, by `native/dds/build.sh` from the pinned tag with
+  the pinned Emscripten; it is committed, so rebuild only to move the DDS version
+  or change `native/dds/dds_wasm.cpp`, and commit the result with that change.
+- `src/dds/dds.worker.ts` runs it in its own module worker; `src/dds/dds.ts` is
+  the client (the table, and declarer's tricks after a fixed opening lead).
+  `src/dds/dds-core.ts` holds the pure PBN and index conversions, unit-tested
+  against tables from a native DDS in `tests/dd_golden_cases.json`.
+- The opening lead comes from the engine (`python/leads.py`, textbook rules;
+  `get_opening_lead` in the adapter) because it needs the interpreter's
+  artificial-call flags to know which suits were bid naturally.

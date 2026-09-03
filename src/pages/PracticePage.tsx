@@ -12,6 +12,10 @@ import { AboutFooter } from "../components/AboutFooter";
 import { DealStats } from "../components/DealStats";
 import { AutobidResult } from "../components/AutobidResult";
 import {
+  DoubleDummyResult,
+  type DoubleDummyAnalysis,
+} from "../components/DoubleDummyResult";
+import {
   parseBoardId,
   generateFilteredBoardId,
   explorePath,
@@ -20,12 +24,16 @@ import {
 import { DealSelector } from "../components/DealSelector";
 import {
   isAuctionComplete,
+  isPassOut,
+  getContract,
+  getDeclarer,
   addRobotBids,
   getFullAutobidAuction,
 } from "../bridge/auction";
 import { callToString } from "../bridge/types";
-import { getSuggestedCall } from "../bridge/engine";
+import { getSuggestedCall, getOpeningLead } from "../bridge/engine";
 import { useCallExplanation } from "../hooks/useCallExplanation";
+import { getDoubleDummyTable, getTricksAfterLead } from "../dds/dds";
 import { initAnalytics, trackPageView, trackEvent } from "../analytics";
 import { setCanonical, setTitle } from "../seo";
 import type { CallHistory } from "../bridge";
@@ -56,9 +64,19 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
     return (saved as DealType) || "Random";
   });
   const [fullAutobid, setFullAutobid] = useState<CallHistory | null>(null);
+  // Keyed by the auction it was solved for, so a result for an earlier auction
+  // on this board (or another board) is never shown.
+  const [doubleDummy, setDoubleDummy] = useState<{
+    key: string;
+    analysis: DoubleDummyAnalysis | null;
+    error: string | null;
+  } | null>(null);
   const trackedResultRef = useRef<string | null>(null);
 
   const auctionDone = isAuctionComplete(history);
+  const auctionKey = boardId
+    ? `${boardId.split(":")[0]}:${history.calls.map(callToString).join(",")}`
+    : null;
 
   const handleExplanationError = useCallback((err: unknown) => {
     setError(String(err));
@@ -98,6 +116,48 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
       cancelled = true;
     };
   }, [auctionDone, boardId, parsed]);
+
+  // Solve the deal double-dummy when the auction is complete: the full table,
+  // then the contract reached after the textbook opening lead.
+  useEffect(() => {
+    if (!auctionDone || !auctionKey || !parsed) return;
+    let cancelled = false;
+    const deal = parsed.deal;
+    const contract = getContract(history);
+    const declarer = getDeclarer(history);
+    const identifier = auctionKey;
+    (async () => {
+      const table = await getDoubleDummyTable(deal);
+      if (isPassOut(history) || !contract || !declarer) {
+        return { table, lead: null, tricksAfterLead: null };
+      }
+      const lead = await getOpeningLead(identifier);
+      const tricksAfterLead = await getTricksAfterLead(
+        deal,
+        contract.strain,
+        declarer,
+        lead.card,
+      );
+      return { table, lead, tricksAfterLead };
+    })()
+      .then((analysis) => {
+        if (!cancelled) {
+          setDoubleDummy({ key: identifier, analysis, error: null });
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setDoubleDummy({
+            key: identifier,
+            analysis: null,
+            error: String(err),
+          });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [auctionDone, auctionKey, parsed, history]);
 
   // On mount, run robot bids for the opening if calls are empty
   useEffect(() => {
@@ -321,6 +381,14 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
               loading={!fullAutobid}
               vulnerability={vulnerability}
               boardNumber={parsed.boardNumber}
+            />
+            <DoubleDummyResult
+              history={history}
+              analysis={
+                doubleDummy?.key === auctionKey ? doubleDummy.analysis : null
+              }
+              loading={doubleDummy?.key !== auctionKey}
+              error={doubleDummy?.key === auctionKey ? doubleDummy.error : null}
             />
             <div className="flex flex-col gap-4">
               <CardFan hand={handForPosition(deal, "N")} position="N" />

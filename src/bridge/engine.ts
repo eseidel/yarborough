@@ -1,9 +1,10 @@
-import type { Call, CallInterpretation } from "./types";
+import type { Call, CallInterpretation, OpeningLead } from "./types";
 import type { EngineMethod } from "./engine-protocol";
 import {
   parseCallInterpretation,
   parseCallInterpretations,
   parseCallName,
+  parseOpeningLead,
   parseStringResult,
 } from "./engine-results";
 import { WorkerRpcClient } from "./worker-rpc-client";
@@ -27,6 +28,7 @@ export interface BiddingEngine {
   getSuggestedCall(identifier: string): Promise<CallInterpretation>;
   generateFilteredBoard(type: string): Promise<string>;
   getFullAutobid(identifier: string): Promise<Call[]>;
+  getOpeningLead(identifier: string): Promise<OpeningLead>;
 }
 
 function engineClient(): WorkerRpcClient {
@@ -87,6 +89,14 @@ export function createBiddingEngine(requester: EngineRequester): BiddingEngine {
       }
       return result.map((c) => parseCallName(String(c)));
     },
+
+    /** The textbook opening lead against the contract a completed auction reached. */
+    async getOpeningLead(identifier: string): Promise<OpeningLead> {
+      const result = await requester.request("get_opening_lead", {
+        identifier,
+      });
+      return parseOpeningLead(result);
+    },
   };
 }
 
@@ -101,3 +111,4 @@ export const getNextCall = biddingEngine.getNextCall;
 export const getSuggestedCall = biddingEngine.getSuggestedCall;
 export const generateFilteredBoard = biddingEngine.generateFilteredBoard;
 export const getFullAutobid = biddingEngine.getFullAutobid;
+export const getOpeningLead = biddingEngine.getOpeningLead;

@@ -1,6 +1,6 @@
 import {
   type EngineMethod,
-  type EngineRequest,
+  type RpcRequest,
   isEngineResponse,
 } from "./engine-protocol";
 
@@ -16,7 +16,7 @@ interface PendingRequest {
   reject: (reason: Error) => void;
 }
 
-export class WorkerRpcClient {
+export class WorkerRpcClient<Method extends string = EngineMethod> {
   private worker: Worker | undefined;
   private nextRequestId = 1;
   private readonly pendingRequests = new Map<number, PendingRequest>();
@@ -27,11 +27,11 @@ export class WorkerRpcClient {
   }
 
   request(
-    method: EngineMethod,
+    method: Method,
     arguments_: Record<string, unknown>,
   ): Promise<unknown> {
     const id = this.nextRequestId++;
-    const request: EngineRequest = { id, method, arguments: arguments_ };
+    const request: RpcRequest<Method> = { id, method, arguments: arguments_ };
 
     return new Promise((resolve, reject) => {
       this.pendingRequests.set(id, { resolve, reject });

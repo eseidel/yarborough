@@ -241,6 +241,17 @@ class History(object):
         for history in self._walk_history_for(position):
             yield history._annotations_for_last_call
 
+    def annotations_by_call(self):
+        """The annotations of every call so far, in auction order (an empty list for a call the
+        interpreter could not explain)."""
+        result = []
+        history = self
+        while history._previous_history is not None:
+            result.append(list(history._annotations_for_last_call))
+            history = history._previous_history
+        result.reverse()
+        return result
+
     def annotations_for_last_call(self, position):
         history = self._history_after_last_call_for(position)
         if not history:

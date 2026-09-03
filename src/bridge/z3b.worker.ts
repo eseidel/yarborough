@@ -24,11 +24,14 @@ const pythonSources = {
       query: "?raw",
     },
   ),
-  ...import.meta.glob("../../python/yarborough_z3b.py", {
-    eager: true,
-    import: "default",
-    query: "?raw",
-  }),
+  ...import.meta.glob(
+    ["../../python/yarborough_z3b.py", "../../python/leads.py"],
+    {
+      eager: true,
+      import: "default",
+      query: "?raw",
+    },
+  ),
 } as Record<string, string>;
 
 let pyodideInitialization: Promise<PyodideAPI> | undefined;
