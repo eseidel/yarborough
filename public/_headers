@@ -12,3 +12,12 @@
 
 /sitemap.xml
   Cache-Control: public, max-age=3600
+
+/site.webmanifest
+  Cache-Control: public, max-age=3600
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=3600
+
+/icons/*
+  Cache-Control: public, max-age=3600

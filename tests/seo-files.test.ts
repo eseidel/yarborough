@@ -29,6 +29,27 @@ describe("index.html", () => {
     expect(existsSync(join(process.cwd(), "public/favicon.ico"))).toBe(true);
   });
 
+  it("is installable to an iPhone home screen", () => {
+    // iOS reads these three independently of the manifest: the capable flag
+    // (already asserted elsewhere), the launch icon, and the home screen
+    // label, which otherwise falls back to the page title.
+    expect(html).toContain('name="apple-mobile-web-app-capable" content="yes"');
+    expect(html).toContain(
+      'rel="apple-touch-icon" href="/apple-touch-icon.png"',
+    );
+    expect(html).toContain(
+      'name="apple-mobile-web-app-title" content="SAYC Bridge"',
+    );
+    expect(existsSync(join(process.cwd(), "public/apple-touch-icon.png"))).toBe(
+      true,
+    );
+  });
+
+  it("links the web app manifest", () => {
+    expect(html).toContain('rel="manifest" href="/site.webmanifest"');
+    expect(html).toContain('name="theme-color" content="#454539"');
+  });
+
   it("keeps the title and description of the page it replaces", () => {
     expect(html).toContain("<title>Bidding Practice - SAYC Bridge</title>");
     expect(html).toContain(
@@ -79,6 +100,46 @@ describe("sitemap.xml", () => {
     expect(sitemap).toContain("<loc>https://saycbridge.com/</loc>");
     expect(sitemap).toContain("<loc>https://saycbridge.com/explore</loc>");
     expect(sitemap).not.toContain("/bid/");
+  });
+});
+
+describe("site.webmanifest", () => {
+  const manifest = JSON.parse(read("public/site.webmanifest")) as {
+    name: string;
+    short_name: string;
+    start_url: string;
+    display: string;
+    icons: { src: string; sizes: string; purpose?: string }[];
+  };
+
+  it("names the app for the home screen and app switcher", () => {
+    expect(manifest.name).toBe("SAYC Bridge Bidding Practice");
+    expect(manifest.short_name).toBe("SAYC Bridge");
+  });
+
+  it("launches at the root and opens without browser chrome", () => {
+    expect(manifest.start_url).toBe("/");
+    expect(manifest.display).toBe("standalone");
+  });
+
+  it("declares both a plain and a maskable icon at 192 and 512", () => {
+    const bySizeAndPurpose = new Set(
+      manifest.icons.map((icon) => `${icon.sizes} ${icon.purpose ?? "any"}`),
+    );
+    expect(bySizeAndPurpose).toEqual(
+      new Set([
+        "192x192 any",
+        "512x512 any",
+        "192x192 maskable",
+        "512x512 maskable",
+      ]),
+    );
+  });
+
+  it("ships every icon file it references", () => {
+    for (const icon of manifest.icons) {
+      expect(existsSync(join(process.cwd(), "public", icon.src))).toBe(true);
+    }
   });
 });
 
