@@ -294,14 +294,6 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
       <NavBar />
       {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
-        <div className="flex justify-end">
-          <ShareButton
-            url={`${CANONICAL_ORIGIN}/bid/${boardId}`}
-            title="SAYC Bridge Practice Hand"
-            text={`Board ${parsed.boardNumber} — try this bridge bidding hand`}
-          />
-        </div>
-
         {/* Auction table */}
         <CallTable
           callHistory={history}
@@ -429,6 +421,14 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
             )}
           </div>
         )}
+
+        <div className="flex justify-center">
+          <ShareButton
+            url={`${CANONICAL_ORIGIN}/bid/${boardId}`}
+            title="SAYC Bridge Practice Hand"
+            text={`Board ${parsed.boardNumber} — try this bridge bidding hand`}
+          />
+        </div>
 
         <div className="border-t border-gray-100 pt-4 mt-2">
           <DealSelector value={dealType} onChange={handleDealTypeChange} />
