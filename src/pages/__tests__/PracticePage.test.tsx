@@ -11,6 +11,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import * as auction from "../../bridge/auction";
 import * as identifier from "../../bridge/identifier";
 import * as engine from "../../bridge/engine";
+import * as dds from "../../dds/dds";
 
 // Mock the bridge modules
 vi.mock("../../bridge/auction", async (importOriginal) => {
@@ -39,8 +40,14 @@ vi.mock("../../bridge/engine", async (importOriginal) => {
     getSuggestedCall: vi.fn(),
     getCallInterpretations: vi.fn(),
     generateFilteredBoard: vi.fn(),
+    getOpeningLead: vi.fn(),
   };
 });
+
+vi.mock("../../dds/dds", () => ({
+  getDoubleDummyTable: vi.fn(),
+  getTricksAfterLead: vi.fn(),
+}));
 
 const mockAddRobotBids = vi.mocked(auction.addRobotBids);
 const mockIsAuctionComplete = vi.mocked(auction.isAuctionComplete);
@@ -49,9 +56,21 @@ const mockParseBoardId = vi.mocked(identifier.parseBoardId);
 const mockGetSuggestedCall = vi.mocked(engine.getSuggestedCall);
 const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
 const mockGenerateFilteredBoard = vi.mocked(engine.generateFilteredBoard);
+const mockGetOpeningLead = vi.mocked(engine.getOpeningLead);
+const mockGetDoubleDummyTable = vi.mocked(dds.getDoubleDummyTable);
+const mockGetTricksAfterLead = vi.mocked(dds.getTricksAfterLead);
 
 describe("PracticePage", () => {
   const boardId = "1-00000000000000000000000000";
+  const DUMMY_TABLE = Object.fromEntries(
+    (["S", "H", "D", "C", "N"] as const).map((strain) => [
+      strain,
+      { N: 9, E: 4, S: 9, W: 4 },
+    ]),
+  ) as Record<
+    "S" | "H" | "D" | "C" | "N",
+    Record<"N" | "E" | "S" | "W", number>
+  >;
   const dummyParsed = {
     boardNumber: 1,
     deal: {
@@ -68,6 +87,15 @@ describe("PracticePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockParseBoardId.mockReturnValue(dummyParsed);
+    mockGetDoubleDummyTable.mockResolvedValue(DUMMY_TABLE);
+    mockGetOpeningLead.mockResolvedValue({
+      leader: "W",
+      card: { suit: "D", rank: "4" },
+      reason: "fourth best",
+      partnerSuits: [],
+      theirSuits: [],
+    });
+    mockGetTricksAfterLead.mockResolvedValue(10);
     mockAddRobotBids.mockResolvedValue({
       dealer: "N",
       calls: [{ type: "pass" }],
@@ -426,6 +454,60 @@ describe("PracticePage", () => {
       expect(screen.getByTestId("deal-stats-ns")).toBeInTheDocument();
       expect(screen.getByTestId("deal-stats-ew")).toBeInTheDocument();
       expect(screen.getByTestId("autobid-result-match")).toBeInTheDocument();
+    });
+  });
+
+  it("shows the double-dummy table and the after-lead result when the auction is complete", async () => {
+    mockIsAuctionComplete.mockReturnValue(true);
+    mockGetFullAutobidAuction.mockResolvedValue({
+      dealer: "N",
+      calls: [{ type: "pass" }],
+    });
+    mockAddRobotBids.mockResolvedValue({
+      dealer: "N",
+      calls: [
+        { type: "bid", level: 1, strain: "S" },
+        { type: "pass" },
+        { type: "bid", level: 4, strain: "S" },
+        { type: "pass" },
+        { type: "pass" },
+        { type: "pass" },
+      ],
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("double-dummy-table")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("double-dummy-contract").textContent).toBe(
+      "down 1 (9 tricks)",
+    );
+    expect(screen.getByTestId("double-dummy-after-lead").textContent).toContain(
+      "makes 4 (10 tricks)",
+    );
+    expect(mockGetTricksAfterLead).toHaveBeenCalledWith(
+      dummyParsed.deal,
+      "S",
+      "N",
+      { suit: "D", rank: "4" },
+    );
+  });
+
+  it("reports a solver failure instead of the table", async () => {
+    mockIsAuctionComplete.mockReturnValue(true);
+    mockGetFullAutobidAuction.mockResolvedValue({
+      dealer: "N",
+      calls: [{ type: "pass" }],
+    });
+    mockGetDoubleDummyTable.mockRejectedValue(new Error("no wasm"));
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("double-dummy-error").textContent).toContain(
+        "no wasm",
+      );
     });
   });
 });

@@ -39,6 +39,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
+## DDS
+
+`src/dds/wasm/dds.mjs` is Bo Haglund's Double Dummy Solver
+([dds-bridge/dds](https://github.com/dds-bridge/dds), version 2.9.0) compiled
+to WebAssembly by `native/dds/build.sh`, distributed under the
+[Apache License 2.0](https://github.com/dds-bridge/dds/blob/develop/LICENSE).
+`native/dds/emscripten-hardware.patch` is the one change to its source.
+
 ## Z3
 
 The browser runtime installs `z3-solver` version 5.1.0.0, distributed under

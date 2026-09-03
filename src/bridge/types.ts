@@ -204,6 +204,15 @@ export interface CallHistory {
   calls: Call[];
 }
 
+/** The textbook opening lead against a completed auction's contract. */
+export interface OpeningLead {
+  leader: Position;
+  card: Card;
+  reason: string;
+  partnerSuits: SuitName[];
+  theirSuits: SuitName[];
+}
+
 export interface CallInterpretation {
   call: Call;
   ruleName?: string;
