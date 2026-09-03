@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { CallHistory, Vulnerability } from "../bridge/types";
 import { callToString } from "../bridge/types";
 import { formatContractAndDeclarer } from "../bridge/auction";
+import { useCallExplanation } from "../hooks/useCallExplanation";
 import { CallTable } from "./CallTable";
 
 export function AutobidResult({
@@ -9,13 +10,20 @@ export function AutobidResult({
   autobidHistory,
   loading = false,
   vulnerability,
+  boardNumber,
 }: {
   userHistory: CallHistory;
   autobidHistory: CallHistory | null;
   loading?: boolean;
   vulnerability?: Vulnerability;
+  boardNumber?: number;
 }) {
   const [showTable, setShowTable] = useState(false);
+  const explanation = useCallExplanation(
+    autobidHistory,
+    vulnerability,
+    boardNumber,
+  );
 
   if (loading || !autobidHistory) {
     return null;
@@ -59,6 +67,11 @@ export function AutobidResult({
           <CallTable
             callHistory={autobidHistory}
             vulnerability={vulnerability}
+            onCallClick={explanation.handleCallClick}
+            selectedCallIndex={explanation.selectedCallIndex}
+            callExplanation={explanation.callExplanation}
+            explanationLoading={explanation.explanationLoading}
+            exploreLink={explanation.exploreLink}
           />
         </div>
       )}

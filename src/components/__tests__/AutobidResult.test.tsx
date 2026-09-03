@@ -1,7 +1,25 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { describe, it, expect, vi } from "vitest";
 import { AutobidResult } from "../AutobidResult";
 import type { CallHistory } from "../../bridge";
+import * as engine from "../../bridge/engine";
+
+vi.mock("../../bridge/engine", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../bridge/engine")>();
+  return {
+    ...actual,
+    getCallInterpretations: vi.fn(),
+  };
+});
+
+const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
 
 describe("AutobidResult", () => {
   const matchHistory: CallHistory = {
@@ -73,5 +91,66 @@ describe("AutobidResult", () => {
     // Click again to close
     fireEvent.click(screen.getByTestId("autobid-table-toggle"));
     expect(screen.queryByTestId("autobid-call-table")).not.toBeInTheDocument();
+  });
+
+  it("explains a bid clicked in the autobidder's auction", async () => {
+    mockGetCallInterpretations.mockResolvedValue([
+      {
+        call: { type: "bid", level: 1, strain: "H" },
+        ruleName: "OneLevelSuitOpening",
+        description: "12-21 HCP, 5+ hearts",
+      },
+    ]);
+
+    render(
+      <AutobidResult
+        userHistory={userHistoryDiff}
+        autobidHistory={matchHistory}
+        vulnerability="NS"
+      />,
+    );
+    fireEvent.click(screen.getByTestId("autobid-table-toggle"));
+
+    const callTable = screen.getByTestId("autobid-call-table");
+    // matchHistory bids hearts twice (1H, 4H); the opener is the first.
+    fireEvent.click(within(callTable).getAllByText("♥")[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText(/OneLevelSuitOpening/)).toBeInTheDocument();
+      expect(screen.getByText("12-21 HCP, 5+ hearts")).toBeInTheDocument();
+    });
+    expect(mockGetCallInterpretations).toHaveBeenCalledWith("", "N", "NS");
+  });
+
+  it("links to the explorer for the clicked point in the autobidder's auction", async () => {
+    mockGetCallInterpretations.mockResolvedValue([
+      {
+        call: { type: "pass" },
+        ruleName: "DefaultPass",
+        description: undefined,
+      },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <AutobidResult
+          userHistory={userHistoryDiff}
+          autobidHistory={matchHistory}
+          boardNumber={7}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByTestId("autobid-table-toggle"));
+
+    const callTable = screen.getByTestId("autobid-call-table");
+    // The second call (index 1) is Pass, reached after the opening 1H.
+    fireEvent.click(within(callTable).getAllByText("Pass")[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: /explore/i })).toHaveAttribute(
+        "href",
+        "/explore/7:1H",
+      );
+    });
   });
 });

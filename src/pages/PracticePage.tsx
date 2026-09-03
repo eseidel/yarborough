@@ -14,6 +14,7 @@ import { AutobidResult } from "../components/AutobidResult";
 import {
   parseBoardId,
   generateFilteredBoardId,
+  explorePath,
   type DealType,
 } from "../bridge/identifier";
 import { DealSelector } from "../components/DealSelector";
@@ -23,7 +24,8 @@ import {
   getFullAutobidAuction,
 } from "../bridge/auction";
 import { callToString } from "../bridge/types";
-import { getSuggestedCall, getCallInterpretations } from "../bridge/engine";
+import { getSuggestedCall } from "../bridge/engine";
+import { useCallExplanation } from "../hooks/useCallExplanation";
 import { initAnalytics, trackPageView, trackEvent } from "../analytics";
 import { setCanonical, setTitle } from "../seo";
 import type { CallHistory } from "../bridge";
@@ -49,12 +51,6 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<CallInterpretation | null>(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
-  const [selectedCallIndex, setSelectedCallIndex] = useState<number | null>(
-    null,
-  );
-  const [callExplanation, setCallExplanation] =
-    useState<CallInterpretation | null>(null);
-  const [explanationLoading, setExplanationLoading] = useState(false);
   const [dealType, setDealType] = useState<DealType>(() => {
     const saved = sessionStorage.getItem("yarborough_deal_type");
     return (saved as DealType) || "Random";
@@ -63,6 +59,16 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
   const trackedResultRef = useRef<string | null>(null);
 
   const auctionDone = isAuctionComplete(history);
+
+  const handleExplanationError = useCallback((err: unknown) => {
+    setError(String(err));
+  }, []);
+  const explanation = useCallExplanation(
+    history,
+    parsed?.vulnerability ?? "None",
+    parsed?.boardNumber,
+    handleExplanationError,
+  );
 
   // Initialize analytics on mount
   useEffect(() => {
@@ -179,8 +185,7 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
       if (!boardId) return;
       setLoading(true);
       setSuggestion(null);
-      setSelectedCallIndex(null);
-      setCallExplanation(null);
+      explanation.reset();
       const baseId = boardId.split(":")[0];
       const afterUser: CallHistory = {
         ...history,
@@ -200,7 +205,7 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
           setLoading(false);
         });
     },
-    [boardId, history, navigate],
+    [boardId, history, navigate, explanation],
   );
 
   const handleRedeal = useCallback(() => {
@@ -239,8 +244,7 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
     trackEvent("Bidding", "Boards", "rebid board");
     setLoading(true);
     setSuggestion(null);
-    setSelectedCallIndex(null);
-    setCallExplanation(null);
+    explanation.reset();
     setError(null);
     const initialHistory: CallHistory = {
       dealer: parsed.dealer,
@@ -260,49 +264,19 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
         setError(String(err));
         setLoading(false);
       });
-  }, [boardId, parsed, navigate]);
+  }, [boardId, parsed, navigate, explanation]);
 
+  // Track the "explain this bid" interaction here rather than inside the
+  // shared hook, since only the live auction view (not the autobidder's)
+  // reports it to analytics.
   const handleCallClick = useCallback(
     (callIndex: number) => {
-      if (selectedCallIndex === callIndex) {
-        setSelectedCallIndex(null);
-        setCallExplanation(null);
-        return;
+      if (explanation.selectedCallIndex !== callIndex) {
+        trackEvent("Bidding", "Help", "Explain Bid");
       }
-      trackEvent("Bidding", "Help", "Explain Bid");
-      setSelectedCallIndex(callIndex);
-      setCallExplanation(null);
-      setExplanationLoading(true);
-      const callsBefore = history.calls.slice(0, callIndex);
-      const callsStr = callsBefore.map(callToString).join(",");
-      const clickedCall = history.calls[callIndex];
-      getCallInterpretations(
-        callsStr,
-        history.dealer,
-        parsed?.vulnerability ?? "None",
-      )
-        .then((interps) => {
-          const match = interps.find(
-            (i) =>
-              i.call.type === clickedCall.type &&
-              i.call.level === clickedCall.level &&
-              i.call.strain === clickedCall.strain,
-          );
-          setCallExplanation(
-            match ?? {
-              call: clickedCall,
-              ruleName: undefined,
-              description: undefined,
-            },
-          );
-          setExplanationLoading(false);
-        })
-        .catch((err) => {
-          setError(String(err));
-          setExplanationLoading(false);
-        });
+      explanation.handleCallClick(callIndex);
     },
-    [history, selectedCallIndex, parsed?.vulnerability],
+    [explanation],
   );
 
   if (!parsed) {
@@ -324,22 +298,10 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
           callHistory={history}
           vulnerability={vulnerability}
           onCallClick={handleCallClick}
-          selectedCallIndex={selectedCallIndex}
-          callExplanation={callExplanation}
-          explanationLoading={explanationLoading}
-          exploreLink={
-            selectedCallIndex !== null
-              ? `/explore/${parsed.boardNumber}${
-                  history.calls.slice(0, selectedCallIndex).length > 0
-                    ? ":" +
-                      history.calls
-                        .slice(0, selectedCallIndex)
-                        .map(callToString)
-                        .join(",")
-                    : ""
-                }`
-              : undefined
-          }
+          selectedCallIndex={explanation.selectedCallIndex}
+          callExplanation={explanation.callExplanation}
+          explanationLoading={explanation.explanationLoading}
+          exploreLink={explanation.exploreLink}
         />
 
         {/* User's hand - only show during auction */}
@@ -358,6 +320,7 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
               autobidHistory={fullAutobid}
               loading={!fullAutobid}
               vulnerability={vulnerability}
+              boardNumber={parsed.boardNumber}
             />
             <div className="flex flex-col gap-4">
               <CardFan hand={handForPosition(deal, "N")} position="N" />
@@ -445,14 +408,9 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
                     )}
                   </div>
                   <button
-                    onClick={() => {
-                      const callsStr = history.calls
-                        .map(callToString)
-                        .join(",");
-                      navigate(
-                        `/explore/${parsed.boardNumber}${callsStr ? `:${callsStr}` : ""}`,
-                      );
-                    }}
+                    onClick={() =>
+                      navigate(explorePath(parsed.boardNumber, history.calls))
+                    }
                     className="text-amber-600 hover:underline text-xs whitespace-nowrap mt-0.5"
                   >
                     Explore &rarr;

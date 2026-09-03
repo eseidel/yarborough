@@ -12,7 +12,7 @@ import {
   stringToCall,
 } from "../bridge";
 import { getCallInterpretations } from "../bridge/engine";
-import { dealerFromBoardNumber } from "../bridge/identifier";
+import { dealerFromBoardNumber, explorePath } from "../bridge/identifier";
 import { initAnalytics, trackPageView } from "../analytics";
 import { setCanonical, setTitle } from "../seo";
 
@@ -84,14 +84,13 @@ export function ExplorePage() {
   const handleSelect = useCallback(
     (interp: CallInterpretation) => {
       const newCalls = [...history.calls, interp.call];
-      const callsStr = newCalls.map(callToString).join(",");
-      navigate(`/explore/${boardNumber}${callsStr ? `:${callsStr}` : ""}`);
+      navigate(explorePath(boardNumber, newCalls));
     },
     [history, boardNumber, navigate],
   );
 
   const handleClear = useCallback(() => {
-    navigate(`/explore/${boardNumber}`);
+    navigate(explorePath(boardNumber, []));
   }, [navigate, boardNumber]);
 
   return (

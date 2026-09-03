@@ -8,7 +8,11 @@ import type {
   Vulnerability,
   Call,
 } from "./types";
-import { vulnerabilityFromBoardNumber, stringToCall } from "./types";
+import {
+  vulnerabilityFromBoardNumber,
+  stringToCall,
+  callToString,
+} from "./types";
 import { randomDeal } from "./mock";
 import { generateFilteredBoard } from "./engine";
 
@@ -169,6 +173,12 @@ export function parseBoardId(id: string): {
     vulnerability: vulnerabilityFromBoardNumber(boardNumber),
     initialCalls,
   };
+}
+
+/** Build the /explore path for `boardNumber` at the auction position after `calls`. */
+export function explorePath(boardNumber: number, calls: Call[]): string {
+  const callsStr = calls.map(callToString).join(",");
+  return `/explore/${boardNumber}${callsStr ? `:${callsStr}` : ""}`;
 }
 
 export type DealType = "Random" | "Notrump" | "Preempt" | "Strong2C";

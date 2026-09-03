@@ -211,6 +211,26 @@ export interface CallInterpretation {
   constraints?: string;
 }
 
+/**
+ * Pick `call`'s interpretation out of the legal-call list z3b returns for a
+ * position in the auction. Falls back to an interpretation with no rule name
+ * when `call` isn't one z3b would have made (e.g. a deliberately off-system
+ * bid), so callers always have something to render.
+ */
+export function findCallInterpretation(
+  interpretations: CallInterpretation[],
+  call: Call,
+): CallInterpretation {
+  return (
+    interpretations.find(
+      (interpretation) =>
+        interpretation.call.type === call.type &&
+        interpretation.call.level === call.level &&
+        interpretation.call.strain === call.strain,
+    ) ?? { call, ruleName: undefined, description: undefined }
+  );
+}
+
 export function formatRuleName(ruleName: string): string {
   return ruleName
     .replace(/([1-9A-Z])/g, " $1")
