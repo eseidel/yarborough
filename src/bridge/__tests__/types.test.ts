@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   cardsBySuit,
+  findCallInterpretation,
   formatRuleName,
   vulnerabilityFromBoardNumber,
   vulnerabilityLabel,
@@ -89,6 +90,43 @@ describe("cardsBySuit", () => {
     expect(bySuit.H).toHaveLength(3);
     expect(bySuit.D).toHaveLength(3);
     expect(bySuit.C).toHaveLength(3);
+  });
+});
+
+describe("findCallInterpretation", () => {
+  const interpretations = [
+    {
+      call: { type: "bid" as const, level: 1, strain: "H" as const },
+      ruleName: "OneLevelSuitOpening",
+      description: "12-21 HCP, 5+ hearts",
+    },
+    {
+      call: { type: "pass" as const },
+      ruleName: undefined,
+      description: undefined,
+    },
+  ];
+
+  it("returns the interpretation matching the call's type, level, and strain", () => {
+    expect(
+      findCallInterpretation(interpretations, {
+        type: "bid",
+        level: 1,
+        strain: "H",
+      }),
+    ).toEqual(interpretations[0]);
+    expect(findCallInterpretation(interpretations, { type: "pass" })).toEqual(
+      interpretations[1],
+    );
+  });
+
+  it("falls back to an interpretation with no rule name for an unmatched call", () => {
+    const call = { type: "bid" as const, level: 2, strain: "S" as const };
+    expect(findCallInterpretation(interpretations, call)).toEqual({
+      call,
+      ruleName: undefined,
+      description: undefined,
+    });
   });
 });
 

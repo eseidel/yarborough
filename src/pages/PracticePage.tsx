@@ -5,7 +5,12 @@ import { ErrorBar } from "../components/ErrorBar";
 import { CardFan } from "../components/CardFan";
 import { CallTable } from "../components/CallTable";
 import { BiddingBox } from "../components/BiddingBox";
-import { type Call, type CallInterpretation, handForPosition } from "../bridge";
+import {
+  type Call,
+  type CallInterpretation,
+  findCallInterpretation,
+  handForPosition,
+} from "../bridge";
 import { CallDisplay } from "../components/CallDisplay";
 import { ConstraintsDisplay } from "../components/ConstraintsDisplay";
 import { AboutFooter } from "../components/AboutFooter";
@@ -282,19 +287,7 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
         parsed?.vulnerability ?? "None",
       )
         .then((interps) => {
-          const match = interps.find(
-            (i) =>
-              i.call.type === clickedCall.type &&
-              i.call.level === clickedCall.level &&
-              i.call.strain === clickedCall.strain,
-          );
-          setCallExplanation(
-            match ?? {
-              call: clickedCall,
-              ruleName: undefined,
-              description: undefined,
-            },
-          );
+          setCallExplanation(findCallInterpretation(interps, clickedCall));
           setExplanationLoading(false);
         })
         .catch((err) => {
@@ -358,6 +351,7 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
               autobidHistory={fullAutobid}
               loading={!fullAutobid}
               vulnerability={vulnerability}
+              boardNumber={parsed.boardNumber}
             />
             <div className="flex flex-col gap-4">
               <CardFan hand={handForPosition(deal, "N")} position="N" />

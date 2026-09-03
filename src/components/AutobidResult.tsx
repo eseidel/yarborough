@@ -1,7 +1,12 @@
-import { useState } from "react";
-import type { CallHistory, Vulnerability } from "../bridge/types";
-import { callToString } from "../bridge/types";
+import { useCallback, useState } from "react";
+import type {
+  CallHistory,
+  CallInterpretation,
+  Vulnerability,
+} from "../bridge/types";
+import { callToString, findCallInterpretation } from "../bridge/types";
 import { formatContractAndDeclarer } from "../bridge/auction";
+import { getCallInterpretations } from "../bridge/engine";
 import { CallTable } from "./CallTable";
 
 export function AutobidResult({
@@ -9,13 +14,51 @@ export function AutobidResult({
   autobidHistory,
   loading = false,
   vulnerability,
+  boardNumber,
 }: {
   userHistory: CallHistory;
   autobidHistory: CallHistory | null;
   loading?: boolean;
   vulnerability?: Vulnerability;
+  boardNumber?: number;
 }) {
   const [showTable, setShowTable] = useState(false);
+  const [selectedCallIndex, setSelectedCallIndex] = useState<number | null>(
+    null,
+  );
+  const [callExplanation, setCallExplanation] =
+    useState<CallInterpretation | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
+
+  const handleCallClick = useCallback(
+    (callIndex: number) => {
+      if (!autobidHistory) return;
+      if (selectedCallIndex === callIndex) {
+        setSelectedCallIndex(null);
+        setCallExplanation(null);
+        return;
+      }
+      setSelectedCallIndex(callIndex);
+      setCallExplanation(null);
+      setExplanationLoading(true);
+      const callsBefore = autobidHistory.calls.slice(0, callIndex);
+      const callsStr = callsBefore.map(callToString).join(",");
+      const clickedCall = autobidHistory.calls[callIndex];
+      getCallInterpretations(
+        callsStr,
+        autobidHistory.dealer,
+        vulnerability ?? "None",
+      )
+        .then((interps) => {
+          setCallExplanation(findCallInterpretation(interps, clickedCall));
+          setExplanationLoading(false);
+        })
+        .catch(() => {
+          setExplanationLoading(false);
+        });
+    },
+    [autobidHistory, selectedCallIndex, vulnerability],
+  );
 
   if (loading || !autobidHistory) {
     return null;
@@ -59,6 +102,23 @@ export function AutobidResult({
           <CallTable
             callHistory={autobidHistory}
             vulnerability={vulnerability}
+            onCallClick={handleCallClick}
+            selectedCallIndex={selectedCallIndex}
+            callExplanation={callExplanation}
+            explanationLoading={explanationLoading}
+            exploreLink={
+              selectedCallIndex !== null && boardNumber !== undefined
+                ? `/explore/${boardNumber}${
+                    selectedCallIndex > 0
+                      ? ":" +
+                        autobidHistory.calls
+                          .slice(0, selectedCallIndex)
+                          .map(callToString)
+                          .join(",")
+                      : ""
+                  }`
+                : undefined
+            }
           />
         </div>
       )}
