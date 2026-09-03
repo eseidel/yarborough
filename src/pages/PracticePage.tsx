@@ -426,7 +426,7 @@ export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
           <ShareButton
             url={`${CANONICAL_ORIGIN}/bid/${boardId}`}
             title="SAYC Bridge Practice Hand"
-            text={`Board ${parsed.boardNumber} — try this bridge bidding hand`}
+            text="Try bidding this bridge hand"
           />
         </div>
 
