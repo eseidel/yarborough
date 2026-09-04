@@ -31,6 +31,22 @@ describe("HandDiagram", () => {
     expect(south).toHaveTextContent("13 HCP");
   });
 
+  it("right-aligns East's suit rows and left-aligns everyone else's", () => {
+    render(<HandDiagram deal={MOCK_DEAL} />);
+    for (const position of ["N", "W", "S"]) {
+      const cards = within(
+        screen.getByTestId(`hand-${position}`),
+      ).getAllByTestId("mini-card");
+      const suitRow = cards[0].parentElement!.parentElement!;
+      expect(suitRow.className).not.toContain("justify-end");
+    }
+    const eastCards = within(screen.getByTestId("hand-E")).getAllByTestId(
+      "mini-card",
+    );
+    const eastSuitRow = eastCards[0].parentElement!.parentElement!;
+    expect(eastSuitRow.className).toContain("justify-end");
+  });
+
   it("states each side's points and fits", () => {
     render(<HandDiagram deal={MOCK_DEAL} />);
     // N-S: 10 + 13 = 23 HCP with 4+4 spades.

@@ -45,4 +45,29 @@ describe("CardFan", () => {
     expect(slots[3].className).toContain("shrink-0");
     expect(slots[3].className).not.toContain("max-w-5");
   });
+
+  it("hugs the right edge of each suit row when aligned to the end", () => {
+    render(
+      <CardFan
+        hand={MOCK_DEAL.north}
+        position="N"
+        variant="list"
+        align="end"
+      />,
+    );
+    const cards = within(screen.getByTestId("hand-N")).getAllByTestId(
+      "mini-card",
+    );
+    const suitRow = cards[0].parentElement!.parentElement!;
+    expect(suitRow.className).toContain("justify-end");
+  });
+
+  it("leaves suit rows at the default start alignment", () => {
+    render(<CardFan hand={MOCK_DEAL.north} position="N" variant="list" />);
+    const cards = within(screen.getByTestId("hand-N")).getAllByTestId(
+      "mini-card",
+    );
+    const suitRow = cards[0].parentElement!.parentElement!;
+    expect(suitRow.className).not.toContain("justify-end");
+  });
 });

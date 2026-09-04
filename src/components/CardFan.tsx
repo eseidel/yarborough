@@ -37,9 +37,15 @@ function MiniCard({ card }: { card: Card }) {
  * room, so a long suit in a narrow column overlaps more instead of spilling
  * out of its box.
  */
-function SuitRow({ cards }: { cards: Card[] }) {
+function SuitRow({
+  cards,
+  align = "start",
+}: {
+  cards: Card[];
+  align?: "start" | "end";
+}) {
   return (
-    <div className="flex min-w-0">
+    <div className={`flex min-w-0 ${align === "end" ? "justify-end" : ""}`}>
       {cards.map((card, i) => (
         <div
           key={`${card.suit}${card.rank}`}
@@ -67,6 +73,7 @@ export function CardFan({
   variant = "fan",
   showPoints = false,
   isUser = false,
+  align = "start",
 }: {
   hand: Hand;
   position?: Position;
@@ -75,6 +82,8 @@ export function CardFan({
   showPoints?: boolean;
   /** Mark the hand as the user's. */
   isUser?: boolean;
+  /** Which side of the column each suit's cards hug (`list` variant only). */
+  align?: "start" | "end";
 }) {
   const bySuit = cardsBySuit(hand);
 
@@ -111,7 +120,7 @@ export function CardFan({
         {FAN_SUIT_ORDER.map((suit) => {
           const cards = bySuit[suit];
           if (cards.length === 0) return null;
-          return <SuitRow key={suit} cards={cards} />;
+          return <SuitRow key={suit} cards={cards} align={align} />;
         })}
       </div>
     </div>
