@@ -554,7 +554,7 @@ describe("PracticePage", () => {
         "makes 5 (11 tricks)",
       );
       expect(screen.getByTestId("play-verdict")).toHaveTextContent(
-        "4♠ makes: N-S reached the game the cards allow.",
+        "N-S reached the game the cards allow.",
       );
       expect(mockGetTricksAfterLead).toHaveBeenCalledWith(
         dummyParsed.deal,
@@ -622,7 +622,10 @@ describe("PracticePage", () => {
         "SAYC reaches 4♠ by North",
       );
       expect(screen.getByTestId("play-verdict")).toHaveTextContent(
-        "2♠ makes, but N-S can make game in 3NT, 4♠, 4♥.",
+        "N-S stopped short of game.",
+      );
+      expect(screen.getByTestId("makeable-NS")).toHaveTextContent(
+        "N-S can make 4NT, 4♠, 4♥, 4♦, 4♣.",
       );
     });
 

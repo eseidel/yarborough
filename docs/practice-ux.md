@@ -66,7 +66,8 @@ is over). South is always the user. Top to bottom, each phase showed:
 2. **Reveal in the order a teacher would.** During bidding, only South's hand
    and the auction. When the auction ends: the result and the verdict on the
    bidding first, then how the cards would play, then the hands themselves.
-   The full double-dummy table is an appendix, not the headline.
+   The double-dummy table is never shown as a table; it is read out in
+   sentences.
 3. **Stay on the page.** The explorer's knowledge (what every legal call means
    here) is available inline for the current position and, read-only, for any
    earlier call. The explorer page itself stays for use with real cards.
@@ -117,19 +118,23 @@ is over). South is always the user. Top to bottom, each phase showed:
       engine's own auction would have ended ("SAYC would have reached 4♥ by
       North") with a link to view that auction, whose calls are clickable for
       their meanings.
-   2. **Play card.** Double dummy in sentences. "With all four hands in view
-      and best play by both sides, 4♠ by North makes 4 (10 tricks)." When the
-      textbook lead changes the outcome: "After West's normal ♦4 lead (fourth
-      best), it makes 5." When it does not, one sentence covers both. Then a
-      line per side listing what it could make ("N-S can make 4♠, 3NT, 2♦;
-      E-W can make 2♥"), and a verdict that ties the contract to the bidding:
-      reached a making game, stopped short of a makeable game, too high, or
-      the opponents' contract and whether it makes. "Full table" expands a
-      captioned table whose columns are the declarer and rows the strain.
-   3. **Hands.** A compass diagram, North on top, West and East side by side,
-      South at the bottom, each hand as four suit lines with the ranks spelled
-      out and its high-card points. Under it, each side's total points and
-      any eight-card or longer fit.
+   2. **Play card.** Double dummy in sentences, one job per line and nothing
+      said twice. The result line: "With all four hands in view and best play
+      by both sides, 4♠ by North makes 4 (10 tricks)." The lead line: "After
+      West's normal ♦4 lead (fourth best), it makes 5", or, when the lead
+      changes nothing, that it does not. A verdict in a few words that ties
+      the contract to the cards: reached the game, stopped short of game,
+      too high, a missed game, or defending was right. Then what each side
+      can make, N-S on one line and E-W on the next, so the two are easy to
+      tell apart at a glance. The twenty-cell trick table itself is not
+      shown; the sentences carry what a learner needs.
+   3. **Hands.** All four hands as the same mini cards South bid from, laid
+      out as at the table: North across the top, West and East side by side,
+      South across the bottom, each with its high-card points and South
+      marked "(you)". In the side-by-side columns every card but the last of
+      a suit sits in a slot that shrinks when the column is narrow, so a long
+      suit overlaps more instead of spilling off a phone screen. Under the
+      hands, each side's total points and any eight-card or longer fit.
    4. **Actions.** **Next hand** as the one primary button; **Bid again** and
       **Share** as secondary. Share sends the bare board, without the
       auction, so the recipient bids the hand themselves. Bid again restarts the same board with the same

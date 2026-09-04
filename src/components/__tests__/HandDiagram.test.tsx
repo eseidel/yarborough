@@ -4,21 +4,31 @@ import { HandDiagram } from "../HandDiagram";
 import { MOCK_DEAL } from "../../bridge/mock";
 
 describe("HandDiagram", () => {
-  it("lays the hands out North, West and East, then South, with points", () => {
+  it("lays the hands out as cards: North, then West and East, then South", () => {
     render(<HandDiagram deal={MOCK_DEAL} userPosition="S" />);
     const order = screen
       .getAllByTestId(/^hand-[NESW]$/)
       .map((el) => el.getAttribute("data-testid"));
     expect(order).toEqual(["hand-N", "hand-W", "hand-E", "hand-S"]);
 
+    for (const position of ["N", "E", "S", "W"]) {
+      expect(
+        within(screen.getByTestId(`hand-${position}`)).getAllByTestId(
+          "mini-card",
+        ),
+      ).toHaveLength(13);
+    }
+
     const north = screen.getByTestId("hand-N");
-    expect(north.textContent).toContain("North");
-    expect(north.textContent).toContain("10 HCP");
-    expect(north.textContent).toContain("A K 3 2");
+    expect(within(north).getByTestId("position-label-N")).toHaveTextContent(
+      "North",
+    );
+    expect(north).toHaveTextContent("10 HCP");
+    expect(within(north).queryByText(/\(you\)/)).toBeNull();
 
     const south = screen.getByTestId("hand-S");
     expect(within(south).getByText(/\(you\)/)).toBeInTheDocument();
-    expect(south.textContent).toContain("10 8 7 6");
+    expect(south).toHaveTextContent("13 HCP");
   });
 
   it("states each side's points and fits", () => {
@@ -31,19 +41,5 @@ describe("HandDiagram", () => {
     expect(screen.getByTestId("side-EW").textContent).toBe(
       "E-W: 17 HCPno 8-card fit",
     );
-  });
-
-  it("shows a void as a dash", () => {
-    render(
-      <HandDiagram
-        deal={{
-          north: { cards: [{ suit: "S", rank: "A" }] },
-          east: { cards: [] },
-          south: { cards: [] },
-          west: { cards: [] },
-        }}
-      />,
-    );
-    expect(screen.getByTestId("hand-N").textContent).toContain("—");
   });
 });
