@@ -55,6 +55,7 @@ export function HandDiagram({
       variant={variant}
       showPoints
       isUser={position === userPosition}
+      align={position === "E" ? "end" : "start"}
     />
   );
   return (
