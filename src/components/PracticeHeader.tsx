@@ -51,29 +51,25 @@ export function PracticeHeader({
           {vulnerabilityWords(vulnerability)}
         </span>
       </div>
-      <div
-        className="flex flex-wrap items-center justify-center gap-1.5"
-        role="group"
-        aria-label="Practice focus"
-      >
-        {FOCUS_OPTIONS.map((option) => {
-          const active = selected === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onFocusChange(option.value)}
-              aria-pressed={active}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                active
-                  ? "bg-emerald-700 border-emerald-700 text-white shadow-sm"
-                  : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-              }`}
-            >
+      <div className="flex items-center justify-center gap-2">
+        <label
+          htmlFor="practice-focus"
+          className="text-xs font-semibold text-gray-500 uppercase tracking-wider"
+        >
+          Focus
+        </label>
+        <select
+          id="practice-focus"
+          value={selected}
+          onChange={(e) => onFocusChange(e.target.value as DealType)}
+          className="px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-700 bg-white border border-gray-200 shadow-sm hover:border-gray-300"
+        >
+          {FOCUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
               {option.label}
-            </button>
-          );
-        })}
+            </option>
+          ))}
+        </select>
       </div>
       {pendingFocus && pendingFocus !== focus && (
         <div

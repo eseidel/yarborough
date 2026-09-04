@@ -45,13 +45,12 @@ describe("PracticeHeader", () => {
         onFocusChange={onFocusChange}
       />,
     );
-    expect(screen.getByRole("button", { name: "Random" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByLabelText("Focus")).toHaveValue("Random");
     expect(screen.queryByTestId("pending-focus")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Strong 2♣" }));
+    fireEvent.change(screen.getByLabelText("Focus"), {
+      target: { value: "Strong2C" },
+    });
     expect(onFocusChange).toHaveBeenCalledWith("Strong2C");
 
     rerender(
@@ -64,10 +63,7 @@ describe("PracticeHeader", () => {
         onFocusChange={onFocusChange}
       />,
     );
-    expect(screen.getByRole("button", { name: "Strong 2♣" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByLabelText("Focus")).toHaveValue("Strong2C");
     expect(screen.getByTestId("pending-focus").textContent).toBe(
       "Next hand: Strong 2♣",
     );

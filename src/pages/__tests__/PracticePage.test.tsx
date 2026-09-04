@@ -470,7 +470,9 @@ describe("PracticePage", () => {
       );
       renderPage();
       await waitForRobots();
-      fireEvent.click(screen.getByRole("button", { name: "Notrump" }));
+      fireEvent.change(screen.getByLabelText("Focus"), {
+        target: { value: "Notrump" },
+      });
       await waitFor(() =>
         expect(mockGenerateFilteredBoard).toHaveBeenCalledWith("Notrump"),
       );
@@ -489,7 +491,9 @@ describe("PracticePage", () => {
       });
       renderPage(`/bid/${boardId}:1S,P,3S,P,4S,P`);
       await waitForRobots();
-      fireEvent.click(screen.getByRole("button", { name: "Preempt" }));
+      fireEvent.change(screen.getByLabelText("Focus"), {
+        target: { value: "Preempt" },
+      });
       expect(mockGenerateFilteredBoard).not.toHaveBeenCalled();
       expect(screen.getByTestId("pending-focus")).toHaveTextContent(
         "Next hand: Preempt",
