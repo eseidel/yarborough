@@ -82,13 +82,18 @@ is over). South is always the user. Top to bottom, each phase showed:
 
 1. **Nav bar** (unchanged).
 2. **Board line.** "Board 7 · Dealer South · N-S vulnerable", and the focus
-   chips (Random / Notrump / Preempt / Strong 2♣). Changing the focus deals a
-   new hand at once if South has not bid yet or the hand is over; otherwise it
-   applies to the next hand and the chip row says so.
+   chips (Random / Notrump / Preempt / Strong 2♣ / Weak spots). Changing the
+   focus deals a new hand at once if South has not bid yet or the hand is
+   over; otherwise it applies to the next hand and the chip row says so.
+   "Weak spots" is adaptive practice (see `docs/progress-plan.md`, section
+   4): it deals hands whose auctions ask for the kinds of call the record
+   shows the user missing, says which one each hand practices, and is
+   disabled until the record shows a weak spot.
 3. **Progress strip.** Appears once at least one hand has been reviewed:
    accuracy across all calls, hands bid, and the current streak of hands bid
    entirely on system. Tapping it expands the breakdown by focus and offers a
-   reset. Stored in `localStorage`; nothing leaves the device.
+   reset. Kept in the IndexedDB record on the device (see
+   `docs/progress-plan.md`); nothing leaves the device.
 4. **Auction table.** As before, plus: a `You` marker under South's column,
    a small ✓ or ✗ beside each of South's calls once its verdict is known, and
    the `?` cell pulses while the robots are thinking instead of the box

@@ -4,27 +4,31 @@
     "call_name": "P",
     "rule_name": "Default Pass",
     "description": null,
-    "knowledge_string": "0-12 hcp"
+    "knowledge_string": "0-12 hcp",
+    "category": ["Opening", "Passing", "Default Pass"]
   },
   {
     "identifier": "16-547572f278c9ca70b07a9a4bc3",
     "call_name": "1N",
     "rule_name": "Notrump Opening",
     "description": null,
-    "knowledge_string": "15-17 hcp, 2-5C 2-5D 2-5H 2-5S NotrumpSystemsOn"
+    "knowledge_string": "15-17 hcp, 2-5C 2-5D 2-5H 2-5S NotrumpSystemsOn",
+    "category": ["Opening", "1NT, 2NT and 3NT", "Notrump Opening"]
   },
   {
     "identifier": "11-e81b64590737c483ae68d8ed37",
     "call_name": "2H",
     "rule_name": "Preemptive Open",
     "description": null,
-    "knowledge_string": "7-10 hcp, 1-5C 1-5D 6H 1-3S"
+    "knowledge_string": "7-10 hcp, 1-5C 1-5D 6H 1-3S",
+    "category": ["Opening", "Preempts", "Preemptive Open"]
   },
   {
     "identifier": "1-0ba4f09f6fd45e79600f6ad680",
     "call_name": "2C",
     "rule_name": "Strong Two Clubs",
     "description": null,
-    "knowledge_string": "22+ hcp Artificial Forcing"
+    "knowledge_string": "22+ hcp Artificial Forcing",
+    "category": ["Opening", "Strong 2♣", "Strong Two Clubs"]
   }
 ]

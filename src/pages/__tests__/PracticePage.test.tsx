@@ -1,3 +1,5 @@
+import "fake-indexeddb/auto";
+import { IDBFactory } from "fake-indexeddb";
 import {
   render,
   screen,
@@ -13,7 +15,11 @@ import * as auction from "../../bridge/auction";
 import * as identifier from "../../bridge/identifier";
 import * as engine from "../../bridge/engine";
 import * as dds from "../../dds/dds";
-import { PROGRESS_STORAGE_KEY } from "../../practice/progress";
+import {
+  type RecordStore,
+  openRecordStore,
+  useRecordStoreForTests,
+} from "../../practice/record/db";
 
 vi.mock("../../bridge/auction", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../bridge/auction")>();
@@ -41,6 +47,7 @@ vi.mock("../../bridge/engine", async (importOriginal) => {
     getCallInterpretations: vi.fn(),
     generateFilteredBoard: vi.fn(),
     getOpeningLead: vi.fn(),
+    generateAdaptiveBoard: vi.fn(),
   };
 });
 
@@ -56,6 +63,7 @@ const mockGetSuggestedCall = vi.mocked(engine.getSuggestedCall);
 const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
 const mockGenerateFilteredBoard = vi.mocked(engine.generateFilteredBoard);
 const mockGetOpeningLead = vi.mocked(engine.getOpeningLead);
+const mockGenerateAdaptiveBoard = vi.mocked(engine.generateAdaptiveBoard);
 const mockGetDoubleDummyTable = vi.mocked(dds.getDoubleDummyTable);
 const mockGetTricksAfterLead = vi.mocked(dds.getTricksAfterLead);
 
@@ -106,9 +114,9 @@ function LocationDisplay() {
   return <div data-testid="location-path">{location.pathname}</div>;
 }
 
-function renderPage(path = `/bid/${boardId}`) {
+function renderPage(path = `/bid/${boardId}`, state?: unknown) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[{ pathname: path, state }]}>
       <Routes>
         <Route
           path="/bid/:boardId"
@@ -133,10 +141,12 @@ const waitForRobots = () =>
   );
 
 describe("PracticePage", () => {
-  beforeEach(() => {
+  let store: RecordStore;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
-    window.localStorage.clear();
-    window.sessionStorage.clear();
+    store = await openRecordStore(new IDBFactory(), "practice-page");
+    useRecordStoreForTests(Promise.resolve(store));
     mockParseBoardId.mockReturnValue(dummyParsed);
     mockAddRobotBids.mockResolvedValue(OPENING);
     mockGetFullAutobidAuction.mockResolvedValue(COMPLETE);
@@ -162,7 +172,59 @@ describe("PracticePage", () => {
       theirSuits: [],
     });
     mockGetTricksAfterLead.mockResolvedValue(11);
+    mockGenerateAdaptiveBoard.mockResolvedValue(null);
   });
+
+  /** A record with one clear weak spot: responses to 1NT. */
+  async function recordWithWeakSpot() {
+    for (let i = 0; i < 10; i++) {
+      await store.addHand({
+        boardId: `${(i % 16) + 1}-11111111111111111111111111`,
+        boardNumber: (i % 16) + 1,
+        dealer: "N",
+        vulnerability: "None",
+        userPosition: "S",
+        source: "Random",
+        calls: ["1N", "P", "P", "P"],
+        contract: "1N",
+        declarer: "N",
+        saycCalls: null,
+        verdicts: [
+          {
+            index: 2,
+            call: "P",
+            saycCall: "2C",
+            ruleName: "Two Level Stayman",
+            category: [
+              "Responding to an opening",
+              "To 1NT",
+              "Two Level Stayman",
+            ],
+            matched: false,
+            assisted: false,
+          },
+          {
+            index: 0,
+            call: "1N",
+            saycCall: "1N",
+            category: ["Opening", "1NT, 2NT and 3NT", "Notrump Opening"],
+            matched: true,
+            assisted: false,
+          },
+        ],
+        completedAt: 1_800_000_000_000 + i * 60_000,
+        durationMs: 1_000,
+      });
+    }
+  }
+  const FOUND = {
+    identifier: "9-00000000000000000000000000",
+    category: [
+      "Responding to an opening",
+      "To 1NT",
+      "Jacoby Transfer To Hearts",
+    ],
+  };
 
   describe("while bidding", () => {
     it("lets the robots bid first, then hands the box to South and updates the URL", async () => {
@@ -242,6 +304,77 @@ describe("PracticePage", () => {
       expect(screen.queryByTestId("call-feedback-match")).toBeNull();
     });
 
+    it("records a hand bid to the end, with its verdicts, auction, and play", async () => {
+      mockGetSuggestedCall.mockImplementation(async (id) => {
+        const key = id.split(":")[1] ?? "";
+        return key === "1S,P"
+          ? {
+              call: bid(3, "S"),
+              ruleName: "Jump Raise",
+              category: ["Responding to an opening", "Raises", "Jump Raise"],
+            }
+          : { call: pass, category: ["Responder's rebid", "Passing", "Pass"] };
+      });
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue(COMPLETE);
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "3♠")!,
+      );
+      await screen.findByTestId("verdict-on-system");
+
+      await waitFor(async () => expect(await store.allHands()).toHaveLength(1));
+      // The engine's auction and the play analysis land after the write.
+      await waitFor(async () => {
+        const [hand] = await store.allHands();
+        expect(hand.saycCalls).toEqual(
+          COMPLETE.calls.map((c) =>
+            c.type === "pass" ? "P" : `${c.level}${c.strain}`,
+          ),
+        );
+        expect(hand.table).toEqual(TABLE);
+      });
+      const [hand] = await store.allHands();
+      expect(hand).toMatchObject({
+        boardId,
+        boardNumber: 1,
+        dealer: "N",
+        userPosition: "S",
+        source: "Random",
+        calls: ["1S", "P", "3S", "P", "4S", "P", "P", "P"],
+        contract: "4S",
+        declarer: "N",
+        lead: "D4",
+        tricksAfterLead: 11,
+      });
+      expect(hand.verdicts).toEqual([
+        {
+          index: 2,
+          call: "3S",
+          saycCall: "3S",
+          ruleName: "Jump Raise",
+          category: ["Responding to an opening", "Raises", "Jump Raise"],
+          matched: true,
+          assisted: false,
+        },
+        {
+          index: 6,
+          call: "P",
+          saycCall: "P",
+          category: ["Responder's rebid", "Passing", "Pass"],
+          matched: true,
+          assisted: false,
+        },
+      ]);
+      expect(hand.completedAt).toBeGreaterThan(0);
+      expect(screen.getByTestId("progress-strip")).toHaveTextContent(
+        "100% on system",
+      );
+      expect(screen.getByTestId("progress-strip")).toHaveTextContent("1 hand");
+    });
+
     it("can hold feedback back until the hand is over", async () => {
       renderPage();
       await waitForRobots();
@@ -260,8 +393,8 @@ describe("PracticePage", () => {
       fireEvent.click(defer);
       expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
       expect(screen.queryByLabelText("differed from SAYC")).toBeNull();
-      expect(window.localStorage.getItem("yarborough_feedback_timing")).toBe(
-        "end",
+      await waitFor(async () =>
+        expect(await store.getSetting("feedbackTiming")).toBe("end"),
       );
     });
 
@@ -473,8 +606,8 @@ describe("PracticePage", () => {
       await waitFor(() =>
         expect(mockGenerateFilteredBoard).toHaveBeenCalledWith("Notrump"),
       );
-      expect(window.sessionStorage.getItem("yarborough_deal_type")).toBe(
-        "Notrump",
+      await waitFor(async () =>
+        expect(await store.getSetting("focus")).toBe("Notrump"),
       );
     });
 
@@ -585,24 +718,12 @@ describe("PracticePage", () => {
       ).toBeInTheDocument();
     });
 
-    it("records the hand on the device once", async () => {
+    it("does not record a hand that arrived complete from a permalink", async () => {
       renderComplete();
-      await waitFor(() => {
-        expect(screen.getByTestId("progress-strip")).toHaveTextContent(
-          "100% on system",
-        );
-      });
-      expect(screen.getByTestId("progress-strip")).toHaveTextContent("1 hand");
-      const stored = JSON.parse(
-        window.localStorage.getItem(PROGRESS_STORAGE_KEY)!,
-      );
-      expect(stored.total).toEqual({
-        hands: 1,
-        handsOnSystem: 1,
-        calls: 2,
-        callsMatched: 2,
-      });
-      expect(stored.streak).toBe(1);
+      await screen.findByTestId("verdict-on-system");
+      await screen.findByTestId("double-dummy-contract");
+      expect(await store.allHands()).toEqual([]);
+      expect(screen.queryByTestId("progress-strip")).toBeNull();
     });
 
     it("lists the calls that differed and where SAYC's own auction ends", async () => {
@@ -672,6 +793,168 @@ describe("PracticePage", () => {
           expect.objectContaining({ calls: [] }),
           "S",
           boardId,
+        ),
+      );
+    });
+  });
+
+  describe("adaptive practice", () => {
+    it("offers Weak spots only once the record shows one", async () => {
+      renderPage();
+      await waitForRobots();
+      const option = screen.getByRole("option", {
+        name: "Weak spots",
+      }) as HTMLOptionElement;
+      expect(option.disabled).toBe(true);
+    });
+
+    it("finds a hand for a weak spot, in short requests, and says what it practices", async () => {
+      await recordWithWeakSpot();
+      mockGenerateAdaptiveBoard
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(FOUND);
+      renderPage();
+      await waitForRobots();
+      await waitFor(() =>
+        expect(
+          (
+            screen.getByRole("option", {
+              name: "Weak spots",
+            }) as HTMLOptionElement
+          ).disabled,
+        ).toBe(false),
+      );
+
+      fireEvent.change(screen.getByLabelText("Focus"), {
+        target: { value: "Adaptive" },
+      });
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${FOUND.identifier}`,
+        ),
+      );
+      expect(mockGenerateAdaptiveBoard).toHaveBeenCalledWith(
+        [["Responding to an opening", "To 1NT"]],
+        3,
+      );
+      expect(await store.getSetting("focus")).toBe("Adaptive");
+    });
+
+    it("deals a random hand when no weak-spot hand turns up in time", async () => {
+      await recordWithWeakSpot();
+      mockGenerateFilteredBoard.mockResolvedValue(
+        "5-00000000000000000000000000",
+      );
+      renderPage();
+      await waitForRobots();
+      await waitFor(() =>
+        expect(
+          (
+            screen.getByRole("option", {
+              name: "Weak spots",
+            }) as HTMLOptionElement
+          ).disabled,
+        ).toBe(false),
+      );
+      fireEvent.change(screen.getByLabelText("Focus"), {
+        target: { value: "Adaptive" },
+      });
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          "/bid/5-00000000000000000000000000",
+        ),
+      );
+      expect(mockGenerateAdaptiveBoard).toHaveBeenCalledTimes(10);
+      expect(mockGenerateFilteredBoard).toHaveBeenCalledWith("Random");
+    });
+
+    it("deals for the weak spot Practice this asked for, straight away", async () => {
+      mockGenerateAdaptiveBoard.mockResolvedValue(FOUND);
+      renderPage(`/bid/${boardId}`, {
+        dealAdaptive: { targets: [["Competing", "Takeout doubles"]] },
+      });
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${FOUND.identifier}`,
+        ),
+      );
+      expect(mockGenerateAdaptiveBoard).toHaveBeenCalledWith(
+        [["Competing", "Takeout doubles"]],
+        3,
+      );
+    });
+
+    it("aims at the one weak spot Practice this chose until told to widen", async () => {
+      await store.setSetting("focus", "Adaptive");
+      await store.setSetting("adaptiveTargets", [
+        ["Competing", "Takeout doubles"],
+      ]);
+      await recordWithWeakSpot();
+      mockGenerateAdaptiveBoard.mockReturnValue(new Promise(() => {}));
+      renderPage();
+      await waitForRobots();
+      const status = await screen.findByTestId("adaptive-status");
+      await waitFor(() =>
+        expect(status).toHaveTextContent("Aiming at Takeout doubles."),
+      );
+      await waitFor(() =>
+        expect(mockGenerateAdaptiveBoard).toHaveBeenCalledWith(
+          [["Competing", "Takeout doubles"]],
+          3,
+        ),
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "All weak spots" }));
+      await waitFor(() =>
+        expect(screen.getByTestId("adaptive-status")).toHaveTextContent(
+          "Aiming at To 1NT.",
+        ),
+      );
+      await waitFor(async () =>
+        expect(await store.getSetting("adaptiveTargets")).toBeNull(),
+      );
+    });
+
+    it("says which weak spot this hand practices, and records it as adaptive", async () => {
+      await store.setSetting("focus", "Adaptive");
+      await recordWithWeakSpot();
+      mockGenerateAdaptiveBoard.mockResolvedValue(FOUND);
+      renderPage(`/bid/${boardId}`, {
+        adaptive: {
+          category: FOUND.category,
+          targets: [["Responding to an opening", "To 1NT"]],
+        },
+      });
+      await waitForRobots();
+      expect(await screen.findByTestId("adaptive-status")).toHaveTextContent(
+        "This hand practices To 1NT.",
+      );
+      // The next board is found in the background while the user bids.
+      await waitFor(() => expect(mockGenerateAdaptiveBoard).toHaveBeenCalled());
+
+      mockAddRobotBids.mockResolvedValue(COMPLETE);
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "3♠")!,
+      );
+      await screen.findByTestId("verdict-on-system");
+      // The seeded hands carry later timestamps, so find this one by board.
+      await waitFor(async () => {
+        const hands = await store.allHands();
+        expect(hands.find((h) => h.boardId === boardId)).toMatchObject({
+          source: "Adaptive",
+          targets: [["Responding to an opening", "To 1NT"]],
+        });
+      });
+
+      // Next hand uses the board found in the background: a fresh search
+      // would never resolve from here.
+      mockGenerateAdaptiveBoard.mockReturnValue(new Promise(() => {}));
+      fireEvent.click(screen.getByRole("button", { name: /next hand/i }));
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${FOUND.identifier}`,
         ),
       );
     });

@@ -1,4 +1,5 @@
 import type {
+  AdaptiveBoard,
   Call,
   CallInterpretation,
   OpeningLead,
@@ -46,8 +47,21 @@ export function parseCallName(value: unknown): Call {
   };
 }
 
+function optionalCategory(value: unknown): string[] | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (
+    !Array.isArray(value) ||
+    value.length !== 3 ||
+    !value.every((level) => typeof level === "string" && level.length > 0)
+  ) {
+    throw new Error("The bidding engine returned an invalid category");
+  }
+  return value as string[];
+}
+
 export function parseCallInterpretation(value: unknown): CallInterpretation {
   const interpretation = record(value, "call interpretation");
+  const category = optionalCategory(interpretation.category);
   return {
     call: parseCallName(interpretation.call_name),
     ruleName: optionalString(interpretation.rule_name, "rule name"),
@@ -56,6 +70,7 @@ export function parseCallInterpretation(value: unknown): CallInterpretation {
       interpretation.knowledge_string ?? interpretation.constraints,
       "constraints",
     ),
+    ...(category ? { category } : {}),
   };
 }
 
@@ -98,4 +113,15 @@ export function parseOpeningLead(value: unknown): OpeningLead {
     partnerSuits: suitList(lead.partner_suits, "partner suits"),
     theirSuits: suitList(lead.their_suits, "declaring side suits"),
   };
+}
+
+/** The adaptive generator's answer: a board, or null when its attempts ran out. */
+export function parseAdaptiveBoard(value: unknown): AdaptiveBoard | null {
+  if (value === null || value === undefined) return null;
+  const board = record(value, "adaptive board");
+  const category = optionalCategory(board.category);
+  if (typeof board.identifier !== "string" || !category) {
+    throw new Error("The bidding engine returned an invalid adaptive board");
+  }
+  return { identifier: board.identifier, category };
 }

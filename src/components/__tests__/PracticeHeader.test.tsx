@@ -1,6 +1,16 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { PracticeHeader } from "../PracticeHeader";
+import { type AdaptiveState, PracticeHeader } from "../PracticeHeader";
+
+const NO_ADAPTIVE: AdaptiveState = {
+  available: false,
+  pinned: false,
+  targetsLabel: "",
+  practicing: null,
+  searching: false,
+  fallback: false,
+};
+const adaptiveProps = { adaptive: NO_ADAPTIVE, onShowAllWeakSpots: () => {} };
 import { focusLabel } from "../../practice/focus";
 
 describe("PracticeHeader", () => {
@@ -13,6 +23,7 @@ describe("PracticeHeader", () => {
         focus="Random"
         pendingFocus={null}
         onFocusChange={() => {}}
+        {...adaptiveProps}
       />,
     );
     expect(screen.getByTestId("board-line").textContent).toBe(
@@ -26,6 +37,7 @@ describe("PracticeHeader", () => {
         focus="Random"
         pendingFocus={null}
         onFocusChange={() => {}}
+        {...adaptiveProps}
       />,
     );
     expect(screen.getByTestId("board-line").textContent).toBe(
@@ -43,6 +55,7 @@ describe("PracticeHeader", () => {
         focus="Random"
         pendingFocus={null}
         onFocusChange={onFocusChange}
+        {...adaptiveProps}
       />,
     );
     expect(screen.getByLabelText("Focus")).toHaveValue("Random");
@@ -61,6 +74,7 @@ describe("PracticeHeader", () => {
         focus="Random"
         pendingFocus="Strong2C"
         onFocusChange={onFocusChange}
+        {...adaptiveProps}
       />,
     );
     expect(screen.getByLabelText("Focus")).toHaveValue("Strong2C");
@@ -68,5 +82,85 @@ describe("PracticeHeader", () => {
       "Next hand: Strong 2♣",
     );
     expect(focusLabel("Notrump")).toBe("Notrump");
+  });
+
+  it("offers Weak spots only once there is something to aim at, and says what it is doing", () => {
+    const onFocusChange = vi.fn();
+    const onShowAllWeakSpots = vi.fn();
+    const base = {
+      boardNumber: 1,
+      dealer: "N" as const,
+      vulnerability: "None" as const,
+      pendingFocus: null,
+      onFocusChange,
+      onShowAllWeakSpots,
+    };
+    const { rerender } = render(
+      <PracticeHeader {...base} focus="Random" adaptive={NO_ADAPTIVE} />,
+    );
+    const option = screen.getByRole("option", {
+      name: "Weak spots",
+    }) as HTMLOptionElement;
+    expect(option.disabled).toBe(true);
+    expect(option).toHaveAttribute(
+      "title",
+      expect.stringMatching(/bid a few more hands/i),
+    );
+    expect(screen.queryByTestId("adaptive-status")).toBeNull();
+
+    const available: AdaptiveState = {
+      ...NO_ADAPTIVE,
+      available: true,
+      targetsLabel: "To 1NT and Takeout doubles",
+    };
+    rerender(<PracticeHeader {...base} focus="Random" adaptive={available} />);
+    expect(
+      (screen.getByRole("option", { name: "Weak spots" }) as HTMLOptionElement)
+        .disabled,
+    ).toBe(false);
+    fireEvent.change(screen.getByLabelText("Focus"), {
+      target: { value: "Adaptive" },
+    });
+    expect(onFocusChange).toHaveBeenCalledWith("Adaptive");
+
+    rerender(
+      <PracticeHeader {...base} focus="Adaptive" adaptive={available} />,
+    );
+    expect(screen.getByTestId("adaptive-status")).toHaveTextContent(
+      "Aiming at To 1NT and Takeout doubles.",
+    );
+    rerender(
+      <PracticeHeader
+        {...base}
+        focus="Adaptive"
+        adaptive={{ ...available, practicing: "To 1NT", pinned: true }}
+      />,
+    );
+    expect(screen.getByTestId("adaptive-status")).toHaveTextContent(
+      "This hand practices To 1NT.",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "All weak spots" }));
+    expect(onShowAllWeakSpots).toHaveBeenCalled();
+
+    rerender(
+      <PracticeHeader
+        {...base}
+        focus="Adaptive"
+        adaptive={{ ...available, searching: true }}
+      />,
+    );
+    expect(screen.getByTestId("adaptive-status")).toHaveTextContent(
+      "Finding a hand that practices To 1NT and Takeout doubles…",
+    );
+    rerender(
+      <PracticeHeader
+        {...base}
+        focus="Adaptive"
+        adaptive={{ ...available, fallback: true }}
+      />,
+    );
+    expect(screen.getByTestId("adaptive-status")).toHaveTextContent(
+      "No hand for To 1NT and Takeout doubles turned up in time, so this one is random.",
+    );
   });
 });

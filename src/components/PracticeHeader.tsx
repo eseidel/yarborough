@@ -1,7 +1,23 @@
 import type { Position, Vulnerability } from "../bridge/types";
 import { POSITION_NAMES } from "../bridge/types";
-import type { DealType } from "../bridge/identifier";
-import { FOCUS_OPTIONS, focusLabel } from "../practice/focus";
+import type { HandSource } from "../practice/record/types";
+import { SOURCE_OPTIONS, focusLabel } from "../practice/focus";
+
+export interface AdaptiveState {
+  /** There is at least one weak spot to aim at. */
+  available: boolean;
+  /** Aimed at one weak spot chosen on the Progress tab. */
+  pinned: boolean;
+  /** "To 1NT and Takeout doubles". */
+  targetsLabel: string;
+  /** The family of call this board was dealt to practice, if any. */
+  practicing: string | null;
+  searching: boolean;
+  fallback: boolean;
+}
+
+const ADAPTIVE_DISABLED_REASON =
+  "Bid a few more hands first; this aims at what you have been missing.";
 
 function vulnerabilityWords(vulnerability: Vulnerability): string {
   switch (vulnerability) {
@@ -28,14 +44,18 @@ export function PracticeHeader({
   focus,
   pendingFocus,
   onFocusChange,
+  adaptive,
+  onShowAllWeakSpots,
 }: {
   boardNumber: number;
   dealer: Position;
   vulnerability: Vulnerability;
-  focus: DealType;
+  focus: HandSource;
   /** A focus chosen mid-hand, to be used for the next deal. */
-  pendingFocus: DealType | null;
-  onFocusChange: (focus: DealType) => void;
+  pendingFocus: HandSource | null;
+  onFocusChange: (focus: HandSource) => void;
+  adaptive: AdaptiveState;
+  onShowAllWeakSpots: () => void;
 }) {
   const selected = pendingFocus ?? focus;
   return (
@@ -61,14 +81,22 @@ export function PracticeHeader({
         <select
           id="practice-focus"
           value={selected}
-          onChange={(e) => onFocusChange(e.target.value as DealType)}
+          onChange={(e) => onFocusChange(e.target.value as HandSource)}
           className="px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-700 bg-white border border-gray-200 shadow-sm hover:border-gray-300"
         >
-          {FOCUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+          {SOURCE_OPTIONS.map((option) => {
+            const disabled = option.value === "Adaptive" && !adaptive.available;
+            return (
+              <option
+                key={option.value}
+                value={option.value}
+                disabled={disabled}
+                title={disabled ? ADAPTIVE_DISABLED_REASON : undefined}
+              >
+                {option.label}
+              </option>
+            );
+          })}
         </select>
       </div>
       {pendingFocus && pendingFocus !== focus && (
@@ -77,6 +105,42 @@ export function PracticeHeader({
           data-testid="pending-focus"
         >
           Next hand: {focusLabel(pendingFocus)}
+        </div>
+      )}
+      {selected === "Adaptive" && (
+        <div
+          className="text-center text-xs text-gray-600"
+          data-testid="adaptive-status"
+        >
+          {adaptive.searching ? (
+            <span className="animate-pulse">
+              Finding a hand that practices {adaptive.targetsLabel}…
+            </span>
+          ) : adaptive.fallback ? (
+            <>
+              No hand for {adaptive.targetsLabel} turned up in time, so this one
+              is random.
+            </>
+          ) : adaptive.practicing ? (
+            <>
+              This hand practices{" "}
+              <span className="font-semibold">{adaptive.practicing}</span>.
+            </>
+          ) : (
+            <>Aiming at {adaptive.targetsLabel}.</>
+          )}
+          {adaptive.pinned && (
+            <>
+              {" "}
+              <button
+                type="button"
+                onClick={onShowAllWeakSpots}
+                className="text-emerald-700 hover:underline"
+              >
+                All weak spots
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

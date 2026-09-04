@@ -1,8 +1,8 @@
 """JSON-friendly z3b operations used by the browser worker."""
 
 import json
-import re
 
+import categories
 import leads
 from core.board import Board
 from core.call import Pass
@@ -139,11 +139,7 @@ class ConstraintsSerializer:
 def _format_rule_name(rule_name):
     if not rule_name:
         return None
-    name = re.sub(r"([1-9A-Z])", r" \1", rule_name)
-    name = name.replace("R H O", "RHO")
-    name = name.replace("L H O", "LHO")
-    name = re.sub(r"\sN$", "NT", name)
-    return name.strip()
+    return categories.format_rule_name(rule_name)
 
 
 def _knowledge_string(position_view, interpreter):
@@ -170,13 +166,14 @@ def _knowledge_string(position_view, interpreter):
     return pretty_string.strip()
 
 
-def _selection_result(selection, knowledge_string=None):
+def _selection_result(selection, knowledge_string=None, category=None):
     if not selection or not selection.call:
         return {
             "call_name": "P",
             "rule_name": None,
             "description": None,
             "knowledge_string": None,
+            "category": category,
         }
 
     rule = selection.rule
@@ -185,7 +182,15 @@ def _selection_result(selection, knowledge_string=None):
         "rule_name": _format_rule_name(rule.name) if rule else None,
         "description": rule.explanation_for_bid(selection.call) if rule else None,
         "knowledge_string": knowledge_string,
+        "category": category,
     }
+
+
+def _category_for_selection(selection, history):
+    """The three-level category of the call `selection` makes (see categories.py)."""
+
+    rule = selection.rule if selection and selection.call else None
+    return categories.category_for(rule.name if rule else None, history)
 
 
 def get_next_call(identifier):
@@ -199,8 +204,9 @@ def get_suggested_call(identifier):
 
     board = _board(identifier)
     selection = _selection_for_board(board)
+    category = _category_for_selection(selection, board.call_history)
     if not selection or not selection.call:
-        return _selection_result(None)
+        return _selection_result(None, category=category)
 
     knowledge_string = None
     interpreter = Interpreter()
@@ -211,7 +217,9 @@ def get_suggested_call(identifier):
     except InconsistentHistoryException:
         knowledge_string = None
 
-    return _selection_result(selection, knowledge_string=knowledge_string)
+    return _selection_result(
+        selection, knowledge_string=knowledge_string, category=category
+    )
 
 
 def get_call_interpretations(calls, dealer, vulnerability):
@@ -276,6 +284,70 @@ def generate_filtered_board(
         "could not generate a %s practice board after %d attempts"
         % (focus, max_attempts)
     )
+
+
+MAX_ADAPTIVE_ATTEMPTS = 10
+
+
+def _targets(value):
+    if not isinstance(value, list) or not value:
+        raise BiddingInputError("targets must be a non-empty list of category paths")
+    targets = []
+    for path in value:
+        if (
+            not isinstance(path, list)
+            or not path
+            or not all(isinstance(level, str) and level for level in path)
+        ):
+            raise BiddingInputError("each target must be a non-empty list of strings")
+        targets.append(list(path))
+    return targets
+
+
+def _matches_target(category, targets):
+    """True when `category` sits under any target path (prefix match)."""
+
+    return any(category[: len(target)] == target for target in targets)
+
+
+def generate_adaptive_board(
+    targets, max_attempts=3, position="S", board_factory=Board.random
+):
+    """A board whose auction, bid by the engine throughout, asks `position`
+    for a call in one of the target categories.
+
+    Bids random boards out with the engine until one of `position`'s calls
+    falls under a target, or `max_attempts` boards have been tried. Returns
+    {"identifier", "category"} for the board found (the category being the
+    matching call's), or None when the attempts ran out, so the caller can
+    ask again without holding the worker for long. See docs/progress-plan.md,
+    section 4.
+    """
+
+    targets = _targets(targets)
+    if not isinstance(max_attempts, int) or not 1 <= max_attempts <= MAX_ADAPTIVE_ATTEMPTS:
+        raise BiddingInputError(
+            "max_attempts must be an integer from 1 to %d" % MAX_ADAPTIVE_ATTEMPTS
+        )
+    position = _require_string(position, "position").upper()
+    if position not in ("N", "E", "S", "W"):
+        raise BiddingInputError("position must be one of N, E, S, W")
+
+    bidder = Bidder()
+    for _ in range(max_attempts):
+        board = board_factory()
+        identifier = board.identifier
+        history = board.call_history
+        while not history.is_complete():
+            caller = history.position_to_call()
+            selection = bidder.call_selection_for(board.deal.hand_for(caller), history)
+            if caller.char == position:
+                category = _category_for_selection(selection, history)
+                if _matches_target(category, targets):
+                    return {"identifier": identifier, "category": category}
+            call = selection.call if selection and selection.call else Pass()
+            history.calls.append(call)
+    return None
 
 
 def get_full_autobid(identifier):
@@ -350,6 +422,12 @@ def dispatch(method, arguments):
         return generate_filtered_board(arguments.get("focus"))
     if method == "get_full_autobid":
         return get_full_autobid(arguments.get("identifier"))
+    if method == "generate_adaptive_board":
+        return generate_adaptive_board(
+            arguments.get("targets"),
+            arguments.get("max_attempts", 3),
+            arguments.get("position", "S"),
+        )
     if method == "get_opening_lead":
         return get_opening_lead(arguments.get("identifier"))
     raise BiddingInputError("unknown engine method: %s" % method)

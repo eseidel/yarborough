@@ -1,6 +1,12 @@
-import type { Call, CallInterpretation, OpeningLead } from "./types";
+import type {
+  AdaptiveBoard,
+  Call,
+  CallInterpretation,
+  OpeningLead,
+} from "./types";
 import type { EngineMethod } from "./engine-protocol";
 import {
+  parseAdaptiveBoard,
   parseCallInterpretation,
   parseCallInterpretations,
   parseCallName,
@@ -29,6 +35,10 @@ export interface BiddingEngine {
   generateFilteredBoard(type: string): Promise<string>;
   getFullAutobid(identifier: string): Promise<Call[]>;
   getOpeningLead(identifier: string): Promise<OpeningLead>;
+  generateAdaptiveBoard(
+    targets: string[][],
+    maxAttempts: number,
+  ): Promise<AdaptiveBoard | null>;
 }
 
 function engineClient(): WorkerRpcClient {
@@ -97,6 +107,22 @@ export function createBiddingEngine(requester: EngineRequester): BiddingEngine {
       });
       return parseOpeningLead(result);
     },
+
+    /**
+     * A board whose engine-bid auction asks South for a call in one of the
+     * target categories, trying at most `maxAttempts` boards so one request
+     * never holds the worker for long; null when they ran out.
+     */
+    async generateAdaptiveBoard(
+      targets: string[][],
+      maxAttempts: number,
+    ): Promise<AdaptiveBoard | null> {
+      const result = await requester.request("generate_adaptive_board", {
+        targets,
+        max_attempts: maxAttempts,
+      });
+      return parseAdaptiveBoard(result);
+    },
   };
 }
 
@@ -112,3 +138,4 @@ export const getSuggestedCall = biddingEngine.getSuggestedCall;
 export const generateFilteredBoard = biddingEngine.generateFilteredBoard;
 export const getFullAutobid = biddingEngine.getFullAutobid;
 export const getOpeningLead = biddingEngine.getOpeningLead;
+export const generateAdaptiveBoard = biddingEngine.generateAdaptiveBoard;

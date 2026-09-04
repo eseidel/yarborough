@@ -3,8 +3,10 @@ import unittest
 from unittest.mock import patch
 
 from core.board import Board
+from core.call import Call
 from z3b import rules
 
+import categories
 import yarborough_z3b as api
 
 
@@ -16,6 +18,22 @@ class _Rule:
 class _Selection:
     def __init__(self, dsl_rule):
         self.rule = _Rule(dsl_rule)
+
+
+class _NamedRule:
+    def __init__(self, name):
+        self.name = name
+
+    def explanation_for_bid(self, call):
+        return None
+
+
+class _NamedSelection:
+    """A selection of `call_name` by the rule class called `rule_name`."""
+
+    def __init__(self, call_name, rule_name):
+        self.call = Call.from_string(call_name)
+        self.rule = _NamedRule(rule_name)
 
 
 class YarboroughZ3bTest(unittest.TestCase):
@@ -102,6 +120,20 @@ class YarboroughZ3bTest(unittest.TestCase):
         self.assertEqual(api.get_next_call(identifier), suggestion["call_name"])
         self.assertIsInstance(suggestion["description"], (str, type(None)))
         self.assertIn("knowledge_string", suggestion)
+        # Every suggestion, rule or no rule, is categorized (see categories.py).
+        self.assertEqual(len(suggestion["category"]), 3)
+        self.assertIn(suggestion["category"][0], categories.LEVEL_ONE)
+
+    def test_suggestion_category_follows_the_rule(self):
+        board = Board.random()
+        with patch.object(
+            api, "_selection_for_board", return_value=_NamedSelection("1N", "NotrumpOpening")
+        ):
+            suggestion = api.get_suggested_call(board.identifier)
+        self.assertEqual(
+            suggestion["category"], ["Opening", "1NT, 2NT and 3NT", "Notrump Opening"]
+        )
+        self.assertEqual(suggestion["rule_name"], "Notrump Opening")
 
     def test_unresolved_selection_defaults_to_pass(self):
         result = api._selection_result(None)
@@ -109,6 +141,7 @@ class YarboroughZ3bTest(unittest.TestCase):
         self.assertIsNone(result["rule_name"])
         self.assertIsNone(result["description"])
         self.assertIsNone(result["knowledge_string"])
+        self.assertIsNone(result["category"])
 
     def test_focus_matching_uses_z3b_rule_classes(self):
         self.assertTrue(
@@ -173,6 +206,62 @@ class YarboroughZ3bTest(unittest.TestCase):
     def test_json_dispatch_rejects_unknown_method(self):
         with self.assertRaises(api.BiddingInputError):
             api.dispatch_json(json.dumps({"method": "missing", "arguments": {}}))
+
+    def test_adaptive_generator_matches_a_target_prefix(self):
+        self.assertTrue(
+            api._matches_target(
+                ["Responding to an opening", "To 1NT", "Stayman"],
+                [["Responding to an opening", "To 1NT"]],
+            )
+        )
+        self.assertTrue(
+            api._matches_target(["Opening", "Preempts", "Preemptive Open"], [["Opening"]])
+        )
+        self.assertFalse(
+            api._matches_target(
+                ["Opening", "Preempts", "Preemptive Open"],
+                [["Responding to an opening", "To 1NT"], ["Slam bidding"]],
+            )
+        )
+
+    def test_adaptive_generator_finds_a_board_for_a_common_target(self):
+        # Every deal has an opening or a pass as the dealer's first call, and
+        # South opens or passes in first or second seat often enough that a
+        # handful of attempts finds one.
+        result = api.generate_adaptive_board([["Opening"]], max_attempts=10)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["category"][0], "Opening")
+        # The identifier is the bare board, without the auction it was found by.
+        self.assertNotIn(":", result["identifier"])
+        board = Board.from_identifier(result["identifier"])
+        self.assertEqual(board.call_history.calls, [])
+
+    def test_adaptive_generator_gives_up_quietly(self):
+        # No engine call is ever in a category that does not exist.
+        self.assertIsNone(
+            api.generate_adaptive_board([["No such thing"]], max_attempts=2)
+        )
+
+    def test_adaptive_generator_rejects_bad_input(self):
+        with self.assertRaises(api.BiddingInputError):
+            api.generate_adaptive_board([], max_attempts=1)
+        with self.assertRaises(api.BiddingInputError):
+            api.generate_adaptive_board([["Opening", 3]], max_attempts=1)
+        with self.assertRaises(api.BiddingInputError):
+            api.generate_adaptive_board([["Opening"]], max_attempts=0)
+        with self.assertRaises(api.BiddingInputError):
+            api.generate_adaptive_board([["Opening"]], max_attempts=1, position="Q")
+
+    def test_json_dispatches_adaptive_generation(self):
+        response = api.dispatch_json(
+            json.dumps(
+                {
+                    "method": "generate_adaptive_board",
+                    "arguments": {"targets": [["No such thing"]], "max_attempts": 1},
+                }
+            )
+        )
+        self.assertIsNone(json.loads(response))
 
     def test_get_full_autobid(self):
         board = Board.random()

@@ -132,9 +132,11 @@ function PracticeBoard({
           focus={session.dealType}
           pendingFocus={session.pendingFocus}
           onFocusChange={session.changeFocus}
+          adaptive={session.adaptive}
+          onShowAllWeakSpots={session.showAllWeakSpots}
         />
         <ProgressStrip
-          progress={session.progress}
+          summary={session.summary}
           onReset={session.resetProgress}
         />
 
