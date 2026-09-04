@@ -107,7 +107,8 @@ function PracticeBoard({
       ? (verdicts[verdicts.length - 1] ?? null)
       : null;
 
-  const shareUrl = `${CANONICAL_ORIGIN}/bid/${boardId}`;
+  // The bare board, without the auction so far: the recipient bids it themselves.
+  const shareUrl = `${CANONICAL_ORIGIN}/bid/${session.baseId}`;
   const optionsAreLive =
     session.options !== null &&
     userToCall &&

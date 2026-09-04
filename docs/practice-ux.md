@@ -20,7 +20,7 @@ is over). South is always the user. Top to bottom, each phase showed:
 | Error bar               | Engine or solver failure text with a dismiss button.                                                                             | Fine. Kept.                                                                                                                                                                           |
 | Auction table           | W N E S columns, vulnerable seats in red, calls in grid order, `?` for the pending call. Tapping a call showed its SAYC meaning. | Nothing said the calls were clickable. Dealer was implied only by blank cells. No board number or vulnerability in words. The user's own calls looked exactly like the robots' calls. |
 | Inline call explanation | Rule name, constraints, description, and an "Explore →" link that left the page.                                                 | Leaving the page loses the hand. The explorer does not know the cards, so it could not say which option fit the hand.                                                                 |
-| Share Hand              | A bare text link centred under the actions.                                                                                      | Looked like a footnote.                                                                                                                                                               |
+| Share Hand              | A bare text link centred under the actions, sharing the permalink with the auction so far.                                       | Looked like a footnote. The recipient got a half-bid or finished auction, not a hand to bid.                                                                                          |
 | Practice Focus          | Random / Notrump / Preempt / Strong 2♣ chips, at the bottom below the fold.                                                      | Tapping a chip threw away the auction in progress with no warning. Being at the bottom, most users never found it.                                                                    |
 | About footer            | Links to the SAYC references and the source.                                                                                     | Fine. Kept.                                                                                                                                                                           |
 
@@ -131,20 +131,24 @@ is over). South is always the user. Top to bottom, each phase showed:
       out and its high-card points. Under it, each side's total points and
       any eight-card or longer fit.
    4. **Actions.** **Next hand** as the one primary button; **Bid again** and
-      **Share** as secondary. Bid again restarts the same board with the same
+      **Share** as secondary. Share sends the bare board, without the
+      auction, so the recipient bids the hand themselves. Bid again restarts the same board with the same
       robots, so the user can try to bid it on system.
 10. **About footer** (unchanged).
 
 ### The action button, by phase
 
-| Phase    | Primary                                  | Secondary               | Tertiary (text)                  |
-| -------- | ---------------------------------------- | ----------------------- | -------------------------------- |
-| Bidding  | The bidding box                          | Options · Show SAYC bid | Restart hand · Skip hand · Share |
-| Thinking | Everything disabled; the `?` cell pulses |                         |                                  |
-| Review   | Next hand                                | Bid again · Share       |                                  |
+| Phase    | Primary                                  | Secondary               | Tertiary (text)                              |
+| -------- | ---------------------------------------- | ----------------------- | -------------------------------------------- |
+| Bidding  | The bidding box                          | Options · Show SAYC bid | Take back · Restart hand · Skip hand · Share |
+| Thinking | Everything disabled; the `?` cell pulses |                         |                                              |
+| Review   | Next hand                                | Bid again · Share       |                                              |
 
 "Rebid" and "Rebid Hand" became "Restart hand" during bidding (it throws away
-calls) and "Bid again" in review (it is a second attempt). "Skip hand" and
+calls) and "Bid again" in review (it is a second attempt). "Take back" undoes
+only South's latest call: the robots' replies to it are dropped, or discarded
+if they are still thinking, and the re-opened turn keeps its cached SAYC bid.
+It is offered during bidding only; a reviewed hand is already in the record. "Skip hand" and
 "Next hand" stay distinct because they mean different things to the learner
 even though both deal.
 

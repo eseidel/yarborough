@@ -636,6 +636,29 @@ describe("PracticePage", () => {
       );
     });
 
+    it("shares the bare board, not the auction, so the recipient can bid it", async () => {
+      const share = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "share", {
+        value: share,
+        configurable: true,
+      });
+      try {
+        renderComplete();
+        await screen.findByTestId("verdict-on-system");
+        fireEvent.click(screen.getByRole("button", { name: /share hand/i }));
+        await waitFor(() =>
+          expect(share).toHaveBeenCalledWith(
+            expect.objectContaining({
+              url: `https://saycbridge.com/bid/${boardId}`,
+            }),
+          ),
+        );
+      } finally {
+        // @ts-expect-error -- test-only cleanup of a per-test stub.
+        delete navigator.share;
+      }
+    });
+
     it("bids the same board again", async () => {
       renderComplete();
       await screen.findByTestId("verdict-on-system");
