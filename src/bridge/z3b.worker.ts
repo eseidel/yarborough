@@ -25,7 +25,11 @@ const pythonSources = {
     },
   ),
   ...import.meta.glob(
-    ["../../python/yarborough_z3b.py", "../../python/leads.py"],
+    [
+      "../../python/yarborough_z3b.py",
+      "../../python/categories.py",
+      "../../python/leads.py",
+    ],
     {
       eager: true,
       import: "default",
