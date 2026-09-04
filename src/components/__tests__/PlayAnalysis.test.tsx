@@ -45,14 +45,18 @@ describe("PlayAnalysis", () => {
       "4♠ by North goes down 1 (9 tricks) with all four hands in view and best play by both sides.",
     );
     const afterLead = screen.getByTestId("double-dummy-after-lead");
-    expect(afterLead.textContent).toContain("East’s normal lead is the ♥8");
-    expect(afterLead.textContent).toContain("(fourth best)");
-    expect(afterLead.textContent).toContain("makes 5 (11 tricks)");
-    expect(screen.getByTestId("play-verdict").textContent).toBe(
-      "4♠ goes down 1 (9 tricks). N-S can make 3♠, 3♦, 1NT.",
+    expect(afterLead.textContent).toBe(
+      "After East’s normal lead, the ♥8 (fourth best), it makes 5 (11 tricks): the defense no longer sees declarer’s cards before the first trick.",
     );
-    expect(screen.getByTestId("makeable-contracts").textContent).toBe(
-      "N-S can make 3♠, 3♦, 1NT. E-W can make 3♥, 3♣.",
+    // The verdict judges; the result above and the lists below are not repeated.
+    expect(screen.getByTestId("play-verdict").textContent).toBe(
+      "Too high for these cards.",
+    );
+    expect(screen.getByTestId("makeable-NS").textContent).toBe(
+      "N-S can make 3♠, 3♦, 1NT.",
+    );
+    expect(screen.getByTestId("makeable-EW").textContent).toBe(
+      "E-W can make 3♥, 3♣.",
     );
   });
 
@@ -63,8 +67,8 @@ describe("PlayAnalysis", () => {
         analysis={{ table: TABLE, lead: LEAD, tricksAfterLead: 9 }}
       />,
     );
-    expect(screen.getByTestId("double-dummy-after-lead").textContent).toContain(
-      "which does not change that",
+    expect(screen.getByTestId("double-dummy-after-lead").textContent).toBe(
+      "East’s normal lead, the ♥8 (fourth best), does not change that.",
     );
   });
 
@@ -96,7 +100,10 @@ describe("PlayAnalysis", () => {
     );
     expect(screen.queryByTestId("double-dummy-contract")).toBeNull();
     expect(screen.getByTestId("play-verdict").textContent).toBe(
-      "Passed out. N-S could make 3♠, 3♦, 1NT, but no game.",
+      "Passed out with only a partscore available to N-S.",
+    );
+    expect(screen.getByTestId("makeable-NS").textContent).toBe(
+      "N-S can make 3♠, 3♦, 1NT.",
     );
   });
 

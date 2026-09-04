@@ -118,15 +118,16 @@ is over). South is always the user. Top to bottom, each phase showed:
       engine's own auction would have ended ("SAYC would have reached 4♥ by
       North") with a link to view that auction, whose calls are clickable for
       their meanings.
-   2. **Play card.** Double dummy in sentences. "With all four hands in view
-      and best play by both sides, 4♠ by North makes 4 (10 tricks)." When the
-      textbook lead changes the outcome: "After West's normal ♦4 lead (fourth
-      best), it makes 5." When it does not, one sentence covers both. Then a
-      line per side listing what it could make ("N-S can make 4♠, 3NT, 2♦;
-      E-W can make 2♥"), and a verdict that ties the contract to the bidding:
-      reached a making game, stopped short of a makeable game, too high, or
-      the opponents' contract and whether it makes. The twenty-cell trick
-      table itself is not shown; the sentences carry what a learner needs.
+   2. **Play card.** Double dummy in sentences, one job per line and nothing
+      said twice. The result line: "With all four hands in view and best play
+      by both sides, 4♠ by North makes 4 (10 tricks)." The lead line: "After
+      West's normal ♦4 lead (fourth best), it makes 5", or, when the lead
+      changes nothing, that it does not. A verdict in a few words that ties
+      the contract to the cards: reached the game, stopped short of game,
+      too high, a missed game, or defending was right. Then what each side
+      can make, N-S on one line and E-W on the next, so the two are easy to
+      tell apart at a glance. The twenty-cell trick table itself is not
+      shown; the sentences carry what a learner needs.
    3. **Hands.** All four hands as the same mini cards South bid from, laid
       out as at the table: North across the top, West and East side by side,
       South across the bottom, each with its high-card points and South

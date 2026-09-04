@@ -31,9 +31,9 @@ function leadName(lead: OpeningLead): string {
 }
 
 /**
- * How the cards play, in sentences: the contract's double-dummy result, what
- * the textbook lead does to it, what each side could make, and how the
- * bidding compares with that. The trick table itself is not shown; these
+ * How the cards play, one job per line: the contract's double-dummy result,
+ * what the textbook lead does to it, a judgment of the bidding, and what
+ * each side can make, N-S and E-W on lines of their own. The trick table itself is not shown; these
  * sentences are what a learner needs from it.
  */
 export function PlayAnalysis({
@@ -101,16 +101,23 @@ export function PlayAnalysis({
       )}
       {contract && lead && tricksAfterLead !== null && (
         <p data-testid="double-dummy-after-lead" className="text-gray-700">
-          {POSITION_NAMES[lead.leader]}&rsquo;s normal lead is the{" "}
-          <SuitText text={leadName(lead)} />
-          {lead.reason && (
-            <span className="text-gray-500"> ({lead.reason})</span>
-          )}
           {tricksAfterLead === tricks ? (
-            <>, which does not change that.</>
+            <>
+              {POSITION_NAMES[lead.leader]}&rsquo;s normal lead, the{" "}
+              <SuitText text={leadName(lead)} />
+              {lead.reason && (
+                <span className="text-gray-500"> ({lead.reason})</span>
+              )}
+              , does not change that.
+            </>
           ) : (
             <>
-              . After it the contract{" "}
+              After {POSITION_NAMES[lead.leader]}&rsquo;s normal lead, the{" "}
+              <SuitText text={leadName(lead)} />
+              {lead.reason && (
+                <span className="text-gray-500"> ({lead.reason})</span>
+              )}
+              , it{" "}
               <span
                 className={
                   contractMakes(contract.level, tricksAfterLead)
@@ -120,8 +127,8 @@ export function PlayAnalysis({
               >
                 {describePlay(contract.level, tricksAfterLead)}
               </span>
-              , because the defense no longer sees declarer&rsquo;s cards before
-              the first trick.
+              : the defense no longer sees declarer&rsquo;s cards before the
+              first trick.
             </>
           )}
         </p>
@@ -132,19 +139,18 @@ export function PlayAnalysis({
       >
         <SuitText text={verdict.text} />
       </p>
-      <p className="text-gray-700" data-testid="makeable-contracts">
-        <SuitText
-          text={describeMakeable(userSide, makeableContracts(table, userSide))}
-        />
-        .{" "}
-        <SuitText
-          text={describeMakeable(
-            otherSide(userSide),
-            makeableContracts(table, otherSide(userSide)),
-          )}
-        />
-        .
-      </p>
+      {[userSide, otherSide(userSide)].map((side) => (
+        <p
+          key={side}
+          className="text-gray-700"
+          data-testid={`makeable-${side}`}
+        >
+          <SuitText
+            text={describeMakeable(side, makeableContracts(table, side))}
+          />
+          .
+        </p>
+      ))}
     </div>
   );
 }

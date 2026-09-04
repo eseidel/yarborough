@@ -139,27 +139,12 @@ export interface PlayVerdict {
   tone: "good" | "mixed" | "bad";
 }
 
-function gameLevel(strain: StrainName): number {
-  return strain === "N" ? 3 : strain === "H" || strain === "S" ? 4 : 5;
-}
-
 /**
- * The side's makeable contracts of `cls`, named the way they are bid: a game
- * is "3NT" even when the cards take ten tricks, since 4NT is not a contract
- * anyone chooses on purpose.
- */
-function highestOfClass(
-  contracts: MakeableContract[],
-  cls: ContractClass,
-): MakeableContract[] {
-  return contracts
-    .filter((c) => contractClass(c.level, c.strain) === cls)
-    .map((c) => (cls === "game" ? { ...c, level: gameLevel(c.strain) } : c));
-}
-
-/**
- * How the contract compares with what the cards allow, from `userSide`'s
- * point of view. `contract` is null for a passed-out board.
+ * How the bidding compares with what the cards allow, from `userSide`'s
+ * point of view: a judgment in a few words. It names neither the contract's
+ * own result nor the contracts each side can make, since the play card
+ * gives both of those on their own lines. `contract` is null for a
+ * passed-out board.
  */
 export function biddingVerdict(
   contract: ContractInfo | null,
@@ -168,88 +153,45 @@ export function biddingVerdict(
   userSide: Side,
 ): PlayVerdict {
   const us = SIDE_LABEL[userSide];
-  const ours = makeableContracts(table, userSide);
-  const ourBest = bestClass(ours);
-  const theirs = makeableContracts(table, otherSide(userSide));
+  const ourBest = bestClass(makeableContracts(table, userSide));
 
   if (!contract || !declarer) {
     if (ourBest && ourBest !== "partscore") {
       return {
-        text: `Passed out, but ${us} can make ${listContracts(highestOfClass(ours, ourBest))}.`,
+        text: `Passed out with a ${ourBest} available to ${us}.`,
         tone: "bad",
       };
     }
     if (ourBest === "partscore") {
       return {
-        text: `Passed out. ${us} could make ${listContracts(ours)}, but no game.`,
+        text: `Passed out with only a partscore available to ${us}.`,
         tone: "mixed",
       };
     }
-    const them =
-      theirs.length > 0
-        ? `${describeMakeable(otherSide(userSide), theirs)}.`
-        : "and neither can the opponents.";
-    return {
-      text: `Passed out. ${us} can make nothing, ${them}`,
-      tone: "good",
-    };
+    return { text: `Passed out, and ${us} can make nothing.`, tone: "good" };
   }
 
-  const name = formatContract(
-    contract.level,
-    contract.strain,
-    contract.doubled,
-  );
   const tricks = table[contract.strain][declarer];
   const makes = contractMakes(contract.level, tricks);
 
   if (sideOf(declarer) === userSide) {
     const cls = contractClass(contract.level, contract.strain);
-    if (makes) {
-      if (ourBest === null || classRank(cls) >= classRank(ourBest)) {
-        if (cls === "partscore") {
-          return {
-            text: `${name} makes, and there is no game for ${us}.`,
-            tone: "good",
-          };
-        }
-        return {
-          text: `${name} makes: ${us} reached the ${cls} the cards allow.`,
-          tone: "good",
-        };
-      }
-      return {
-        text: `${name} makes, but ${us} can make ${ourBest} in ${listContracts(highestOfClass(ours, ourBest))}.`,
-        tone: "mixed",
-      };
+    if (!makes) return { text: "Too high for these cards.", tone: "bad" };
+    if (ourBest === null || classRank(cls) >= classRank(ourBest)) {
+      return cls === "partscore"
+        ? { text: `There is no game for ${us}.`, tone: "good" }
+        : { text: `${us} reached the ${cls} the cards allow.`, tone: "good" };
     }
-    if (ours.length === 0) {
-      return {
-        text: `${name} ${describePlay(contract.level, tricks)}. ${us} can make nothing on these cards.`,
-        tone: "bad",
-      };
-    }
-    return {
-      text: `${name} ${describePlay(contract.level, tricks)}. ${us} can make ${listContracts(ours)}.`,
-      tone: "bad",
-    };
+    return cls === "partscore"
+      ? { text: `${us} stopped short of game.`, tone: "mixed" }
+      : { text: `${us} missed a ${ourBest}.`, tone: "mixed" };
   }
 
-  const theirResult = `${formatContractBy(contract, declarer)} ${describePlay(contract.level, tricks)}.`;
   if (ourBest && ourBest !== "partscore") {
-    return {
-      text: `${theirResult} ${us} can make ${listContracts(highestOfClass(ours, ourBest))}: a missed ${ourBest}.`,
-      tone: "bad",
-    };
+    return { text: `A missed ${ourBest} for ${us}.`, tone: "bad" };
   }
-  if (ourBest === "partscore") {
-    return {
-      text: `${theirResult} ${us} could make ${listContracts(ours)}.`,
-      tone: makes ? "mixed" : "good",
-    };
+  if (ourBest === "partscore" && makes) {
+    return { text: `${us} could have competed in a partscore.`, tone: "mixed" };
   }
-  return {
-    text: `${theirResult} ${us} can make nothing, so defending is right.`,
-    tone: "good",
-  };
+  return { text: "Defending was right.", tone: "good" };
 }
