@@ -1,20 +1,18 @@
 import { useCallback, useState } from "react";
 import type { CallHistory, CallInterpretation } from "../bridge/types";
 import { callToString, findCallInterpretation } from "../bridge/types";
-import { explorePath } from "../bridge/identifier";
 import { getCallInterpretations } from "../bridge/engine";
 
 /**
  * Drives the click-to-explain interaction on a `CallTable`: clicking a call
  * fetches z3b's interpretation of it and tracks which call is selected, so
- * the table can show the explanation and an Explore link inline. Shared by
- * the live auction view and the autobidder's auction view, which both embed
- * a `CallTable` and need the same behavior.
+ * the table can show the explanation inline. Shared by the live auction view
+ * and the engine's own auction in the review, which both embed a `CallTable`
+ * and need the same behavior.
  */
 export function useCallExplanation(
   history: CallHistory | null,
   vulnerability: string = "None",
-  boardNumber?: number,
   onError?: (error: unknown) => void,
 ) {
   const [selectedCallIndex, setSelectedCallIndex] = useState<number | null>(
@@ -60,16 +58,10 @@ export function useCallExplanation(
     [history, selectedCallIndex, vulnerability, reset, onError],
   );
 
-  const exploreLink =
-    selectedCallIndex != null && boardNumber !== undefined && history
-      ? explorePath(boardNumber, history.calls.slice(0, selectedCallIndex))
-      : undefined;
-
   return {
     selectedCallIndex,
     callExplanation,
     explanationLoading,
-    exploreLink,
     handleCallClick,
     reset,
   };

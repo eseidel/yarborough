@@ -7,19 +7,19 @@ import {
 } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PracticePage } from "../PracticePage";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import type { Call, CallHistory } from "../../bridge/types";
 import * as auction from "../../bridge/auction";
 import * as identifier from "../../bridge/identifier";
 import * as engine from "../../bridge/engine";
 import * as dds from "../../dds/dds";
+import { PROGRESS_STORAGE_KEY } from "../../practice/progress";
 
-// Mock the bridge modules
 vi.mock("../../bridge/auction", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../bridge/auction")>();
   return {
     ...actual,
     addRobotBids: vi.fn(),
-    isAuctionComplete: vi.fn(),
     getFullAutobidAuction: vi.fn(),
   };
 });
@@ -50,7 +50,6 @@ vi.mock("../../dds/dds", () => ({
 }));
 
 const mockAddRobotBids = vi.mocked(auction.addRobotBids);
-const mockIsAuctionComplete = vi.mocked(auction.isAuctionComplete);
 const mockGetFullAutobidAuction = vi.mocked(auction.getFullAutobidAuction);
 const mockParseBoardId = vi.mocked(identifier.parseBoardId);
 const mockGetSuggestedCall = vi.mocked(engine.getSuggestedCall);
@@ -60,461 +59,617 @@ const mockGetOpeningLead = vi.mocked(engine.getOpeningLead);
 const mockGetDoubleDummyTable = vi.mocked(dds.getDoubleDummyTable);
 const mockGetTricksAfterLead = vi.mocked(dds.getTricksAfterLead);
 
-describe("PracticePage", () => {
-  const boardId = "1-00000000000000000000000000";
-  const DUMMY_TABLE = Object.fromEntries(
-    (["S", "H", "D", "C", "N"] as const).map((strain) => [
-      strain,
-      { N: 9, E: 4, S: 9, W: 4 },
-    ]),
-  ) as Record<
-    "S" | "H" | "D" | "C" | "N",
-    Record<"N" | "E" | "S" | "W", number>
-  >;
-  const dummyParsed = {
-    boardNumber: 1,
-    deal: {
-      north: { cards: [] },
-      east: { cards: [] },
-      south: { cards: [] },
-      west: { cards: [] },
-    },
-    dealer: "N" as const,
-    vulnerability: "None" as const,
-    initialCalls: [],
-  };
+const boardId = "1-00000000000000000000000000";
+const bid = (level: number, strain: "C" | "D" | "H" | "S" | "N"): Call => ({
+  type: "bid",
+  level,
+  strain,
+});
+const pass: Call = { type: "pass" };
 
+// Dealer North. The robots open 1♠ and East passes; South is to call.
+const OPENING: CallHistory = { dealer: "N", calls: [bid(1, "S"), pass] };
+// ...and a completed auction, 4♠ by North, in which South called twice.
+const COMPLETE: CallHistory = {
+  dealer: "N",
+  calls: [bid(1, "S"), pass, bid(3, "S"), pass, bid(4, "S"), pass, pass, pass],
+};
+
+const TABLE = Object.fromEntries(
+  (["S", "H", "D", "C", "N"] as const).map((strain) => [
+    strain,
+    { N: 10, E: 3, S: 10, W: 3 },
+  ]),
+) as Record<"S" | "H" | "D" | "C" | "N", Record<"N" | "E" | "S" | "W", number>>;
+
+const dummyParsed = {
+  boardNumber: 1,
+  deal: {
+    north: { cards: [] },
+    east: { cards: [] },
+    south: { cards: [] },
+    west: { cards: [] },
+  },
+  dealer: "N" as const,
+  vulnerability: "None" as const,
+  initialCalls: [] as Call[],
+};
+
+/** The engine's call at each of South's turns, by the auction before it. */
+const SAYC_CALLS: Record<string, Call> = {
+  "1S,P": bid(3, "S"),
+  "1S,P,3S,P,4S,P": pass,
+};
+
+function LocationDisplay() {
+  const location = useLocation();
+  return <div data-testid="location-path">{location.pathname}</div>;
+}
+
+function renderPage(path = `/bid/${boardId}`) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route
+          path="/bid/:boardId"
+          element={
+            <>
+              <PracticePage />
+              <LocationDisplay />
+            </>
+          }
+        />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+const waitForRobots = () =>
+  waitFor(() =>
+    expect(screen.getByTestId("bidding-box")).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    ),
+  );
+
+describe("PracticePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
+    window.sessionStorage.clear();
     mockParseBoardId.mockReturnValue(dummyParsed);
-    mockGetDoubleDummyTable.mockResolvedValue(DUMMY_TABLE);
+    mockAddRobotBids.mockResolvedValue(OPENING);
+    mockGetFullAutobidAuction.mockResolvedValue(COMPLETE);
+    mockGetSuggestedCall.mockImplementation(async (id) => {
+      const key = id.split(":")[1] ?? "";
+      return {
+        call: SAYC_CALLS[key] ?? pass,
+        ruleName: key === "1S,P" ? "Jump Raise" : undefined,
+        constraints: key === "1S,P" ? "10-12 hcp, 4+S" : undefined,
+      };
+    });
+    mockGetCallInterpretations.mockResolvedValue([
+      { call: bid(3, "S"), ruleName: "Jump Raise" },
+      { call: bid(2, "S"), ruleName: "Simple Raise" },
+      { call: pass },
+    ]);
+    mockGetDoubleDummyTable.mockResolvedValue(TABLE);
     mockGetOpeningLead.mockResolvedValue({
-      leader: "W",
+      leader: "E",
       card: { suit: "D", rank: "4" },
       reason: "fourth best",
       partnerSuits: [],
       theirSuits: [],
     });
-    mockGetTricksAfterLead.mockResolvedValue(10);
-    mockAddRobotBids.mockResolvedValue({
-      dealer: "N",
-      calls: [{ type: "pass" }],
-    });
-    mockIsAuctionComplete.mockReturnValue(false);
-    mockGetFullAutobidAuction.mockResolvedValue({
-      dealer: "N",
-      calls: [
-        { type: "pass" },
-        { type: "pass" },
-        { type: "pass" },
-        { type: "pass" },
-      ],
-    });
+    mockGetTricksAfterLead.mockResolvedValue(11);
   });
 
-  const renderPage = () => {
-    return render(
-      <MemoryRouter initialEntries={[`/bid/${boardId}`]}>
-        <Routes>
-          <Route path="/bid/:boardId" element={<PracticePage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-  };
-
-  it("renders and handles rebid during auction", async () => {
-    renderPage();
-
-    // Wait for initial robot bids
-    await waitFor(() => expect(mockAddRobotBids).toHaveBeenCalled());
-
-    // Find and click Rebid button
-    const rebidButton = await screen.findByRole("button", { name: /rebid/i });
-    expect(rebidButton).toBeInTheDocument();
-
-    // Clear mocks to track the rebid call
-    mockAddRobotBids.mockClear();
-
-    fireEvent.click(rebidButton);
-
-    // Verify handleRebid was called
-    await waitFor(() => {
-      // It should call addRobotBids with empty calls history
+  describe("while bidding", () => {
+    it("lets the robots bid first, then hands the box to South and updates the URL", async () => {
+      renderPage();
+      // The box is on the page from the start, disabled while the robots think.
+      expect(screen.getByTestId("bidding-box")).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      await waitForRobots();
       expect(mockAddRobotBids).toHaveBeenCalledWith(
         expect.objectContaining({ calls: [] }),
         "S",
         boardId,
       );
-    });
-  });
-
-  it("shows explanation when a bid in call history is clicked", async () => {
-    mockAddRobotBids.mockResolvedValue({
-      dealer: "N",
-      calls: [{ type: "bid", level: 1, strain: "C" }, { type: "pass" }],
-    });
-    mockGetCallInterpretations.mockResolvedValue([
-      {
-        call: { type: "bid", level: 1, strain: "C" },
-        ruleName: "Opening 1♣",
-        description: "12-21 HCP, 3+ clubs",
-      },
-      {
-        call: { type: "pass" },
-        ruleName: undefined,
-        description: undefined,
-      },
-    ]);
-
-    renderPage();
-
-    // Wait for initial render with calls
-    await waitFor(() =>
-      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
-    );
-
-    // Click the 1♣ bid in the call table (not the BiddingBox)
-    const callTable = screen.getByTestId("call-table");
-    const clubSymbol = within(callTable).getByText("♣");
-    fireEvent.click(clubSymbol.closest("div")!);
-
-    // Should show explanation
-    await waitFor(() => {
-      expect(screen.getByText(/Opening 1♣/)).toBeInTheDocument();
-      expect(screen.getByText("12-21 HCP, 3+ clubs")).toBeInTheDocument();
-    });
-
-    expect(mockGetCallInterpretations).toHaveBeenCalledWith("", "N", "None");
-  });
-
-  it("shows 'No interpretation available' for unrecognized bids", async () => {
-    mockAddRobotBids.mockResolvedValue({
-      dealer: "N",
-      calls: [{ type: "pass" }],
-    });
-    mockGetCallInterpretations.mockResolvedValue([
-      {
-        call: { type: "pass" },
-        ruleName: undefined,
-        description: undefined,
-      },
-    ]);
-
-    renderPage();
-
-    await waitFor(() =>
-      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
-    );
-
-    // Click Pass in the call table (not the BiddingBox)
-    const callTable = screen.getByTestId("call-table");
-    fireEvent.click(within(callTable).getByText("Pass"));
-
-    await waitFor(() => {
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${boardId}:1S,P`,
+        ),
+      );
+      expect(screen.getByTestId("board-line")).toHaveTextContent(
+        "Board 1 · Dealer North · Nobody vulnerable",
+      );
+      // South's column is the user's.
       expect(
-        screen.getByText(/No interpretation available/),
+        within(screen.getByTestId("call-table")).getByText("South").textContent,
+      ).toContain("you");
+      // The engine's call for this turn was fetched before South acted.
+      await waitFor(() =>
+        expect(mockGetSuggestedCall).toHaveBeenCalledWith(`${boardId}:1S,P`),
+      );
+    });
+
+    it("checks each call South makes and says what SAYC bids instead", async () => {
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      const box = screen.getByTestId("bidding-box");
+      fireEvent.click(
+        within(box)
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId("call-feedback-miss")).toHaveTextContent(
+          "You bid 2♠; SAYC bids 3♠: Jump Raise.",
+        );
+      });
+      expect(screen.getByLabelText("differed from SAYC")).toBeInTheDocument();
+      expect(mockAddRobotBids).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          calls: [bid(1, "S"), pass, bid(2, "S")],
+        }),
+        "S",
+        boardId,
+      );
+    });
+
+    it("confirms a call that matches SAYC", async () => {
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(3, "S"), pass],
+      });
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "3♠")!,
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId("call-feedback-match")).toHaveTextContent(
+          "3♠ is the SAYC bid: Jump Raise",
+        );
+      });
+      expect(screen.getByLabelText("matched SAYC")).toBeInTheDocument();
+    });
+
+    it("can hold feedback back until the hand is over", async () => {
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      const defer = await screen.findByRole("button", {
+        name: /hide until the end/i,
+      });
+      fireEvent.click(defer);
+      expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
+      expect(screen.queryByLabelText("differed from SAYC")).toBeNull();
+      expect(window.localStorage.getItem("yarborough_feedback_timing")).toBe(
+        "end",
+      );
+    });
+
+    it("shows the SAYC bid on request, bids it in one tap, and does not count it", async () => {
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(screen.getByRole("button", { name: /show sayc bid/i }));
+      const hint = await screen.findByTestId("sayc-hint");
+      expect(hint).toHaveTextContent("SAYC bids 3♠: Jump Raise");
+      expect(hint).toHaveTextContent("10-12 hcp, 4+");
+
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(3, "S"), pass],
+      });
+      fireEvent.click(within(hint).getByRole("button", { name: /bid 3/i }));
+      await waitFor(() =>
+        expect(screen.getByTestId("call-feedback-match")).toHaveTextContent(
+          "(shown first)",
+        ),
+      );
+      expect(screen.queryByTestId("sayc-hint")).toBeNull();
+    });
+
+    it("lists every option in place and bids the tapped one", async () => {
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(screen.getByRole("button", { name: "Options" }));
+      const sheet = await screen.findByRole("dialog");
+      expect(sheet).toHaveAccessibleName("Options after 1♠ · Pass");
+      await waitFor(() =>
+        expect(within(sheet).getByText("Simple Raise")).toBeInTheDocument(),
+      );
+      expect(mockGetCallInterpretations).toHaveBeenCalledWith(
+        "1S,P",
+        "N",
+        "None",
+      );
+
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      fireEvent.click(within(sheet).getByText("Simple Raise"));
+      expect(screen.queryByRole("dialog")).toBeNull();
+      await waitFor(() =>
+        expect(mockAddRobotBids).toHaveBeenLastCalledWith(
+          expect.objectContaining({ calls: [bid(1, "S"), pass, bid(2, "S")] }),
+          "S",
+          boardId,
+        ),
+      );
+    });
+
+    it("explains a tapped call and offers the options at that point, read-only", async () => {
+      mockGetCallInterpretations.mockResolvedValue([
+        { call: bid(1, "S"), ruleName: "One Level Suit Opening" },
+        { call: bid(1, "N"), ruleName: "Notrump Opening" },
+      ]);
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(
+        within(screen.getByTestId("call-table")).getByTestId("call-0"),
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("call-explanation")).toHaveTextContent(
+          "One Level Suit Opening",
+        ),
+      );
+      expect(mockGetCallInterpretations).toHaveBeenCalledWith("", "N", "None");
+
+      fireEvent.click(screen.getByRole("button", { name: "All options here" }));
+      const sheet = await screen.findByRole("dialog");
+      expect(sheet).toHaveAccessibleName("Options as opener");
+      await waitFor(() =>
+        expect(within(sheet).getByText("Notrump Opening")).toBeInTheDocument(),
+      );
+      // An earlier point cannot be bid from.
+      expect(
+        within(sheet).queryByRole("button", { name: /notrump opening/i }),
+      ).toBeNull();
+    });
+
+    it("takes back South's last call and re-opens that turn", async () => {
+      renderPage();
+      await waitForRobots();
+      // Nothing of South's to undo yet.
+      expect(screen.getByRole("button", { name: /take back/i })).toBeDisabled();
+
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass, bid(3, "S"), pass],
+      });
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      await screen.findByTestId("call-feedback-miss");
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `${boardId}:1S,P,2S,P,3S,P`,
+        ),
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /take back/i }));
+      // Back to the turn before 2♠, with the robots' replies gone.
+      expect(screen.getByTestId("location-path")).toHaveTextContent(
+        `/bid/${boardId}:1S,P`,
+      );
+      expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
+      expect(screen.queryByTestId("call-2")).toBeNull();
+      expect(screen.getByTestId("bidding-box")).not.toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      expect(screen.getByRole("button", { name: /take back/i })).toBeDisabled();
+      // The re-opened turn's SAYC bid was cached, not fetched again.
+      const suggestCalls = mockGetSuggestedCall.mock.calls.filter(
+        ([id]) => id === `${boardId}:1S,P`,
+      );
+      expect(suggestCalls).toHaveLength(1);
+
+      // South can call again from here.
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "3♠")!,
+      );
+      await screen.findByTestId("call-feedback-match");
+    });
+
+    it("takes back a call while the robots are still thinking", async () => {
+      renderPage();
+      await waitForRobots();
+      let replyWithRobots: (h: CallHistory) => void = () => {};
+      mockAddRobotBids.mockReturnValue(
+        new Promise((resolve) => {
+          replyWithRobots = resolve;
+        }),
+      );
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      expect(screen.getByTestId("bidding-box")).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /take back/i }));
+      expect(screen.getByTestId("bidding-box")).not.toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+
+      // A late reply from the robots is ignored.
+      replyWithRobots({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      await waitFor(() =>
+        expect(mockGetSuggestedCall).toHaveBeenCalledWith(`${boardId}:1S,P`),
+      );
+      expect(screen.queryByTestId("call-2")).toBeNull();
+      expect(screen.getByTestId("location-path")).toHaveTextContent(
+        `/bid/${boardId}:1S,P`,
+      );
+    });
+
+    it("restarts the hand from the first call", async () => {
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockClear();
+      fireEvent.click(screen.getByRole("button", { name: /restart hand/i }));
+      await waitFor(() =>
+        expect(mockAddRobotBids).toHaveBeenCalledWith(
+          expect.objectContaining({ calls: [] }),
+          "S",
+          boardId,
+        ),
+      );
+    });
+
+    it("skips to a new hand with the chosen focus", async () => {
+      mockGenerateFilteredBoard.mockResolvedValue(
+        "2-00000000000000000000000000",
+      );
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(screen.getByRole("button", { name: /skip hand/i }));
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          "/bid/2-00000000000000000000000000",
+        ),
+      );
+      expect(mockGenerateFilteredBoard).toHaveBeenCalledWith("Random");
+    });
+
+    it("deals for a new focus at once when nothing has been bid, and defers it mid-hand", async () => {
+      mockGenerateFilteredBoard.mockResolvedValue(
+        "3-00000000000000000000000000",
+      );
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(screen.getByRole("button", { name: "Notrump" }));
+      await waitFor(() =>
+        expect(mockGenerateFilteredBoard).toHaveBeenCalledWith("Notrump"),
+      );
+      expect(window.sessionStorage.getItem("yarborough_deal_type")).toBe(
+        "Notrump",
+      );
+    });
+
+    it("keeps a focus chosen mid-hand for the next deal", async () => {
+      mockGenerateFilteredBoard.mockResolvedValue(
+        "4-00000000000000000000000000",
+      );
+      mockParseBoardId.mockReturnValue({
+        ...dummyParsed,
+        initialCalls: [bid(1, "S"), pass, bid(3, "S"), pass, bid(4, "S"), pass],
+      });
+      renderPage(`/bid/${boardId}:1S,P,3S,P,4S,P`);
+      await waitForRobots();
+      fireEvent.click(screen.getByRole("button", { name: "Preempt" }));
+      expect(mockGenerateFilteredBoard).not.toHaveBeenCalled();
+      expect(screen.getByTestId("pending-focus")).toHaveTextContent(
+        "Next hand: Preempt",
+      );
+      fireEvent.click(screen.getByRole("button", { name: /skip hand/i }));
+      await waitFor(() =>
+        expect(mockGenerateFilteredBoard).toHaveBeenCalledWith("Preempt"),
+      );
+    });
+
+    it("shows a generation error instead of silently changing the requested deal", async () => {
+      mockGenerateFilteredBoard.mockRejectedValue(
+        new Error("worker unavailable"),
+      );
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(screen.getByRole("button", { name: /skip hand/i }));
+      await waitFor(() =>
+        expect(screen.getByText(/worker unavailable/i)).toBeInTheDocument(),
+      );
+    });
+
+    it("sets the document title", async () => {
+      renderPage();
+      await waitFor(() =>
+        expect(document.title).toBe("Bidding Practice - SAYC Bridge"),
+      );
+    });
+  });
+
+  describe("in review", () => {
+    const renderComplete = () => {
+      mockParseBoardId.mockReturnValue({
+        ...dummyParsed,
+        initialCalls: COMPLETE.calls,
+      });
+      return renderPage(`/bid/${boardId}:1S,P,3S,P,4S,P,P,P`);
+    };
+
+    it("reveals the verdict, the play, and all four hands, in that order", async () => {
+      renderComplete();
+      await waitFor(() =>
+        expect(screen.getByTestId("verdict-on-system")).toHaveTextContent(
+          "All 2 of your calls followed SAYC",
+        ),
+      );
+      expect(document.title).toBe("Bidding Results - SAYC Bridge");
+      expect(screen.getByTestId("contract")).toHaveTextContent("4♠ by North");
+      // Verdicts for a permalink's earlier calls were fetched one by one.
+      expect(mockGetSuggestedCall).toHaveBeenCalledWith(`${boardId}:1S,P`);
+      expect(mockGetSuggestedCall).toHaveBeenCalledWith(
+        `${boardId}:1S,P,3S,P,4S,P`,
+      );
+      expect(mockAddRobotBids).not.toHaveBeenCalled();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("double-dummy-contract")).toHaveTextContent(
+          "4♠ by North makes 4 (10 tricks)",
+        ),
+      );
+      expect(screen.getByTestId("double-dummy-after-lead")).toHaveTextContent(
+        "makes 5 (11 tricks)",
+      );
+      expect(screen.getByTestId("play-verdict")).toHaveTextContent(
+        "4♠ makes: N-S reached the game the cards allow.",
+      );
+      expect(mockGetTricksAfterLead).toHaveBeenCalledWith(
+        dummyParsed.deal,
+        "S",
+        "N",
+        { suit: "D", rank: "4" },
+      );
+
+      const order = [
+        "review-summary",
+        "double-dummy-contract",
+        "hand-diagram",
+      ].map((id) => screen.getByTestId(id));
+      expect(
+        order[0].compareDocumentPosition(order[1]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        order[1].compareDocumentPosition(order[2]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        screen.getByRole("button", { name: /next hand/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /bid again/i }),
       ).toBeInTheDocument();
     });
-  });
 
-  it("shows suggested bid with formatted rule name and constraints", async () => {
-    mockGetSuggestedCall.mockResolvedValue({
-      call: { type: "bid", level: 1, strain: "H" },
-      ruleName: "One Level Suit Opening",
-      description: "12-21 HCP, 5+ hearts",
-      constraints: "12-21 hcp, 5+H",
-    });
-
-    renderPage();
-
-    await waitFor(() =>
-      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
-    );
-
-    const suggestButton = await screen.findByRole("button", {
-      name: /suggest bid/i,
-    });
-    fireEvent.click(suggestButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Autobidder says:/)).toBeInTheDocument();
-      expect(screen.getByText("One Level Suit Opening")).toBeInTheDocument();
-      expect(screen.getByText("12-21 hcp, 5+")).toBeInTheDocument();
-      expect(screen.getByText("12-21 HCP, 5+ hearts")).toBeInTheDocument();
-    });
-  });
-
-  it("handles rebid after auction completion", async () => {
-    mockIsAuctionComplete.mockReturnValue(true);
-
-    renderPage();
-
-    // Wait for render
-    const rebidHandButton = await screen.findByRole("button", {
-      name: /rebid hand/i,
-    });
-    expect(rebidHandButton).toBeInTheDocument();
-
-    mockAddRobotBids.mockClear();
-    fireEvent.click(rebidHandButton);
-
-    await waitFor(() => {
-      expect(mockAddRobotBids).toHaveBeenCalledWith(
-        expect.objectContaining({ calls: [] }),
-        "S",
-        boardId,
+    it("records the hand on the device once", async () => {
+      renderComplete();
+      await waitFor(() => {
+        expect(screen.getByTestId("progress-strip")).toHaveTextContent(
+          "100% on system",
+        );
+      });
+      expect(screen.getByTestId("progress-strip")).toHaveTextContent("1 hand");
+      const stored = JSON.parse(
+        window.localStorage.getItem(PROGRESS_STORAGE_KEY)!,
       );
-    });
-  });
-  it("renders hand fans for all players when auction is complete", async () => {
-    mockIsAuctionComplete.mockReturnValue(true);
-
-    renderPage();
-
-    // Wait for initial robot bids and loading to finish
-    await waitFor(() =>
-      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
-    );
-
-    // Verify we are in the completed auction state
-    expect(screen.getByText(/auction complete/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /next hand/i }),
-    ).toBeInTheDocument();
-
-    // Verify relative order in the DOM
-    const labels = screen.getAllByTestId(/position-label-/);
-    const labelPositions = labels.map((l) =>
-      l.getAttribute("data-testid")?.replace("position-label-", ""),
-    );
-
-    // We expect N, then W and E (order of W/E depends on grid), then S
-    const nIndex = labelPositions.indexOf("N");
-    const wIndex = labelPositions.indexOf("W");
-    const eIndex = labelPositions.indexOf("E");
-    const sIndex = labelPositions.indexOf("S");
-
-    expect(nIndex).toBeLessThan(wIndex);
-    expect(nIndex).toBeLessThan(eIndex);
-    expect(wIndex).toBeLessThan(sIndex);
-    expect(eIndex).toBeLessThan(sIndex);
-  });
-
-  it("shows a generation error instead of silently changing the requested practice deal", async () => {
-    mockIsAuctionComplete.mockReturnValue(true);
-    mockGenerateFilteredBoard.mockRejectedValue(
-      new Error("worker unavailable"),
-    );
-
-    renderPage();
-
-    fireEvent.click(await screen.findByRole("button", { name: /next hand/i }));
-
-    await waitFor(() =>
-      expect(screen.getByText(/worker unavailable/i)).toBeInTheDocument(),
-    );
-  });
-
-  it("loads initial calls from URL", async () => {
-    const boardIdWithCalls = `${boardId}:1C,P,1S`;
-    mockParseBoardId.mockReturnValue({
-      ...dummyParsed,
-      initialCalls: [
-        { type: "bid", level: 1, strain: "C" },
-        { type: "pass" },
-        { type: "bid", level: 1, strain: "S" },
-      ],
+      expect(stored.total).toEqual({
+        hands: 1,
+        handsOnSystem: 1,
+        calls: 2,
+        callsMatched: 2,
+      });
+      expect(stored.streak).toBe(1);
     });
 
-    render(
-      <MemoryRouter initialEntries={[`/bid/${boardIdWithCalls}`]}>
-        <Routes>
-          <Route path="/bid/:boardId" element={<PracticePage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    // Wait for loading to finish
-    await waitFor(() =>
-      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
-    );
-
-    // Wait for loading to finish
-    await waitFor(
-      () => expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
-      { timeout: 2000 },
-    );
-
-    // Verify calls are in the table
-    const callTable = screen.getByTestId("call-table");
-    expect(within(callTable).getByText("♣")).toBeInTheDocument();
-    expect(within(callTable).getByText("♠")).toBeInTheDocument();
-    expect(within(callTable).getByText("Pass")).toBeInTheDocument();
-    // Check that one of them has level 1
-    expect(within(callTable).getAllByText(/1/)).toHaveLength(2);
-  });
-
-  it("updates URL when a bid is made", async () => {
-    // 1. Initial State: Dealer N, E and W are robots.
-    // Robot bids: N bids 1C, E passes.
-    mockAddRobotBids.mockResolvedValue({
-      dealer: "N",
-      calls: [
-        { type: "bid", level: 1, strain: "C" }, // N
-        { type: "pass" }, // E
-      ],
-    });
-
-    render(
-      <MemoryRouter initialEntries={[`/bid/${boardId}`]}>
-        <Routes>
-          <Route
-            path="/bid/:boardId"
-            element={
-              <>
-                <PracticePage />
-                <LocationDisplay />
-              </>
-            }
-          />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    // Wait for robot bids to finish
-    await waitFor(() =>
-      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
-    );
-
-    // Verify initial URL update (N: 1C, E: P)
-    await waitFor(() => {
-      expect(screen.getByTestId("location-path")).toHaveTextContent(
-        `/bid/${boardId}:1C,P`,
+    it("lists the calls that differed and where SAYC's own auction ends", async () => {
+      mockParseBoardId.mockReturnValue({
+        ...dummyParsed,
+        initialCalls: [bid(1, "S"), pass, bid(2, "S"), pass, pass, pass],
+      });
+      renderPage(`/bid/${boardId}:1S,P,2S,P,P,P`);
+      await waitFor(() =>
+        expect(screen.getByTestId("verdict-missed")).toHaveTextContent(
+          "1 of your 1 call differed from SAYC",
+        ),
+      );
+      expect(screen.getByTestId("missed-call")).toHaveTextContent(
+        "After 1♠ · Pass, you bid 2♠. SAYC bids 3♠: Jump Raise.",
+      );
+      expect(screen.getByTestId("sayc-auction")).toHaveTextContent(
+        "SAYC reaches 4♠ by North",
+      );
+      expect(screen.getByTestId("play-verdict")).toHaveTextContent(
+        "2♠ makes, but N-S can make game in 3NT, 4♠, 4♥.",
       );
     });
 
-    // 2. User Bids: S (User) bids 1H.
-    // Mock robot response (W passes)
-    mockAddRobotBids.mockResolvedValue({
-      dealer: "N",
-      calls: [
-        { type: "bid", level: 1, strain: "C" }, // N
-        { type: "pass" }, // E
-        { type: "bid", level: 1, strain: "H" }, // S (User)
-        { type: "pass" }, // W
-      ],
+    it("reports a solver failure instead of the play analysis", async () => {
+      mockGetDoubleDummyTable.mockRejectedValue(new Error("no wasm"));
+      renderComplete();
+      await waitFor(() =>
+        expect(screen.getByTestId("double-dummy-error")).toHaveTextContent(
+          "no wasm",
+        ),
+      );
     });
 
-    // For the User bid button, just look for any button with "1" and heart symbol
-    await waitFor(() => {
-      const bidButtons = screen.getAllByRole("button");
-      const heartButton = bidButtons.find(
-        (b) => b.textContent?.includes("1") && b.textContent?.includes("♥"),
-      );
-      if (!heartButton) {
-        throw new Error("Could not find bid button");
+    it("shares the bare board, not the auction, so the recipient can bid it", async () => {
+      const share = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "share", {
+        value: share,
+        configurable: true,
+      });
+      try {
+        renderComplete();
+        await screen.findByTestId("verdict-on-system");
+        fireEvent.click(screen.getByRole("button", { name: /share hand/i }));
+        await waitFor(() =>
+          expect(share).toHaveBeenCalledWith(
+            expect.objectContaining({
+              url: `https://saycbridge.com/bid/${boardId}`,
+            }),
+          ),
+        );
+      } finally {
+        // @ts-expect-error -- test-only cleanup of a per-test stub.
+        delete navigator.share;
       }
-      fireEvent.click(heartButton);
     });
 
-    // Wait for loading and robot response
-    await waitFor(() =>
-      expect(screen.queryByText("Thinking...")).not.toBeInTheDocument(),
-    );
-
-    // Verify URL update after User(1H) and Robot(P)
-    await waitFor(
-      () => {
-        const path = screen.getByTestId("location-path").textContent;
-        expect(path).toContain(`${boardId}:1C,P,1H,P`);
-      },
-      { timeout: 3000 },
-    );
-  });
-
-  it("sets document title to 'Bidding Practice - SAYC Bridge' while auction is active", async () => {
-    mockIsAuctionComplete.mockReturnValue(false);
-    renderPage();
-    await waitFor(() => {
-      expect(document.title).toBe("Bidding Practice - SAYC Bridge");
-    });
-  });
-
-  it("sets document title to 'Bidding Results - SAYC Bridge' and renders AutobidResult and DealStats when auction is complete", async () => {
-    mockIsAuctionComplete.mockReturnValue(true);
-    mockGetFullAutobidAuction.mockResolvedValue({
-      dealer: "N",
-      calls: [{ type: "pass" }],
-    });
-
-    renderPage();
-
-    await waitFor(() => {
-      expect(document.title).toBe("Bidding Results - SAYC Bridge");
-      expect(screen.getByTestId("deal-stats-ns")).toBeInTheDocument();
-      expect(screen.getByTestId("deal-stats-ew")).toBeInTheDocument();
-      expect(screen.getByTestId("autobid-result-match")).toBeInTheDocument();
-    });
-  });
-
-  it("shows the double-dummy table and the after-lead result when the auction is complete", async () => {
-    mockIsAuctionComplete.mockReturnValue(true);
-    mockGetFullAutobidAuction.mockResolvedValue({
-      dealer: "N",
-      calls: [{ type: "pass" }],
-    });
-    mockAddRobotBids.mockResolvedValue({
-      dealer: "N",
-      calls: [
-        { type: "bid", level: 1, strain: "S" },
-        { type: "pass" },
-        { type: "bid", level: 4, strain: "S" },
-        { type: "pass" },
-        { type: "pass" },
-        { type: "pass" },
-      ],
-    });
-
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("double-dummy-table")).toBeInTheDocument();
-    });
-    expect(screen.getByTestId("double-dummy-contract").textContent).toBe(
-      "down 1 (9 tricks)",
-    );
-    expect(screen.getByTestId("double-dummy-after-lead").textContent).toContain(
-      "makes 4 (10 tricks)",
-    );
-    expect(mockGetTricksAfterLead).toHaveBeenCalledWith(
-      dummyParsed.deal,
-      "S",
-      "N",
-      { suit: "D", rank: "4" },
-    );
-  });
-
-  it("reports a solver failure instead of the table", async () => {
-    mockIsAuctionComplete.mockReturnValue(true);
-    mockGetFullAutobidAuction.mockResolvedValue({
-      dealer: "N",
-      calls: [{ type: "pass" }],
-    });
-    mockGetDoubleDummyTable.mockRejectedValue(new Error("no wasm"));
-
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("double-dummy-error").textContent).toContain(
-        "no wasm",
+    it("bids the same board again", async () => {
+      renderComplete();
+      await screen.findByTestId("verdict-on-system");
+      fireEvent.click(screen.getByRole("button", { name: /bid again/i }));
+      await waitFor(() =>
+        expect(mockAddRobotBids).toHaveBeenCalledWith(
+          expect.objectContaining({ calls: [] }),
+          "S",
+          boardId,
+        ),
       );
     });
   });
 });
-
-/** Helper component to verify URL in tests */
-import { useLocation } from "react-router-dom";
-function LocationDisplay() {
-  const location = useLocation();
-  return <div data-testid="location-path">{location.pathname}</div>;
-}

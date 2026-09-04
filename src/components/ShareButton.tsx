@@ -10,10 +10,12 @@ export function ShareButton({
   url,
   title,
   text,
+  className = "text-sm font-semibold text-emerald-700 hover:text-emerald-900 hover:underline",
 }: {
   url: string;
   title: string;
   text?: string;
+  className?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -40,10 +42,7 @@ export function ShareButton({
   }, [url, title, text]);
 
   return (
-    <button
-      onClick={handleShare}
-      className="text-sm font-semibold text-emerald-700 hover:text-emerald-900 hover:underline"
-    >
+    <button type="button" onClick={handleShare} className={className}>
       {copied ? "Link copied!" : "Share Hand"}
     </button>
   );

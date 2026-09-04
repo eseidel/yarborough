@@ -280,3 +280,11 @@ export function stringToCall(s: string): Call {
   const strain = s.substring(1) as StrainName;
   return { type: "bid", level, strain };
 }
+
+/** A call the way it is said: "Pass", "X", "XX", "1♠", "3NT". */
+export function callLabel(call: Call): string {
+  if (call.type === "pass") return "Pass";
+  if (call.type === "double") return "X";
+  if (call.type === "redouble") return "XX";
+  return `${call.level}${strainSymbol(call.strain!)}`;
+}

@@ -67,7 +67,7 @@ describe("useCallExplanation", () => {
     const onError = vi.fn();
     mockGetCallInterpretations.mockRejectedValue(new Error("engine down"));
     const { result } = renderHook(() =>
-      useCallExplanation(history, "None", undefined, onError),
+      useCallExplanation(history, "None", onError),
     );
 
     act(() => result.current.handleCallClick(0));
@@ -83,28 +83,6 @@ describe("useCallExplanation", () => {
 
     expect(result.current.selectedCallIndex).toBeNull();
     expect(mockGetCallInterpretations).not.toHaveBeenCalled();
-  });
-
-  it("builds the explore link for the point in the auction before the selected call", async () => {
-    mockGetCallInterpretations.mockResolvedValue([]);
-    const { result } = renderHook(() => useCallExplanation(history, "None", 7));
-
-    expect(result.current.exploreLink).toBeUndefined();
-
-    act(() => result.current.handleCallClick(1));
-    await waitFor(() => expect(result.current.explanationLoading).toBe(false));
-
-    expect(result.current.exploreLink).toBe("/explore/7:1H");
-  });
-
-  it("omits the explore link when no boardNumber is given", async () => {
-    mockGetCallInterpretations.mockResolvedValue([]);
-    const { result } = renderHook(() => useCallExplanation(history));
-
-    act(() => result.current.handleCallClick(0));
-    await waitFor(() => expect(result.current.explanationLoading).toBe(false));
-
-    expect(result.current.exploreLink).toBeUndefined();
   });
 
   it("resets the selection and explanation", async () => {
