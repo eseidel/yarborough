@@ -862,6 +862,37 @@ describe("PracticePage", () => {
       );
     });
 
+    it("aims at the one weak spot Practice this chose until told to widen", async () => {
+      await store.setSetting("focus", "Adaptive");
+      await store.setSetting("adaptiveTargets", [
+        ["Competing", "Takeout doubles"],
+      ]);
+      await recordWithWeakSpot();
+      mockGenerateAdaptiveBoard.mockReturnValue(new Promise(() => {}));
+      renderPage();
+      await waitForRobots();
+      const status = await screen.findByTestId("adaptive-status");
+      await waitFor(() =>
+        expect(status).toHaveTextContent("Aiming at Takeout doubles."),
+      );
+      await waitFor(() =>
+        expect(mockGenerateAdaptiveBoard).toHaveBeenCalledWith(
+          [["Competing", "Takeout doubles"]],
+          3,
+        ),
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "All weak spots" }));
+      await waitFor(() =>
+        expect(screen.getByTestId("adaptive-status")).toHaveTextContent(
+          "Aiming at To 1NT.",
+        ),
+      );
+      await waitFor(async () =>
+        expect(await store.getSetting("adaptiveTargets")).toBeNull(),
+      );
+    });
+
     it("says which weak spot this hand practices, and records it as adaptive", async () => {
       await store.setSetting("focus", "Adaptive");
       await recordWithWeakSpot();
