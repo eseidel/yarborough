@@ -134,7 +134,7 @@ function PracticeBoard({
           onFocusChange={session.changeFocus}
         />
         <ProgressStrip
-          progress={session.progress}
+          summary={session.summary}
           onReset={session.resetProgress}
         />
 

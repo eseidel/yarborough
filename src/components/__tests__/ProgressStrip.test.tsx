@@ -1,31 +1,42 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ProgressStrip } from "../ProgressStrip";
-import { EMPTY_PROGRESS, type Progress } from "../../practice/progress";
+import type { Summary } from "../../practice/stats";
 
-const PROGRESS: Progress = {
-  version: 1,
-  total: { hands: 5, handsOnSystem: 3, calls: 12, callsMatched: 9 },
-  byFocus: {
-    Random: { hands: 3, handsOnSystem: 2, calls: 7, callsMatched: 6 },
-    Notrump: { hands: 2, handsOnSystem: 1, calls: 5, callsMatched: 3 },
-  },
+const SUMMARY: Summary = {
+  hands: 5,
+  handsOnSystem: 3,
+  calls: 12,
+  matched: 9,
   streak: 2,
   bestStreak: 3,
-  recorded: [],
+  bySource: {
+    Random: { hands: 3, handsOnSystem: 2, calls: 7, matched: 6 },
+    Notrump: { hands: 2, handsOnSystem: 1, calls: 5, matched: 3 },
+  },
+};
+
+const EMPTY: Summary = {
+  hands: 0,
+  handsOnSystem: 0,
+  calls: 0,
+  matched: 0,
+  streak: 0,
+  bestStreak: 0,
+  bySource: {},
 };
 
 describe("ProgressStrip", () => {
   it("renders nothing before the first hand", () => {
     const { container } = render(
-      <ProgressStrip progress={EMPTY_PROGRESS} onReset={() => {}} />,
+      <ProgressStrip summary={EMPTY} onReset={() => {}} />,
     );
     expect(container).toBeEmptyDOMElement();
   });
 
   it("summarizes accuracy, hands, and the streak, and expands to a breakdown", () => {
     const onReset = vi.fn();
-    render(<ProgressStrip progress={PROGRESS} onReset={onReset} />);
+    render(<ProgressStrip summary={SUMMARY} onReset={onReset} />);
     const strip = screen.getByTestId("progress-strip");
     expect(strip.textContent).toContain("75%");
     expect(strip.textContent).toContain("5 hands");
@@ -45,11 +56,7 @@ describe("ProgressStrip", () => {
   it("omits the breakdown and the streak when there is nothing to break down", () => {
     render(
       <ProgressStrip
-        progress={{
-          ...PROGRESS,
-          byFocus: { Random: PROGRESS.total },
-          streak: 0,
-        }}
+        summary={{ ...SUMMARY, bySource: { Random: SUMMARY }, streak: 0 }}
         onReset={() => {}}
       />,
     );
