@@ -1,4 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+  fireEvent,
+  render as renderBare,
+  screen,
+} from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ProgressStrip } from "../ProgressStrip";
 import type { Summary } from "../../practice/stats";
@@ -25,6 +31,9 @@ const EMPTY: Summary = {
   bestStreak: 0,
   bySource: {},
 };
+
+const render = (ui: ReactElement) =>
+  renderBare(<MemoryRouter>{ui}</MemoryRouter>);
 
 describe("ProgressStrip", () => {
   it("renders nothing before the first hand", () => {
