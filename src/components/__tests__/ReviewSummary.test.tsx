@@ -8,10 +8,7 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { ReviewSummary } from "../ReviewSummary";
 import type { CallHistory } from "../../bridge/types";
-import {
-  type CallVerdict,
-  describeAuctionPoint,
-} from "../../practice/verdicts";
+import type { CallVerdict } from "../../practice/verdicts";
 import * as engine from "../../bridge/engine";
 
 vi.mock("../../bridge/engine", async (importOriginal) => {
@@ -65,16 +62,6 @@ const FINAL_PASS: CallVerdict = {
   matched: true,
   assisted: false,
 };
-
-describe("describeAuctionPoint", () => {
-  it("names the point in the auction", () => {
-    expect(describeAuctionPoint(HISTORY, 0)).toBe("as opener");
-    expect(describeAuctionPoint(HISTORY, 2)).toBe("after 1♥ · Pass");
-    expect(describeAuctionPoint(HISTORY, 6)).toBe(
-      "after … 2♥ · Pass · 3♥ · Pass",
-    );
-  });
-});
 
 describe("ReviewSummary", () => {
   it("shows the contract and waits for every call to be checked", () => {
@@ -141,7 +128,7 @@ describe("ReviewSummary", () => {
     );
     const missed = screen.getByTestId("missed-call");
     expect(missed.textContent).toContain(
-      "After 1♥ · Pass, you bid 2♥. SAYC bids 4♥: Jump Raise.",
+      "You bid 2♥. SAYC bids 4♥: Jump Raise.",
     );
     expect(screen.queryByText("Game raise")).toBeNull();
     fireEvent.click(within(missed).getByRole("button", { name: "Why?" }));

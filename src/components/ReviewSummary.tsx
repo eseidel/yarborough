@@ -6,7 +6,6 @@ import { formatContractBy } from "../practice/analysis";
 import {
   type CallVerdict,
   callIndicesFor,
-  describeAuctionPoint,
   summarizeVerdicts,
 } from "../practice/verdicts";
 import { useCallExplanation } from "../hooks/useCallExplanation";
@@ -21,16 +20,10 @@ function contractHeadline(history: CallHistory): string {
   return contract && declarer ? formatContractBy(contract, declarer) : "";
 }
 
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
 function MissedCall({
-  history,
   verdict,
   onShowOptions,
 }: {
-  history: CallHistory;
   verdict: CallVerdict;
   onShowOptions?: (index: number) => void;
 }) {
@@ -41,10 +34,7 @@ function MissedCall({
     <li className="py-2 first:pt-0 last:pb-0" data-testid="missed-call">
       <div>
         <span className="text-red-600 font-bold mr-1">✗</span>
-        <SuitText
-          text={capitalize(describeAuctionPoint(history, verdict.index))}
-        />
-        , you bid{" "}
+        You bid{" "}
         <span className="font-semibold">
           <SuitText text={callLabel(verdict.call)} />
         </span>
@@ -231,7 +221,6 @@ export function ReviewSummary({
             {summary.missed.map((verdict) => (
               <MissedCall
                 key={verdict.index}
-                history={history}
                 verdict={verdict}
                 onShowOptions={
                   onShowOptions

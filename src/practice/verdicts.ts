@@ -7,7 +7,7 @@ import type {
   CallInterpretation,
   Position,
 } from "../bridge/types";
-import { callLabel, callToString } from "../bridge/types";
+import { callToString } from "../bridge/types";
 
 const SEAT_ORDER: Position[] = ["N", "E", "S", "W"];
 
@@ -98,15 +98,4 @@ export function summarizeVerdicts(verdicts: CallVerdict[]): VerdictSummary {
     missed,
     onSystem: verdicts.length > 0 && missed.length === 0 && assisted === 0,
   };
-}
-
-/** "after 1♠ · Pass", or "as opener" when the call opened the auction. */
-export function describeAuctionPoint(
-  history: CallHistory,
-  index: number,
-): string {
-  const before = history.calls.slice(0, index);
-  if (before.length === 0) return "as opener";
-  const shown = before.slice(-4).map(callLabel).join(" · ");
-  return `after ${before.length > 4 ? "… " : ""}${shown}`;
 }

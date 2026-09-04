@@ -17,9 +17,8 @@ const MISS: CallVerdict = {
 };
 
 describe("CallFeedback", () => {
-  it("confirms a matching call in one line", () => {
-    const onDefer = vi.fn();
-    render(
+  it("shows nothing for a matching call", () => {
+    const { container } = render(
       <CallFeedback
         verdict={{
           ...MISS,
@@ -27,16 +26,11 @@ describe("CallFeedback", () => {
           matched: true,
           assisted: true,
         }}
-        onDefer={onDefer}
+        onDefer={vi.fn()}
       />,
     );
-    const feedback = screen.getByTestId("call-feedback-match");
-    expect(feedback.textContent).toContain("✓ 4♥ is the SAYC bid: Jump Raise");
-    expect(feedback.textContent).toContain("(shown first)");
-    fireEvent.click(
-      screen.getByRole("button", { name: /hide until the end/i }),
-    );
-    expect(onDefer).toHaveBeenCalled();
+    expect(screen.queryByTestId("call-feedback-match")).toBeNull();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("explains a miss on request and opens the options", () => {

@@ -5,8 +5,9 @@ import { ConstraintsDisplay } from "./ConstraintsDisplay";
 import { SuitText } from "./SuitText";
 
 /**
- * The verdict on the user's latest call, shown while the auction goes on:
- * a match in one line, a miss with what SAYC bids instead and why.
+ * The verdict on the user's latest call, shown while the auction goes on.
+ * A match needs no comment (the call table already ticks it); only a miss
+ * gets a box, with what SAYC bids instead and why.
  */
 export function CallFeedback({
   verdict,
@@ -23,35 +24,7 @@ export function CallFeedback({
   const { sayc } = verdict;
 
   if (verdict.matched) {
-    return (
-      <div
-        className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
-        data-testid="call-feedback-match"
-      >
-        <span>
-          <span className="font-bold">✓</span>{" "}
-          <span className="font-semibold">
-            <SuitText text={callLabel(verdict.call)} />
-          </span>{" "}
-          is the SAYC bid
-          {sayc.ruleName && (
-            <span className="text-emerald-700">: {sayc.ruleName}</span>
-          )}
-          {verdict.assisted && (
-            <span className="text-emerald-700/80"> (shown first)</span>
-          )}
-        </span>
-        {onDefer && (
-          <button
-            type="button"
-            onClick={onDefer}
-            className="text-xs text-emerald-700/80 hover:underline whitespace-nowrap"
-          >
-            Hide until the end
-          </button>
-        )}
-      </div>
-    );
+    return null;
   }
 
   return (

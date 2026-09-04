@@ -224,7 +224,7 @@ describe("PracticePage", () => {
       );
     });
 
-    it("confirms a call that matches SAYC", async () => {
+    it("marks a call that matches SAYC without a comparison box", async () => {
       renderPage();
       await waitForRobots();
       mockAddRobotBids.mockResolvedValue({
@@ -236,12 +236,10 @@ describe("PracticePage", () => {
           .getAllByRole("button")
           .find((b) => b.textContent === "3♠")!,
       );
-      await waitFor(() => {
-        expect(screen.getByTestId("call-feedback-match")).toHaveTextContent(
-          "3♠ is the SAYC bid: Jump Raise",
-        );
-      });
-      expect(screen.getByLabelText("matched SAYC")).toBeInTheDocument();
+      await waitFor(() =>
+        expect(screen.getByLabelText("matched SAYC")).toBeInTheDocument(),
+      );
+      expect(screen.queryByTestId("call-feedback-match")).toBeNull();
     });
 
     it("can hold feedback back until the hand is over", async () => {
@@ -281,11 +279,10 @@ describe("PracticePage", () => {
       });
       fireEvent.click(within(hint).getByRole("button", { name: /bid 3/i }));
       await waitFor(() =>
-        expect(screen.getByTestId("call-feedback-match")).toHaveTextContent(
-          "(shown first)",
-        ),
+        expect(screen.getByLabelText("matched SAYC")).toBeInTheDocument(),
       );
       expect(screen.queryByTestId("sayc-hint")).toBeNull();
+      expect(screen.queryByTestId("call-feedback-match")).toBeNull();
     });
 
     it("lists every option in place and bids the tapped one", async () => {
@@ -393,7 +390,7 @@ describe("PracticePage", () => {
           .getAllByRole("button")
           .find((b) => b.textContent === "3♠")!,
       );
-      await screen.findByTestId("call-feedback-match");
+      await screen.findByLabelText("matched SAYC");
     });
 
     it("takes back a call while the robots are still thinking", async () => {
@@ -620,7 +617,7 @@ describe("PracticePage", () => {
         ),
       );
       expect(screen.getByTestId("missed-call")).toHaveTextContent(
-        "After 1♠ · Pass, you bid 2♠. SAYC bids 3♠: Jump Raise.",
+        "You bid 2♠. SAYC bids 3♠: Jump Raise.",
       );
       expect(screen.getByTestId("sayc-auction")).toHaveTextContent(
         "SAYC reaches 4♠ by North",
