@@ -347,6 +347,94 @@ describe("PracticePage", () => {
       ).toBeNull();
     });
 
+    it("takes back South's last call and re-opens that turn", async () => {
+      renderPage();
+      await waitForRobots();
+      // Nothing of South's to undo yet.
+      expect(screen.getByRole("button", { name: /take back/i })).toBeDisabled();
+
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass, bid(3, "S"), pass],
+      });
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      await screen.findByTestId("call-feedback-miss");
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `${boardId}:1S,P,2S,P,3S,P`,
+        ),
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /take back/i }));
+      // Back to the turn before 2♠, with the robots' replies gone.
+      expect(screen.getByTestId("location-path")).toHaveTextContent(
+        `/bid/${boardId}:1S,P`,
+      );
+      expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
+      expect(screen.queryByTestId("call-2")).toBeNull();
+      expect(screen.getByTestId("bidding-box")).not.toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      expect(screen.getByRole("button", { name: /take back/i })).toBeDisabled();
+      // The re-opened turn's SAYC bid was cached, not fetched again.
+      const suggestCalls = mockGetSuggestedCall.mock.calls.filter(
+        ([id]) => id === `${boardId}:1S,P`,
+      );
+      expect(suggestCalls).toHaveLength(1);
+
+      // South can call again from here.
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "3♠")!,
+      );
+      await screen.findByTestId("call-feedback-match");
+    });
+
+    it("takes back a call while the robots are still thinking", async () => {
+      renderPage();
+      await waitForRobots();
+      let replyWithRobots: (h: CallHistory) => void = () => {};
+      mockAddRobotBids.mockReturnValue(
+        new Promise((resolve) => {
+          replyWithRobots = resolve;
+        }),
+      );
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      expect(screen.getByTestId("bidding-box")).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /take back/i }));
+      expect(screen.getByTestId("bidding-box")).not.toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+
+      // A late reply from the robots is ignored.
+      replyWithRobots({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      await waitFor(() =>
+        expect(mockGetSuggestedCall).toHaveBeenCalledWith(`${boardId}:1S,P`),
+      );
+      expect(screen.queryByTestId("call-2")).toBeNull();
+      expect(screen.getByTestId("location-path")).toHaveTextContent(
+        `/bid/${boardId}:1S,P`,
+      );
+    });
+
     it("restarts the hand from the first call", async () => {
       renderPage();
       await waitForRobots();

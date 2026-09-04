@@ -111,6 +111,8 @@ export function usePracticeSession(
   hintKeyRef.current = hintKey;
   const inFlight = useRef(new Set<string>());
   const failed = useRef(new Set<string>());
+  /** Cancels the robots' reply in progress, if any. */
+  const robotsInProgress = useRef<(() => void) | null>(null);
   const [retry, setRetry] = useState(0);
 
   const [saycAuction, setSaycAuction] = useState<CallHistory | null>(null);
@@ -163,6 +165,7 @@ export function usePracticeSession(
       addRobotBids(from, userPosition, baseId)
         .then((next) => {
           if (cancelled) return;
+          robotsInProgress.current = null;
           setError(null);
           setHistory(next);
           setThinking(false);
@@ -173,12 +176,15 @@ export function usePracticeSession(
         })
         .catch((err) => {
           if (cancelled) return;
+          robotsInProgress.current = null;
           setError(String(err));
           setThinking(false);
         });
-      return () => {
+      const cancel = () => {
         cancelled = true;
       };
+      robotsInProgress.current = cancel;
+      return cancel;
     },
     [baseId, navigate, userPosition],
   );
@@ -331,6 +337,33 @@ export function usePracticeSession(
   }, []);
   const closeOptions = useCallback(() => setOptions(null), []);
 
+  /**
+   * Undo the user's latest call. The robots' replies to it are dropped (they
+   * are deterministic, so nothing needs replaying), and if they are still
+   * thinking their answer is discarded. The engine's calls are cached by the
+   * auction before them, so the re-opened turn keeps its SAYC bid and, if
+   * that bid was shown, its assisted mark.
+   */
+  const takeBack = useCallback(() => {
+    const indices = callIndicesFor(history, userPosition);
+    if (auctionDone || indices.length === 0) return;
+    trackEvent("Bidding", "Boards", "take back call");
+    robotsInProgress.current?.();
+    robotsInProgress.current = null;
+    setThinking(false);
+    setHintKey(null);
+    setOptions(null);
+    explanation.reset();
+    setError(null);
+    const reopened: CallHistory = {
+      ...history,
+      calls: history.calls.slice(0, indices[indices.length - 1]),
+    };
+    setHistory(reopened);
+    const calls = reopened.calls.map(callToString).join(",");
+    navigate(`/bid/${baseId}${calls ? `:${calls}` : ""}`, { replace: true });
+  }, [history, userPosition, auctionDone, explanation, navigate, baseId]);
+
   const restart = useCallback(() => {
     trackEvent("Bidding", "Boards", "rebid board");
     setHintKey(null);
@@ -431,6 +464,9 @@ export function usePracticeSession(
     hideSaycBid,
     showOptions,
     closeOptions,
+    /** True while there is a call of the user's to undo. */
+    canTakeBack: !auctionDone && userCallCount > 0,
+    takeBack,
     restart,
     dealNext,
     changeFocus,

@@ -198,6 +198,14 @@ function PracticeBoard({
             <div className="flex justify-center gap-5">
               <button
                 type="button"
+                onClick={session.takeBack}
+                disabled={!session.canTakeBack}
+                className={`${TEXT_BUTTON} disabled:opacity-40 disabled:no-underline`}
+              >
+                Take back
+              </button>
+              <button
+                type="button"
                 onClick={session.restart}
                 className={TEXT_BUTTON}
               >
