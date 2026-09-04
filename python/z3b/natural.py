@@ -170,7 +170,16 @@ class SufficientCombinedPoints(Constraint):
         else:
             assert strain in suit.SUITS, "%s not in %s" % (strain, suit.SUITS)
             min_points = suited[call.level]
-        return points >= max(0, min_points - history.partner.min_points)
+        implied = max(0, min_points - history.partner.min_points)
+        # Once both hands have agreed a suit the fit is known and shortness counts on both
+        # sides: the bid is valued in support points for that suit, the way partner reads it.
+        # A first raise stays on hcp plus length (the corpus: 3H, not 4H, on nine with a
+        # doubleton after Stayman).
+        if (strain in suit.SUITS and call.level <= 5
+                and history.bid_suit_naturally(strain, positions.Partner)
+                and history.bid_suit_naturally(strain, positions.Me)):
+            return support_points_expr_for_suit(strain) >= implied
+        return points >= implied
 
 
 class SufficientCombinedLength(MinimumCombinedLength):
@@ -215,6 +224,8 @@ class LawOfTotalTricks(Rule):
     preconditions = [
         # FIXME: This should only apply over weak bids (only when NaturalSuited does not)?
         PartnerHasAtLeastLengthInSuit(1),
+        # A backup for competitive auctions, not a way past partner's signoff.
+        InvertedPrecondition(LastBidHasAnnotation(positions.Partner, annotations.Signoff)),
     ]
     priorities_per_call = copy_dict(
         natural, Call.suited_names_between('2C', '5D'))

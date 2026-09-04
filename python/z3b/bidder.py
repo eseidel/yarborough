@@ -358,13 +358,27 @@ class History(object):
         return self._lower_bound(predicate, pos + 1, hi)
 
     def bid_suit_naturally(self, strain, position):
-        """Has `position` made a natural (non-Artificial) contract call in `strain`?"""
+        """Has `position` agreed `strain`: a natural (non-Artificial) contract call in it, or a
+        call annotated SupportsPartnersSuit while partner's last suit was `strain`?"""
         for history in self._walk_history_for(position):
             call = history.call_history.last_call
-            if (call is not None and call.is_contract() and call.strain == strain and
+            if call is None:
+                continue
+            if (call.is_contract() and call.strain == strain and
                     annotations.Artificial not in history._annotations_for_last_call):
                 return True
+            if history._supported_suit() == strain:
+                return True
         return False
+
+    def _supported_suit(self):
+        """The suit the last call agreed by annotation (SupportsPartnersSuit), else None."""
+        if annotations.SupportsPartnersSuit not in self._annotations_for_last_call:
+            return None
+        partners_call = self.last_call_for_position(positions.LHO)  # the caller's partner
+        if partners_call is not None and partners_call.is_contract() and partners_call.strain in suit.SUITS:
+            return partners_call.strain
+        return None
 
     @property
     def _points_shown_by_last_call(self):
@@ -373,6 +387,9 @@ class History(object):
         agrees it, and the hand is revalued in support points for that suit instead (the
         booklet: do not count both long-suit points and support points in the same hand)."""
         call = self.call_history.last_call  # made by RHO, whose partner is LHO
+        supported = self._supported_suit()
+        if supported is not None:
+            return model.support_points_expr_for_suit(supported)
         if (call is not None and call.is_contract() and call.strain in suit.SUITS and
                 annotations.Artificial not in self._annotations_for_last_call and
                 self.bid_suit_naturally(call.strain, positions.LHO)):

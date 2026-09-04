@@ -105,7 +105,7 @@ Pass 15 of 15 hands
 
 test_misc_hands_from_play:
 FAIL: 3D (expected 2N) for A93.Q762.K832.J3 (hcp: 10 lp: 10 sp: 10), history: 1D P 1H P 1S P (subtest of 1D P 1H P 1S P 2N P 3N P)
-FAIL: None (expected P) for AKQ643.KQ76.9.72 (hcp: 14 lp: 16 sp: 18), history: P P 1C P 1S P 2C P 3C P
+FAIL: 5C (expected P) for AKQ643.KQ76.9.72 (hcp: 14 lp: 16 sp: 18), history: P P 1C P 1S P 2C P 3C P
 FAIL: P (expected 3N) for AK83.8652.8.AJ73 (hcp: 12 lp: 12 sp: 15), history: 1D P 1S P 1N P 2N P 3S P
 FAIL: 3D (expected 2N) for AK83.8652.8.AJ73 (hcp: 12 lp: 12 sp: 15), history: 1D P 1S P 1N P (subtest of 1D P 1S P 1N P 2N P 3S P)
 FAIL: 3S (expected 4S) for A7.K.QT6.KJ98543 (hcp: 13 lp: 16 sp: 14), history: 1C P 1S P 1N P
@@ -134,7 +134,7 @@ FAIL: P (expected 2C) for A96432.5.KJ8.AQJ (hcp: 15 lp: 17 sp: 18), history: P 1
 FAIL: P (expected X) for 84.KT9765.4.A763 (hcp: 7 lp: 9 sp: 11), history: 1H 2C
 FAIL: 2D (expected 3C) for AKT964.975.7.965 (hcp: 7 lp: 9 sp: 10), history: 2C P (subtest of 2C P 3C P 4N P)
 FAIL: 2S (expected 2N) for AK.AK54.98.KQJ76 (hcp: 20 lp: 21 sp: 22), history: 2H P
-FAIL: P (expected 3S) for KJ64.9.K6.KT7542 (hcp: 10 lp: 12 sp: 14), history: 1S P 2C P 3C P (subtest of 1S P 2C P 3C P 3S P 4S P)
+FAIL: 5C (expected 3S) for KJ64.9.K6.KT7542 (hcp: 10 lp: 12 sp: 14), history: 1S P 2C P 3C P (subtest of 1S P 2C P 3C P 3S P 4S P)
 FAIL: 4H (expected 3H) for QT62.Q8.J94.KT76 (hcp: 8 lp: 8 sp: 7), history: P P P 1H P 2H P 3D P
 FAIL: 3D (expected 2D) for J83.AQJ8.72.Q763 (hcp: 10 lp: 10 sp: 11), history: P P 1D P 1S P 1N P
 FAIL: 3N (expected 3H) for AK.K8.AKT762.953 (hcp: 17 lp: 19 sp: 19), history: P P 1H P 2C P
@@ -243,7 +243,7 @@ test_rule_of_twenty_open:
 Pass 17 of 17 hands
 
 test_sayc_gaps:
-Pass 12 of 12 hands
+Pass 24 of 24 hands
 
 test_slam_biding:
 FAIL: 4H (expected 5H) for .AKQ.QT76432.AKQ (hcp: 20 lp: 23 sp: 25), history: 1H P 3H P
@@ -296,9 +296,9 @@ Pass 5 of 5 hands
 test_weak_game_jump_over_one_nt:
 Pass 3 of 3 hands
 
-Pass 1370 (89.8%) of 1525 total hands
+Pass 1382 (89.9%) of 1537 total hands
 
-Tested call generation of 206 rules of 215 total (excluding 8 requires_planning rules).
+Tested call generation of 205 rules of 214 total (excluding 8 requires_planning rules).
 Never selected call from:
 CompleteOwnTransferToHeartsAfterDouble
 CompleteOwnTransferToSpadesAfterDouble
@@ -310,7 +310,7 @@ RaiseOfReverseSuit
 RebidOwnSuitAfterFourthSuitForcing
 SpadesRebidAfterHeartsTransfer
 
-Tested interpretation of 128 rules of 223 total.
+Tested interpretation of 129 rules of 222 total.
 
 8 rules were never used for either bidding or interpretation:
 CompleteOwnTransferToHeartsAfterDouble
