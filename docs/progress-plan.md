@@ -126,8 +126,18 @@ smoothly: small samples are pulled toward "no evidence" rather than cut off.
 
 Labels follow the probability: **weak spot** at 80% or more, **strength** at
 20% or less (that is, 80% likely to be above overall), otherwise nothing.
-Rows sort by that probability, and the Progress tab shows it beside the
-accuracy ("Weak spot, 91% sure").
+Rows sort by that probability.
+
+**What the user sees is words, not statistics.** The figures above decide
+what to say; the page then says it in the learner's terms. A category reads
+"Weak spot" past 95% and "Likely weak spot" past 80% (and "Strength" or
+"Likely strength" the other way), never a probability. An accuracy is a
+plain percentage with, when it rests on fewer than ten calls, "so early
+days" beside it, never an interval in parentheses. A trend is "Improving,
+up about 6 points over your last 100 calls", "Probably improving", "Holding
+steady", or "Slipping", never a p-value or a confidence figure. The interval
+appears only as a soft band on the chart, where a reader can see the points
+separate or wander without being told a number for it.
 
 **Trend** asks whether accuracy is rising with time, and how fast. Calls in
 the window are ordered by time and the test is the score test for a
@@ -145,8 +155,7 @@ with the same minimum.
 
 Labels follow the one-sided p-value: **improving** at p ≤ 0.05, **probably
 improving** at p ≤ 0.2, and the mirror pair for a negative slope, otherwise
-**no clear trend**. Shown as "Improving, 97% confidence, +6 points per 100
-calls".
+**no clear trend** (shown as "Holding steady").
 
 The chart of accuracy over time plots each block of hands as a point with
 its Wilson interval, so a user can see for themselves whether the points
@@ -202,9 +211,9 @@ page. Top to bottom:
    that starts adaptive mode on that category.
 3. **All categories.** The full tree, collapsed to level 1 with level 2 and
    level 3 underneath on tap. Each row: name, accuracy or "n/a", count, and a
-   thin bar carrying the interval, and the weak-spot or strength probability
-   when it is one. Rows with no calls yet are dimmed rather than hidden, so
-   the user can see what they have not met.
+   thin bar, and "Weak spot" or "Strength" when it is one. Rows with no
+   calls yet are dimmed rather than hidden, so the user can see what they
+   have not met.
 4. **Recent hands.** The last twenty, newest first: date, contract, "on
    system" or which category the misses were in. Each opens the board's
    review at `/bid/<board>:<calls>`, which already renders the verdicts from

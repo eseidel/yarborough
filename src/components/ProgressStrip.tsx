@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { type Summary, formatAccuracy } from "../practice/stats";
 import type { HandSource } from "../practice/record/types";
 import { FOCUS_OPTIONS } from "../practice/focus";
@@ -95,13 +96,21 @@ export function ProgressStrip({
               </tbody>
             </table>
           )}
-          <button
-            type="button"
-            onClick={onReset}
-            className="text-xs text-gray-500 hover:text-red-700 hover:underline"
-          >
-            Reset progress
-          </button>
+          <div className="flex gap-4 text-xs">
+            <Link
+              to="/progress"
+              className="text-emerald-700 font-semibold hover:underline"
+            >
+              See your progress
+            </Link>
+            <button
+              type="button"
+              onClick={onReset}
+              className="text-gray-500 hover:text-red-700 hover:underline"
+            >
+              Reset progress
+            </button>
+          </div>
         </div>
       )}
     </div>

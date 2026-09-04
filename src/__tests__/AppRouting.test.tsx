@@ -25,6 +25,7 @@ describe("routing", () => {
     expect(window.location.pathname).toBe("/");
     expect(screen.getByRole("link", { name: "Practice" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Explore" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Progress" })).toBeInTheDocument();
   });
 
   it("canonicalizes the root route to the apex", () => {
