@@ -3,8 +3,10 @@ import unittest
 from unittest.mock import patch
 
 from core.board import Board
+from core.call import Call
 from z3b import rules
 
+import categories
 import yarborough_z3b as api
 
 
@@ -16,6 +18,22 @@ class _Rule:
 class _Selection:
     def __init__(self, dsl_rule):
         self.rule = _Rule(dsl_rule)
+
+
+class _NamedRule:
+    def __init__(self, name):
+        self.name = name
+
+    def explanation_for_bid(self, call):
+        return None
+
+
+class _NamedSelection:
+    """A selection of `call_name` by the rule class called `rule_name`."""
+
+    def __init__(self, call_name, rule_name):
+        self.call = Call.from_string(call_name)
+        self.rule = _NamedRule(rule_name)
 
 
 class YarboroughZ3bTest(unittest.TestCase):
@@ -102,6 +120,20 @@ class YarboroughZ3bTest(unittest.TestCase):
         self.assertEqual(api.get_next_call(identifier), suggestion["call_name"])
         self.assertIsInstance(suggestion["description"], (str, type(None)))
         self.assertIn("knowledge_string", suggestion)
+        # Every suggestion, rule or no rule, is categorized (see categories.py).
+        self.assertEqual(len(suggestion["category"]), 3)
+        self.assertIn(suggestion["category"][0], categories.LEVEL_ONE)
+
+    def test_suggestion_category_follows_the_rule(self):
+        board = Board.random()
+        with patch.object(
+            api, "_selection_for_board", return_value=_NamedSelection("1N", "NotrumpOpening")
+        ):
+            suggestion = api.get_suggested_call(board.identifier)
+        self.assertEqual(
+            suggestion["category"], ["Opening", "1NT, 2NT and 3NT", "Notrump Opening"]
+        )
+        self.assertEqual(suggestion["rule_name"], "Notrump Opening")
 
     def test_unresolved_selection_defaults_to_pass(self):
         result = api._selection_result(None)
@@ -109,6 +141,7 @@ class YarboroughZ3bTest(unittest.TestCase):
         self.assertIsNone(result["rule_name"])
         self.assertIsNone(result["description"])
         self.assertIsNone(result["knowledge_string"])
+        self.assertIsNone(result["category"])
 
     def test_focus_matching_uses_z3b_rule_classes(self):
         self.assertTrue(

@@ -1,8 +1,8 @@
 """JSON-friendly z3b operations used by the browser worker."""
 
 import json
-import re
 
+import categories
 import leads
 from core.board import Board
 from core.call import Pass
@@ -139,11 +139,7 @@ class ConstraintsSerializer:
 def _format_rule_name(rule_name):
     if not rule_name:
         return None
-    name = re.sub(r"([1-9A-Z])", r" \1", rule_name)
-    name = name.replace("R H O", "RHO")
-    name = name.replace("L H O", "LHO")
-    name = re.sub(r"\sN$", "NT", name)
-    return name.strip()
+    return categories.format_rule_name(rule_name)
 
 
 def _knowledge_string(position_view, interpreter):
@@ -170,13 +166,14 @@ def _knowledge_string(position_view, interpreter):
     return pretty_string.strip()
 
 
-def _selection_result(selection, knowledge_string=None):
+def _selection_result(selection, knowledge_string=None, category=None):
     if not selection or not selection.call:
         return {
             "call_name": "P",
             "rule_name": None,
             "description": None,
             "knowledge_string": None,
+            "category": category,
         }
 
     rule = selection.rule
@@ -185,7 +182,15 @@ def _selection_result(selection, knowledge_string=None):
         "rule_name": _format_rule_name(rule.name) if rule else None,
         "description": rule.explanation_for_bid(selection.call) if rule else None,
         "knowledge_string": knowledge_string,
+        "category": category,
     }
+
+
+def _category_for_selection(selection, history):
+    """The three-level category of the call `selection` makes (see categories.py)."""
+
+    rule = selection.rule if selection and selection.call else None
+    return categories.category_for(rule.name if rule else None, history)
 
 
 def get_next_call(identifier):
@@ -199,8 +204,9 @@ def get_suggested_call(identifier):
 
     board = _board(identifier)
     selection = _selection_for_board(board)
+    category = _category_for_selection(selection, board.call_history)
     if not selection or not selection.call:
-        return _selection_result(None)
+        return _selection_result(None, category=category)
 
     knowledge_string = None
     interpreter = Interpreter()
@@ -211,7 +217,9 @@ def get_suggested_call(identifier):
     except InconsistentHistoryException:
         knowledge_string = None
 
-    return _selection_result(selection, knowledge_string=knowledge_string)
+    return _selection_result(
+        selection, knowledge_string=knowledge_string, category=category
+    )
 
 
 def get_call_interpretations(calls, dealer, vulnerability):

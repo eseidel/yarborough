@@ -28,5 +28,6 @@ class Z3bGoldenCasesTest(unittest.TestCase):
                         "rule_name": case["rule_name"],
                         "description": case["description"],
                         "knowledge_string": case["knowledge_string"],
+                        "category": case["category"],
                     },
                 )

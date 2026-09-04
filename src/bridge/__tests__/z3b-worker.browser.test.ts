@@ -29,6 +29,7 @@ describe("z3b browser worker", () => {
         ruleName: goldenCase.rule_name ?? undefined,
         description: goldenCase.description ?? undefined,
         constraints: goldenCase.knowledge_string ?? undefined,
+        category: goldenCase.category,
       });
     }
 

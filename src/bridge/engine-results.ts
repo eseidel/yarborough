@@ -46,8 +46,21 @@ export function parseCallName(value: unknown): Call {
   };
 }
 
+function optionalCategory(value: unknown): string[] | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (
+    !Array.isArray(value) ||
+    value.length !== 3 ||
+    !value.every((level) => typeof level === "string" && level.length > 0)
+  ) {
+    throw new Error("The bidding engine returned an invalid category");
+  }
+  return value as string[];
+}
+
 export function parseCallInterpretation(value: unknown): CallInterpretation {
   const interpretation = record(value, "call interpretation");
+  const category = optionalCategory(interpretation.category);
   return {
     call: parseCallName(interpretation.call_name),
     ruleName: optionalString(interpretation.rule_name, "rule name"),
@@ -56,6 +69,7 @@ export function parseCallInterpretation(value: unknown): CallInterpretation {
       interpretation.knowledge_string ?? interpretation.constraints,
       "constraints",
     ),
+    ...(category ? { category } : {}),
   };
 }
 
