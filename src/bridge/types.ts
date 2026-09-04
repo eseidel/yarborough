@@ -294,3 +294,10 @@ export function callLabel(call: Call): string {
   if (call.type === "redouble") return "XX";
   return `${call.level}${strainSymbol(call.strain!)}`;
 }
+
+/** A board adaptive practice found, and the category of the call it asks for. */
+export interface AdaptiveBoard {
+  /** The bare board identifier, without calls. */
+  identifier: string;
+  category: string[];
+}

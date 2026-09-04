@@ -5,6 +5,7 @@ export const ENGINE_METHODS = [
   "generate_filtered_board",
   "get_full_autobid",
   "get_opening_lead",
+  "generate_adaptive_board",
 ] as const;
 
 export type EngineMethod = (typeof ENGINE_METHODS)[number];

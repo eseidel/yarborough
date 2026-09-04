@@ -47,6 +47,7 @@ vi.mock("../../bridge/engine", async (importOriginal) => {
     getCallInterpretations: vi.fn(),
     generateFilteredBoard: vi.fn(),
     getOpeningLead: vi.fn(),
+    generateAdaptiveBoard: vi.fn(),
   };
 });
 
@@ -62,6 +63,7 @@ const mockGetSuggestedCall = vi.mocked(engine.getSuggestedCall);
 const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
 const mockGenerateFilteredBoard = vi.mocked(engine.generateFilteredBoard);
 const mockGetOpeningLead = vi.mocked(engine.getOpeningLead);
+const mockGenerateAdaptiveBoard = vi.mocked(engine.generateAdaptiveBoard);
 const mockGetDoubleDummyTable = vi.mocked(dds.getDoubleDummyTable);
 const mockGetTricksAfterLead = vi.mocked(dds.getTricksAfterLead);
 
@@ -112,9 +114,9 @@ function LocationDisplay() {
   return <div data-testid="location-path">{location.pathname}</div>;
 }
 
-function renderPage(path = `/bid/${boardId}`) {
+function renderPage(path = `/bid/${boardId}`, state?: unknown) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[{ pathname: path, state }]}>
       <Routes>
         <Route
           path="/bid/:boardId"
@@ -170,7 +172,59 @@ describe("PracticePage", () => {
       theirSuits: [],
     });
     mockGetTricksAfterLead.mockResolvedValue(11);
+    mockGenerateAdaptiveBoard.mockResolvedValue(null);
   });
+
+  /** A record with one clear weak spot: responses to 1NT. */
+  async function recordWithWeakSpot() {
+    for (let i = 0; i < 10; i++) {
+      await store.addHand({
+        boardId: `${(i % 16) + 1}-11111111111111111111111111`,
+        boardNumber: (i % 16) + 1,
+        dealer: "N",
+        vulnerability: "None",
+        userPosition: "S",
+        source: "Random",
+        calls: ["1N", "P", "P", "P"],
+        contract: "1N",
+        declarer: "N",
+        saycCalls: null,
+        verdicts: [
+          {
+            index: 2,
+            call: "P",
+            saycCall: "2C",
+            ruleName: "Two Level Stayman",
+            category: [
+              "Responding to an opening",
+              "To 1NT",
+              "Two Level Stayman",
+            ],
+            matched: false,
+            assisted: false,
+          },
+          {
+            index: 0,
+            call: "1N",
+            saycCall: "1N",
+            category: ["Opening", "1NT, 2NT and 3NT", "Notrump Opening"],
+            matched: true,
+            assisted: false,
+          },
+        ],
+        completedAt: 1_800_000_000_000 + i * 60_000,
+        durationMs: 1_000,
+      });
+    }
+  }
+  const FOUND = {
+    identifier: "9-00000000000000000000000000",
+    category: [
+      "Responding to an opening",
+      "To 1NT",
+      "Jacoby Transfer To Hearts",
+    ],
+  };
 
   describe("while bidding", () => {
     it("lets the robots bid first, then hands the box to South and updates the URL", async () => {
@@ -738,6 +792,116 @@ describe("PracticePage", () => {
           expect.objectContaining({ calls: [] }),
           "S",
           boardId,
+        ),
+      );
+    });
+  });
+
+  describe("adaptive practice", () => {
+    it("offers Weak spots only once the record shows one", async () => {
+      renderPage();
+      await waitForRobots();
+      expect(screen.getByRole("button", { name: "Weak spots" })).toBeDisabled();
+    });
+
+    it("finds a hand for a weak spot, in short requests, and says what it practices", async () => {
+      await recordWithWeakSpot();
+      mockGenerateAdaptiveBoard
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(FOUND);
+      renderPage();
+      await waitForRobots();
+      const chip = await screen.findByRole("button", { name: "Weak spots" });
+      await waitFor(() => expect(chip).not.toBeDisabled());
+
+      fireEvent.click(chip);
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${FOUND.identifier}`,
+        ),
+      );
+      expect(mockGenerateAdaptiveBoard).toHaveBeenCalledWith(
+        [["Responding to an opening", "To 1NT"]],
+        3,
+      );
+      expect(await store.getSetting("focus")).toBe("Adaptive");
+    });
+
+    it("deals a random hand when no weak-spot hand turns up in time", async () => {
+      await recordWithWeakSpot();
+      mockGenerateFilteredBoard.mockResolvedValue(
+        "5-00000000000000000000000000",
+      );
+      renderPage();
+      await waitForRobots();
+      const chip = await screen.findByRole("button", { name: "Weak spots" });
+      await waitFor(() => expect(chip).not.toBeDisabled());
+      fireEvent.click(chip);
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          "/bid/5-00000000000000000000000000",
+        ),
+      );
+      expect(mockGenerateAdaptiveBoard).toHaveBeenCalledTimes(10);
+      expect(mockGenerateFilteredBoard).toHaveBeenCalledWith("Random");
+    });
+
+    it("deals for the weak spot Practice this asked for, straight away", async () => {
+      mockGenerateAdaptiveBoard.mockResolvedValue(FOUND);
+      renderPage(`/bid/${boardId}`, {
+        dealAdaptive: { targets: [["Competing", "Takeout doubles"]] },
+      });
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${FOUND.identifier}`,
+        ),
+      );
+      expect(mockGenerateAdaptiveBoard).toHaveBeenCalledWith(
+        [["Competing", "Takeout doubles"]],
+        3,
+      );
+    });
+
+    it("says which weak spot this hand practices, and records it as adaptive", async () => {
+      await store.setSetting("focus", "Adaptive");
+      await recordWithWeakSpot();
+      mockGenerateAdaptiveBoard.mockResolvedValue(FOUND);
+      renderPage(`/bid/${boardId}`, {
+        adaptive: {
+          category: FOUND.category,
+          targets: [["Responding to an opening", "To 1NT"]],
+        },
+      });
+      await waitForRobots();
+      expect(await screen.findByTestId("adaptive-status")).toHaveTextContent(
+        "This hand practices To 1NT.",
+      );
+      // The next board is found in the background while the user bids.
+      await waitFor(() => expect(mockGenerateAdaptiveBoard).toHaveBeenCalled());
+
+      mockAddRobotBids.mockResolvedValue(COMPLETE);
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "3♠")!,
+      );
+      await screen.findByTestId("verdict-on-system");
+      // The seeded hands carry later timestamps, so find this one by board.
+      await waitFor(async () => {
+        const hands = await store.allHands();
+        expect(hands.find((h) => h.boardId === boardId)).toMatchObject({
+          source: "Adaptive",
+          targets: [["Responding to an opening", "To 1NT"]],
+        });
+      });
+
+      // Next hand uses the board found in the background: a fresh search
+      // would never resolve from here.
+      mockGenerateAdaptiveBoard.mockReturnValue(new Promise(() => {}));
+      fireEvent.click(screen.getByRole("button", { name: /next hand/i }));
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${FOUND.identifier}`,
         ),
       );
     });

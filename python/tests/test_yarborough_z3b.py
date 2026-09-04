@@ -207,6 +207,62 @@ class YarboroughZ3bTest(unittest.TestCase):
         with self.assertRaises(api.BiddingInputError):
             api.dispatch_json(json.dumps({"method": "missing", "arguments": {}}))
 
+    def test_adaptive_generator_matches_a_target_prefix(self):
+        self.assertTrue(
+            api._matches_target(
+                ["Responding to an opening", "To 1NT", "Stayman"],
+                [["Responding to an opening", "To 1NT"]],
+            )
+        )
+        self.assertTrue(
+            api._matches_target(["Opening", "Preempts", "Preemptive Open"], [["Opening"]])
+        )
+        self.assertFalse(
+            api._matches_target(
+                ["Opening", "Preempts", "Preemptive Open"],
+                [["Responding to an opening", "To 1NT"], ["Slam bidding"]],
+            )
+        )
+
+    def test_adaptive_generator_finds_a_board_for_a_common_target(self):
+        # Every deal has an opening or a pass as the dealer's first call, and
+        # South opens or passes in first or second seat often enough that a
+        # handful of attempts finds one.
+        result = api.generate_adaptive_board([["Opening"]], max_attempts=10)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["category"][0], "Opening")
+        # The identifier is the bare board, without the auction it was found by.
+        self.assertNotIn(":", result["identifier"])
+        board = Board.from_identifier(result["identifier"])
+        self.assertEqual(board.call_history.calls, [])
+
+    def test_adaptive_generator_gives_up_quietly(self):
+        # No engine call is ever in a category that does not exist.
+        self.assertIsNone(
+            api.generate_adaptive_board([["No such thing"]], max_attempts=2)
+        )
+
+    def test_adaptive_generator_rejects_bad_input(self):
+        with self.assertRaises(api.BiddingInputError):
+            api.generate_adaptive_board([], max_attempts=1)
+        with self.assertRaises(api.BiddingInputError):
+            api.generate_adaptive_board([["Opening", 3]], max_attempts=1)
+        with self.assertRaises(api.BiddingInputError):
+            api.generate_adaptive_board([["Opening"]], max_attempts=0)
+        with self.assertRaises(api.BiddingInputError):
+            api.generate_adaptive_board([["Opening"]], max_attempts=1, position="Q")
+
+    def test_json_dispatches_adaptive_generation(self):
+        response = api.dispatch_json(
+            json.dumps(
+                {
+                    "method": "generate_adaptive_board",
+                    "arguments": {"targets": [["No such thing"]], "max_attempts": 1},
+                }
+            )
+        )
+        self.assertIsNone(json.loads(response))
+
     def test_get_full_autobid(self):
         board = Board.random()
         calls = api.get_full_autobid(board.identifier)

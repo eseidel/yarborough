@@ -112,4 +112,35 @@ describe("createBiddingEngine", () => {
       identifier: "board",
     });
   });
+
+  it("asks for an adaptive board and accepts the engine giving up", async () => {
+    const found = requester({
+      identifier: "7-00000000000000000000000000",
+      category: ["Responding to an opening", "To 1NT", "Stayman"],
+    });
+    const engine = createBiddingEngine(found);
+    await expect(
+      engine.generateAdaptiveBoard([["Responding to an opening", "To 1NT"]], 3),
+    ).resolves.toEqual({
+      identifier: "7-00000000000000000000000000",
+      category: ["Responding to an opening", "To 1NT", "Stayman"],
+    });
+    expect(found.request).toHaveBeenCalledWith("generate_adaptive_board", {
+      targets: [["Responding to an opening", "To 1NT"]],
+      max_attempts: 3,
+    });
+
+    await expect(
+      createBiddingEngine(requester(null)).generateAdaptiveBoard(
+        [["Opening"]],
+        3,
+      ),
+    ).resolves.toBeNull();
+    await expect(
+      createBiddingEngine(requester({ identifier: 5 })).generateAdaptiveBoard(
+        [["Opening"]],
+        3,
+      ),
+    ).rejects.toThrow("invalid");
+  });
 });

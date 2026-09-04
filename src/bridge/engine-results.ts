@@ -1,4 +1,5 @@
 import type {
+  AdaptiveBoard,
   Call,
   CallInterpretation,
   OpeningLead,
@@ -112,4 +113,15 @@ export function parseOpeningLead(value: unknown): OpeningLead {
     partnerSuits: suitList(lead.partner_suits, "partner suits"),
     theirSuits: suitList(lead.their_suits, "declaring side suits"),
   };
+}
+
+/** The adaptive generator's answer: a board, or null when its attempts ran out. */
+export function parseAdaptiveBoard(value: unknown): AdaptiveBoard | null {
+  if (value === null || value === undefined) return null;
+  const board = record(value, "adaptive board");
+  const category = optionalCategory(board.category);
+  if (typeof board.identifier !== "string" || !category) {
+    throw new Error("The bidding engine returned an invalid adaptive board");
+  }
+  return { identifier: board.identifier, category };
 }

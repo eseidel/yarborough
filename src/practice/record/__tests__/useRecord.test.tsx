@@ -63,7 +63,9 @@ describe("useSetting", () => {
     expect(result.current[0]).toBe("immediate");
     await waitFor(() => expect(result.current[0]).toBe("end"));
 
-    act(() => result.current[1]("immediate"));
+    await act(async () => {
+      await result.current[1]("immediate");
+    });
     expect(result.current[0]).toBe("immediate");
     await waitFor(async () =>
       expect(await store.getSetting("feedbackTiming")).toBe("immediate"),
@@ -75,7 +77,9 @@ describe("useSetting", () => {
     const { result } = renderHook(() => useSetting("focus", "Random"));
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(result.current[0]).toBe("Random");
-    act(() => result.current[1]("Notrump"));
+    await act(async () => {
+      await result.current[1]("Notrump");
+    });
     expect(result.current[0]).toBe("Notrump");
   });
 });
