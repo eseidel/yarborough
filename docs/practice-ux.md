@@ -127,10 +127,13 @@ is over). South is always the user. Top to bottom, each phase showed:
       reached a making game, stopped short of a makeable game, too high, or
       the opponents' contract and whether it makes. The twenty-cell trick
       table itself is not shown; the sentences carry what a learner needs.
-   3. **Hands.** A compass diagram, North on top, West and East side by side,
-      South at the bottom, each hand as four suit lines with the ranks spelled
-      out and its high-card points. Under it, each side's total points and
-      any eight-card or longer fit.
+   3. **Hands.** All four hands as the same mini cards South bid from, laid
+      out as at the table: North across the top, West and East side by side,
+      South across the bottom, each with its high-card points and South
+      marked "(you)". In the side-by-side columns every card but the last of
+      a suit sits in a slot that shrinks when the column is narrow, so a long
+      suit overlaps more instead of spilling off a phone screen. Under the
+      hands, each side's total points and any eight-card or longer fit.
    4. **Actions.** **Next hand** as the one primary button; **Bid again** and
       **Share** as secondary. Share sends the bare board, without the
       auction, so the recipient bids the hand themselves. Bid again restarts the same board with the same
