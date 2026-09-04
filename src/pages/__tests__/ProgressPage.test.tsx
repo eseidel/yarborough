@@ -7,7 +7,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProgressPage } from "../ProgressPage";
 import {
@@ -45,16 +45,20 @@ function hand(
   });
 }
 
-function renderPage(onPractice?: (node: { path: string[] }) => void) {
+function PracticeStub() {
+  const location = useLocation();
+  return (
+    <div data-testid="practice-stub">{JSON.stringify(location.state)}</div>
+  );
+}
+
+function renderPage() {
   return render(
     <MemoryRouter initialEntries={["/progress"]}>
       <Routes>
-        <Route
-          path="/progress"
-          element={<ProgressPage onPractice={onPractice} />}
-        />
+        <Route path="/progress" element={<ProgressPage />} />
         <Route path="/bid/:boardId" element={<div>Review page</div>} />
-        <Route path="/" element={<div>Practice page</div>} />
+        <Route path="/" element={<PracticeStub />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -120,10 +124,9 @@ describe("ProgressPage", () => {
     expect(opportunities).toHaveTextContent("Weak spot");
     expect(opportunities).toHaveTextContent("17%");
     expect(opportunities).toHaveTextContent("from 6 calls, so early days");
-    // Without adaptive mode there is nothing to practice from here yet.
     expect(
-      within(opportunities).queryByRole("button", { name: /practice this/i }),
-    ).toBeNull();
+      within(opportunities).getByRole("button", { name: /practice this/i }),
+    ).toBeInTheDocument();
 
     const strengths = screen.getByTestId("strengths");
     expect(strengths).toHaveTextContent("Raises");
@@ -155,21 +158,25 @@ describe("ProgressPage", () => {
     );
   });
 
-  it("offers Practice this on weak spots when adaptive practice is available", async () => {
+  it("sends Practice this to the practice page, aimed at that weak spot", async () => {
     for (let i = 0; i < 10; i++) {
       await store.addHand(
         hand(i, [verdict(OPEN, true), verdict(STAYMAN, false)]),
       );
     }
-    const onPractice = vi.fn();
-    renderPage(onPractice);
+    renderPage();
     const opportunities = await screen.findByTestId("opportunities");
     fireEvent.click(
       within(opportunities).getByRole("button", { name: /practice this/i }),
     );
-    expect(onPractice).toHaveBeenCalledWith(
-      expect.objectContaining({ path: ["Responding to an opening", "To 1NT"] }),
-    );
+    const stub = await screen.findByTestId("practice-stub");
+    expect(JSON.parse(stub.textContent!)).toEqual({
+      dealAdaptive: { targets: [["Responding to an opening", "To 1NT"]] },
+    });
+    expect(await store.getSetting("focus")).toBe("Adaptive");
+    expect(await store.getSetting("adaptiveTargets")).toEqual([
+      ["Responding to an opening", "To 1NT"],
+    ]);
   });
 
   it("shows the chart's figures for a tapped block", async () => {

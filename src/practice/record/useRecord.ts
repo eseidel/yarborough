@@ -88,7 +88,7 @@ export function useRecord() {
 export function useSetting<T>(
   key: SettingKey,
   fallback: T,
-): [T, (value: T) => void] {
+): [T, (value: T) => Promise<void>] {
   const [value, setValueState] = useState<T>(fallback);
 
   useEffect(() => {
@@ -107,14 +107,16 @@ export function useSetting<T>(
   }, [key]);
 
   const setValue = useCallback(
-    (next: T) => {
-      setValueState(next);
-      recordStore()
-        .then((store) => store.setSetting(key, next))
-        .catch(() => {
-          // The setting lives for this page only.
-        });
-    },
+    (next: T) =>
+      new Promise<void>((resolve) => {
+        setValueState(next);
+        recordStore()
+          .then((store) => store.setSetting(key, next))
+          .catch(() => {
+            // The setting lives for this page only.
+          })
+          .finally(resolve);
+      }),
     [key],
   );
 

@@ -3,7 +3,7 @@
 // and the learner's record. The page itself is layout.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type {
   Call,
   CallHistory,
@@ -20,20 +20,28 @@ import {
   isAuctionComplete,
   isPassOut,
 } from "../bridge/auction";
+import { generateFilteredBoardId, parseBoardId } from "../bridge/identifier";
 import {
-  type DealType,
-  generateFilteredBoardId,
-  parseBoardId,
-} from "../bridge/identifier";
-import { getOpeningLead, getSuggestedCall } from "../bridge/engine";
+  generateAdaptiveBoard,
+  getOpeningLead,
+  getSuggestedCall,
+} from "../bridge/engine";
 import { getDoubleDummyTable, getTricksAfterLead } from "../dds/dds";
 import type { DoubleDummyAnalysis } from "../components/PlayAnalysis";
 import type { AuctionPoint } from "../components/OptionsSheet";
 import { useCallExplanation } from "../hooks/useCallExplanation";
 import { trackEvent } from "../analytics";
 import { useRecord, useSetting } from "./record/useRecord";
-import type { HandRecord } from "./record/types";
+import type { HandRecord, HandSource } from "./record/types";
 import { summarize } from "./stats";
+import { computeInsights } from "./insights";
+import {
+  type AdaptiveSearchResult,
+  type AdaptiveTarget,
+  adaptiveTargets,
+  describeTargets,
+  searchAdaptiveBoard,
+} from "./adaptive";
 import {
   type CallVerdict,
   buildVerdicts,
@@ -59,12 +67,32 @@ function toRecordedVerdict(verdict: CallVerdict) {
 
 export type ParsedBoard = NonNullable<ReturnType<typeof parseBoardId>>;
 
+/** What the page navigating here said about why: adaptive mode's doing. */
+interface ArrivalState {
+  adaptive?: {
+    /** The category of the call this board practices. */
+    category?: string[];
+    targets?: string[][];
+    /** No board was found in time; this one is random. */
+    fallback?: boolean;
+  };
+  /** Deal an adaptive board for these targets straight away. */
+  dealAdaptive?: { targets: string[][] };
+}
+
 export function usePracticeSession(
   boardId: string,
   parsed: ParsedBoard,
   userPosition: Position = "S",
 ) {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Read once: the robots' replies rewrite the URL (replace, no state) and
+  // would otherwise wipe what the page arrived with.
+  const arrivalRef = useRef<ArrivalState | null>(
+    (location.state ?? null) as ArrivalState | null,
+  );
+  const arrival = arrivalRef.current;
   const baseId = boardId.split(":")[0];
 
   const [history, setHistory] = useState<CallHistory>({
@@ -101,8 +129,13 @@ export function usePracticeSession(
     error: string | null;
   } | null>(null);
 
-  const [dealType, setDealType] = useSetting<DealType>("focus", "Random");
-  const [pendingFocus, setPendingFocus] = useState<DealType | null>(null);
+  const [dealType, setDealType] = useSetting<HandSource>("focus", "Random");
+  const [pendingFocus, setPendingFocus] = useState<HandSource | null>(null);
+  // A single weak spot chosen on the Progress tab; null means all of them.
+  const [pinnedTargets, setPinnedTargets] = useSetting<string[][] | null>(
+    "adaptiveTargets",
+    null,
+  );
   const [feedbackTiming, setFeedbackTiming] = useSetting<FeedbackTiming>(
     "feedbackTiming",
     "immediate",
@@ -110,6 +143,24 @@ export function usePracticeSession(
   const [options, setOptions] = useState<AuctionPoint | null>(null);
   const record = useRecord();
   const summary = useMemo(() => summarize(record.hands), [record.hands]);
+  const weakSpots = useMemo(
+    () => adaptiveTargets(computeInsights(record.hands)),
+    [record.hands],
+  );
+  const targets: AdaptiveTarget[] = useMemo(
+    () =>
+      pinnedTargets
+        ? pinnedTargets.map((path) => ({ path, weight: 1 }))
+        : weakSpots,
+    [pinnedTargets, weakSpots],
+  );
+  // The next adaptive board, found while the user bids the current one.
+  const [nextBoard, setNextBoard] = useState<AdaptiveSearchResult | null>(null);
+  const search = useRef<{ current: boolean } | null>(null);
+  const [adaptiveStatus, setAdaptiveStatus] = useState<
+    "idle" | "searching" | "fallback"
+  >(arrival?.adaptive?.fallback ? "fallback" : "idle");
+  const dealtOnArrival = useRef(false);
   // Set when the auction ended in this session, as opposed to arriving
   // complete from a permalink: only those hands go into the record.
   const completedHere = useRef(false);
@@ -292,7 +343,10 @@ export function usePracticeSession(
       dealer: parsed.dealer,
       vulnerability: parsed.vulnerability,
       userPosition,
-      source: dealType,
+      source: arrival?.adaptive?.fallback ? "Random" : dealType,
+      ...(dealType === "Adaptive" && arrival?.adaptive?.targets
+        ? { targets: arrival.adaptive.targets }
+        : {}),
       calls: history.calls.map(callToString),
       contract: contract
         ? `${contract.level}${contract.strain}${contract.doubled ?? ""}`
@@ -330,6 +384,7 @@ export function usePracticeSession(
     saycAuction,
     doubleDummy,
     addHand,
+    arrival,
   ]);
 
   // The engine's auction and the play analysis usually land after the hand
@@ -434,23 +489,121 @@ export function usePracticeSession(
     }
   }, [parsed.dealer, userPosition, navigate, baseId, runRobots, explanation]);
 
+  /** Look for an adaptive board; resolves null when none turns up in time. */
+  const findAdaptiveBoard = useCallback((forTargets: AdaptiveTarget[]) => {
+    if (search.current) search.current.current = true;
+    const cancelled = { current: false };
+    search.current = cancelled;
+    return searchAdaptiveBoard(forTargets, {
+      generate: generateAdaptiveBoard,
+      cancelled,
+    }).finally(() => {
+      if (search.current === cancelled) search.current = null;
+    });
+  }, []);
+
+  // While the user bids in adaptive mode, find the next board in the
+  // background so Next hand is usually instant.
+  useEffect(() => {
+    if ((pendingFocus ?? dealType) !== "Adaptive" || targets.length === 0)
+      return;
+    if (!(userToCall || auctionDone) || nextBoard || search.current) return;
+    findAdaptiveBoard(targets)
+      .then((result) => {
+        if (result) setNextBoard(result);
+      })
+      .catch(() => {
+        // The search on Next hand will report a failure if it persists.
+      });
+  }, [
+    dealType,
+    pendingFocus,
+    targets,
+    userToCall,
+    auctionDone,
+    nextBoard,
+    findAdaptiveBoard,
+  ]);
+
+  useEffect(
+    () => () => {
+      if (search.current) search.current.current = true;
+    },
+    [],
+  );
+
   /** Deal a new board for `focus`, remembering it as the session's focus. */
   const deal = useCallback(
-    (focus: DealType, label: "next hand" | "skip hand") => {
+    (
+      focus: HandSource,
+      label: "next hand" | "skip hand",
+      forTargets: AdaptiveTarget[] = targets,
+    ) => {
       trackEvent("Bidding", "Boards", label);
-      setDealType(focus);
+      void setDealType(focus);
       setPendingFocus(null);
       setThinking(true);
       setError(null);
-      generateFilteredBoardId(focus)
-        .then(({ id }) => navigate(`/bid/${id}`))
-        .catch((err) => {
-          setError(String(err));
-          setThinking(false);
-        });
+      const fail = (err: unknown) => {
+        setError(String(err));
+        setThinking(false);
+        setAdaptiveStatus("idle");
+      };
+      if (focus !== "Adaptive") {
+        generateFilteredBoardId(focus)
+          .then(({ id }) => navigate(`/bid/${id}`))
+          .catch(fail);
+        return;
+      }
+      const go = (result: AdaptiveSearchResult | null) => {
+        if (result) {
+          navigate(`/bid/${result.board.identifier}`, {
+            state: {
+              adaptive: {
+                category: result.board.category,
+                targets: forTargets.map((t) => t.path),
+              },
+            } satisfies ArrivalState,
+          });
+          return;
+        }
+        // Nothing turned up in time: a random hand rather than a wait.
+        setAdaptiveStatus("fallback");
+        generateFilteredBoardId("Random")
+          .then(({ id }) =>
+            navigate(`/bid/${id}`, {
+              state: { adaptive: { fallback: true } } satisfies ArrivalState,
+            }),
+          )
+          .catch(fail);
+      };
+      if (nextBoard) {
+        setNextBoard(null);
+        go(nextBoard);
+        return;
+      }
+      if (forTargets.length === 0) {
+        go(null);
+        return;
+      }
+      setAdaptiveStatus("searching");
+      findAdaptiveBoard(forTargets).then(go).catch(fail);
     },
-    [navigate, setDealType],
+    [navigate, setDealType, targets, nextBoard, findAdaptiveBoard],
   );
+
+  // Sent here by "Practice this" on the Progress tab: deal for that weak
+  // spot at once instead of bidding the random board the root route made.
+  useEffect(() => {
+    const request = arrival?.dealAdaptive;
+    if (!request || dealtOnArrival.current) return;
+    dealtOnArrival.current = true;
+    deal(
+      "Adaptive",
+      "skip hand",
+      request.targets.map((path) => ({ path, weight: 1 })),
+    );
+  }, [arrival, deal]);
 
   const dealNext = useCallback(
     (label: "next hand" | "skip hand") => deal(pendingFocus ?? dealType, label),
@@ -460,15 +613,22 @@ export function usePracticeSession(
   // A new focus takes effect at once while nothing has been bid; mid-hand it
   // waits for the next deal, so a tap cannot throw away the auction.
   const changeFocus = useCallback(
-    (focus: DealType) => {
+    (focus: HandSource) => {
+      if (focus === "Adaptive" && targets.length === 0) return;
       if (auctionDone || userCallCount === 0) {
         deal(focus, "skip hand");
       } else {
         setPendingFocus(focus === dealType ? null : focus);
       }
     },
-    [auctionDone, userCallCount, dealType, deal],
+    [auctionDone, userCallCount, dealType, deal, targets],
   );
+
+  /** Aim adaptive mode at every weak spot again, not the one pinned. */
+  const showAllWeakSpots = useCallback(() => {
+    void setPinnedTargets(null);
+    setNextBoard(null);
+  }, [setPinnedTargets]);
 
   const resetProgress = useCallback(() => {
     void record.clearHands();
@@ -493,6 +653,20 @@ export function usePracticeSession(
     doubleDummy: doubleDummy?.key === auctionKey ? doubleDummy : null,
     dealType,
     pendingFocus,
+    /** Adaptive practice: what it can aim at and what it is doing. */
+    adaptive: {
+      available: targets.length > 0,
+      pinned: pinnedTargets !== null,
+      targetsLabel: describeTargets(targets.map((t) => t.path)),
+      /** The family of call this board was dealt to practice, if any. */
+      practicing:
+        dealType === "Adaptive" && arrival?.adaptive?.category
+          ? (arrival.adaptive.category[1] ?? null)
+          : null,
+      searching: adaptiveStatus === "searching",
+      fallback: adaptiveStatus === "fallback",
+    },
+    showAllWeakSpots,
     /** Totals over the record, for the strip. */
     summary,
     recordAvailable: record.available,

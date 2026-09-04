@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { AboutFooter } from "../components/AboutFooter";
 import { AccuracyChart } from "../components/AccuracyChart";
 import { CategoryRow, CategoryTree } from "../components/CategoryTree";
 import { RecentHands } from "../components/RecentHands";
-import { useRecord } from "../practice/record/useRecord";
+import { useRecord, useSetting } from "../practice/record/useRecord";
+import type { HandSource } from "../practice/record/types";
 import {
   type Insights,
   type NodeStats,
@@ -133,13 +134,20 @@ function downloadJson(filename: string, value: unknown): void {
  * is going well, what needs work, whether they are improving, and the
  * hands behind it. The statistics stay behind the words.
  */
-export function ProgressPage({
-  onPractice,
-}: {
-  /** Start adaptive practice on a weak spot; absent until that mode exists. */
-  onPractice?: (node: NodeStats) => void;
-}) {
+export function ProgressPage() {
   const record = useRecord();
+  const navigate = useNavigate();
+  const [, setFocus] = useSetting<HandSource>("focus", "Random");
+  const [, setPinnedTargets] = useSetting<string[][] | null>(
+    "adaptiveTargets",
+    null,
+  );
+  // Aim adaptive practice at this weak spot and deal for it straight away.
+  const onPractice = async (node: NodeStats) => {
+    trackEvent("Progress", "Practice this", node.path.join(" / "));
+    await Promise.all([setFocus("Adaptive"), setPinnedTargets([node.path])]);
+    navigate("/", { state: { dealAdaptive: { targets: [node.path] } } });
+  };
   const [confirmingReset, setConfirmingReset] = useState(false);
   const insights = useMemo(() => computeInsights(record.hands), [record.hands]);
 

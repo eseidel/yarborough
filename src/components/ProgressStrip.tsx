@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { type Summary, formatAccuracy } from "../practice/stats";
-import type { HandSource } from "../practice/record/types";
-import { FOCUS_OPTIONS } from "../practice/focus";
-
-const SOURCE_OPTIONS: { value: HandSource; label: string }[] = [
-  ...FOCUS_OPTIONS,
-  { value: "Adaptive", label: "Weak spots" },
-];
+import { SOURCE_OPTIONS } from "../practice/focus";
 
 /**
  * The learner's record: accuracy across checked calls, hands bid, and the

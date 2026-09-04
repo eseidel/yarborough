@@ -59,4 +59,4 @@ export interface HandRecord {
 }
 
 /** Keys of the `settings` store. */
-export type SettingKey = "feedbackTiming" | "focus";
+export type SettingKey = "feedbackTiming" | "focus" | "adaptiveTargets";
