@@ -111,9 +111,13 @@ async function main() {
           `The production app did not render a call table: ${String(error)}\n${browserErrors.join("\n")}\n${failedRequests.join("\n")}`,
         );
       }
-      await page.waitForFunction(
-        () => !document.body.textContent?.includes("Thinking..."),
-      );
+      // The engine loads and bids for the seats before South; the table shows
+      // a pulsing marker in the pending cell until then. Wait for a call.
+      await page
+        .locator('[data-testid="call-table"]')
+        .getByText("Pass")
+        .first()
+        .waitFor({ timeout: 120_000 });
       assert.match(
         (await page.locator('[data-testid="call-table"]').textContent()) ?? "",
         /Pass/,
