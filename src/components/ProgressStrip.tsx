@@ -1,25 +1,30 @@
 import { useState } from "react";
-import type { DealType } from "../bridge/identifier";
-import { type Progress, formatAccuracy } from "../practice/progress";
+import { type Summary, formatAccuracy } from "../practice/stats";
+import type { HandSource } from "../practice/record/types";
 import { FOCUS_OPTIONS } from "../practice/focus";
+
+const SOURCE_OPTIONS: { value: HandSource; label: string }[] = [
+  ...FOCUS_OPTIONS,
+  { value: "Adaptive", label: "Weak spots" },
+];
 
 /**
  * The learner's record: accuracy across checked calls, hands bid, and the
  * streak of hands bid entirely on system. Expands to a breakdown by focus.
  */
 export function ProgressStrip({
-  progress,
+  summary,
   onReset,
 }: {
-  progress: Progress;
+  summary: Summary;
   onReset: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { total } = progress;
+  const total = summary;
   if (total.hands === 0) return null;
 
-  const focuses = FOCUS_OPTIONS.filter(
-    (option) => (progress.byFocus[option.value]?.hands ?? 0) > 0,
+  const sources = SOURCE_OPTIONS.filter(
+    (option) => (summary.bySource[option.value]?.hands ?? 0) > 0,
   );
 
   return (
@@ -43,9 +48,9 @@ export function ProgressStrip({
           <span className="text-gray-700 tabular-nums">
             {total.hands} {total.hands === 1 ? "hand" : "hands"}
           </span>
-          {progress.streak > 0 && (
+          {summary.streak > 0 && (
             <span className="text-amber-700 tabular-nums" title="Streak">
-              🔥 {progress.streak}
+              🔥 {summary.streak}
             </span>
           )}
         </span>
@@ -57,12 +62,12 @@ export function ProgressStrip({
           data-testid="progress-details"
         >
           <p className="text-xs text-gray-500">
-            {total.callsMatched} of {total.calls} checked calls matched SAYC.{" "}
+            {total.matched} of {total.calls} checked calls matched SAYC.{" "}
             {total.handsOnSystem} of {total.hands} hands bid entirely on system;
-            best streak {progress.bestStreak}. Calls made after seeing the SAYC
+            best streak {summary.bestStreak}. Calls made after seeing the SAYC
             bid are not counted. Kept on this device only.
           </p>
-          {focuses.length > 1 && (
+          {sources.length > 1 && (
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-gray-500">
@@ -72,8 +77,8 @@ export function ProgressStrip({
                 </tr>
               </thead>
               <tbody>
-                {focuses.map((option) => {
-                  const stats = progress.byFocus[option.value as DealType]!;
+                {sources.map((option) => {
+                  const stats = summary.bySource[option.value]!;
                   return (
                     <tr
                       key={option.value}

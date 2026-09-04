@@ -1,3 +1,5 @@
+import "fake-indexeddb/auto";
+import { IDBFactory } from "fake-indexeddb";
 import {
   render,
   screen,
@@ -13,7 +15,11 @@ import * as auction from "../../bridge/auction";
 import * as identifier from "../../bridge/identifier";
 import * as engine from "../../bridge/engine";
 import * as dds from "../../dds/dds";
-import { PROGRESS_STORAGE_KEY } from "../../practice/progress";
+import {
+  type RecordStore,
+  openRecordStore,
+  useRecordStoreForTests,
+} from "../../practice/record/db";
 
 vi.mock("../../bridge/auction", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../bridge/auction")>();
@@ -133,10 +139,12 @@ const waitForRobots = () =>
   );
 
 describe("PracticePage", () => {
-  beforeEach(() => {
+  let store: RecordStore;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
-    window.localStorage.clear();
-    window.sessionStorage.clear();
+    store = await openRecordStore(new IDBFactory(), "practice-page");
+    useRecordStoreForTests(Promise.resolve(store));
     mockParseBoardId.mockReturnValue(dummyParsed);
     mockAddRobotBids.mockResolvedValue(OPENING);
     mockGetFullAutobidAuction.mockResolvedValue(COMPLETE);
@@ -244,6 +252,77 @@ describe("PracticePage", () => {
       expect(screen.getByLabelText("matched SAYC")).toBeInTheDocument();
     });
 
+    it("records a hand bid to the end, with its verdicts, auction, and play", async () => {
+      mockGetSuggestedCall.mockImplementation(async (id) => {
+        const key = id.split(":")[1] ?? "";
+        return key === "1S,P"
+          ? {
+              call: bid(3, "S"),
+              ruleName: "Jump Raise",
+              category: ["Responding to an opening", "Raises", "Jump Raise"],
+            }
+          : { call: pass, category: ["Responder's rebid", "Passing", "Pass"] };
+      });
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue(COMPLETE);
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "3♠")!,
+      );
+      await screen.findByTestId("verdict-on-system");
+
+      await waitFor(async () => expect(await store.allHands()).toHaveLength(1));
+      // The engine's auction and the play analysis land after the write.
+      await waitFor(async () => {
+        const [hand] = await store.allHands();
+        expect(hand.saycCalls).toEqual(
+          COMPLETE.calls.map((c) =>
+            c.type === "pass" ? "P" : `${c.level}${c.strain}`,
+          ),
+        );
+        expect(hand.table).toEqual(TABLE);
+      });
+      const [hand] = await store.allHands();
+      expect(hand).toMatchObject({
+        boardId,
+        boardNumber: 1,
+        dealer: "N",
+        userPosition: "S",
+        source: "Random",
+        calls: ["1S", "P", "3S", "P", "4S", "P", "P", "P"],
+        contract: "4S",
+        declarer: "N",
+        lead: "D4",
+        tricksAfterLead: 11,
+      });
+      expect(hand.verdicts).toEqual([
+        {
+          index: 2,
+          call: "3S",
+          saycCall: "3S",
+          ruleName: "Jump Raise",
+          category: ["Responding to an opening", "Raises", "Jump Raise"],
+          matched: true,
+          assisted: false,
+        },
+        {
+          index: 6,
+          call: "P",
+          saycCall: "P",
+          category: ["Responder's rebid", "Passing", "Pass"],
+          matched: true,
+          assisted: false,
+        },
+      ]);
+      expect(hand.completedAt).toBeGreaterThan(0);
+      expect(screen.getByTestId("progress-strip")).toHaveTextContent(
+        "100% on system",
+      );
+      expect(screen.getByTestId("progress-strip")).toHaveTextContent("1 hand");
+    });
+
     it("can hold feedback back until the hand is over", async () => {
       renderPage();
       await waitForRobots();
@@ -262,8 +341,8 @@ describe("PracticePage", () => {
       fireEvent.click(defer);
       expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
       expect(screen.queryByLabelText("differed from SAYC")).toBeNull();
-      expect(window.localStorage.getItem("yarborough_feedback_timing")).toBe(
-        "end",
+      await waitFor(async () =>
+        expect(await store.getSetting("feedbackTiming")).toBe("end"),
       );
     });
 
@@ -474,8 +553,8 @@ describe("PracticePage", () => {
       await waitFor(() =>
         expect(mockGenerateFilteredBoard).toHaveBeenCalledWith("Notrump"),
       );
-      expect(window.sessionStorage.getItem("yarborough_deal_type")).toBe(
-        "Notrump",
+      await waitFor(async () =>
+        expect(await store.getSetting("focus")).toBe("Notrump"),
       );
     });
 
@@ -584,24 +663,12 @@ describe("PracticePage", () => {
       ).toBeInTheDocument();
     });
 
-    it("records the hand on the device once", async () => {
+    it("does not record a hand that arrived complete from a permalink", async () => {
       renderComplete();
-      await waitFor(() => {
-        expect(screen.getByTestId("progress-strip")).toHaveTextContent(
-          "100% on system",
-        );
-      });
-      expect(screen.getByTestId("progress-strip")).toHaveTextContent("1 hand");
-      const stored = JSON.parse(
-        window.localStorage.getItem(PROGRESS_STORAGE_KEY)!,
-      );
-      expect(stored.total).toEqual({
-        hands: 1,
-        handsOnSystem: 1,
-        calls: 2,
-        callsMatched: 2,
-      });
-      expect(stored.streak).toBe(1);
+      await screen.findByTestId("verdict-on-system");
+      await screen.findByTestId("double-dummy-contract");
+      expect(await store.allHands()).toEqual([]);
+      expect(screen.queryByTestId("progress-strip")).toBeNull();
     });
 
     it("lists the calls that differed and where SAYC's own auction ends", async () => {

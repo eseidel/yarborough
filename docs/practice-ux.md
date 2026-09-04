@@ -88,7 +88,8 @@ is over). South is always the user. Top to bottom, each phase showed:
 3. **Progress strip.** Appears once at least one hand has been reviewed:
    accuracy across all calls, hands bid, and the current streak of hands bid
    entirely on system. Tapping it expands the breakdown by focus and offers a
-   reset. Stored in `localStorage`; nothing leaves the device.
+   reset. Kept in the IndexedDB record on the device (see
+   `docs/progress-plan.md`); nothing leaves the device.
 4. **Auction table.** As before, plus: a `You` marker under South's column,
    a small ✓ or ✗ beside each of South's calls once its verdict is known, and
    the `?` cell pulses while the robots are thinking instead of the box
