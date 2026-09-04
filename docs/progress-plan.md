@@ -50,12 +50,12 @@ side is silent (Competing); the opponents opened and partner has acted
 the table uses for the rows above, so it lives in `categories.py` beside the
 table.
 
-The engine adapter gains one field. `get_suggested_call` returns `category`
-(the three-element path) alongside `rule_name`, and `get_full_autobid`
-returns the category of every call so the adaptive generator (section 4) can
-look at an auction without a second pass. The TypeScript result parsers and
-`CallInterpretation` gain the field. The engine's bidding does not change,
-so the baseline test is untouched.
+The engine adapter gains one field: `get_suggested_call` returns `category`
+(the three-element path) alongside `rule_name`, and the TypeScript result
+parser and `CallInterpretation` carry it. The adaptive generator (section 4)
+categorizes the engine's own auction inside the adapter, so `get_full_autobid`
+is unchanged. The engine's bidding does not change, so the baseline test is
+untouched.
 
 ## 2. The record: IndexedDB
 
