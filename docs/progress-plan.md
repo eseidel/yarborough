@@ -98,30 +98,68 @@ tab both read from it.
 
 ## 3. What the numbers mean
 
-For any set of verdicts (all of them, or one category's, or one time
-window's):
+Usage volume differs enormously between users: one bids ten hands a month,
+another a hundred a day. Any fixed window ("the last half of your calls",
+"at least five calls") is wrong for one of them. So every judgment the app
+makes about the record is a statistical statement with its own confidence,
+computed from however much data there is, and shown as such.
 
-- **calls** and **matched**, counting only unassisted calls, as today;
-- **accuracy** = matched / calls, shown only once calls ≥ 5, otherwise "not
-  enough data yet";
-- **trend**: accuracy over the most recent half of the calls against the
-  earlier half (or the last 30 days against the 30 before), shown as an
-  arrow with the two percentages; hidden below 10 calls.
+Every checked call is one Bernoulli trial: matched or not, unassisted only.
 
-**Strength and weakness** are judged per category at whichever level is
-being shown, always against the user's own overall accuracy, not a fixed
-bar: a category is a weakness when it has at least 5 calls and its accuracy
-is more than 10 points below the overall figure, a strength when it is at
-least 5 calls and above the overall figure, and otherwise unremarkable. This
-keeps the labels meaningful for a beginner at 60% and an expert at 95%.
+**Accuracy** for any set of calls is matched / calls, shown with a 95%
+Wilson interval so a beginner's 4 of 5 reads "80% (38–96%)" and a heavy
+user's 400 of 500 reads "80% (76–83%)". Nothing is hidden for being small;
+the interval says how much to trust it.
+
+**Strengths and weaknesses** ask, for each category: is the user's accuracy
+here genuinely different from their accuracy everywhere else? Each category
+gets a Beta posterior whose prior is centred on the user's overall accuracy
+with the weight of five calls, updated by the category's own calls. The
+figure shown is the posterior probability that the category's true accuracy
+is below the overall figure. A category with 3 misses in 3 calls comes out
+around 90% likely to be a weak spot; the same 3 misses among 30 calls at a
+user who runs 80% overall comes out near 50%, which is to say unremarkable.
+The regularized incomplete beta function this needs is forty lines of
+numerical code with a unit test against known values; there is no library
+to add. The prior does the work a minimum-count threshold did, and does it
+smoothly: small samples are pulled toward "no evidence" rather than cut off.
+
+Labels follow the probability: **weak spot** at 80% or more, **strength** at
+20% or less (that is, 80% likely to be above overall), otherwise nothing.
+Rows sort by that probability, and the Progress tab shows it beside the
+accuracy ("Weak spot, 91% sure").
+
+**Trend** asks whether accuracy is rising with time, and how fast. Calls in
+the window are ordered by time and the test is the score test for a
+positive slope in a logistic model of matched on call order (this is the
+Cochran–Armitage trend test with one call per level). It is closed-form,
+uses every call rather than two halves, and its power grows with the number
+of calls, so a heavy user sees a trend confirmed within days rather than
+after doubling their history. The fitted slope is reported as percentage
+points per hundred calls, so the reader gets size as well as direction.
+
+The window answers "am I improving now?", not "have I ever improved": the
+last ninety days, extended back to at least forty calls when the ninety days
+hold fewer. The same test runs per category over that category's window,
+with the same minimum.
+
+Labels follow the one-sided p-value: **improving** at p ≤ 0.05, **probably
+improving** at p ≤ 0.2, and the mirror pair for a negative slope, otherwise
+**no clear trend**. Shown as "Improving, 97% confidence, +6 points per 100
+calls".
+
+The chart of accuracy over time plots each block of hands as a point with
+its Wilson interval, so a user can see for themselves whether the points
+are separating or merely wandering.
 
 ## 4. Adaptive practice
 
-Adaptive mode is a fifth focus chip, "Weak spots", enabled once the record
-has at least 30 unassisted calls and at least one weakness at level 2. Its
-targets are the level-2 weaknesses, each weighted by how far below overall it
-sits and by how many calls it has, so a category with 5 calls at 40% is
-sampled but does not dominate one with 40 calls at 65%. A target chosen from
+Adaptive mode is a fifth focus chip, "Weak spots", enabled once at least one
+level-2 category is a weak spot by the rule in section 3 (80% posterior
+probability of sitting below the user's overall accuracy). Its targets are
+those categories, each weighted by that probability times the gap between
+its posterior mean and the overall figure, so a near-certain small weakness
+and a likely large one both get practice and neither dominates. A target chosen from
 the Progress tab ("Practice this") is a single-category form of the same
 mode.
 
@@ -155,17 +193,18 @@ A third tab in the nav, `/progress`, built for the phone like the practice
 page. Top to bottom:
 
 1. **Overall.** Accuracy, hands bid, calls checked, current and best streak,
-   and the trend. A small bar chart of accuracy per block of 20 hands (or
-   per week once there are weeks), so improvement over time is visible at a
-   glance.
+   and the trend with its confidence and slope. A small chart of accuracy
+   over time, one point per block of hands with its Wilson interval, so
+   improvement (or its absence) is visible at a glance.
 2. **Strengths and opportunities.** Two short lists picked from level 2 by
    the rules in section 3, each row with the category, its accuracy over its
    count, and its trend. Every opportunity row has a "Practice this" button
    that starts adaptive mode on that category.
 3. **All categories.** The full tree, collapsed to level 1 with level 2 and
    level 3 underneath on tap. Each row: name, accuracy or "n/a", count, and a
-   thin bar. Rows with fewer than 5 calls are dimmed rather than hidden, so
-   the user can see what they have not met yet.
+   thin bar carrying the interval, and the weak-spot or strength probability
+   when it is one. Rows with no calls yet are dimmed rather than hidden, so
+   the user can see what they have not met.
 4. **Recent hands.** The last twenty, newest first: date, contract, "on
    system" or which category the misses were in. Each opens the board's
    review at `/bid/<board>:<calls>`, which already renders the verdicts from
@@ -216,5 +255,7 @@ To confirm before step 1:
 - The seven level-1 groups and the level-2 split above. These are the labels
   the user will read; changing them later re-labels history but loses no
   data, since each verdict stores its full path.
-- "Weak spots" as the adaptive chip's name, and the 30-call, 5-call and
-  10-point thresholds.
+- "Weak spots" as the adaptive chip's name, and the confidence levels in
+  section 3: 80% posterior probability for a weak spot or strength, p ≤ 0.05
+  and p ≤ 0.2 for the two trend labels, five calls of prior weight, and the
+  ninety-day / forty-call trend window.
