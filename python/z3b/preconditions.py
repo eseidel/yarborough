@@ -44,6 +44,10 @@ annotations = enum.Enum(
     # A minimum, non-forcing decline of partner's invitation (ResponseToJordan's cheapest
     # rebid): partner passes it rather than proving combined points he cannot have.
     "Signoff",
+    # The call agrees partner's last suit without naming it (the cuebid advance of an
+    # overcall): its points are read as support points for that suit, and the suit counts
+    # as agreed for the natural bids that follow.
+    "SupportsPartnersSuit",
 
     "Artificial",
     # NOTE: RuleCompiler._compile_annotations will automatically imply

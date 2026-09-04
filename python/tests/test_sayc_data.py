@@ -1564,7 +1564,9 @@ sayc_expectations = {
         ['KQJT3.864.AQ9.AT', '4S', '1D 2S P 2N P 3H P'],  # deal 10261368563172950620196330721081, S should bid game, seeing N has a maximum.
         ['KQJT3.864.AQ9.AT', '4S', '1D 2S P 2N P 3N P'],  # modified deal 10261368563172950620196330721081, S should bid game, seeing N has a maximum.
         ['QT8.KQ632.86.T97', '1N', 'P P 1C P 1D P 1H P', 'N-S'],  # deal 18461602223397807530713780374231, N should bid 1D.  An earlier version of the bidder failed to.
-        ['JT87.A732..KQJ72', '3S', '1D 1S P 2D P'],  # deal 15141057107213075875501235469840, W should overcall 1S rather than pass.
+        # deal 15141057107213075875501235469840, W should overcall 1S rather than pass; over the cuebid
+        # advance (eleven support points) sixteen with a void is the table's game (2026-09-03; was 3S).
+        ['JT87.A732..KQJ72', '4S', '1D 1S P 2D P'],
         ['AJT95.AK4.K93.K6', '1N', '1S', 'Both'],  # deal 16428150251578352755575396243774, N could big-hand double if we use length-points for big-hand doubles?
         ['AQJT9.AQT3.5.T52', '5N', '2S X P 3C P 3H P', 'E-W'],  # deal 5046897236076953230543124332887, S shouldn't pass.  Our current behavior of 5N is better than nothing (they make 6N cold).
         ['KQ986.K.AK7.J942', 'P', '1N P P', 'Both'],  # deal 14701784778261743532608945607084, E likely has to pass, but mostly the bidder shouldn't crash.
@@ -1712,6 +1714,14 @@ sayc_expectations["test_sayc_gaps"] = [
     ["AKT965.75.Q98.87", "4C", "1D 2C 2D 3D P"],  # minimum: retreat over the three-level cuebid
     ["KQ4.A93.8.AQJ752", "4S", "1H 1S P 2H P"],  # maximum: game opposite the promised eleven
     ["T32.AJ3.82.KQ752", "P", "1H 2C P 2H P 3C P"],  # advancer passes the retreat with a bare limit raise
+    # The cuebid's eleven are support points partner can add up (2026-09-03): the natural
+    # game takes over from any bespoke tier.  The reference deal 1-6d57c48...: a ten-card
+    # diamond fit with a void opposite a singleton makes twelve tricks and stopped in 4D.
+    ["KJ.A9432.987432.", "5D", "P 1C 1D 1S 2C 3C 4D P"],  # 8 hcp but a void: 13 support opposite the jump's 15
+    ["K8.QJ8.AT94.J932", "P", "P 1C 1D 1S 2C 3C 4D P"],  # the bare limit raise still passes
+    ["A3.KQT875.6.AQ62", "3N", "1C 1D 1S 2C 3C"],  # 19 opposite eleven is a game; both their suits stopped: 3N over 5D
+    ["A3.KJT875.6.KQ62", "5D", "1C 1D 1S 2C 3C"],  # 17 opposite eleven: the table's 28, the minor game itself
+    ["A3.KJT875.6.KJ62", "4D", "1C 1D 1S 2C 3C"],  # 15: the extras jump, short of game
     # Partner's suit game is the game to play: no correcting 4H to 4S when both fit
     # (2026-08-31: the pass and the 4S were unordered and the bidder had no call; partner's
     # 3N is still pulled to a fitting major game).  Worth revisiting alongside

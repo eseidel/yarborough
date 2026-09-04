@@ -2575,17 +2575,19 @@ class CuebidResponseToStandardOvercall(ResponseToStandardOvercall):
         SupportForPartnerLastBid(3),
         MinimumSupportPointsForPartnersLastSuit(11),
     ]
-    # A cuebid of their suit shows nothing in it.
-    annotations = [annotations.Artificial, annotations.CuebidAdvance]
+    # A cuebid of their suit shows nothing in it; it agrees partner's suit, so its eleven
+    # are read as support points there and the natural games can add them up.
+    annotations = [annotations.Artificial, annotations.CuebidAdvance, annotations.SupportsPartnersSuit]
 
 
 cuebid_advance_rebids = enum.Enum(
-    "Game",
     "Extras",
     "Minimum",
 )
-# Game when the combined support points are there, else the cheapest rebid.
+# The natural game (SufficientCombinedPoints over the eleven the cuebid promised) when the
+# combined support points are there, else the extras jump, else the cheapest rebid.
 rule_order.order(*reversed(cuebid_advance_rebids))
+rule_order.order(cuebid_advance_rebids, natural_exact_games)
 # The structure owns the auction: no natural dribble beside the retreat, and a maximum
 # bids the game rather than tying with a natural raise (3S vs 4S was unordered).
 rule_order.order(natural_suited_part_scores, cuebid_advance_rebids)
@@ -2593,10 +2595,12 @@ rule_order.order(natural_suited_part_scores, cuebid_advance_rebids)
 
 class RebidAfterCuebidResponseToOvercall(Rule):
     """Overcaller's reply to the cuebid advance (a limit raise or better of our suit,
-    p137, structured like ResponseToJordan): game in our suit with more than a minimum,
-    otherwise the cheapest rebid of it, which advancer passes holding only the limit
-    raise.  Before 2026-09-01 no rule covered ANY call here and the overcaller was stuck
-    (autobid-for-none: the cuebid is forcing, so even the pass is unavailable)."""
+    p137, structured like ResponseToJordan): the natural game in our suit when the
+    combined support points reach it, a jump with extras short of that, otherwise the
+    cheapest rebid of it, which advancer passes holding only the limit raise and raises
+    with more (NaturalSuited, valued in support points).  Before 2026-09-01 no rule
+    covered ANY call here and the overcaller was stuck (autobid-for-none: the cuebid is
+    forcing, so even the pass is unavailable)."""
     category = categories.Gadget
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.CuebidAdvance),
@@ -2616,27 +2620,16 @@ class MinimumRebidAfterCuebidResponse(RebidAfterCuebidResponseToOvercall):
 
 class ExtrasRebidAfterCuebidResponse(RebidAfterCuebidResponseToOvercall):
     """The single-jump rebid of our suit: extra values, still short of bidding game
-    ourselves (the from-play 3S on JT87.A732..KQJ72 after 1D 1S P 2D)."""
+    ourselves."""
     preconditions = JumpFromLastContract(exact_size=1)
     call_names = ('3C', '3D', '3H', '3S', '4C', '4D')
-    # Our own support points, opposite the eleven the cuebid promised (partner's generic
-    # minimum does not carry his support-point promise, so the Combined constraints read
-    # him as six and every tier died).  Game only from 17 (a 28 combined floor): eleven is
-    # advancer's MINIMUM and he moves again with more, so the overcaller stays low -- the
-    # from-play pin bids 3S, not game, on 16 with a void.
-    shared_constraints = MinimumSupportPointsForSuitOfCall(13)
+    # Fifteen support points: opposite the cuebid's eleven that is short of the table's
+    # game (25 for a major, 28 for a minor); advancer's natural raise adds up from a maximum.
+    shared_constraints = MinimumSupportPointsForSuitOfCall(15)
     priority = cuebid_advance_rebids.Extras
     annotations_per_call = dict.fromkeys(('3C', '3D', '3H', '3S', '4C', '4D'),
                                          annotations.Signoff)
     forcing = False
-
-
-class GameRebidAfterCuebidResponse(RebidAfterCuebidResponseToOvercall):
-    priority = cuebid_advance_rebids.Game
-    constraints = {
-        ('4H', '4S'): MinimumSupportPointsForSuitOfCall(17),
-        ('5C', '5D'): MinimumSupportPointsForSuitOfCall(20),
-    }
 
 
 class NewSuitResponseToStandardOvercall(ResponseToStandardOvercall):
