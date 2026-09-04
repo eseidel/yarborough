@@ -24,3 +24,27 @@ describe("BiddingBox", () => {
     expect(buttonTexts[2]).toBe("X");
   });
 });
+
+describe("BiddingBox while the engine thinks", () => {
+  it("keeps every call on screen but disabled", () => {
+    render(
+      <BiddingBox
+        onBid={() => {}}
+        callHistory={{ dealer: "N", calls: [] }}
+        disabled
+      />,
+    );
+    expect(screen.getByTestId("bidding-box")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    // Every call is disabled; only the show-all-levels toggle still works.
+    const calls = screen
+      .getAllByRole("button")
+      .filter((button) => !/levels/.test(button.textContent ?? ""));
+    expect(calls.length).toBeGreaterThan(20);
+    for (const button of calls) {
+      expect(button).toBeDisabled();
+    }
+  });
+});
