@@ -66,7 +66,8 @@ is over). South is always the user. Top to bottom, each phase showed:
 2. **Reveal in the order a teacher would.** During bidding, only South's hand
    and the auction. When the auction ends: the result and the verdict on the
    bidding first, then how the cards would play, then the hands themselves.
-   The full double-dummy table is an appendix, not the headline.
+   The double-dummy table is never shown as a table; it is read out in
+   sentences.
 3. **Stay on the page.** The explorer's knowledge (what every legal call means
    here) is available inline for the current position and, read-only, for any
    earlier call. The explorer page itself stays for use with real cards.
@@ -124,8 +125,8 @@ is over). South is always the user. Top to bottom, each phase showed:
       line per side listing what it could make ("N-S can make 4♠, 3NT, 2♦;
       E-W can make 2♥"), and a verdict that ties the contract to the bidding:
       reached a making game, stopped short of a makeable game, too high, or
-      the opponents' contract and whether it makes. "Full table" expands a
-      captioned table whose columns are the declarer and rows the strain.
+      the opponents' contract and whether it makes. The twenty-cell trick
+      table itself is not shown; the sentences carry what a learner needs.
    3. **Hands.** A compass diagram, North on top, West and East side by side,
       South at the bottom, each hand as four suit lines with the ranks spelled
       out and its high-card points. Under it, each side's total points and

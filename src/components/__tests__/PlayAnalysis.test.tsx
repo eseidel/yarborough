@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { PlayAnalysis } from "../PlayAnalysis";
 import type { CallHistory } from "../../bridge/types";
@@ -68,33 +68,15 @@ describe("PlayAnalysis", () => {
     );
   });
 
-  it("keeps the full table behind a toggle, captioned and with the contract highlighted", () => {
+  it("shows no trick table", () => {
     render(
       <PlayAnalysis
         history={FOUR_SPADES}
         analysis={{ table: TABLE, lead: null, tricksAfterLead: null }}
       />,
     );
-    expect(screen.queryByTestId("double-dummy-table")).toBeNull();
-    fireEvent.click(
-      screen.getByRole("button", { name: /show the full table/i }),
-    );
-    const table = screen.getByTestId("double-dummy-table");
-    expect(table.querySelector("caption")?.textContent).toContain(
-      "best play by both sides",
-    );
-    const rows = table.querySelectorAll("tbody tr");
-    expect(rows).toHaveLength(5);
-    expect(rows[0].textContent).toBe("NT7373");
-    expect(rows[1].textContent).toBe("♠9393");
-    // 4♠ by North: the spade row, North column.
-    expect(rows[1].querySelectorAll("td")[0].className).toContain(
-      "bg-blue-100",
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: /hide the full table/i }),
-    );
-    expect(screen.queryByTestId("double-dummy-table")).toBeNull();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("judges a passed-out board", () => {
