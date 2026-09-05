@@ -246,7 +246,7 @@ describe("PracticePage", () => {
         ),
       );
       expect(screen.getByTestId("board-line")).toHaveTextContent(
-        "Board 1 · Dealer North · Nobody vulnerable",
+        "1 · North · Nobody vulnerable",
       );
       // South's column is the user's.
       expect(

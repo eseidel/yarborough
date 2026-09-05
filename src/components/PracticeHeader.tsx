@@ -60,29 +60,21 @@ export function PracticeHeader({
   const selected = pendingFocus ?? focus;
   return (
     <div className="space-y-2">
-      <div
-        className="text-center text-sm text-gray-600"
-        data-testid="board-line"
-      >
-        <span className="font-semibold text-gray-800">Board {boardNumber}</span>
-        {" · "}Dealer {POSITION_NAMES[dealer]}
-        {" · "}
-        <span className={vulnerability === "None" ? "" : "text-red-700"}>
-          {vulnerabilityWords(vulnerability)}
+      <div className="flex items-center justify-between gap-2 text-sm text-gray-600">
+        <span className="min-w-0" data-testid="board-line">
+          <span className="font-semibold text-gray-800">{boardNumber}</span>
+          {" · "}
+          {POSITION_NAMES[dealer]}
+          {" · "}
+          <span className={vulnerability === "None" ? "" : "text-red-700"}>
+            {vulnerabilityWords(vulnerability)}
+          </span>
         </span>
-      </div>
-      <div className="flex items-center justify-center gap-2">
-        <label
-          htmlFor="practice-focus"
-          className="text-xs font-semibold text-gray-500 uppercase tracking-wider"
-        >
-          Focus
-        </label>
         <select
-          id="practice-focus"
+          aria-label="Focus"
           value={selected}
           onChange={(e) => onFocusChange(e.target.value as HandSource)}
-          className="px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-700 bg-white border border-gray-200 shadow-sm hover:border-gray-300"
+          className="shrink-0 px-2 py-1 rounded-full text-xs font-semibold text-emerald-700 bg-white border border-gray-200 shadow-sm hover:border-gray-300"
         >
           {SOURCE_OPTIONS.map((option) => {
             const disabled = option.value === "Adaptive" && !adaptive.available;

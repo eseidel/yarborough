@@ -27,7 +27,7 @@ describe("PracticeHeader", () => {
       />,
     );
     expect(screen.getByTestId("board-line").textContent).toBe(
-      "Board 7 · Dealer South · Both vulnerable",
+      "7 · South · Both vulnerable",
     );
     rerender(
       <PracticeHeader
@@ -41,7 +41,7 @@ describe("PracticeHeader", () => {
       />,
     );
     expect(screen.getByTestId("board-line").textContent).toBe(
-      "Board 1 · Dealer North · Nobody vulnerable",
+      "1 · North · Nobody vulnerable",
     );
   });
 
