@@ -1,4 +1,4 @@
-// cspell:ignore DAKJ
+// cspell:ignore DAKJ HAKQJ SAKQ DAKQJT CAKQJT
 import type {
   Deal,
   Hand,
@@ -58,6 +58,14 @@ export const MOCK_DEAL: Deal = {
   east: { cards: parseHand("SQJ9 HT98 DAKJ CT982") },
   south: { cards: parseHand("ST876 HA76 DQ32 CAK3") },
   west: { cards: parseHand("S54 HK532 DT654 CQJ7") },
+};
+
+/** A deal whose West hand is void in hearts, for hands with a missing suit. */
+export const MOCK_VOID_DEAL: Deal = {
+  north: { cards: parseHand("S8765 HT98 D654 C654") },
+  east: { cards: parseHand("SJT9 HAKQJ D987 C987") },
+  south: { cards: parseHand("S432 H765432 D32 C32") },
+  west: { cards: parseHand("SAKQ DAKQJT CAKQJT") },
 };
 
 export const MOCK_CALL_HISTORY: CallHistory = {

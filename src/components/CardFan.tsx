@@ -2,6 +2,7 @@ import {
   type Hand,
   type Card,
   type Position,
+  type SuitName,
   SUITS,
   FAN_SUIT_ORDER,
   POSITION_NAMES,
@@ -10,11 +11,17 @@ import {
   highCardPoints,
 } from "../bridge/types";
 
+/**
+ * Height of a mini card. A void's blank line matches it so the suits of two
+ * `list` hands side by side stay on the same rows.
+ */
+const CARD_HEIGHT = "h-14";
+
 function MiniCard({ card }: { card: Card }) {
   const suit = SUITS[card.suit];
   return (
     <div
-      className="relative w-10 h-14 bg-white rounded-md border border-gray-300 shadow-sm select-none shrink-0"
+      className={`relative w-10 ${CARD_HEIGHT} bg-white rounded-md border border-gray-300 shadow-sm select-none shrink-0`}
       data-testid="mini-card"
     >
       <span
@@ -60,6 +67,11 @@ function SuitRow({
       ))}
     </div>
   );
+}
+
+/** The blank line a void gets in the `list` variant, as tall as a suit row. */
+function VoidRow({ suit }: { suit: SuitName }) {
+  return <div className={CARD_HEIGHT} data-testid={`void-row-${suit}`} />;
 }
 
 /**
@@ -115,11 +127,19 @@ export function CardFan({
         </div>
       )}
       <div
+        data-testid="suit-rows"
         className={`flex ${variant === "fan" ? "justify-center flex-wrap gap-1.5 items-end min-h-[60px]" : "flex-col gap-1"}`}
       >
         {FAN_SUIT_ORDER.map((suit) => {
           const cards = bySuit[suit];
-          if (cards.length === 0) return null;
+          if (cards.length === 0) {
+            // A fan is one wrapped row, so a void there is simply fewer
+            // cards; a list keeps every suit's line, blank for a void, so
+            // West's and East's suits line up row for row.
+            return variant === "list" ? (
+              <VoidRow key={suit} suit={suit} />
+            ) : null;
+          }
           return <SuitRow key={suit} cards={cards} align={align} />;
         })}
       </div>
