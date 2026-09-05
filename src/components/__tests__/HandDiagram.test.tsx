@@ -1,7 +1,21 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { HandDiagram } from "../HandDiagram";
-import { MOCK_DEAL } from "../../bridge/mock";
+import { MOCK_DEAL, MOCK_VOID_DEAL } from "../../bridge/mock";
+import { FAN_SUIT_ORDER, SUITS, type Position } from "../../bridge/types";
+
+/** Each row of a hand, top to bottom: the suit it shows, or "void" if blank. */
+function rowSuits(position: Position): string[] {
+  const rows = within(screen.getByTestId(`hand-${position}`)).getByTestId(
+    "suit-rows",
+  );
+  return [...rows.children].map(
+    (row) =>
+      FAN_SUIT_ORDER.find((suit) =>
+        row.textContent?.includes(SUITS[suit].symbol),
+      ) ?? "void",
+  );
+}
 
 describe("HandDiagram", () => {
   it("lays the hands out as cards: North, then West and East, then South", () => {
@@ -45,6 +59,12 @@ describe("HandDiagram", () => {
     );
     const eastSuitRow = eastCards[0].parentElement!.parentElement!;
     expect(eastSuitRow.className).toContain("justify-end");
+  });
+
+  it("blanks a void's line so West's and East's suits stay on the same rows", () => {
+    render(<HandDiagram deal={MOCK_VOID_DEAL} />);
+    expect(rowSuits("W")).toEqual(["S", "void", "D", "C"]);
+    expect(rowSuits("E")).toEqual(["S", "H", "D", "C"]);
   });
 
   it("states each side's points and fits", () => {

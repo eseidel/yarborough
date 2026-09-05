@@ -2,7 +2,12 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { CardFan } from "../CardFan";
 import { type Hand } from "../../bridge";
-import { MOCK_DEAL } from "../../bridge/mock";
+import { MOCK_DEAL, MOCK_VOID_DEAL } from "../../bridge/mock";
+
+/** The Tailwind height class of an element, e.g. "h-14". */
+function heightClass(el: Element): string | undefined {
+  return [...el.classList].find((name) => name.startsWith("h-"));
+}
 
 describe("CardFan", () => {
   const dummyHand: Hand = { cards: [] };
@@ -60,6 +65,36 @@ describe("CardFan", () => {
     );
     const suitRow = cards[0].parentElement!.parentElement!;
     expect(suitRow.className).toContain("justify-end");
+  });
+
+  it("keeps a blank line where a list hand is void", () => {
+    // Void in hearts, so the diamonds stay on the diamond row instead of
+    // moving up into the hearts' place.
+    render(<CardFan hand={MOCK_VOID_DEAL.west} position="W" variant="list" />);
+    const rows = [...screen.getByTestId("suit-rows").children];
+    expect(rows).toHaveLength(4);
+    expect(rows[1]).toBe(screen.getByTestId("void-row-H"));
+    expect(
+      within(rows[0] as HTMLElement).getAllByTestId("mini-card"),
+    ).toHaveLength(3);
+    expect(
+      within(rows[2] as HTMLElement).getAllByTestId("mini-card"),
+    ).toHaveLength(5);
+  });
+
+  it("gives the blank line a card's height", () => {
+    render(<CardFan hand={MOCK_VOID_DEAL.west} position="W" variant="list" />);
+    const card = screen.getAllByTestId("mini-card")[0];
+    expect(heightClass(card)).toBeDefined();
+    expect(heightClass(screen.getByTestId("void-row-H"))).toBe(
+      heightClass(card),
+    );
+  });
+
+  it("drops void suits from a fan, which has nothing to line up with", () => {
+    render(<CardFan hand={MOCK_VOID_DEAL.west} position="N" />);
+    expect(screen.queryByTestId("void-row-H")).toBeNull();
+    expect(screen.getByTestId("suit-rows").children).toHaveLength(3);
   });
 
   it("leaves suit rows at the default start alignment", () => {
