@@ -29,8 +29,8 @@ class CategoriesTest(unittest.TestCase):
 
     def test_table_rules_are_placed_by_the_table(self):
         self.assertEqual(
-            categories.category_for("JacobyTransferToHearts", _history("1N P")),
-            ["Responding to an opening", "To 1NT", "Jacoby Transfer To Hearts"],
+            categories.category_for("JacobyTransfer", _history("1N P")),
+            ["Responding to an opening", "To 1NT", "Jacoby Transfer"],
         )
         self.assertEqual(
             categories.category_for("OneLevelTakeoutDouble", _history("1S")),
