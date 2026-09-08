@@ -1441,6 +1441,8 @@ sayc_expectations = {
         # ["KJ.QJT9.A873.KQ3", "6N", "1N P 4N P"], # p156, West
         ["JT64.AK8.KQ6.A62", "4N", "1N P"],  # p156, East
         ["KQ.QJT9.A87.QJ73", "P", "1N P 4N P"], # p156, West
+        # Eighteen opposite 1N (15-17) makes 33 opposite a minimum: the slam, not the invitation.
+        ["A96.AT62.AQ5.KJ3", "6N", "1N P"],
         # Over 2N (20-21) the invitation is 12; 13 makes 33 opposite a minimum and bids the slam.
         ["AQ32.KJ2.Q76.T43", "4N", "2N P"],
         ["AQ32.KJ2.Q76.J43", "6N", "2N P"],
