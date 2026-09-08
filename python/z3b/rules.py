@@ -1155,7 +1155,7 @@ class JumpShiftByOpener(JumpShift, RebidAfterOneLevelOpen):
     # The lowest possible jumpshift is 1C P 1D P 2H.
     # The highest possible jumpshift is 1S P 2S P 4H
     # FIXME: The book mentions that opener jumpshifts don't always promise 4, especially for 1C P MAJOR P 3D
-    call_names = ['2H', '2S', '3C', '3D', '3H', '4C', '4D', '4H']
+    call_names = ['2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D', '4H']
     preconditions = InvertedPrecondition(LastBidHasAnnotation(positions.Partner, annotations.NegativeDouble))  # after partner's negative double the cuebid is the game force
     shared_constraints = (points >= 19, MinLength(4), z3.Not(balanced))  # balanced 18-19 jumps in notrump instead
     prefer = [Longest(*call_names), Cheapest(*call_names)]  # the longer suit, else up the line
@@ -1704,8 +1704,9 @@ class TwoSpadesRelay(NotrumpTransferResponse):
 
 class QuantitativeFourNotrumpJumpConstraint(Constraint):
     def expr(self, history, call):
-        # Invites opener to bid 6N if at a maxium, otherwise pass.
-        return points + history.partner.max_points >= 33
+        # Invites opener to bid 6N if at a maximum, otherwise pass: slam is possible but not
+        # certain (a hand that makes 33 opposite partner's minimum bids the slam itself).
+        return z3.And(points + history.partner.max_points >= 33, points + history.partner.min_points < 33)
 
 
 class QuantitativeFourNotrumpJump(NotrumpResponse):
