@@ -480,6 +480,7 @@ sayc_expectations = {
         ["K5.AJ9.AKJ984.A9", "4H", "1H P 1N P"],  # p54, h19 (Maybe 3H?)
         ["K765.AK87.KQ.A98", "2N", "1D P 1H P"],  # p54, h20
         ["K4.AKQJ94.87.A96", "3N", "1D P 1H P"],  # p54, h21
+        ["K2.AKJ763.3.AKQ8", "3S", "1D P 2C P"],  # the jump shift to 3S (the purposes conversion had dropped the call)
 
         # JumpShift is forcing and thus better than rebidding to show 6 hearts.
         ['AKJ5.Q2.AQ9842.A', '3C', 'P 1H P 1S P'],  # 8-7855840deedca11a0d32bf79b8, N
@@ -1440,6 +1441,9 @@ sayc_expectations = {
         # ["KJ.QJT9.A873.KQ3", "6N", "1N P 4N P"], # p156, West
         ["JT64.AK8.KQ6.A62", "4N", "1N P"],  # p156, East
         ["KQ.QJT9.A87.QJ73", "P", "1N P 4N P"], # p156, West
+        # Over 2N (20-21) the invitation is 12; 13 makes 33 opposite a minimum and bids the slam.
+        ["AQ32.KJ2.Q76.T43", "4N", "2N P"],
+        ["AQ32.KJ2.Q76.J43", "6N", "2N P"],
 
         # 5H/5S functions like 4NT, inviting to small slam based on quality of trump holding.
         [".AKQ.QT76432.AKQ", "5H", "1H P 3H P"],
