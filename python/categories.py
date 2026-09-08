@@ -66,12 +66,9 @@ _group(OPENING, "Preempts", "PreemptiveOpen")
 _group(
     RESPONDING,
     "Raises",
-    "MinimumRaise",
-    "LimitRaise",
-    "MajorJumpToGame",
+    "Raise",
     "Jacoby2N",
-    "Jordan",
-    "JumpRaiseResponseToAfterRHOTakeoutDouble",
+    "RaiseOverTakeoutDouble",
 )
 _group(
     RESPONDING,
@@ -110,8 +107,7 @@ _group(
     "ThreeLevelStayman",
     "StolenTwoClubStayman",
     "StolenThreeClubStayman",
-    "JacobyTransferToHearts",
-    "JacobyTransferToSpades",
+    "JacobyTransfer",
     "TwoSpadesRelay",
     "NotrumpGameInvitation",
     "NotrumpGameAccept",
@@ -168,8 +164,7 @@ _group(
 _group(
     OPENER_REBID,
     "After Jacoby 2NT",
-    "SingletonResponseToJacoby2N",
-    "SolidSuitResponseToJacoby2N",
+    "ShapeResponseToJacoby2N",
     "SlamResponseToJacoby2N",
     "MinimumResponseToJacoby2N",
     "NotrumpResponseToJacoby2N",
@@ -478,7 +473,7 @@ def _has_bid(history, position):
 
 
 def format_rule_name(rule_name):
-    """"JacobyTransferToHearts" as "Jacoby Transfer To Hearts"."""
+    """"OneLevelSuitOpening" as "One Level Suit Opening"."""
 
     name = re.sub(r"([1-9A-Z])", r" \1", rule_name)
     name = name.replace("R H O", "RHO")
