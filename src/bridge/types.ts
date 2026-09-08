@@ -218,6 +218,12 @@ export interface CallInterpretation {
   ruleName?: string;
   description?: string;
   constraints?: string;
+  /**
+   * What kind of call this is, in three levels from the engine's category
+   * table (python/categories.py): what you are doing, the family of call,
+   * and the rule. Present on the engine's suggested call.
+   */
+  category?: string[];
 }
 
 /**
@@ -279,4 +285,19 @@ export function stringToCall(s: string): Call {
   const level = parseInt(s[0], 10);
   const strain = s.substring(1) as StrainName;
   return { type: "bid", level, strain };
+}
+
+/** A call the way it is said: "Pass", "X", "XX", "1♠", "3NT". */
+export function callLabel(call: Call): string {
+  if (call.type === "pass") return "Pass";
+  if (call.type === "double") return "X";
+  if (call.type === "redouble") return "XX";
+  return `${call.level}${strainSymbol(call.strain!)}`;
+}
+
+/** A board adaptive practice found, and the category of the call it asks for. */
+export interface AdaptiveBoard {
+  /** The bare board identifier, without calls. */
+  identifier: string;
+  category: string[];
 }

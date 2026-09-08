@@ -15,6 +15,8 @@ import * as auction from "../bridge/auction";
 vi.mock("../bridge/engine", () => ({
   getSuggestedCall: vi.fn(),
   getCallInterpretations: vi.fn(),
+  getOpeningLead: vi.fn(),
+  generateFilteredBoard: vi.fn(),
 }));
 
 vi.mock("../bridge/auction", async (importOriginal) => {
@@ -22,18 +24,32 @@ vi.mock("../bridge/auction", async (importOriginal) => {
   return {
     ...actual,
     addRobotBids: vi.fn((h) => Promise.resolve(h)),
+    getFullAutobidAuction: vi.fn(() => new Promise(() => {})),
   };
 });
 
-describe("Explore Link Integration", () => {
+vi.mock("../dds/dds", () => ({
+  getDoubleDummyTable: vi.fn(() => new Promise(() => {})),
+  getTricksAfterLead: vi.fn(() => new Promise(() => {})),
+}));
+
+// The explorer's knowledge (what every call means at a point in the auction)
+// is the same data on both pages; the practice page shows it in place.
+describe("Explorer data across pages", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(engine.getSuggestedCall).mockResolvedValue({
+      call: { type: "pass" },
+    });
   });
 
-  it("shows 'Explore ->' link in PracticePage when a bid is clicked", async () => {
+  it("opens the options at a tapped call's point on the practice page", async () => {
     const mockHistory = {
       dealer: "N" as const,
-      calls: [{ type: "bid" as const, level: 1, strain: "H" as const }],
+      calls: [
+        { type: "bid" as const, level: 1, strain: "H" as const },
+        { type: "pass" as const },
+      ],
     };
     vi.mocked(auction.addRobotBids).mockResolvedValue(mockHistory);
     vi.mocked(engine.getCallInterpretations).mockResolvedValue([
@@ -42,35 +58,33 @@ describe("Explore Link Integration", () => {
         ruleName: "Opening 1H",
         description: "12+ HCP, 5+ hearts",
       },
+      {
+        call: { type: "bid", level: 1, strain: "S" },
+        ruleName: "Opening 1S",
+      },
     ]);
 
     render(
       <MemoryRouter initialEntries={["/bid/1-00000000000000000000000000"]}>
         <Routes>
           <Route path="/bid/:boardId" element={<PracticePage />} />
-          <Route path="/explore" element={<div>Explore Page</div>} />
         </Routes>
       </MemoryRouter>,
     );
 
-    // Wait for initial robot bids
-    await waitFor(() =>
-      expect(screen.getAllByText(/1/)[0]).toBeInTheDocument(),
+    const callTable = await screen.findByTestId("call-table");
+    fireEvent.click(await within(callTable).findByTestId("call-0"));
+
+    const explanation = await screen.findByTestId("call-explanation");
+    await waitFor(() => expect(explanation).toHaveTextContent("Opening 1H"));
+    fireEvent.click(
+      within(explanation).getByRole("button", { name: "All options here" }),
     );
-
-    // Click the bid to see explanation (it contains a '1' and a '♥')
-    const hearts = screen.getAllByText("♥")[0];
-    fireEvent.click(hearts.closest("div")!);
-
-    // Check for Explore link within the explanation
-    await waitFor(() => {
-      const explanation = screen.getByTestId("call-explanation");
-      const link = within(explanation).getByRole("link", { name: /explore/i });
-      expect(link).toBeInTheDocument();
-      // Current bid should NOT be in the history.
-      // History was dealer=N, calls=1H. Clicking 1H should link to /explore/1
-      expect(link.getAttribute("href")).toBe("/explore/1");
-    });
+    const sheet = await screen.findByRole("dialog");
+    expect(sheet).toHaveAccessibleName("Options as opener");
+    await waitFor(() =>
+      expect(within(sheet).getByText("Opening 1S")).toBeInTheDocument(),
+    );
   });
 
   it("ExplorePage initializes state from URL parameters", async () => {
@@ -97,36 +111,5 @@ describe("Explore Link Integration", () => {
     expect(screen.getAllByText(/1/).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("♥")).toBeInTheDocument();
     expect(screen.getByText("♠")).toBeInTheDocument();
-  });
-
-  it("shows 'Explore ->' link in suggest bid section", async () => {
-    vi.mocked(engine.getSuggestedCall).mockResolvedValue({
-      call: { type: "bid", level: 1, strain: "S" },
-      ruleName: "Opening 1S",
-      description: "12+ HCP, 5+ spades",
-    });
-
-    render(
-      <MemoryRouter initialEntries={["/bid/1-00000000000000000000000000"]}>
-        <Routes>
-          <Route path="/bid/:boardId" element={<PracticePage />} />
-          <Route path="/explore/:exploreId" element={<div>Explore Page</div>} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    // Click Suggest Bid
-    const suggestBtn = await screen.findByRole("button", {
-      name: /suggest bid/i,
-    });
-    fireEvent.click(suggestBtn);
-
-    // Wait for suggestion and check for Explore link
-    const link = await screen.findByRole("button", { name: /explore/i });
-    expect(link).toBeInTheDocument();
-
-    // Click it and check if we are on explore page
-    fireEvent.click(link);
-    expect(screen.getByText("Explore Page")).toBeInTheDocument();
   });
 });

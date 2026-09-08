@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import { useState } from "react";
 import { ExplorePage } from "./pages/ExplorePage";
 import { PracticePage } from "./pages/PracticePage";
+import { ProgressPage } from "./pages/ProgressPage";
 import { generateBoardId } from "./bridge";
 
 /**
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/bid/:boardId" element={<PracticeRoute />} />
         <Route path="/explore/:exploreId" element={<ExplorePage />} />
         <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/progress" element={<ProgressPage />} />
       </Routes>
     </BrowserRouter>
   );

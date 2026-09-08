@@ -116,7 +116,7 @@ describe("CallTable", () => {
     expect(explanation.className).toContain("col-span-4");
   });
 
-  it("shows 'No interpretation available' when explanation has no rule", () => {
+  it("says when SAYC has no rule for the call", () => {
     const history = makeHistory([{ type: "pass" }]);
 
     render(
@@ -130,7 +130,9 @@ describe("CallTable", () => {
       />,
     );
 
-    expect(screen.getByText("No interpretation available")).toBeInTheDocument();
+    expect(
+      screen.getByText("SAYC has no rule for this call here"),
+    ).toBeInTheDocument();
   });
 
   it("shows loading state for explanation", () => {
@@ -179,6 +181,59 @@ describe("CallTable", () => {
     expect(explanationIndex).not.toBe(-1);
     // "?" should come before the explanation in the DOM order (to be in its grid cell)
     expect(questionIndex).toBeLessThan(explanationIndex);
+  });
+
+  it("labels the user's seat and marks each verdict", () => {
+    const history = makeHistory([
+      { type: "bid", level: 1, strain: "C" },
+      { type: "pass" },
+      { type: "bid", level: 1, strain: "H" },
+    ]);
+
+    render(
+      <CallTable
+        callHistory={history}
+        userPosition="S"
+        verdicts={{ 2: false }}
+      />,
+    );
+
+    expect(screen.getByText("South").textContent).toContain("you");
+    expect(screen.getByLabelText("differed from SAYC").textContent).toBe("✗");
+    expect(screen.queryByLabelText("matched SAYC")).toBeNull();
+    expect(screen.getByTestId("call-2").textContent).toContain("✗");
+  });
+
+  it("pulses the pending cell while the engine thinks", () => {
+    const history = makeHistory([{ type: "pass" }]);
+    const { rerender } = render(<CallTable callHistory={history} />);
+    expect(screen.getByTestId("pending-call").textContent).toBe("?");
+
+    rerender(<CallTable callHistory={history} thinking />);
+    const pending = screen.getByTestId("pending-call");
+    expect(pending.textContent).toBe("…");
+    expect(pending.querySelector(".animate-pulse")).not.toBeNull();
+  });
+
+  it("offers every option at the selected call's point", () => {
+    const onShowOptions = vi.fn();
+    const history = makeHistory([
+      { type: "bid", level: 1, strain: "C" },
+      { type: "pass" },
+    ]);
+
+    render(
+      <CallTable
+        callHistory={history}
+        onCallClick={() => {}}
+        selectedCallIndex={1}
+        callExplanation={{ call: { type: "pass" } }}
+        onShowOptions={onShowOptions}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "All options here" }));
+    expect(onShowOptions).toHaveBeenCalledWith(1);
   });
 
   // Vulnerability highlighting had no test of its own. It was reached only

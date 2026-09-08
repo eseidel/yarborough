@@ -43,6 +43,33 @@ describe("parseCallInterpretation", () => {
     });
   });
 
+  it("carries the engine's three-level category when present", () => {
+    expect(
+      parseCallInterpretation({
+        call_name: "2D",
+        rule_name: "Jacoby Transfer To Hearts",
+        category: [
+          "Responding to an opening",
+          "To 1NT",
+          "Jacoby Transfer To Hearts",
+        ],
+      }).category,
+    ).toEqual([
+      "Responding to an opening",
+      "To 1NT",
+      "Jacoby Transfer To Hearts",
+    ]);
+    expect(parseCallInterpretation({ call_name: "P", category: null })).toEqual(
+      { call: { type: "pass" } },
+    );
+    expect(() =>
+      parseCallInterpretation({ call_name: "P", category: ["Opening"] }),
+    ).toThrow("invalid category");
+    expect(() =>
+      parseCallInterpretation({ call_name: "P", category: ["a", "", "c"] }),
+    ).toThrow("invalid category");
+  });
+
   it("omits absent optional explanations", () => {
     expect(
       parseCallInterpretation({

@@ -1,0 +1,81 @@
+import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { HandDiagram } from "../HandDiagram";
+import { MOCK_DEAL, MOCK_VOID_DEAL } from "../../bridge/mock";
+import { FAN_SUIT_ORDER, SUITS, type Position } from "../../bridge/types";
+
+/** Each row of a hand, top to bottom: the suit it shows, or "void" if blank. */
+function rowSuits(position: Position): string[] {
+  const rows = within(screen.getByTestId(`hand-${position}`)).getByTestId(
+    "suit-rows",
+  );
+  return [...rows.children].map(
+    (row) =>
+      FAN_SUIT_ORDER.find((suit) =>
+        row.textContent?.includes(SUITS[suit].symbol),
+      ) ?? "void",
+  );
+}
+
+describe("HandDiagram", () => {
+  it("lays the hands out as cards: North, then West and East, then South", () => {
+    render(<HandDiagram deal={MOCK_DEAL} userPosition="S" />);
+    const order = screen
+      .getAllByTestId(/^hand-[NESW]$/)
+      .map((el) => el.getAttribute("data-testid"));
+    expect(order).toEqual(["hand-N", "hand-W", "hand-E", "hand-S"]);
+
+    for (const position of ["N", "E", "S", "W"]) {
+      expect(
+        within(screen.getByTestId(`hand-${position}`)).getAllByTestId(
+          "mini-card",
+        ),
+      ).toHaveLength(13);
+    }
+
+    const north = screen.getByTestId("hand-N");
+    expect(within(north).getByTestId("position-label-N")).toHaveTextContent(
+      "North",
+    );
+    expect(north).toHaveTextContent("10 HCP");
+    expect(within(north).queryByText(/\(you\)/)).toBeNull();
+
+    const south = screen.getByTestId("hand-S");
+    expect(within(south).getByText(/\(you\)/)).toBeInTheDocument();
+    expect(south).toHaveTextContent("13 HCP");
+  });
+
+  it("right-aligns East's suit rows and left-aligns everyone else's", () => {
+    render(<HandDiagram deal={MOCK_DEAL} />);
+    for (const position of ["N", "W", "S"]) {
+      const cards = within(
+        screen.getByTestId(`hand-${position}`),
+      ).getAllByTestId("mini-card");
+      const suitRow = cards[0].parentElement!.parentElement!;
+      expect(suitRow.className).not.toContain("justify-end");
+    }
+    const eastCards = within(screen.getByTestId("hand-E")).getAllByTestId(
+      "mini-card",
+    );
+    const eastSuitRow = eastCards[0].parentElement!.parentElement!;
+    expect(eastSuitRow.className).toContain("justify-end");
+  });
+
+  it("blanks a void's line so West's and East's suits stay on the same rows", () => {
+    render(<HandDiagram deal={MOCK_VOID_DEAL} />);
+    expect(rowSuits("W")).toEqual(["S", "void", "D", "C"]);
+    expect(rowSuits("E")).toEqual(["S", "H", "D", "C"]);
+  });
+
+  it("states each side's points and fits", () => {
+    render(<HandDiagram deal={MOCK_DEAL} />);
+    // N-S: 10 + 13 = 23 HCP with 4+4 spades.
+    expect(screen.getByTestId("side-NS").textContent).toBe(
+      "N-S: 23 HCP8-card ♠ fit",
+    );
+    // E-W: 11 + 6 = 17 HCP, no eight-card suit.
+    expect(screen.getByTestId("side-EW").textContent).toBe(
+      "E-W: 17 HCPno 8-card fit",
+    );
+  });
+});
