@@ -2,9 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from z3b.model import expr_for_suit
+from z3b.model import expr_for_suit, positions, high_card_points
 import z3b.model as model
 import z3
+from z3b import purposes
 from core import suit
 from z3b.preconditions import annotations
 
@@ -54,6 +55,16 @@ class MinimumCombinedLength(Constraint):
         return expr_for_suit(suit) >= implied_length
 
 
+
+class MaximumCombinedLength(Constraint):
+    """Our length in the suit is at most max_count less what partner has promised (a single
+    raise over their takeout double: three trumps, the eight-card fit and no more)."""
+    def __init__(self, max_count):
+        self.max_count = max_count
+
+    def expr(self, history, call):
+        return expr_for_suit(call.strain) <= self.max_count - history.partner.min_length(call.strain)
+
 class MinimumCombinedPoints(Constraint):
     def __init__(self, min_points):
         self.min_points = min_points
@@ -86,6 +97,14 @@ class MinimumSupportPointsForSuitOfCall(Constraint):
 
     def expr(self, history, call):
         return model.support_points_expr_for_suit(call.strain) >= self.min_points
+
+
+class MaximumSupportPointsForSuitOfCall(Constraint):
+    def __init__(self, max_points):
+        self.max_points = max_points
+
+    def expr(self, history, call):
+        return model.support_points_expr_for_suit(call.strain) <= self.max_points
 
 
 class MinimumSupportPointsForPartnersLastSuit(Constraint):
@@ -195,11 +214,77 @@ class MaxLengthInLastContractSuit(Constraint):
 
 
 class MaxLengthInUnbidMajors(Constraint):
+    """The majors other than the suit of the call are short (their name notwithstanding, they
+    need not be unbid)."""
     def __init__(self, max_length):
         self.max_length = max_length
 
     def expr(self, history, call):
         return z3.And([expr_for_suit(major) <= self.max_length for major in suit.MAJORS if major != call.strain])
+
+
+class NotEnoughForGame(Constraint):
+    """Our points and partner's minimum do not reach a notrump game: the hand is worth an
+    invitation at most."""
+    def expr(self, history, call):
+        return high_card_points < max(0, 25 - history.partner.min_points)
+
+
+class MinLengthInPartnersLastSuit(Constraint):
+    """At least min_length cards in the suit of partner's last bid (support, when the call
+    itself is a cuebid of theirs)."""
+    def __init__(self, min_length):
+        self.min_length = min_length
+
+    def expr(self, history, call):
+        return expr_for_suit(history.partner.last_call.strain) >= self.min_length
+
+
+
+class MaxLengthInPartnersLastSuit(Constraint):
+    """At most max_length cards in the suit of partner's last bid."""
+    def __init__(self, max_length):
+        self.max_length = max_length
+
+    def expr(self, history, call):
+        return expr_for_suit(history.partner.last_call.strain) <= self.max_length
+
+class MaxLengthInHigherUnbidMajors(Constraint):
+    """No major above partner's suit (one biddable at the one level) is longer than
+    max_length: a notrump response denies such a suit."""
+    def __init__(self, max_length):
+        self.max_length = max_length
+
+    def expr(self, history, call):
+        partner_suit = history.partner.last_call.strain
+        return z3.And([expr_for_suit(major) <= self.max_length
+                       for major in suit.MAJORS if partner_suit is None or major > partner_suit])
+
+
+class HelpSuitGameTryStrength(Constraint):
+    """A help-suit try in a major is for a hand short of the game; opposite a raise of a
+    minor the try still looks for 3N, so any strength tries."""
+    def __init__(self, max_support_points=19):
+        self.max_support_points = max_support_points
+
+    def expr(self, history, call):
+        partner_suit = history.partner.last_call.strain
+        if partner_suit is None or partner_suit.char not in "HS":
+            return model.NO_CONSTRAINTS
+        return model.support_points_expr_for_suit(partner_suit) <= self.max_support_points
+
+
+class OpponentsSilent(Constraint):
+    """The opponents have neither bid nor doubled (a hand-independent fact of the auction)."""
+    def expr(self, history, call):
+        for position in (positions.LHO, positions.RHO):
+            for opponent in history._walk_history_for(position):
+                call = opponent.call_history.last_call
+                if call is not None and not call.is_pass():
+                    return z3.BoolVal(False)
+        return z3.BoolVal(True)
+
+
 
 
 # class AdditionalLength(Constraint):
@@ -349,6 +434,9 @@ class StoppersInOpponentsSuits(Constraint):
         return z3.And([model.stopper_expr_for_suit(suit) for suit in history.them.bid_suits])
 
 
+
+purposes.CONDITIONS["stopped"] = StoppersInOpponentsSuits()
+
 class Stopper(Constraint):
     def expr(self, history, call):
         return model.stopper_expr_for_suit(call.strain)
@@ -433,3 +521,12 @@ class MinCombinedPointsForPartnerMinimumSuitedRebid(Constraint):
         # NOTE: This math matches NaturalSuited (almost):
         expected_points = 19 + (rebid_level - 2) * 3
         return model.points >= expected_points - history.partner.min_points
+
+
+# Four-card support for partner's minor comes before an invitational notrump when the hand is
+# short of game values (SupportMinorWithFour); five-card support is raised with any strength
+# (SupportMinorWithFive).  The partner_ forms are for a cuebid, whose own suit is theirs.
+minor_raise_before_notrump = ConstraintAnd(MinLength(4), NotEnoughForGame())
+minor_raise_with_five = MinLength(5)
+partner_minor_raise_before_notrump = ConstraintAnd(MinLengthInPartnersLastSuit(4), NotEnoughForGame())
+partner_minor_raise_with_five = MinLengthInPartnersLastSuit(5)

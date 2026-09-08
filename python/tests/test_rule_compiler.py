@@ -6,7 +6,10 @@ import unittest
 
 from z3b import enum
 from z3b.rule_compiler import RuleCompiler, _is_not_empty_or_none
-from z3b.rules import OneLevelSuitOpening, opening_priorities
+from z3b.rules import OneLevelSuitOpening
+from z3b.bidder import Interpreter
+from core.callhistory import CallHistory
+from core.call import Call
 from z3b.model import NO_CONSTRAINTS
 
 
@@ -29,9 +32,19 @@ class RuleCompilerTest(unittest.TestCase):
         self.assertTrue(_is_not_empty_or_none([NO_CONSTRAINTS]))
         self.assertTrue(_is_not_empty_or_none(NO_CONSTRAINTS))  # a z3 expression, never compared with ==
 
-    def test_all_priorities_includes_per_call_conditionals(self):
+    def test_prefer_variants_of_a_converted_rule(self):
+        """Each call carries its prefer key, a conditional entry adds a variant, and the keys
+        order the calls as the list reads."""
         rule = RuleCompiler.compile(OneLevelSuitOpening)
-        self.assertIn(opening_priorities.LongestMinor, rule.all_priorities)
-        # Known gap (unchanged): priorities given inside constraints tuples, e.g.
-        # '1C': (clubs >= 3, LowerMinor), and rule-level conditional_priorities are not included.
-        self.assertNotIn(opening_priorities.LowerMinor, rule.all_priorities)
+        with Interpreter().create_history(CallHistory.from_string("")) as history:
+            keys = {}
+            for name in ('1C', '1D', '1H', '1S'):
+                priorities = [priority for priority, _ in rule.meaning_of(history, Call.from_string(name))]
+                self.assertTrue(all(p.rule is rule for p in priorities))
+                keys[name] = sorted(p.key for p in priorities)
+        # 1S: the longest-major variant (entry 0), then the unconditional five-five entry (1).
+        self.assertEqual(keys['1S'][0][0], 0)
+        self.assertEqual(keys['1S'][-1][0], 1)
+        # 1C: longest minor (3), three-three (4), and last of all unconditionally (6).
+        self.assertEqual([key[0] for key in keys['1C']], [3, 4, 6])
+        self.assertEqual(keys['1D'][-1][0], 5)

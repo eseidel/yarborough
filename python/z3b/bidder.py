@@ -6,7 +6,6 @@ from core.call import Call
 from core.callexplorer import CallExplorer
 from core.callhistory import CallHistory
 from itertools import chain
-from z3b import enum
 from third_party.memoized import memoized
 from z3b.model import positions, expr_for_suit, is_possible, is_certain
 from z3b.preconditions import did_bid_annotation, annotations
@@ -357,6 +356,24 @@ class History(object):
             return self._lower_bound(predicate, lo, pos)
         return self._lower_bound(predicate, pos + 1, hi)
 
+    def first_natural_bidder(self, strain):
+        """Which of us (Me or Partner) bid `strain` naturally first, or None."""
+        first, first_length = None, None
+        for position in (positions.Me, positions.Partner):
+            for history in self._walk_history_for(position):
+                call = history.call_history.last_call
+                if call is None:
+                    continue
+                natural = ((call.is_contract() and call.strain == strain and
+                            annotations.Artificial not in history._annotations_for_last_call) or
+                           history._supported_suit() == strain)
+                if not natural:
+                    continue
+                length = len(history.call_history.calls)
+                if first_length is None or length < first_length:
+                    first, first_length = position, length
+        return first
+
     def bid_suit_naturally(self, strain, position):
         """Has `position` agreed `strain`: a natural (non-Artificial) contract call in it, or a
         call annotated SupportsPartnersSuit while partner's last suit was `strain`?"""
@@ -548,19 +565,29 @@ class PossibleCalls(object):
             maximal_calls_and_priorities = [max_call_max_priority for max_call_max_priority in maximal_calls_and_priorities if not self.ordering.lt(
                 max_call_max_priority[1], priority)]
             maximal_calls_and_priorities.append([call, priority])
-        return maximal_calls_and_priorities
+        # Two variants of one call never tie: the call is the same whichever variant fits.
+        first_by_call = []
+        for pair in maximal_calls_and_priorities:
+            if all(pair[0] != seen[0] for seen in first_by_call):
+                first_by_call.append(pair)
+        return first_by_call
 
 
 # CallSelection exposes similar information to a History object, but not connected in a History chain.
 # It also comes from the *bidding* process and thus can contain more information (since it had access to the hand).
 class CallSelection(object):
-    def __init__(self, call, rule_selector):
+    def __init__(self, call, rule_selector, collision=None):
         self.call = call
         self.rule_selector = rule_selector
+        self.collision = collision  # (calls, rules, priorities) when the choice was not ordered
 
     @property
     def rule(self):
         return self.rule_selector.rule_for_call(self.call)
+
+
+def _production_order(call):
+    return (0 if call.is_contract() else 1 if call.is_double() or call.is_redouble() else 2, call)
 
 
 class Bidder(object):
@@ -591,15 +618,20 @@ class Bidder(object):
                 return None  # If we failed to find any call, this is an error.
             maximal_calls, maximal_priorities = list(
                 zip(*maximal_calls_and_priorities))
+            collision = None
             if len(maximal_calls) != 1:
+                # A collision: two rules of one purpose both fit and nothing orders them.  That
+                # is a defect in the rules (their meanings should not both admit this hand);
+                # the choice here is deterministic and logged, never a semantics partner can
+                # read.  A bid before a double before a pass, the cheapest first.
                 rules = list(map(rule_selector.rule_for_call, maximal_calls))
-                call_names = [call.name for call in maximal_calls]
-                print("WARNING: Unordered: %s rules: %s priorities: %s" %
-                      (call_names, rules, maximal_priorities))
-                return None
+                collision = (list(maximal_calls), rules, list(maximal_priorities))
+                print("COLLISION: calls %s rules %s priorities %s" % (
+                    [call.name for call in maximal_calls], rules, maximal_priorities))
+                maximal_calls = [min(maximal_calls, key=_production_order)]
 
             call = maximal_calls[0]
-            return CallSelection(call, rule_selector)
+            return CallSelection(call, rule_selector, collision)
 
     def find_call_for(self, hand, call_history, expected_call=None):
         call_selection = self.call_selection_for(
@@ -669,6 +701,8 @@ class RuleSelector(object):
         for priority, z3_meaning in rule.meaning_of(self.history, call):
             situational_exprs = [z3_meaning]
             for unmade_call, unmade_rule in self._call_to_rule.items():
+                if unmade_rule.requires_planning:
+                    continue  # never bid without a planner, so never "not bid" either
                 for unmade_priority, unmade_z3_meaning in unmade_rule.meaning_of(self.history, unmade_call):
                     if self.system.priority_ordering.lt(priority, unmade_priority):
                         if self.explain and self.expected_call == call:
@@ -686,8 +720,8 @@ class RuleSelector(object):
         solver = _solver_pool.borrow_solver_for_hand(hand)
         for call in self.history.legal_calls:
             rule = self.rule_for_call(call)
-            if not rule:
-                continue
+            if not rule or rule.requires_planning:
+                continue  # planning rules are interpreted when bid, never chosen
 
             for priority, z3_meaning in rule.meaning_of(self.history, call):
                 if is_possible(solver, z3_meaning):

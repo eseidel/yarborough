@@ -3,133 +3,17 @@
 # found in the LICENSE file.
 
 from core import suit
-from z3b import enum
+from z3b import purposes
 from z3b.constraints import *
 from z3b.model import *
 from z3b.preconditions import *
-from z3b.rule_compiler import Rule, rule_order, categories
+from z3b.rule_compiler import Rule, categories
+from z3b.prefer import Highest, LowestLevel
 from core.call import Call
 
 
 def copy_dict(d, keys):
     return {key: d.get(key) for key in keys}
-
-
-natural = enum.Enum(*Call.suited_names())
-notrump_without_stoppers = enum.Enum(*Call.notrump_names())
-notrump_with_stoppers = enum.Enum(*Call.notrump_names())
-
-
-natural_slams = rule_order.order(
-    notrump_without_stoppers.get('6N'),
-
-    natural.get('6C'),
-    natural.get('6D'),
-    natural.get('6H'),
-    natural.get('6S'),
-
-    notrump_with_stoppers.get('6N'),
-    notrump_without_stoppers.get('7N'),
-
-    natural.get('7C'),
-    natural.get('7D'),
-    natural.get('7H'),
-    natural.get('7S'),
-
-    notrump_with_stoppers.get('7N'),
-)
-
-
-natural_exact_games = rule_order.order(
-    notrump_without_stoppers.get('3N'),
-
-    natural.get('5C'),
-    natural.get('5D'),
-
-    notrump_with_stoppers.get('3N'),
-
-    natural.get('4H'),
-    natural.get('4S'),
-)
-
-
-natural_overly_sufficient_games = rule_order.order(
-    notrump_without_stoppers.get('5N'),
-    notrump_without_stoppers.get('4N'),
-
-    natural.get('5H'),
-    natural.get('5S'),
-
-    notrump_with_stoppers.get('5N'),
-    notrump_with_stoppers.get('4N'),
-)
-
-
-natural_part_scores = rule_order.order(
-    notrump_without_stoppers.get('2N'),
-    notrump_without_stoppers.get('1N'),
-
-    # FIXME: These should have higher priorities than the suited part scores.
-    notrump_with_stoppers.get('2N'),
-    notrump_with_stoppers.get('1N'),
-
-    natural.get('4C'), natural.get('4D'),
-    natural.get('3C'), natural.get('3D'), natural.get('3H'), natural.get('3S'),
-    natural.get('2C'), natural.get('2D'), natural.get('2H'), natural.get('2S'),
-)
-
-
-rule_order.order(
-    natural_part_scores,
-    natural_overly_sufficient_games,
-    natural_exact_games,
-    natural_slams,
-)
-
-
-natural_bids = set(natural) | set(
-    notrump_with_stoppers) | set(notrump_without_stoppers)
-
-natural_exact_minor_games = set([
-    natural.get('5C'),
-    natural.get('5D'),
-])
-
-natural_exact_major_games = set([
-    natural.get('4H'),
-    natural.get('4S'),
-])
-
-natural_exact_notrump_game = set([
-    notrump_with_stoppers.get('3N'),
-    notrump_without_stoppers.get('3N'),
-])
-
-natural_games = set([
-    notrump_with_stoppers.get('3N'), notrump_without_stoppers.get('3N'),
-    natural.get('4H'), natural.get('4S'), notrump_with_stoppers.get(
-        '4N'), notrump_without_stoppers.get('4N'),
-    natural.get('5C'), natural.get('5D'), natural.get('5H'), natural.get(
-        '5S'), notrump_with_stoppers.get('5N'), notrump_without_stoppers.get('5N'),
-])
-
-natural_minor_part_scores = set([
-    natural.get('2C'), natural.get('2D'),
-    natural.get('3C'), natural.get('3D'),
-    natural.get('4C'), natural.get('4D'),
-])
-
-natural_major_part_scores = set([
-    natural.get('2H'), natural.get('2S'),
-    natural.get('3H'), natural.get('3S'),
-])
-
-natural_suited_part_scores = natural_minor_part_scores | natural_major_part_scores
-
-natural_nt_part_scores = set([
-    notrump_with_stoppers.get('1N'), notrump_without_stoppers.get('1N'),
-    notrump_with_stoppers.get('2N'), notrump_without_stoppers.get('2N'),
-])
 
 
 points_for_sound_suited_bid_at_level = [
@@ -200,6 +84,63 @@ class LengthSatisfiesLawOfTotalTricks(Constraint):
         return expr_for_suit(call.strain) >= my_count
 
 
+def _natural_suited_possible(call):
+    if call.level >= 6:
+        return ["Slam"]
+    if call.level == 5 or (call.level == 4 and call.strain.char in "HS"):
+        return ["Game", "SupportMajors"] if call.strain.char in "HS" else ["Game"]
+    return ["RebidSuit", "Support", "AskLater", "Discovery"]
+
+
+def natural_suited_purpose(history, call):
+    """A natural suit bid is a slam or a game at those levels; below game it raises
+    partner's suit, rebids our own, or discovers a new one."""
+    if call.level >= 6:
+        return "Slam"
+    game = call.level == 5 or (call.level == 4 and call.strain.char in "HS")
+    first = history.first_natural_bidder(call.strain)
+    if first == positions.Me:
+        return "Game" if game else "RebidSuit"  # our own suit, whether or not partner raised it
+    if first == positions.Partner and call.strain.char in "HS" and call.level <= 4:
+        return "SupportMajors"  # raising partner's major to game is still support: it beats exploring
+    if game:
+        return "Game"  # a minor game competes with 3N as a game
+    if first == positions.Partner:
+        return "SupportMinors"
+    if any(history.bid_suit_naturally(s, positions.Me) and history.bid_suit_naturally(s, positions.Partner)
+           for s in suit.SUITS):
+        return "AskLater"  # a new suit once we have agreed one is a try, not a search for a fit
+    return "Discovery"
+
+
+def new_suit_purpose(history, call):
+    """A new suit is discovery; a four-card minor shown at the two level or above waits
+    behind a six-card rebid (a fifth card promotes it, see the rules' conditional purposes)."""
+    if call.strain.char in "HS":
+        return "MajorDiscovery"
+    if call.level == 1:
+        return "MinorDiscovery"
+    return "MinorDiscoveryWithFour"
+
+
+new_minor_with_five = [(MinLength(5), "MinorDiscovery", "MinorDiscoveryWithFour")]
+
+
+def natural_notrump_purpose(history, call):
+    if call.level >= 6:
+        return "Slam"
+    if call.level == 3:
+        return "Game"
+    return "CharacterizeStrength"
+
+
+def law_of_total_tricks_purpose(history, call):
+    """The law raises partner's suit to the level of the fit; anything else is competing."""
+    if history.bid_suit_naturally(call.strain, positions.Partner):
+        return "Support"
+    return "Compete"
+
+
 class Natural(Rule):
     category = categories.Natural
 
@@ -209,27 +150,44 @@ class SoundNaturalBid(Natural):
         SufficientCombinedLength(), SufficientCombinedPoints()]
 
 
+# A natural suit bid: the slam the hand is worth (the higher first), else a game, else the
+# lowest sufficient level, the higher suit within a level.
+natural_suited_preference = [
+    Highest(*Call.suited_names_between('6C', '7S')),
+    LowestLevel('4H', '4S', '5C', '5D'),
+    LowestLevel(*[name for name in Call.suited_names_between('2C', '5S') if name not in ('4H', '4S', '5C', '5D')]),
+]
+
+
 class NaturalSuited(SoundNaturalBid):
+    """A natural suit bid: a raise of partner's suit, a rebid of our own, a new suit, a game
+    or a slam.  The backstop of its purposes: any convention that applies says more."""
+    purpose = natural_suited_purpose
+    conditional_purposes = [(minor_raise_before_notrump, "SupportMinorWithFour", "SupportMinors"), (minor_raise_with_five, "SupportMinorWithFive", "SupportMinors")]  # see constraints.minor_raise_before_notrump
+    fallback = 1
     preconditions = [
         InvertedPrecondition(LastBidHasAnnotation(
             positions.Partner, annotations.Preemptive)),
         WeHaveShownMorePointsThanThem(),
         PartnerHasAtLeastLengthInSuit(1),
     ]
-    priorities_per_call = copy_dict(
-        natural, Call.suited_names_between('2C', '7S'))
+    call_names = Call.suited_names_between('2C', '7S')
+    prefer = natural_suited_preference
 
 
 class LawOfTotalTricks(Rule):
+    purpose = law_of_total_tricks_purpose
+    conditional_purposes = [(MinLength(4), "SupportMinorWithFour", "SupportMinors")]
     preconditions = [
         # FIXME: This should only apply over weak bids (only when NaturalSuited does not)?
         PartnerHasAtLeastLengthInSuit(1),
         # A backup for competitive auctions, not a way past partner's signoff.
         InvertedPrecondition(LastBidHasAnnotation(positions.Partner, annotations.Signoff)),
     ]
-    priorities_per_call = copy_dict(
-        natural, Call.suited_names_between('2C', '5D'))
+    call_names = Call.suited_names_between('2C', '5D')
     shared_constraints = LengthSatisfiesLawOfTotalTricks()
+    fallback = 2  # the backup raise: when neither a convention's raise nor a natural raise applies
+    prefer = [Highest('4H', '4S', '5C', '5D'), Highest(*Call.suited_names_between('2C', '5D'))]  # a game, else the level of the fit
     category = categories.LawOfTotalTricks
 
 
@@ -249,27 +207,28 @@ class SufficientStoppers(Constraint):
 
 
 class NaturalNotrump(SoundNaturalBid):
+    purpose = natural_notrump_purpose
+    # A balanced hand's invitational 2N is its limit bid, before a raise of a minor or a suit
+    # rebid; with shape those come first.
+    conditional_purposes_per_call = {'2N': [(ConstraintAnd(balanced, NotEnoughForGame()), "BalancedLimit", "CharacterizeStrength")]}
     preconditions = WeHaveShownMorePointsThanThem()
-    # The copy_dict is redundant, this is all notrump bids.
-    priorities_per_call = copy_dict(
-        notrump_without_stoppers, Call.notrump_names_between('1N', '7N'))
+    call_names = Call.notrump_names_between('1N', '7N')
     shared_constraints = SufficientStoppers()
-    conditional_priorities_per_call = {
-        '1N': [(StoppersInOpponentsSuits(), notrump_with_stoppers.get('1N'))],
-        '2N': [(StoppersInOpponentsSuits(), notrump_with_stoppers.get('2N'))],
-        '3N': [(StoppersInOpponentsSuits(), notrump_with_stoppers.get('3N'))],
-        '4N': [(StoppersInOpponentsSuits(), notrump_with_stoppers.get('4N'))],
-        '5N': [(StoppersInOpponentsSuits(), notrump_with_stoppers.get('5N'))],
-        '6N': [(StoppersInOpponentsSuits(), notrump_with_stoppers.get('6N'))],
-        '7N': [(StoppersInOpponentsSuits(), notrump_with_stoppers.get('7N'))],
-    }
+    fallback = 1  # the backstop of its purposes: any convention's notrump call says more
+    # The slam the hand is worth, else the lowest sufficient level (the Game preference
+    # tells a stopped 3N from an unstopped one).
+    prefer = [Highest('6N', '7N'), LowestLevel('1N', '2N', '3N', '4N', '5N')]
 
 
 class DefaultPass(Rule):
+    purpose = "Forced"
     preconditions = InvertedPrecondition(ForcedToBid())
     call_names = 'P'
     shared_constraints = NO_CONSTRAINTS
     category = categories.DefaultPass
+    prefer = []
+    fallback = 1  # the pass of last resort: any forced minimum call comes first
+
 
 
 class NaturalPass(Rule):
@@ -294,21 +253,28 @@ class NaturalPassWithFit(NaturalPass):
 
 
 class SuitGameIsRemote(NaturalPassWithFit):
+    purpose = "CharacterizeStrength"
     preconditions = LastBidWasBelowGame()
     # FIXME: Shouldn't this be support points?
     shared_constraints = MaximumCombinedPoints(24)
+    prefer = []
+    fallback = 2  # passing is what is left when no natural bid applies either
 
 
 class SuitSlamIsRemote(NaturalPassWithFit):
+    purpose = "Enough"
     preconditions = [
         LastBidWasGameOrAbove(),
         LastBidWasBelowSlam(),
         InvertedPrecondition(LastBidHasStrain(positions.Partner, suit.NOTRUMP))
     ]
     shared_constraints = MaximumCombinedPointsOppositeMinimum(32)
+    prefer = []
+    fallback = 2  # passing is what is left when no natural bid applies either
 
 
 class NotrumpSlamIsRemote(NaturalPass):
+    purpose = "Game"  # passing 3N is choosing a game: only a major game (the Game preference) is better
     preconditions = [
         LastBidHasStrain(positions.Partner, suit.NOTRUMP),
         LastBidWasGameOrAbove(),
@@ -317,39 +283,5 @@ class NotrumpSlamIsRemote(NaturalPass):
         InvertedPrecondition(LastBidWas(positions.Partner, '5N')),
     ]
     shared_constraints = MaximumCombinedPointsOppositeMinimum(32)
-
-
-game_is_remote_passes = set([
-    # FIXME: Need NotrumpGameIsRemote?
-    SuitGameIsRemote,
-])
-
-slam_is_remote_passes = set([
-    SuitSlamIsRemote,
-    NotrumpSlamIsRemote,
-])
-
-natural_passses = game_is_remote_passes | slam_is_remote_passes
-
-
-rule_order.order(DefaultPass, natural_passses)
-# Suited games are much easier to make, we should prefer those when available: partner's
-# 3N is pulled to a major game that fits.
-rule_order.order(NotrumpSlamIsRemote, natural_exact_major_games)
-# But partner's SUIT game is the game to play, like the minors below: no correcting 4H to
-# 4S when both fit (2026-08-31: the pair was unordered and the bidder had no call).
-rule_order.order(natural_exact_major_games, SuitSlamIsRemote)
-# ... but partner's game (3N, 4H, 4S) is the game to play rather than eleven tricks in a
-# minor: the passes outrank a natural 5C/5D over it (they were unordered, and with partner's
-# minimum now counting length the minor game was often reachable: a coin toss between P and 5m).
-rule_order.order(natural_exact_minor_games, slam_is_remote_passes)
-rule_order.order(natural_suited_part_scores, natural_passses)
-rule_order.order(
-    SuitGameIsRemote,
-    natural_exact_games,
-)
-rule_order.order(
-    natural_overly_sufficient_games,
-    slam_is_remote_passes,
-    natural_slams,
-)
+    prefer = []
+    fallback = 2  # passing is what is left when no natural bid applies either

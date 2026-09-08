@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import os
 import itertools
 import logging
 import multiprocessing
@@ -130,7 +131,9 @@ class ResultsAggregator(object):
         self._results_by_identifier = {}
         self._group_has_printed = [False for group in self.groups]
         self._total_failures = 0
-        self.errors = []  # (test, traceback) for hands where the bidder raised
+        self.errors = []
+        self.collisions = []  # (test, "calls [...] rules [...]") where the choice was not ordered
+        self.dropped = 0  # calls two rules claimed at one category (neither owns the call)
 
     def _is_complete(self, group):
         return self._results_count_by_group.get(group.name) == len(group.tests)
@@ -159,6 +162,12 @@ class ResultsAggregator(object):
                 self.errors.append((test, result.exc_str))
                 print("ERROR: exception bidding %s (see end of run)" % test.test_string)
                 continue
+
+            if result.collision:
+                self.collisions.append((test, result.collision))
+                print("COLLISION: %s for %s" % (result.collision, test.test_string))
+            if result.stdout and "Multiple rules have maximal category" in result.stdout:
+                self.dropped += result.stdout.count("Multiple rules have maximal category")
 
             if result.call and result.call == test.expected_call:
                 _log.info("PASS: %s for %s" %
@@ -218,6 +227,10 @@ class ResultsAggregator(object):
         percent = 100.0 * total_pass / total_tests if total_tests else 0
         print("Pass %s (%.1f%%) of %s total hands" %
               (total_pass, percent, total_tests))
+        nones = sum(1 for result in self._results_by_identifier.values() if result.call is None and not result.exc_str)
+        with_pass_or_double = sum(1 for _, text in self.collisions if "'P'" in text.split("rules")[0] or "'X" in text.split("rules")[0])
+        print("Collisions %s (the bidder's choice was not ordered; %s with a pass or double), no call %s, dropped calls %s" % (
+            len(self.collisions), with_pass_or_double, nones, self.dropped))
 
 
 # Pickle gets mad at us if we make this a member or even static function.
@@ -236,6 +249,10 @@ def _run_test(test):
         if call_selection:
             result.call = call_selection.call
             result.rule_name = str(call_selection.rule)
+            if call_selection.collision:
+                calls, rules, priorities = call_selection.collision
+                result.collision = "calls %s rules %s priorities %s" % (
+                    [c.name for c in calls], [str(r) for r in rules], [str(p) for p in priorities])
             result.fill_last_three_rule_names(call_selection)
 
             if result.last_three_rule_names and result.last_three_rule_names[-2] is None:
@@ -250,7 +267,7 @@ def _run_test(test):
 
 
 class TestHarness(unittest.TestCase):
-    use_multi_process = True
+    use_multi_process = os.environ.get("HARNESS_PROCESSES") != "1"  # HARNESS_PROCESSES=1: one process, least memory
     test_shard_size = 10
     rules_dump_path = None  # set by `python -m tests.harness --dump FILE`
 
@@ -279,7 +296,7 @@ class TestHarness(unittest.TestCase):
     def run_tests_multi_process(self):
         all_tests = list(itertools.chain.from_iterable(
             group.tests for group in self.groups))
-        pool = multiprocessing.Pool()
+        pool = multiprocessing.Pool(int(os.environ["HARNESS_PROCESSES"]) if os.environ.get("HARNESS_PROCESSES") else None)
         # FIXME: outstanding_jobs + map_async is a workaround for http://bugs.python.org/issue8296 (only fixed in python 3)
         outstanding_jobs = []
         for x in range(0, len(all_tests), self.test_shard_size):
@@ -360,6 +377,7 @@ class TestResult(object):
         self.test = None
         self.call = None
         self.rule_name = None
+        self.collision = None  # "calls [...] rules [...]" when the bidder's choice was not ordered
         # We only bother to store the last 3, as the subtest system will have handled all calls before that.
         self.last_three_rule_names = None
         self.exc_str = None
