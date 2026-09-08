@@ -2,16 +2,28 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from z3b import enum
+from z3b import purposes
 from z3b.constraints import *
 from z3b.model import *
 from z3b.natural import *
 from z3b.preconditions import *
-from z3b.rule_compiler import Rule, RuleCompiler, all_priorities_for_rule, rule_order, categories
+from z3b.rule_compiler import Rule, RuleCompiler, categories
+from z3b.prefer import Longest, Highest, HigherSuit, Cheapest
+
+
+def partner_suit_support_purpose(history, call):
+    """A raise that names a different call (a cuebid, Jordan): support for PARTNER's suit."""
+    partners = history.partner.last_call
+    if partners is not None and partners.is_contract() and partners.strain.char in "HS":
+        return "SupportMajors"
+    return "SupportMinors"
 
 # The rules of SAYC, roughly in the order a bidding book presents them.  Each section is a
-# base Rule class, its concrete rules, the enum of priorities they compete under, and the
-# rule_order.order() calls that rank them; the cross-section orderings sit at the end.
+# base Rule class and its concrete rules.  Every rule declares its purpose (z3b.purposes:
+# why the call is made, and which reason wins), and where it may bid several calls, its
+# own preference among them (prefer, z3b.prefer).  Two rules of one purpose must not both
+# fit a hand: their meanings, or preconditions, keep them apart; a rule that is the call of
+# last resort for its purpose says so (fallback).
 #
 #   Openings ............................ Opening, OneLevelSuitOpening, NotrumpOpening, StrongTwoClubs
 #   Responses to a suit opening ......... Response, RaiseResponse, Jacoby2N, NegativeDouble, ...
@@ -23,64 +35,24 @@ from z3b.rule_compiler import Rule, RuleCompiler, all_priorities_for_rule, rule_
 #   Takeout doubles ..................... TakeoutDouble, ResponseToTakeoutDouble, RebidAfterTakeoutDouble
 #   Preempts ............................ PreemptiveOpen, PreemptiveOvercall, ResponseToPreempt
 #   Slam conventions .................... Gerber, Blackwood, TwoNotrumpFeatureRequest, GrandSlamForce
-#   Cross-section orderings ............. the rule_order.order() block at the end of the file
 #
 # Natural bids, passes and the law of total tricks live in natural.py; Cappelletti in cappelletti.py.
 
 
-def lower_calls_first(call_names):
-    priorities = enum.Enum(*call_names)
-    rule_order.order(*reversed(priorities))
-    return copy_dict(priorities, call_names)
+def suit_preference(call_names):
+    """The prefer list for a rule that may bid any of several suits: the longest suit first;
+    with equal lengths a major before a minor, then the cheaper call."""
+    calls = [Call.from_string(name) for name in call_names]
+    majors = [call.name for call in calls if call.strain in suit.MAJORS]
+    minors = [call.name for call in calls if call.strain not in suit.MAJORS]
+    preference = SuitPreference([Longest(*call_names), Cheapest(*majors), Cheapest(*minors)])
+    preference.call_names = list(call_names)
+    return preference
 
 
-class SuitPreference(object):
-    """Priorities for a rule that may bid any of several suits, so that two fitting suits
-    never tie: the longest suit first; with equal lengths a major before a minor, then the
-    cheaper call.  Use as
-        foo_suits = SuitPreference(['2D', '2H', '2S'])
-        class Foo(Rule):
-            priorities_per_call = foo_suits.per_call
-            conditional_priorities_per_call = foo_suits.conditional
-    and order foo_suits.all against other rules."""
-    def __init__(self, call_names):
-        calls = [Call.from_string(name) for name in call_names]
-        by_preference = sorted(calls, key=lambda call: (call.strain not in suit.MAJORS, call))
-        self.preferred = enum.Enum(*[call.name for call in by_preference])
-        self.longest = enum.Enum(*[call.name for call in by_preference])
-        rule_order.order(*reversed(self.preferred))
-        rule_order.order(set(self.preferred), set(self.longest))
-        self.all = set(self.preferred) | set(self.longest)
-        self.per_call = copy_dict(self.preferred, call_names)
-        self.conditional = {}
-        for call in calls:
-            other_suits = set(other.strain for other in calls if other.strain != call.strain)
-            if other_suits:
-                is_longest = z3.And([expr_for_suit(call.strain) > expr_for_suit(other) for other in sorted(other_suits)])
-                self.conditional[call.name] = [(is_longest, self.longest.get(call.name))]
-
-
-relay_priorities = enum.Enum(
-    "RedoubleDoubledTransfer",  # five good cards in the suit they doubled: play there
-    "SuperAccept",
-    "Accept",
-    "PassDoubledTransfer",  # a doubleton in partner's major: let partner bid it himself
-)
-rule_order.order(*reversed(relay_priorities))
-
-
-opening_priorities = enum.Enum(
-    "ThreeNotrumpOpening",
-    "StrongTwoClubs",
-    "NotrumpOpening",
-    "LongestMajor",
-    "HigherMajor",
-    "LowerMajor",
-    "LongestMinor",
-    "HigherMinor",
-    "LowerMinor",
-)
-rule_order.order(*reversed(opening_priorities))
+class SuitPreference(list):
+    """A prefer list that remembers its calls (Rule.call_names = preference.call_names)."""
+    call_names = None
 
 
 class Opening(Rule):
@@ -89,6 +61,7 @@ class Opening(Rule):
 
 
 class OneLevelSuitOpening(Opening):
+    purpose = "MajorDiscovery"
     shared_constraints = OpeningRuleConstraint()
     annotations_per_call = {
         '1C': annotations.BidClubs,
@@ -99,29 +72,27 @@ class OneLevelSuitOpening(Opening):
     # FIXME: This shadows the "annotations" module for the rest of this class scope!
     annotations = annotations.OneLevelSuitOpening
     constraints = {
-        '1C': (clubs >= 3, opening_priorities.LowerMinor),
-        '1D': (diamonds >= 3, opening_priorities.HigherMinor),
-        '1H': (hearts >= 5, opening_priorities.LowerMajor),
-        '1S': (spades >= 5, opening_priorities.HigherMajor),
+        '1C': clubs >= 3,
+        '1D': diamonds >= 3,
+        '1H': hearts >= 5,
+        '1S': spades >= 5,
     }
-    conditional_priorities_per_call = {
-        '1C': [
-            (clubs > diamonds, opening_priorities.LongestMinor),
-            (z3.And(clubs == 3, diamonds == 3), opening_priorities.LongestMinor),
-        ],
-        '1D': [(diamonds > clubs, opening_priorities.LongestMinor)],
-        '1H': [(hearts > spades, opening_priorities.LongestMajor)],
-        '1S': [(spades > hearts, opening_priorities.LongestMajor)],
-    }
+    prefer = [
+        Longest('1H', '1S'),                        # a five-card major, the longer first
+        '1S', '1H',                                 # five-five: spades
+        Longest('1C', '1D'),                        # the longer minor
+        ('1C', z3.And(clubs == 3, diamonds == 3)),  # three-three: clubs
+        '1D', '1C',                                 # four-four (or five-five): diamonds
+    ]
 
 
 class NotrumpOpening(Opening):
+    purpose = "EnterNotrumpSystem"
     annotations = annotations.NotrumpSystemsOn
     constraints = {
         '1N': z3.And(points >= 15, points <= 17, balanced),
         '2N': z3.And(points >= 20, points <= 21, balanced)
     }
-    priority = opening_priorities.NotrumpOpening
 
 
 class ThreeNotrumpOpening(Opening):
@@ -129,17 +100,17 @@ class ThreeNotrumpOpening(Opening):
     open 2C then 3N, 30-31 open 2C then 4N; the engine previously compressed all of them
     into 2C-then-3N).  Above StrongTwoClubs so the band actually opens 3N.  No notrump
     systems: responses are natural."""
+    purpose = "EnterNotrumpSystem"
     call_names = '3N'
     shared_constraints = z3.And(points >= 25, points <= 27, balanced)
-    priority = opening_priorities.ThreeNotrumpOpening
 
 
 class StrongTwoClubs(Opening):
+    purpose = "GameForce"
     # Artificial: says nothing about clubs (a double of it is lead-directing, not takeout).
     annotations = [annotations.StrongTwoClubOpening, annotations.Artificial]
     call_names = '2C'
     shared_constraints = points >= 22  # FIXME: Should support "or 9+ winners"
-    priority = opening_priorities.StrongTwoClubs
 
 
 class Response(Rule):
@@ -154,6 +125,7 @@ class NewSuitAtTheThreeLevelOverJumpOvercall(ResponseToOneLevelSuitedOpen):
     """1x - (weak jump overcall) - 3y: a new suit at the three level, forcing (the jump took away
     the two level; the negative double covers the four-card hands).  Before this rule partner's
     3y had no meaning and opener no call."""
+    purpose = "Discovery"
     preconditions = [
         LastBidHasAnnotation(positions.RHO, annotations.Preemptive),
         UnbidSuit(),
@@ -165,55 +137,54 @@ class NewSuitAtTheThreeLevelOverJumpOvercall(ResponseToOneLevelSuitedOpen):
     forcing = True
 
 
-# A real suit and a forcing hand outrank the (four-card) negative double, and passing.
-rule_order.order(DefaultPass, NewSuitAtTheThreeLevelOverJumpOvercall)
+class NoNegativeDoubleShape(Constraint):
+    """A new major at the one level over their overcall: the hands with the negative double's
+    shape (four-four over 1D, exactly four spades over 1H) double instead (p129).
+    Uncontested, or where no negative double is available, no constraint."""
+    def expr(self, history, call):
+        rho = history.rho.last_call
+        if rho is None or annotations.Artificial in history.rho.annotations_for_last_call:
+            return NO_CONSTRAINTS
+        shape = negative_double_shape(history)
+        return NO_CONSTRAINTS if shape is None else z3.Not(shape)
 
 
-new_one_level_suit_responses = enum.Enum(
-    "LongestNewMajor",
-    "OneSpadeWithFive",
-    "OneHeartWithFive",
-    # We prefer 1D over 4-card majors when bidding up the line.
-    "OneDiamondWithPossibleMajor",
-    "OneHeartWithFour",
-    "OneSpadeWithFour",
-    "OneDiamond",
-)
-rule_order.order(*reversed(new_one_level_suit_responses))
-
-
-new_one_level_major_responses = set([
-    new_one_level_suit_responses.LongestNewMajor,
-    new_one_level_suit_responses.OneSpadeWithFive,
-    new_one_level_suit_responses.OneHeartWithFive,
-    new_one_level_suit_responses.OneHeartWithFour,
-    new_one_level_suit_responses.OneSpadeWithFour,
-])
-
-
-# We don't include OneDiamondWithPossibleMajor in this as it only
-# matters relative to 4-card major bids.
-new_one_level_minor_responses = set([new_one_level_suit_responses.OneDiamond])
+class NoNewMajorAtTheTwoLevel(Constraint):
+    """The negative double denies a five-card major worth bidding: at the two level our
+    longest suit with the values for a two-level response (p129: 2H, not a double, on
+    Q832.QT.AQT93.K4 over 1D 1S); over a jump overcall, at the three level with 25 combined
+    (NewSuitAtTheThreeLevelOverJumpOvercall)."""
+    def expr(self, history, call):
+        excluded = []
+        for major in suit.MAJORS:
+            if any(history.is_bid_suit(major, position) for position in positions):
+                continue
+            if history.call_history.is_legal_call(Call.from_level_and_strain(2, major)):
+                excluded.append(z3.And(longest_suit(expr_for_suit(major)), MinimumCombinedPoints(22).expr(history, call)))
+            elif history.call_history.is_legal_call(Call.from_level_and_strain(3, major)):
+                excluded.append(z3.And(expr_for_suit(major) >= 5, MinimumCombinedPoints(25).expr(history, call)))
+        if not excluded:
+            return NO_CONSTRAINTS
+        return z3.Not(z3.Or(excluded))
 
 
 class OneLevelNewSuitResponse(Rule):
+    purpose = "MajorDiscovery"
     # If partner opened, regardless of the bidding, its always only 6 points to mention a new suit at the one level.
-    preconditions = Opened(positions.Partner)
+    preconditions = [Opened(positions.Partner), InvertedPrecondition(LastBidWas(positions.Partner, 'X'))]  # over partner's reopening double the double's answers apply
     shared_constraints = points >= 6
     constraints = {
-        '1D': (diamonds >= 4, new_one_level_suit_responses.OneDiamond),
-        '1H': (hearts >= 4, new_one_level_suit_responses.OneHeartWithFour),
-        '1S': (spades >= 4, new_one_level_suit_responses.OneSpadeWithFour),
+        '1D': diamonds >= 4,
+        '1H': [hearts >= 4, NoNegativeDoubleShape()],
+        '1S': [spades >= 4, NoNegativeDoubleShape()],
     }
-    # FIXME: 4 should probably be the special case and 5+ be the default priority.
-    conditional_priorities_per_call = {
-        '1D': [(z3.Or(hearts == 4, spades == 4), new_one_level_suit_responses.OneDiamondWithPossibleMajor)],
-        '1H': [
-            (z3.And(hearts >= 5, hearts > spades), new_one_level_suit_responses.LongestNewMajor),
-            (hearts >= 5, new_one_level_suit_responses.OneHeartWithFive),
-        ],
-        '1S': [(spades >= 5, new_one_level_suit_responses.OneSpadeWithFive)]
-    }
+    prefer = [
+        ('1H', z3.And(hearts >= 5, hearts > spades)),  # the longer five-card major
+        ('1S', spades >= 5),                           # five spades (five-five: spades)
+        ('1H', hearts >= 5),
+        ('1D', z3.Or(hearts == 4, spades == 4)),        # up the line: diamonds before a four-card major
+        '1H', '1S', '1D',
+    ]
 
 
 class StopperWhenTheyOvercalled(Constraint):
@@ -227,10 +198,16 @@ class StopperWhenTheyOvercalled(Constraint):
         return NO_CONSTRAINTS
 
 
+# Up to 12: the 2N and 3N responses to a minor start at 13, and over a major the hands above
+# 12 have a new suit, a limit raise, Jacoby 2N or 3N.  Shared with the pass over their
+# overcall, which yields to this call.
+one_notrump_response_hand = ConstraintAnd(points >= 6, points <= 12, StopperWhenTheyOvercalled())
+
+
 class OneNotrumpResponse(ResponseToOneLevelSuitedOpen):
+    purpose = "CharacterizeStrength"
     call_names = '1N'
-    # For minors this can be up to 12 hcp?  If we're 4.3.3.3 what better bid do we have?
-    shared_constraints = [points >= 6, StopperWhenTheyOvercalled()]
+    shared_constraints = one_notrump_response_hand
 
 
 class RaiseResponse(ResponseToOneLevelSuitedOpen):
@@ -240,32 +217,12 @@ class RaiseResponse(ResponseToOneLevelSuitedOpen):
     ]
 
 
-raise_responses = enum.Enum(
-    "MajorLimit",
-    "MajorMinimum",
-
-    "MinorLimit",
-    "MinorMinimum",
-)
-rule_order.order(*reversed(raise_responses))
-
-
-major_raise_responses = set([
-    raise_responses.MajorLimit,
-    raise_responses.MajorMinimum,
-])
-
-
-minor_raise_responses = set([
-    raise_responses.MinorLimit,
-    raise_responses.MinorMinimum,
-])
-
-
-minimum_raise_responses = set([
-    raise_responses.MinorMinimum,
-    raise_responses.MajorMinimum,
-])
+single_raise_strength = [
+    MinimumCombinedSupportPoints(18),
+    # Truly limited: at 10 support points the limit raise applies, and a hand under the limit
+    # raise's 6-hcp floor raises here whatever its support points (the void-and-five hands).
+    ConstraintOr(MaximumSupportPointsForPartnersLastSuit(9), points <= 5),
+]
 
 
 # A single raise of 1D promises four diamonds (p48 h9: 2D on KJ63); a raise of 1C, which may be
@@ -274,64 +231,68 @@ minimum_raise_responses = set([
 # promises the eight-card fit.
 
 
-class MinimumRaise(RaiseResponse):
-    priorities_per_call = {
-        ('2C', '2D'): raise_responses.MinorMinimum,
-        ('2H', '2S'): raise_responses.MajorMinimum,
-    }
-    constraints = {
-        '2C': MinimumCombinedLength(8),
-        '2D': MinLength(4),
-        ('2H', '2S'): MinimumCombinedLength(8),
-    }
-    shared_constraints = [
-        MinimumCombinedSupportPoints(18),
-        # For the same reasons as described in LimitRaise, this bid is truly limited.
-        # At 10 hcp, LimitRaise should apply, and we do not want to absorb any holes
-        # which might occur above a limit raise.  A hand under LimitRaise's 6-hcp floor
-        # raises here whatever its support points (the void-and-five hands).
-        ConstraintOr(MaximumSupportPointsForPartnersLastSuit(9), points <= 5),
-    ]
-
-
-class LimitRaise(RaiseResponse):
+class Raise(RaiseResponse):
+    """Responder's raise of the opening suit: a single raise with 6-9 support points, a limit
+    raise with 10-12 (truly limited: above 12 a new suit or Jacoby 2N), and with five trumps
+    and fewer than ten high the jump to game in a major (p37-38, p38 h13).  Over their takeout
+    double the raises change meaning: RaiseOverTakeoutDouble."""
+    purpose = "Support"
+    conditional_purposes = [(minor_raise_before_notrump, "SupportMinorWithFour"), (minor_raise_with_five, "SupportMinorWithFive")]  # see constraints.minor_raise_before_notrump
     preconditions = InvertedPrecondition(LastBidHasAnnotation(positions.RHO, annotations.TakeoutDouble))
-    priorities_per_call = {
-        ('3C', '3D'): raise_responses.MinorLimit,
-        ('3H', '3S'): raise_responses.MajorLimit,
+    call_names = ['2C', '2D', '2H', '2S', '3C', '3D', '3H', '3S', '4H', '4S']
+    annotations_per_call = {('3C', '3D', '3H', '3S'): annotations.LimitRaise}
+    constraints = {
+        '2C': [MinimumCombinedLength(8), single_raise_strength],
+        '2D': [MinLength(4), single_raise_strength],
+        ('2H', '2S'): [MinimumCombinedLength(8), single_raise_strength],
+        ('3C', '3D', '3H', '3S'): [MinimumCombinedLength(8), points >= 6, MinimumCombinedSupportPoints(22), MaximumSupportPointsForPartnersLastSuit(12)],
+        ('4H', '4S'): [MinimumCombinedLength(10), points < 10],
     }
-    annotations = annotations.LimitRaise
-    shared_constraints = [
-        MinimumCombinedLength(8),
-        # We shouldn't make a limit raise with less than 6 HCP
-        # even with a large number of support points.
-        points >= 6, # FIXME: This leaves a hole with PassResponseToSuitedOpen.
-        MinimumCombinedSupportPoints(22),
-        # This bid is truly limited.  Above 12 points we should either
-        # mention a new suit or bid NT (Jacoby2N for majors).
-        # We could instead give this bid a very low priority when
-        # above 12 hcp, but limiting it directly seems slightly cleaner (and makes none-finding possible).
-        MaximumSupportPointsForPartnersLastSuit(12),
-    ]
+    prefer = [Highest(*call_names)]  # the highest raise the hand is worth
 
 
-class MajorJumpToGame(RaiseResponse):
-    call_names = ['4H', '4S']
-    shared_constraints = [
-        MinimumCombinedLength(10),
-        points < 10
+class RaiseOverTakeoutDouble(ResponseToOneLevelSuitedOpen):
+    """Responder's raises over their takeout double (p122-123): a single raise is 6-9 with
+    three trumps (the eight-card fit and no more), the jump raise is preemptive with four
+    trumps and fewer than ten, 2N (Jordan) is a limit raise or better, and with five trumps
+    and fewer than ten high the jump to game keeps its meaning (p122 h25)."""
+    purpose = "Support"
+    purposes_per_call = {'2N': partner_suit_support_purpose}
+    conditional_purposes_per_call = {
+        ('2C', '2D', '3C', '3D'): [(minor_raise_before_notrump, "SupportMinorWithFour"), (minor_raise_with_five, "SupportMinorWithFive")],
+        '2N': [(partner_minor_raise_before_notrump, "SupportMinorWithFour", "SupportMinors"), (partner_minor_raise_with_five, "SupportMinorWithFive", "SupportMinors")],
+    }
+    preconditions = [
+        LastBidHasAnnotation(positions.RHO, annotations.TakeoutDouble),
+        LastBidHasAnnotation(positions.Partner, annotations.Opening),
     ]
+    preconditions_per_call = {('2C', '2D', '2H', '2S', '3C', '3D', '3H', '3S', '4H', '4S'): RaiseOfPartnersLastSuit()}
+    call_names = ['2C', '2D', '2H', '2S', '2N', '3C', '3D', '3H', '3S', '4H', '4S']
+    annotations_per_call = {'2N': annotations.Jordan}
+    constraints = {
+        '2C': [MinimumCombinedLength(8), MaximumCombinedLength(8), single_raise_strength],
+        '2D': [MinLength(4), MaximumCombinedLength(8), single_raise_strength],
+        ('2H', '2S'): [MinimumCombinedLength(8), MaximumCombinedLength(8), single_raise_strength],
+        '2N': [MinimumCombinedLength(8, use_partners_last_suit=True), MinimumCombinedSupportPoints(22, use_partners_last_suit=True)],
+        ('3C', '3D', '3H', '3S'): [MinimumCombinedLength(9), MaximumSupportPointsForPartnersLastSuit(9)],
+        ('4H', '4S'): [MinimumCombinedLength(10), points < 10],
+    }
+    prefer = [Highest('4H', '4S'), '2N', Cheapest('3C', '3D', '3H', '3S'), Cheapest('2C', '2D', '2H', '2S')]
 
 
 class ThreeNotrumpMajorResponse(ResponseToOneLevelSuitedOpen):
+    purpose = "CharacterizeStrength"
+    conditional_purposes = [(ConstraintAnd(semi_balanced, OpponentsSilent()), "BalancedLimit")]  # over an overcall the negative double comes first
     preconditions = LastBidHasStrain(positions.Partner, suit.MAJORS)
     call_names = '3N'
     # This is a very specific range per page 43.
     # With 27+ points, do we need to worry about stoppers in RHO's suit?
-    shared_constraints = [balanced, points >= 15, points <= 17]
+    shared_constraints = [balanced, points >= 15, points <= 17, MaxLengthInHigherUnbidMajors(3)]  # with a four-card major biddable at the one level, bid it
 
 
 class NotrumpResponseToMinorOpen(ResponseToOneLevelSuitedOpen):
+    purpose = "CharacterizeStrength"
+    conditional_purposes = [(z3.And(z3.And(voids == 0, singletons == 0), hearts <= 3, spades <= 3), "BalancedLimit")]  # no singleton and no four-card major to show first
     preconditions = [
         LastBidHasStrain(positions.Partner, suit.MINORS),
         InvertedPrecondition(LastBidHasAnnotation(positions.RHO, annotations.TakeoutDouble)),
@@ -345,29 +306,14 @@ class NotrumpResponseToMinorOpen(ResponseToOneLevelSuitedOpen):
     shared_constraints = balanced
 
 
-class Jordan(ResponseToOneLevelSuitedOpen):
-    preconditions = LastBidHasAnnotation(positions.RHO, annotations.TakeoutDouble)
-    call_names = '2N'
-    # A limit raise or better of partner's suit, nothing to do with notrump (implies Artificial).
-    annotations = annotations.Jordan
-    shared_constraints = [
-        MinimumCombinedLength(8, use_partners_last_suit=True),
-        MinimumCombinedSupportPoints(22, use_partners_last_suit=True),
-    ]
-
-
-jordan_responses = enum.Enum(
-    "Game",
-    "Minimum",
-)
 # Game when the combined support points are there, else the cheapest rebid.
-rule_order.order(*reversed(jordan_responses))
 
 
 class ResponseToJordan(Rule):
     """Opener's reply to Jordan (a limit raise or better over their takeout double, p123):
     game in the agreed major with more than a minimum, otherwise the cheapest rebid of it.
     Gadget category: the natural rules would read the 2N as notrump."""
+    purpose = "Answer"
     category = categories.Gadget
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.Jordan),
@@ -378,15 +324,12 @@ class ResponseToJordan(Rule):
         ('4H', '4S'): MinimumCombinedSupportPoints(25),
         ('5C', '5D'): MinimumCombinedSupportPoints(28),
     }
-    priorities_per_call = {
-        ('3C', '3D', '3H', '3S'): jordan_responses.Minimum,
-        ('4H', '4S', '5C', '5D'): jordan_responses.Game,
-    }
     # The minimum rebid may be passed (partner raises to game with more than a limit raise).
     annotations_per_call = {
         ('3C', '3D', '3H', '3S'): annotations.Signoff,
     }
     forcing = False
+    prefer = [Highest('3C', '3D', '3H', '3S', '4H', '4S', '5C', '5D')]  # game with more than a minimum
 
 
 class PassAfterSignoff(Rule):
@@ -394,6 +337,7 @@ class PassAfterSignoff(Rule):
     so pass.  Gadget: the natural passes demand combined-point guarantees a limited hand
     opposite a wide signoff cannot show -- the Jordan 2N bidder (11-12) had NO call at all
     over opener's 3H (autobid-for-none, 2026-08-31)."""
+    purpose = "Forced"  # unconstrained: any reason to bid on comes first
     category = categories.Gadget
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.Signoff),
@@ -404,17 +348,12 @@ class PassAfterSignoff(Rule):
     shared_constraints = NO_CONSTRAINTS
 
 
-# The signoff pass is the floor: with a natural continuation that fits (p101 h11: 3H over
-# the retreat shows extra values), bid it.
-rule_order.order(PassAfterSignoff, natural_suited_part_scores)
-rule_order.order(PassAfterSignoff, natural_exact_games)
-
-
 class ResponseAfterRHOTakeoutDouble(ResponseToOneLevelSuitedOpen):
     preconditions = LastBidHasAnnotation(positions.RHO, annotations.TakeoutDouble)
 
 
 class RedoubleResponseAfterRHOTakeoutDouble(ResponseAfterRHOTakeoutDouble):
+    purpose = "BalancedLimit"
     call_names = 'XX'
     shared_constraints = MinimumCombinedPoints(22)
 
@@ -425,22 +364,11 @@ class NewSuitAtTheTwoLevelAfterRHODouble(ResponseAfterRHOTakeoutDouble):
     the uncontested 10+ forcing meaning is off.  The 10+ hands start with a redouble: the
     booklet calls the bid invitational but its own p122 h23 redoubles with 11 even holding
     five diamonds, so the weak reading is the consistent one."""
+    purpose = "Discovery"
     preconditions = [UnbidSuit(), NotJumpFromLastContract()]
     call_names = ['2C', '2D', '2H', '2S']
     shared_constraints = [MinLength(5), points >= 6, points <= 9]
     forcing = False
-
-
-# With a five-card suit to show, the weak suit bid beats the 1N response -- but a raise
-# with support (p122 h24) and the preemptive jump with a six-card suit (h26) both beat it.
-rule_order.order(OneNotrumpResponse, NewSuitAtTheTwoLevelAfterRHODouble)
-rule_order.order(NewSuitAtTheTwoLevelAfterRHODouble, raise_responses)
-
-
-class JumpRaiseResponseToAfterRHOTakeoutDouble(RaiseResponse):
-    preconditions = LastBidHasAnnotation(positions.RHO, annotations.TakeoutDouble)
-    call_names = ['3C', '3D', '3H', '3S']
-    shared_constraints = MinimumCombinedLength(9)
 
 
 class JumpShift(object):
@@ -451,6 +379,7 @@ class JumpShift(object):
 
 
 class JumpShiftResponseToOpenAfterRHODouble(JumpShift, ResponseAfterRHOTakeoutDouble):
+    purpose = "GameForce"
     call_names = Call.suited_names_between('2D', '3H')
     shared_constraints = [
         points >= 5,
@@ -459,65 +388,18 @@ class JumpShiftResponseToOpenAfterRHODouble(JumpShift, ResponseAfterRHOTakeoutDo
     ]
 
 
-
-
-rule_order.order(NewSuitAtTheTwoLevelAfterRHODouble, JumpShiftResponseToOpenAfterRHODouble)
-defenses_against_takeout_double = [
-    Jordan,
-    RedoubleResponseAfterRHOTakeoutDouble,
-    JumpRaiseResponseToAfterRHOTakeoutDouble,
-    JumpShiftResponseToOpenAfterRHODouble,
-]
-rule_order.order(*reversed(defenses_against_takeout_double))
-
-
 # A new suit at the two level: with a five-card suit that is at least as long as every other
 # suit, bid it -- the higher of two five-card suits first (1S P: 2H on 5 hearts and 5 diamonds),
 # the longer suit first with 6-5.  A four-card minor is bid up the line (2C before 2D) and only
 # when no five-card suit qualifies.  Majors always need five.
-new_two_level_suit_responses = enum.Enum(
-    "TwoClubs",
-    "TwoDiamonds",
-    "TwoHearts",
-    "TwoSpades",
-)
-# Five-card suits: the higher suit first when two are equal in length.
-rule_order.order(*new_two_level_suit_responses)
-
-new_two_level_four_card_minor_responses = enum.Enum(
-    "TwoClubsWithFour",
-    "TwoDiamondsWithFour",
-)
-# Four-card minors up the line.
-rule_order.order(*reversed(new_two_level_four_card_minor_responses))
-# A five-card suit before a four-card minor.
-rule_order.order(new_two_level_four_card_minor_responses, new_two_level_suit_responses)
-
-
-new_two_level_minor_responses = set([
-    new_two_level_suit_responses.TwoClubs,
-    new_two_level_suit_responses.TwoDiamonds,
-    new_two_level_four_card_minor_responses.TwoClubsWithFour,
-    new_two_level_four_card_minor_responses.TwoDiamondsWithFour,
-])
-
-
-new_two_level_major_responses = set([
-    new_two_level_suit_responses.TwoHearts,
-    new_two_level_suit_responses.TwoSpades,
-])
-
-new_two_level_responses = new_two_level_minor_responses | new_two_level_major_responses
-
-new_minor_responses = new_one_level_minor_responses | new_two_level_minor_responses
-
-
 def longest_suit(suit_expr):
     """The suit has five or more cards and no other suit is longer."""
     return z3.And(suit_expr >= 5, *[suit_expr >= other for other in (clubs, diamonds, hearts, spades) if other is not suit_expr])
 
 
 class NewSuitAtTheTwoLevel(ResponseToOneLevelSuitedOpen):
+    purpose = new_suit_purpose
+    conditional_purposes = new_minor_with_five
     preconditions = [
         UnbidSuit(),
         NotJumpFromLastContract(),
@@ -526,30 +408,21 @@ class NewSuitAtTheTwoLevel(ResponseToOneLevelSuitedOpen):
         InvertedPrecondition(LastBidHasAnnotation(positions.RHO, annotations.TakeoutDouble)),
     ]
     call_names = ['2C', '2D', '2H', '2S']
-    priorities_per_call = {
-        '2C': new_two_level_four_card_minor_responses.TwoClubsWithFour,
-        '2D': new_two_level_four_card_minor_responses.TwoDiamondsWithFour,
-        '2H': new_two_level_suit_responses.TwoHearts,
-        '2S': new_two_level_suit_responses.TwoSpades,
-    }
     constraints = {
         '2C': clubs >= 4,
         '2D': diamonds >= 4,
         '2H': longest_suit(hearts),
         '2S': longest_suit(spades),
     }
-    conditional_priorities_per_call = {
-        '2C': [(longest_suit(clubs), new_two_level_suit_responses.TwoClubs)],
-        '2D': [(longest_suit(diamonds), new_two_level_suit_responses.TwoDiamonds)],
-    }
+    # A five-card suit at least as long as every other, the higher first (1S P: 2H on five
+    # hearts and five diamonds); a four-card minor up the line, and only when no five-card
+    # suit qualifies.  Majors always need five.
+    prefer = [
+        '2S', '2H',
+        ('2D', longest_suit(diamonds)), ('2C', longest_suit(clubs)),
+        '2C', '2D',
+    ]
     shared_constraints = MinimumCombinedPoints(22)
-
-
-rule_order.order(
-    # Don't jump directly to some high part score or game if we have a second suit to mention first, we might miss slam.
-    natural_minor_part_scores | natural_exact_minor_games,
-    new_two_level_responses,
-)
 
 
 class ResponseToMajorOpen(ResponseToOneLevelSuitedOpen):
@@ -560,6 +433,7 @@ class ResponseToMajorOpen(ResponseToOneLevelSuitedOpen):
 
 
 class PassResponseToSuitedOpen(ResponseToOneLevelSuitedOpen):
+    purpose = "CharacterizeStrength"
     preconditions = LastBidWas(positions.RHO, 'P')
     call_names = 'P'
     # SuitGameIsRemote would imply that we have < 4 hcp, but conventionally we may pass with 5 hcp.
@@ -568,17 +442,15 @@ class PassResponseToSuitedOpen(ResponseToOneLevelSuitedOpen):
 
 
 # Due to the Or above, we need to order PassResponseToSuitedOpen relative to raises and game jumps.
-rule_order.order(
-    PassResponseToSuitedOpen,
-    minimum_raise_responses,
-    MajorJumpToGame,
-)
 
 
-trap_pass = enum.Enum(
-    "Trap",  # length and honors in their suit: pass and wait for opener's reopening double
-    "Weak",  # nothing to say
-)
+class OneNotrumpResponseAvailable(Constraint):
+    """Responder can bid 1N over their overcall: it is legal, and the hand has the values and
+    the stopper (OneNotrumpResponse)."""
+    def expr(self, history, call):
+        if not history.call_history.is_legal_call(Call.from_string('1N')):
+            return z3.BoolVal(False)
+        return one_notrump_response_hand.expr(history, call)
 
 
 class PassResponseOverOvercall(ResponseToOneLevelSuitedOpen):
@@ -588,6 +460,7 @@ class PassResponseOverOvercall(ResponseToOneLevelSuitedOpen):
     p138): we cannot double for penalties, so we pass and wait for opener's reopening double,
     which we will pass.  One rule with both meanings so that the pass has a rule for every
     hand in the auction (a pass rule claims the call for the whole auction)."""
+    purpose = "CharacterizeStrength"
     preconditions = [
         LastBidHasSuit(positions.RHO),
         InvertedPrecondition(LastBidHasAnnotation(positions.RHO, annotations.Artificial)),
@@ -596,27 +469,21 @@ class PassResponseOverOvercall(ResponseToOneLevelSuitedOpen):
     call_names = 'P'
     shared_constraints = ConstraintOr(
         ConstraintAnd(MinLengthInLastContractSuit(5), ThreeOfTheTopFiveInLastContractSuit(), points >= 10),
-        points <= 9,
+        ConstraintAnd(points <= 9, ConstraintNot(OneNotrumpResponseAvailable())),  # with 6-9 and a stopper, 1N
     )
-    priority = trap_pass.Weak
-    conditional_priorities = [
-        (ConstraintAnd(MinLengthInLastContractSuit(5), ThreeOfTheTopFiveInLastContractSuit(), points >= 10), trap_pass.Trap),
+    conditional_purposes = [
+        (ConstraintAnd(MinLengthInLastContractSuit(5), ThreeOfTheTopFiveInLastContractSuit(), points >= 10), "Penalize"),
     ]
-
-
-jacoby_2n = enum.Enum(
-    "Jacoby2NWithFour",
-    "Jacoby2NWithThree",
-)
-rule_order.order(*reversed(jacoby_2n))
+    prefer = []
 
 
 class Jacoby2N(ResponseToMajorOpen):
+    # With four trumps the forcing raise comes first; with three a new suit is shown first
+    # (the game-forcing raise then ranks with a slam try, above a natural slam: the order below).
+    purpose = "Slam"
+    conditional_purposes = [(MinLengthInPartnersLastSuit(4), "SupportMajors")]  # with four trumps the fit is found: support
     preconditions = LastBidWas(positions.RHO, 'P')
     call_names = '2N'
-    conditional_priorities = [
-        (SupportForPartnerLastBid(4), jacoby_2n.Jacoby2NWithFour)
-    ]
     shared_constraints = [
         # The book says 14+, but this needs to be 13 hcp or there is a hole above limit raise.
         points >= 13,
@@ -624,8 +491,17 @@ class Jacoby2N(ResponseToMajorOpen):
         # 3-card trump support lower priority than mentioning a new suit.
         SupportForPartnerLastBid(3),
     ]
-    priority = jacoby_2n.Jacoby2NWithThree
     annotations = annotations.Jacoby2N
+    prefer = []
+
+
+class SolidSideSuit(Constraint):
+    """A five-card suit with three of the top five honours other than the suit we opened:
+    the jump to four of it answers Jacoby 2N (p40)."""
+    def expr(self, history, call):
+        mine = history.me.last_call.strain
+        return z3.Or([z3.And(expr_for_suit(s) >= 5, ThreeOfTheTopFiveOrBetter().expr(history, Call.from_level_and_strain(4, s)))
+                      for s in suit.SUITS if s != mine])
 
 
 class ResponseToJacoby2N(Rule):
@@ -634,48 +510,49 @@ class ResponseToJacoby2N(Rule):
     category = categories.Gadget
 
 
-class SingletonResponseToJacoby2N(ResponseToJacoby2N):
+class ShapeResponseToJacoby2N(ResponseToJacoby2N):
+    """Opener's shape answers to Jacoby 2N (p40): a jump to four of a five-card side suit with
+    three of the top five honours, else three of a suit with a singleton or void (the solid
+    suit first: 4D, not 3C, on 8.KQJ72.AJ973.K9 after 1H P 2N P)."""
+    purpose = "Answer"
     preconditions = InvertedPrecondition(RebidSameSuit())
-    call_names = ['3C', '3D', '3H', '3S']
-    shared_constraints = MaxLength(1)
-    annotations = annotations.Artificial
-    priorities_per_call = lower_calls_first(call_names)
-
-
-class SolidSuitResponseToJacoby2N(ResponseToJacoby2N):
-    preconditions = InvertedPrecondition(RebidSameSuit())
-    call_names = ['4C', '4D', '4H', '4S']
-    shared_constraints = [MinLength(5), ThreeOfTheTopFiveOrBetter()]
+    call_names = ['3C', '3D', '3H', '3S', '4C', '4D', '4H', '4S']
+    constraints = {
+        ('3C', '3D', '3H', '3S'): MaxLength(1),
+        ('4C', '4D', '4H', '4S'): [MinLength(5), ThreeOfTheTopFiveOrBetter()],
+    }
+    annotations_per_call = {('3C', '3D', '3H', '3S'): annotations.Artificial}
+    prefer = [Cheapest('4C', '4D', '4H', '4S'), Cheapest('3C', '3D', '3H', '3S')]
 
 
 class SlamResponseToJacoby2N(ResponseToJacoby2N):
+    """Three of the agreed major: 18+ with no singleton or void to show (p40)."""
+    purpose = "Answer"
     preconditions = RebidSameSuit()
     call_names = ['3C', '3D', '3H', '3S']
-    shared_constraints = points >= 18
+    shared_constraints = [points >= 18, singletons == 0, voids == 0, ConstraintNot(SolidSideSuit())]
+    prefer = []
 
 
 class MinimumResponseToJacoby2N(ResponseToJacoby2N):
+    """Game in the agreed major: nothing else to say."""
+    purpose = "Answer"
+    fallback = 1
     preconditions = RebidSameSuit()
     call_names = ['4C', '4D', '4H', '4S']
     shared_constraints = NO_CONSTRAINTS
 
 
 class NotrumpResponseToJacoby2N(ResponseToJacoby2N):
+    """3N: 16-17 with no singleton or void (p40; the booklet's 15-17)."""
+    purpose = "Answer"
     call_names = '3N'
-    shared_constraints = points > 15 # It's really 15-17
-
-
-jacoby_2n_responses= rule_order.order(
-    MinimumResponseToJacoby2N,
-    NotrumpResponseToJacoby2N,
-    SlamResponseToJacoby2N,
-    # Currently favoring features over slam interest.  Unclear if that's correct?
-    all_priorities_for_rule(SingletonResponseToJacoby2N),
-    SolidSuitResponseToJacoby2N,
-)
+    shared_constraints = [points >= 16, points <= 17, singletons == 0, voids == 0, ConstraintNot(SolidSideSuit())]
+    prefer = []
 
 
 class JumpShiftResponseToOpen(JumpShift, ResponseToOneLevelSuitedOpen):
+    purpose = "GameForce"
     preconditions = InvertedPrecondition(LastBidHasAnnotation(positions.RHO, annotations.TakeoutDouble))
 
     # Jumpshifts must be below game and are off in competition so
@@ -686,10 +563,9 @@ class JumpShiftResponseToOpen(JumpShift, ResponseToOneLevelSuitedOpen):
     annotations = annotations.JumpShiftResponse
 
 
-class ShapeForNegativeDouble(Constraint):
-    def expr(self, history, call):
-        call_string = '%s %s' % (history.partner.last_call.name, history.rho.last_call.name)
-        return {
+# The negative double's shape by the opening and the overcall (p129): both majors over a
+# minor overcall, the other major (four exactly) over a major, the minors over their major.
+NEGATIVE_DOUBLE_SHAPES = {
             '1C 1D': z3.And(hearts >= 4, spades >= 4),
             '1C 1H': spades == 4,
             # After a minor opening, "two places to play" means the unbid major with
@@ -712,7 +588,24 @@ class ShapeForNegativeDouble(Constraint):
             '1S 2C': z3.And(diamonds >= 3, hearts >= 4),
             '1S 2D': z3.And(clubs >= 3, hearts >= 4),
             '1S 2H': z3.And(clubs >= 3, diamonds >= 3),
-        }[call_string]
+        
+}
+
+
+def negative_double_shape(history):
+    """The negative double's shape in this auction, or None when there is no such double
+    (partner's last call is not a one-level suit opening, or RHO's is not a suit overcall)."""
+    partner, rho = history.partner.last_call, history.rho.last_call
+    if partner is None or rho is None:
+        return None
+    return NEGATIVE_DOUBLE_SHAPES.get('%s %s' % (partner.name, rho.name))
+
+
+class ShapeForNegativeDouble(Constraint):
+    def expr(self, history, call):
+        shape = negative_double_shape(history)
+        assert shape is not None, "no negative double in %s" % history.call_history.calls_string()
+        return shape
 
 
 class NegativeDouble(ResponseToOneLevelSuitedOpen):
@@ -724,24 +617,24 @@ class NegativeDouble(ResponseToOneLevelSuitedOpen):
         # A hackish way to make sure Partner and RHO did not bid the same suit.
         InvertedPrecondition(LastBidHasAnnotation(positions.RHO, annotations.Artificial)),
     ]
-    shared_constraints = ShapeForNegativeDouble()
+    shared_constraints = [ShapeForNegativeDouble(), NoNewMajorAtTheTwoLevel()]
     annotations = annotations.NegativeDouble
 
 
 class OneLevelNegativeDouble(NegativeDouble):
+    purpose = "MajorDiscovery"
     preconditions = LastBidHasLevel(positions.RHO, 1)
     shared_constraints = points >= 6
 
 
 class TwoLevelNegativeDouble(NegativeDouble):
+    purpose = "MajorDiscovery"
     preconditions = LastBidHasLevel(positions.RHO, 2)
     shared_constraints = points >= 8
 
 
-negative_doubles = set([OneLevelNegativeDouble, TwoLevelNegativeDouble])
 # The negative double (four cards in the unbid major) comes first; the three-level new suit is for
 # hands without it (1C 2H: 4-4-5 doubles, a six-card club suit bids 3C).
-rule_order.order(NewSuitAtTheThreeLevelOverJumpOvercall, negative_doubles)
 
 
 # aka OpenerRebidAfterNegativeDouble.
@@ -751,6 +644,7 @@ class ResponseToNegativeDouble(Rule):
 
 
 class CuebidReponseToNegativeDouble(ResponseToNegativeDouble):
+    purpose = "GameForce"
     preconditions = [
         CueBid(positions.LHO),
         NotJumpFromLastContract(),
@@ -765,6 +659,8 @@ class CuebidReponseToNegativeDouble(ResponseToNegativeDouble):
 
 
 class NewSuitResponseToNegativeDouble(ResponseToNegativeDouble):
+    purpose = new_suit_purpose
+    conditional_purposes = new_minor_with_five
     preconditions = [
         NotJumpFromLastContract(),
         UnbidSuit(),
@@ -774,41 +670,26 @@ class NewSuitResponseToNegativeDouble(ResponseToNegativeDouble):
     shared_constraints = MinLength(4)
 
 
-rule_order.order(
-    DefaultPass,
-    NewSuitResponseToNegativeDouble,
-)
-
-
 class RaiseResponseToNegativeDouble(ResponseToNegativeDouble):
+    purpose = "Support"
+    conditional_purposes = [(minor_raise_before_notrump, "SupportMinorWithFour"), (minor_raise_with_five, "SupportMinorWithFive")]  # see constraints.minor_raise_before_notrump
     preconditions = [
         PartnerHasAtLeastLengthInSuit(4),
         NotJumpFromLastContract(),
     ]
     # Min: 1C 1D X P 1H, Max: 1C 2S X P 3H
-    priorities_per_call = {
-        # FIXME: It's a bit awkward to re-use raise_responses here.
-        ('2C', '2D',
-         '3C', '3D'): raise_responses.MinorMinimum,
-        ('1H', '1S',
-         '2H', '2S',
-         '3H'      ): raise_responses.MajorMinimum,
-    }
-    shared_constraints = MinimumCombinedLength(8)
+    call_names = ['1H', '1S', '2C', '2D', '2H', '2S', '3C', '3D', '3H']
+    prefer = []
+    shared_constraints = [MinimumCombinedLength(8), points <= 15]  # the jump raise shows 16+
 
 
 # FIXME: Should this be a forced-only response?  Should the unforced variant show points? stoppers?
 class NotrumpResponseToNegativeDouble(ResponseToNegativeDouble):
+    purpose = "CharacterizeStrength"
     preconditions = NotJumpFromLastContract()
-    call_names = ['1N', '2N']
+    # A minimum: with 16+ the jump 2N (or 3N) says so; the natural 4N and 5N are slam tries.
+    constraints = {'1N': points <= 15, '2N': points <= 19}
     shared_constraints = balanced
-
-
-rule_order.order(
-    raise_responses.MinorMinimum,
-    NotrumpResponseToNegativeDouble,
-    raise_responses.MajorMinimum,
-)
 
 
 class JumpResponseToNegativeDouble(ResponseToNegativeDouble):
@@ -816,36 +697,19 @@ class JumpResponseToNegativeDouble(ResponseToNegativeDouble):
     shared_constraints = points >= 16
 
 
-negative_double_jump_responses = enum.Enum(
-    "RaiseMajor",
-    "NewMajor",
-    "Notrump",
-    "RaiseMinor",
-    "NewMinor",
-)
-rule_order.order(*reversed(negative_double_jump_responses))
-
-
 class JumpRaiseResponseToNegativeDouble(JumpResponseToNegativeDouble):
+    purpose = "Support"
+    conditional_purposes = [(minor_raise_before_notrump, "SupportMinorWithFour"), (minor_raise_with_five, "SupportMinorWithFive")]  # see constraints.minor_raise_before_notrump
     preconditions = PartnerHasAtLeastLengthInSuit(4),
     # Min: 1C 1D X P 2H, Max: 1C 2S X P 4H
-    priorities_per_call = {
-        ('2H', '2S'): negative_double_jump_responses.RaiseMajor,
-        ('3C', '3D'): negative_double_jump_responses.RaiseMinor,
-        ('3H', '3S'): negative_double_jump_responses.RaiseMajor,
-        ('4C', '4D'): negative_double_jump_responses.RaiseMinor,
-        ('4H'      ): negative_double_jump_responses.RaiseMajor,
-    }
+    call_names = ['2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D', '4H']
     shared_constraints = MinimumCombinedLength(8)
-
-
-rule_order.order(
-    raise_responses,
-    negative_double_jump_responses,
-)
+    prefer = []
 
 
 class JumpNotrumpResponseToNegativeDouble(JumpResponseToNegativeDouble):
+    purpose = "CharacterizeStrength"
+    conditional_purposes = [(semi_balanced, "BalancedLimit")]  # a hand without a singleton tells its strength here
     call_names = '2N'
     # If this bid promised balanced, it would be exactly 18, as otherwise
     # we would have opened 1N if we were balanced.
@@ -854,22 +718,11 @@ class JumpNotrumpResponseToNegativeDouble(JumpResponseToNegativeDouble):
     # No singleton either (a jump to 2N with a stiff spade was made on A.AQ94.KJT95.Q53); the
     # booklet's 2N hands are 5-4-2-2 shapes too, so z3b's `balanced` (one doubleton) is too strict.
     shared_constraints = MinLength(2, suit.SUITS)
-    priority = negative_double_jump_responses.Notrump
-
-
-rule_order.order(
-    NotrumpResponseToNegativeDouble,
-    negative_double_jump_responses.Notrump,
-)
-
-# Cuebid response is for when we're going to at least game and possibly slam and is basically our highest priority.
-rule_order.order(
-    natural_bids,
-    CuebidReponseToNegativeDouble,
-)
+    prefer = []
 
 
 class CueBidRebidAfterNegativeDouble(Rule):
+    purpose = "GameForce"
     preconditions = [
         LastBidHasAnnotation(positions.Me, annotations.NegativeDouble),
         # If we understood better what kind of hand this bid was trying to show, we might be able to cuebid after NT.
@@ -886,43 +739,42 @@ class CueBidRebidAfterNegativeDouble(Rule):
     shared_constraints = MinimumSupportPointsForPartnersLastSuit(15) # How big should this really be?
 
 
-# Slam interest is always more fun than natural bidding. :)
-rule_order.order(
-    natural_bids,
-    CueBidRebidAfterNegativeDouble,
-)
-
-
-two_clubs_response_priorities = enum.Enum(
-    "SuitResponse",
-    "NoBiddableSuit",
-    "WaitingResponse",
-)
-rule_order.order(*reversed(two_clubs_response_priorities))
-
-
 class ResponseToStrongTwoClubs(Response):
     preconditions = LastBidHasAnnotation(positions.Partner, annotations.StrongTwoClubOpening)
 
 
 class WaitingResponseToStrongTwoClubs(ResponseToStrongTwoClubs):
+    """2D waiting: no positive response to make (p92 h8)."""
+    purpose = "Answer"
+    fallback = 1
     call_names = '2D'
     shared_constraints = NO_CONSTRAINTS
     annotations = annotations.Artificial
-    priority = two_clubs_response_priorities.WaitingResponse
+
+
+two_clubs_positive_suit = ConstraintAnd(MinLength(5), TwoOfTheTopThree())
+
+
+class PositiveSuitSomewhere(Constraint):
+    """Some suit has five cards with two of the top three honours: a positive suit response
+    to 2C (p92 h5)."""
+    def expr(self, history, call):
+        return z3.Or([two_clubs_positive_suit.expr(history, Call.from_level_and_strain(3, s)) for s in suit.SUITS])
 
 
 class SuitResponseToStrongTwoClubs(ResponseToStrongTwoClubs):
+    purpose = "Answer"
     call_names = ['2H', '2S', '3C', '3D']
-    shared_constraints = [MinLength(5), TwoOfTheTopThree(), points >= 8]
-    # FIXME: These should have ordered conditional priorities, no?
-    priority = two_clubs_response_priorities.SuitResponse
+    shared_constraints = [two_clubs_positive_suit, points >= 8]
+    prefer = [Longest(*call_names), Cheapest(*call_names)]
 
 
 class NotrumpResponseToStrongTwoClubs(ResponseToStrongTwoClubs):
+    """2N: 8+ with no suit worth a positive response (p92 h7)."""
+    purpose = "Answer"
     call_names = '2N'
-    shared_constraints = points >= 8
-    priority = two_clubs_response_priorities.NoBiddableSuit
+    shared_constraints = [points >= 8, ConstraintNot(PositiveSuitSomewhere())]
+    prefer = []
 
 
 class OpenerRebid(Rule):
@@ -935,6 +787,8 @@ class RebidAfterOneLevelOpen(OpenerRebid):
 
 
 class NotrumpJumpRebid(RebidAfterOneLevelOpen):
+    purpose = "CharacterizeStrength"
+    conditional_purposes = [(semi_balanced, "BalancedLimit")]  # a hand without a singleton tells its strength here
     # See KBB's NotrumpJumpRebid for discussion of cases for this bid.
     # Unclear how this is affected by competition?
     annotations = annotations.NotrumpSystemsOn
@@ -955,6 +809,7 @@ class PassPassedHandResponse(RebidAfterOneLevelOpen):
     K5.J86532.K6.AJ8 after P P P 1D P 1S; 2C, not P, on AQT854.7.AJ98.J3 after P P 1C P 1S).
     Gadget category: the pass owns the call only for these hands; other hands rebid as
     usual."""
+    purpose = "Enough"  # game is out of reach opposite a passed hand: the auction has found its level
     category = categories.Gadget
     preconditions = [
         PassedHand(positions.Partner),
@@ -980,6 +835,7 @@ class PassPassedHandResponse(RebidAfterOneLevelOpen):
 
 
 class RebidOneNotrumpByOpener(RebidAfterOneLevelOpen):
+    purpose = "CharacterizeStrength"
     preconditions = InvertedPrecondition(LastBidWas(positions.Partner, 'P'))
     call_names = '1N'
     # No shape test: the booklet's 1N rebid is a balanced minimum (p52 h3), but from play the
@@ -989,37 +845,44 @@ class RebidOneNotrumpByOpener(RebidAfterOneLevelOpen):
 
 
 class NotrumpInvitationByOpener(RebidAfterOneLevelOpen):
+    purpose = "CharacterizeStrength"
+    conditional_purposes = [(semi_balanced, "BalancedLimit")]  # a hand without a singleton tells its strength here
     preconditions = [NotJumpFromLastContract(), HaveFit()]
     # If we're not balanced, than we'd have a HelpSuitGameTry to use instead.
     call_names = '2N'
-    shared_constraints = [points >= 16, balanced]
-
-
-rule_order.order(
-    # Jumping to 3N (if possible) is better than just inviting to game.
-    # Unclear if we need a separate rule for this jump or if natural NT is sufficient.
-    NotrumpInvitationByOpener,
-    natural_exact_notrump_game,
-)
-
-
-opener_one_level_new_major = enum.Enum(
-    # Up the line with 4s...
-    "NewSuitHearts",
-    "NewSuitSpades",
-)
-rule_order.order(*reversed(opener_one_level_new_major))
+    shared_constraints = [points >= 16, points <= 17, balanced]
 
 
 class NewOneLevelMajorByOpener(RebidAfterOneLevelOpen):
+    purpose = "MajorDiscovery"
     preconditions = UnbidSuit()
     # FIXME: Should this prefer Hearts over Spades: 1C P 1D P 1H with 4-4 in majors?
     # If partner is expected to prefer 4-card majors over minors then 1H seems impossible?
-    priorities_per_call = {
-        '1H': opener_one_level_new_major.NewSuitHearts,
-        '1S': opener_one_level_new_major.NewSuitSpades,
-    }
     shared_constraints = MinLength(4)
+    call_names = ['1H', '1S']
+    prefer = []  # up the line
+
+
+reverse_strength = z3.And(points >= 16, points <= 18)  # nineteen jumps
+
+
+class ReverseAvailable(Constraint):
+    """A reverse is on: a four-card suit above the one we opened, biddable at the two level
+    without a jump, with 16-18 (ReverseByOpener).  Such a hand reverses rather than bidding a
+    lower new suit."""
+    def expr(self, history, call):
+        mine = history.me.last_call.strain
+        suits = []
+        for s in suit.SUITS:
+            two = Call.from_level_and_strain(2, s)
+            if s.index <= mine.index or not history.call_history.is_legal_call(two) or not history.is_unbid_suit(s):
+                continue
+            if history.call_history.last_contract() and two < history.call_history.last_contract():
+                continue
+            suits.append(expr_for_suit(s) >= 4)
+        if not suits:
+            return z3.BoolVal(False)
+        return z3.And(z3.Or(suits), reverse_strength)
 
 
 class SecondSuitFromOpener(RebidAfterOneLevelOpen):
@@ -1030,37 +893,25 @@ class SecondSuitFromOpener(RebidAfterOneLevelOpen):
     ]
 
 
-opener_higher_level_new_suits = enum.Enum(
-    "NewSuitHearts", # If you're 4.0.4.5, prefer the major, no?
-    "NewSuitClubs", # If you're 4.4.0.5, up the line...
-    "NewSuitDiamonds",
-)
-rule_order.order(*reversed(opener_higher_level_new_suits))
-
-
-opener_higher_level_new_minors = set([
-    opener_higher_level_new_suits.NewSuitClubs,
-    opener_higher_level_new_suits.NewSuitDiamonds,
-])
-
-opener_higher_level_new_major = opener_higher_level_new_suits.NewSuitHearts
-
-
 class NewSuitByOpener(SecondSuitFromOpener):
+    purpose = new_suit_purpose
+    conditional_purposes = new_minor_with_five
     preconditions = SuitLowerThanMyLastSuit()
     # If you're 4.4.0.5 and the bidding goes 1S P 1H P, do you prefer 2C or 2D?
     constraints = {
-        '2C': (NO_CONSTRAINTS, opener_higher_level_new_suits.NewSuitClubs),
-        '2D': (NO_CONSTRAINTS, opener_higher_level_new_suits.NewSuitDiamonds),
-        '2H': (NO_CONSTRAINTS, opener_higher_level_new_suits.NewSuitHearts),
+        '2C': NO_CONSTRAINTS,
+        '2D': NO_CONSTRAINTS,
+        '2H': NO_CONSTRAINTS,
         # 2S would necessarily be a reverse, or a jump shift, and is not covered by this rule.
 
-        '3C': (MinimumCombinedPoints(25), opener_higher_level_new_suits.NewSuitClubs),
-        '3D': (MinimumCombinedPoints(25), opener_higher_level_new_suits.NewSuitDiamonds),
-        '3H': (MinimumCombinedPoints(25), opener_higher_level_new_suits.NewSuitHearts),
+        '3C': MinimumCombinedPoints(25),
+        '3D': MinimumCombinedPoints(25),
+        '3H': MinimumCombinedPoints(25),
         # 3S would necessarily be a reverse, or a jump shift, and is not covered by this rule.
     }
-    shared_constraints = MinLength(4)
+    # Up to 18 (nineteen jumps) and no reverse to make (a higher four-card suit with 16+).
+    shared_constraints = [MinLength(4), points <= 18, ConstraintNot(ReverseAvailable())]
+    prefer = [Cheapest('2H', '3H'), Cheapest('2C', '2D', '3C', '3D')]  # a major first, the minors up the line
 
 
 reverse_preconditions = [
@@ -1076,54 +927,25 @@ class MinimumResponseToLimitRaise(OpenerRebid):
 
 
 class PassResponseToLimitRaise(MinimumResponseToLimitRaise):
+    purpose = "CharacterizeStrength"
     call_names = 'P'
     shared_constraints = (balanced, points <= 14)
 
 
 class GameAccept(MinimumResponseToLimitRaise):
+    purpose = "Game"
     preconditions = RaiseOfPartnersLastSuit()
     call_names = ('4H', '4S')
-    shared_constraints = NO_CONSTRAINTS  # Accepting game is our default action.
+    shared_constraints = ConstraintOr(points >= 15, z3.Not(balanced))  # the pass below shows a balanced minimum
 
-
-rule_order.order(
-    # GameAccept is defined in terms of pass, we could write it the other way around and reverse the priorities.
-    GameAccept,
-    PassResponseToLimitRaise,
-)
-
-rule_order.order(
-    # We have various ways to get to slam with a big hand,  Replying 3N here doesn't seem like one of them.
-    natural_exact_notrump_game,
-    GameAccept,
-)
-
-
-opener_reverses = enum.Enum(
-    # FIXME: With 5.0.4.4 which do you reverse to?
-    "ReverseSpades",
-    "ReverseHearts",
-    "ReverseDiamonds",
-)
-rule_order.order(*reversed(opener_reverses))
-
-opener_reverse_to_a_minor = opener_reverses.ReverseDiamonds,
-
-opener_reverse_to_a_major = set([
-    opener_reverses.ReverseSpades,
-    opener_reverses.ReverseHearts,
-])
 
 class ReverseByOpener(SecondSuitFromOpener):
+    purpose = "Discovery"
     preconditions = reverse_preconditions
     annotations = annotations.OpenerReverse
-    priorities_per_call = {
-        # 2C is never a reverse
-        '2D': opener_reverses.ReverseDiamonds,
-        '2H': opener_reverses.ReverseHearts,
-        '2S': opener_reverses.ReverseSpades,
-    }
-    shared_constraints = [MinLength(4), points >= 16]
+    shared_constraints = [MinLength(4), reverse_strength]
+    call_names = ['2D', '2H', '2S']
+    prefer = [Longest('2D', '2H', '2S'), Cheapest('2D', '2H', '2S')]  # the longer suit, else up the line
 
 
 class ForcedMinimumResponseToOpenerReverse(Rule):
@@ -1135,6 +957,7 @@ class ForcedMinimumResponseToOpenerReverse(Rule):
 
 # Also known as Ingberman 2NT
 class Lebensohl(ForcedMinimumResponseToOpenerReverse):
+    purpose = "Forced"  # the relay is what is left when a five-card major cannot be rebid
     call_names = '2N'
     # Ingberman's 2N: a weak hand asking opener to rebid his first suit, not notrump (implies Artificial).
     annotations = annotations.Lebensohl
@@ -1148,6 +971,7 @@ class RebidFirstSuitAfterLebensohl(Rule):
     pass or correct to the second.  Opener with 19+ "is not bound to comply" (the 5440 monster
     bids 4H); that continuation is not modelled.  Gadget category: the 2N is artificial and the
     natural rules have no reading of it."""
+    purpose = "Answer"
     category = categories.Gadget
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.Lebensohl),
@@ -1158,32 +982,14 @@ class RebidFirstSuitAfterLebensohl(Rule):
     forcing = False
 
 
-major_responses_to_opener_reverse = enum.Enum(
-    "WithFive",
-    "WithSixOrMore",
-)
-
-
 class ForcedMajorRebid(ForcedMinimumResponseToOpenerReverse):
+    purpose = "RebidSuit"  # a fifth card is rebid before raising a minor or relaying
+    conditional_purposes = [(MinLength(6), "RebidLongMajor")]  # six cards: rebid before the fourth suit
     # We have a minimum hand, so we never menetioned a 2-level suit before this one.
     call_names = ('2H', '2S')
-    # We only need 5-cards to rebid our major, and no additional points.
-    shared_constraints = MinLength(5)
-    conditional_priorities = [
-        (MinLength(6), major_responses_to_opener_reverse.WithSixOrMore),
-    ]
-    priority = major_responses_to_opener_reverse.WithFive
-
-
-rule_order.order(
-    Lebensohl,
-    major_responses_to_opener_reverse,
-)
-
-responses_to_opener_reverse = enum.Enum(
-    "GameForcingRaiseOfMajor",
-    "GameForcingRaiseOfMinor",
-)
+    # Five cards and no more than a minimum: with 10-11 and six the three-level rebid says so.
+    shared_constraints = [MinLength(5), points <= 9]
+    prefer = []
 
 
 class ResponseToOpenerReverse(Rule):
@@ -1199,38 +1005,26 @@ class GameForcingRaiseAfterOpenerReverse(ResponseToOpenerReverse):
     call_names = ['3C', '3D', '3H', '3S']
     preconditions = DidBidSuit(positions.Partner)
     shared_constraints = points >= 8
-    conditional_priorities_per_call = {
-        ('3H', '3S'): [(NO_CONSTRAINTS, responses_to_opener_reverse.GameForcingRaiseOfMajor)],
-    }
-    priority = responses_to_opener_reverse.GameForcingRaiseOfMinor
     forcing = True
+    prefer = []
 
 
 class RaiseOfReverseSuit(GameForcingRaiseAfterOpenerReverse):
+    purpose = "Support"
     preconditions = RaiseOfPartnersLastSuit()
     shared_constraints = MinLength(4)
 
 
 class RaiseOfFirstSuitAfterReverse(GameForcingRaiseAfterOpenerReverse):
+    purpose = "Support"
     preconditions = InvertedPrecondition(RaiseOfPartnersLastSuit())
-    shared_constraints = MinLength(3)
+    shared_constraints = [MinLength(3), MaxLengthInPartnersLastSuit(3)]  # with four in the reverse suit, raise that
 
 
 # Over a reverse the weak hand's Ingberman 2N comes before a natural part score (p62 h7: 2N,
 # not a 3C preference on a 6-count); with 8+ the raise of a major is the game force to make,
 # and with a minor fit 3N comes first when it is available (p65: 4D over 1D-1S; 2H says "no
 # desire to play 3NT").
-rule_order.order(
-    natural_suited_part_scores,
-    Lebensohl,
-    responses_to_opener_reverse.GameForcingRaiseOfMinor,
-    natural_exact_notrump_game,
-    responses_to_opener_reverse.GameForcingRaiseOfMajor,
-)
-rule_order.order(
-    natural_nt_part_scores,
-    Lebensohl,
-)
 
 
 class SupportPartnerSuit(RebidAfterOneLevelOpen):
@@ -1240,21 +1034,15 @@ class SupportPartnerSuit(RebidAfterOneLevelOpen):
     ]
 
 
-opener_support_majors = enum.Enum(
-    "MajorMax",
-    "MajorLimit",
-    "MajorMin",
-)
-rule_order.order(*reversed(opener_support_majors))
-
-
 class SupportPartnerMajorSuit(SupportPartnerSuit):
+    purpose = "SupportMajors"
+    call_names = ['2H', '2S', '3H', '3S', '4H', '4S']
     constraints = {
-        ('2H', '2S'): (NO_CONSTRAINTS, opener_support_majors.MajorMin),
-        ('3H', '3S'): (MinimumCombinedSupportPoints(22), opener_support_majors.MajorLimit),
-        ('4H', '4S'): (MinimumCombinedSupportPoints(25), opener_support_majors.MajorMax),
+        ('3H', '3S'): MinimumCombinedSupportPoints(22),
+        ('4H', '4S'): MinimumCombinedSupportPoints(25),
     }
     shared_constraints = MinimumCombinedLength(8)
+    prefer = [Highest(*call_names)]  # the highest level the hand is worth
 
 
 class RebidOriginalSuitByOpener(RebidAfterOneLevelOpen):
@@ -1268,26 +1056,43 @@ class MinimumRebidOriginalSuitByOpener(RebidOriginalSuitByOpener):
     preconditions = NotJumpFromLastContract()
 
 
-unforced_three_level_suit_rebid = enum.Enum("ThreeLevel")
-
 class UnforcedRebidOriginalSuitByOpener(MinimumRebidOriginalSuitByOpener):
+    purpose = "RebidSuit"
+    conditional_purposes = [(MinLength(6), "RebidLongMinimum")]  # a sixth card is worth showing
     preconditions = InvertedPrecondition(ForcedToBid())
     # The three level, e.g. after a reverse (1C P 1S P 2D P 2S P: 3C, p63), ranks below a new
     # suit (its own priority; the two-level calls keep this rule as theirs).
     call_names = ['2C', '2D', '2H', '2S', '3C', '3D', '3H', '3S']
-    priorities_per_call = {
-        ('3C', '3D', '3H', '3S'): unforced_three_level_suit_rebid.ThreeLevel,
-    }
     shared_constraints = MinLength(6)
+    # At the two level a minimum (sixteen jumps, nineteen bids the game); at the three level,
+    # over partner's raise, an invitation.
+    constraints = {
+        ('2C', '2D', '2H', '2S'): points <= 15,
+        ('3C', '3D', '3H', '3S'): points <= 18,
+    }
+    prefer = []
 
 
 # Opener's two-level rebid of a five-card suit with a singleton or void: the booklet's 2N
 # rebid is balanced (p53 h13: 2S on KQJ87.3.74.AQT98, not 2N), so with shortness the suit
 # rebid outranks the non-jump 2N it would otherwise lose to.
-forced_suit_rebid_with_shortness = enum.Enum("WithShortness")
+
+
+class OneNotrumpNotAvailable(Constraint):
+    """1N is no longer a legal call (partner responded at 1N or above): the limited suit
+    rebid takes its place."""
+    def expr(self, history, call):
+        return z3.BoolVal(not history.call_history.is_legal_call(Call.from_string('1N')))
 
 
 class ForcedRebidOriginalSuitByOpener(MinimumRebidOriginalSuitByOpener):
+    purpose = "Forced"
+    conditional_purposes = [
+        (ConstraintAnd(MinLength(6), points <= 15), "RebidLongMinimum"),  # a minimum with a sixth card rebids it
+        # A five-card suit rebid with shortness limits the hand like a notrump rebid would,
+        # when 1N is no longer available (OneNotrumpNotAvailable); a natural 2N comes later.
+        (ConstraintAnd(singletons + voids >= 1, OneNotrumpNotAvailable()), "CharacterizeStrength"),
+    ]
     preconditions = ForcedToBid()
     # At the three level (partner's forcing new suit was itself at the three level, e.g. over a
     # weak jump overcall) the rebid promises six; before that opener had no call at all there.
@@ -1295,79 +1100,42 @@ class ForcedRebidOriginalSuitByOpener(MinimumRebidOriginalSuitByOpener):
         ('2C', '2D', '2H', '2S'): MinLength(5),
         ('3C', '3D', '3H', '3S'): MinLength(6),
     }
-    conditional_priorities_per_call = {
-        ('2C', '2D', '2H', '2S'): [
-            (MinLength(6), UnforcedRebidOriginalSuitByOpener),
-            (singletons + voids >= 1, forced_suit_rebid_with_shortness.WithShortness),
-        ],
-    }
-
-
-# The minimum opener's pass of a passed hand's response beats every rebid he would otherwise
-# make (its constraints exclude the hands that raise with four or have extras).
-rule_order.order(UnforcedRebidOriginalSuitByOpener, PassPassedHandResponse)
-rule_order.order(ForcedRebidOriginalSuitByOpener, PassPassedHandResponse)
-rule_order.order(forced_suit_rebid_with_shortness, PassPassedHandResponse)
-rule_order.order(natural_bids, PassPassedHandResponse)
-rule_order.order(opener_higher_level_new_suits, PassPassedHandResponse)
-rule_order.order(opener_one_level_new_major, PassPassedHandResponse)
-rule_order.order(opener_support_majors, PassPassedHandResponse)
-rule_order.order(RebidOneNotrumpByOpener, PassPassedHandResponse)
+    prefer = []
 
 
 class UnsupportedRebid(RebidOriginalSuitByOpener):
     preconditions = MaxShownLength(positions.Partner, 0)
 
 
-opener_unsupported_rebids = enum.Enum(
-    "GameForcingMajor",
-    "GameForcingMinor",
-    "InvitationalMajor",
-    "InvitationalMinor",
-)
-# Opener rebids one suit, so a major and a minor jump never compete; the jump to game in that
-# suit beats the invitational jump in it.  (A single chain here would put the 4m jump above the
-# 3N rebid through InvitationalMajor, see below.)
-rule_order.order(opener_unsupported_rebids.InvitationalMinor, opener_unsupported_rebids.GameForcingMinor)
-rule_order.order(opener_unsupported_rebids.InvitationalMajor, opener_unsupported_rebids.GameForcingMajor)
-rule_order.order(opener_unsupported_rebids.InvitationalMinor, opener_unsupported_rebids.InvitationalMajor)
 # With a solid six-card minor, 19+ and stoppers, 3N is the game to bid, not 4m (p54 h21).
-rule_order.order(opener_unsupported_rebids.GameForcingMinor, natural_exact_notrump_game)
-
-opener_unsupported_minor_rebid = set([
-    opener_unsupported_rebids.GameForcingMinor,
-    opener_unsupported_rebids.InvitationalMinor,
-])
-
-
-opener_unsupported_major_rebid = opener_unsupported_rebids.InvitationalMajor
 
 
 class InvitationalUnsupportedRebidByOpener(UnsupportedRebid):
+    purpose = "RebidSuit"
+    conditional_purposes = [(MinLength(6), "RebidLong")]  # a sixth card is worth showing first
     preconditions = JumpFromLastContract()
-    priorities_per_call = {
-        ('3C', '3D'): opener_unsupported_rebids.InvitationalMinor,
-        ('3H', '3S'): opener_unsupported_rebids.InvitationalMajor,
-    }
-    shared_constraints = MinLength(6), points >= 16
+    shared_constraints = MinLength(6), points >= 16, points <= 18  # 19+ bids the game
+    call_names = ['3C', '3D', '3H', '3S']
+    prefer = []
 
 
 # Mentioned as "double jump rebid his own suit", p56.
 # Only thing close to an example is h19, p56 which has sufficient HCP for a game (even if not fit).
 class GameForcingUnsupportedRebidByOpener(UnsupportedRebid):
+    purpose = "Game"  # the jump to game in our six-card major (the Game preference puts it above 3N)
     preconditions = JumpFromLastContract()
     # I doubt we want to jump to game w/o support from our partner.  He's shown 6 points...
     # Maybe this is for extremely unbalanced hands, like 7+?
     # p54 h19: 4H with 19+ and a six-card major, even opposite a 1N response.
-    priorities_per_call = {
-        ('4C', '4D'): opener_unsupported_rebids.GameForcingMinor,
-        ('4H', '4S'): opener_unsupported_rebids.GameForcingMajor,
-    }
     shared_constraints = MinLength(6), points >= 19
+    call_names = ['4C', '4D', '4H', '4S']
+    prefer = []
 
 
 class HelpSuitGameTry(RebidAfterOneLevelOpen):
+    purpose = "SupportMajors"
     preconditions = [
+        InvertedPrecondition(LastBidHasAnnotation(positions.Partner, annotations.LimitRaise)),  # opposite a limit raise: accept or pass
         NotJumpFromLastContract(),
         HaveFit(),
         UnbidSuit(),
@@ -1375,77 +1143,22 @@ class HelpSuitGameTry(RebidAfterOneLevelOpen):
     # Minimum: 1C,2C,2D, Max: 1C,3C,3S
     call_names = Call.suited_names_between('2D', '3S')
     # Descriptive not placement bid hence points instead of MinimumCombinedPoints.
-    shared_constraints = [MinLength(4), Stopper(), points >= 16]
-    priorities_per_call = lower_calls_first(call_names)
+    shared_constraints = [MinLength(4), Stopper(), points >= 16, HelpSuitGameTryStrength()]
+    prefer = []
 
 
-rule_order.order(
-    # No need to help-suit if we already see game:
-    all_priorities_for_rule(HelpSuitGameTry),
-    GameAccept,
-)
-
-
-opener_jumpshifts = enum.Enum(
-    # It's possible to have 0.4.4.5 and we'd rather jump-shift to hearts than diamonds, no?
-    # FIXME: 4-card suits should be mentioned up-the-line!
-    "JumpShiftToSpades",
-    "JumpShiftToHearts",
-    "JumpShiftToDiamonds",
-    "JumpShiftToClubs",
-)
-rule_order.order(*reversed(opener_jumpshifts))
 # After a negative double the cuebid (19+, every strain still open) outranks a jump shift (19+).
-rule_order.order(opener_jumpshifts, CuebidReponseToNegativeDouble)
-# With a second suit to show, the jump shift is more descriptive than a jump to 4M.
-rule_order.order(opener_unsupported_rebids.GameForcingMajor, opener_jumpshifts)
-
-
-opener_jumpshifts_to_minors = set([
-    opener_jumpshifts.JumpShiftToDiamonds,
-    opener_jumpshifts.JumpShiftToClubs,
-])
-
-
-opener_jumpshifts_to_majors = set([
-    opener_jumpshifts.JumpShiftToSpades,
-    opener_jumpshifts.JumpShiftToHearts,
-])
 
 
 class JumpShiftByOpener(JumpShift, RebidAfterOneLevelOpen):
+    purpose = "GameForce"
     # The lowest possible jumpshift is 1C P 1D P 2H.
     # The highest possible jumpshift is 1S P 2S P 4H
-    priorities_per_call = {
-        (      '3C', '4C'): opener_jumpshifts.JumpShiftToClubs,
-        (      '3D', '4D'): opener_jumpshifts.JumpShiftToDiamonds,
-        ('2H', '3H', '4H'): opener_jumpshifts.JumpShiftToHearts,
-        ('2S', '3S',     ): opener_jumpshifts.JumpShiftToSpades,
-    }
     # FIXME: The book mentions that opener jumpshifts don't always promise 4, especially for 1C P MAJOR P 3D
-    shared_constraints = (points >= 19, MinLength(4))
-
-
-rule_order.order(
-    opener_reverse_to_a_minor,
-    opener_jumpshifts_to_minors,
-)
-
-rule_order.order(
-    # Partner can place us into game, we'd rather JumpShift to show our full strength?
-    # This should never preclude a game bid, since JumpShifts are always to lower suits.
-    natural_games,
-    opener_jumpshifts,
-)
-
-two_clubs_opener_rebid_priorities = enum.Enum(
-    "ThreeLevelNTRebid",
-    "SuitedJumpRebid", # This isn't actually comparible with 3N.
-
-    "SuitedRebid", # I think you'd rather bid 2S when available, instead of 2N, right?
-    "TwoLevelNTRebid",
-)
-rule_order.order(*reversed(two_clubs_opener_rebid_priorities))
+    call_names = ['2H', '2S', '3C', '3D', '3H', '4C', '4D', '4H']
+    preconditions = InvertedPrecondition(LastBidHasAnnotation(positions.Partner, annotations.NegativeDouble))  # after partner's negative double the cuebid is the game force
+    shared_constraints = (points >= 19, MinLength(4), z3.Not(balanced))  # balanced 18-19 jumps in notrump instead
+    prefer = [Longest(*call_names), Cheapest(*call_names)]  # the longer suit, else up the line
 
 
 class OpenerRebidAfterStrongTwoClubs(OpenerRebid):
@@ -1454,44 +1167,49 @@ class OpenerRebidAfterStrongTwoClubs(OpenerRebid):
 
 
 class NotrumpRebidOverTwoClubs(OpenerRebidAfterStrongTwoClubs):
+    purpose = "EnterNotrumpSystem"
     annotations = annotations.NotrumpSystemsOn
     # These bids are only systematic after a 2D response from partner.
     preconditions = LastBidWas(positions.Partner, '2D')
     # 25-27 opens 3N directly, so the rebid bands are 22-24 / 28-29 / 30-31 (booklet).
     constraints = {
-        '2N': [z3.And(points >= 22, points <= 24), two_clubs_opener_rebid_priorities.TwoLevelNTRebid],
-        '3N': [z3.And(points >= 28, points <= 29), two_clubs_opener_rebid_priorities.ThreeLevelNTRebid],
-        '4N': [points >= 30, two_clubs_opener_rebid_priorities.ThreeLevelNTRebid],
+        '2N': z3.And(points >= 22, points <= 24),
+        '3N': z3.And(points >= 28, points <= 29),
+        '4N': points >= 30,
     }
     shared_constraints = balanced
+    prefer = []
 
 
-opener_suited_rebids_after_two_clubs = SuitPreference(Call.suited_names_between('2H', '4C'))
-# Same place in the order as the SuitedRebid slot of two_clubs_opener_rebid_priorities.
-rule_order.order(
-    two_clubs_opener_rebid_priorities.TwoLevelNTRebid,
-    opener_suited_rebids_after_two_clubs.all,
-    two_clubs_opener_rebid_priorities.SuitedJumpRebid,
-)
+opener_suited_rebids_after_two_clubs = suit_preference(Call.suited_names_between('2H', '4C'))
+
+class SolidSevenCardSuitSomewhere(Constraint):
+    """Some suit has seven cards with two of the top three honours: the 2C opener jumps in it."""
+    def expr(self, history, call):
+        return z3.Or([z3.And(expr_for_suit(s) >= 7, TwoOfTheTopThree().expr(history, Call.from_level_and_strain(3, s))) for s in suit.SUITS])
+
 
 class OpenerSuitedRebidAfterStrongTwoClubs(OpenerRebidAfterStrongTwoClubs):
+    purpose = "MajorDiscovery"
     preconditions = [UnbidSuit(), NotJumpFromLastContract()]
     # This maxes out at 4C -> 2C P 3D P 4C
     # If the opponents are competing we're just gonna double them anyway.
     # FIXME: This should either have NoMajorFit(), or have priorities separated
     # so that we prefer to support our partner's major before bidding our own new minor.
-    shared_constraints = MinLength(5)
-    priorities_per_call = opener_suited_rebids_after_two_clubs.per_call
-    conditional_priorities_per_call = opener_suited_rebids_after_two_clubs.conditional
+    # A seven-card suit with two of the top three honours jumps instead (in that suit).
+    shared_constraints = [MinLength(5), ConstraintNot(SolidSevenCardSuitSomewhere())]
+    call_names = opener_suited_rebids_after_two_clubs.call_names
+    prefer = opener_suited_rebids_after_two_clubs
 
 
 class OpenerSuitedJumpRebidAfterStrongTwoClubs(OpenerRebidAfterStrongTwoClubs):
+    purpose = "MajorDiscovery"
     preconditions = [UnbidSuit(), JumpFromLastContract(exact_size=1)]
     # This maxes out at 4C -> 2C P 3D P 5C, but I'm not sure we need to cover that case?
     # If we have self-supporting suit why jump all the way to 5C?  Why not Blackwood in preparation for slam?
     call_names = Call.suited_names_between('3H', '5C')
     shared_constraints = [MinLength(7), TwoOfTheTopThree()]
-    priority = two_clubs_opener_rebid_priorities.SuitedJumpRebid
+    prefer = []
 
 
 class ResponderRebid(Rule):
@@ -1510,28 +1228,20 @@ class ResponderSuitRebid(OneLevelOpeningResponderRebid):
 
 
 class RebidResponderSuitByResponder(ResponderSuitRebid):
+    purpose = "RebidSuit"
+    conditional_purposes = [(MinLength(6), "RebidLongMinimum")]  # a weak rebid of a sixth card
     preconditions = [
         InvertedPrecondition(RaiseOfPartnersLastSuit()),
         InvertedPrecondition(LastBidHasAnnotation(positions.Partner, annotations.OpenerReverse))
     ]
     call_names = ['2D', '2H', '2S']
-    shared_constraints = [MinLength(6), points >= 6]
-
-
-rule_order.order(
-    natural_nt_part_scores,
-    RebidResponderSuitByResponder,
-)
-rule_order.order(
-    # In the rare case of 1C 1D 1H we'd rather mention 1S than rebid our minor.
-    RebidResponderSuitByResponder,
-    new_one_level_suit_responses,
-)
+    shared_constraints = [MinLength(6), points >= 6, points <= 9]  # a weak rebid; 10-11 jumps, more bids game
 
 
 class RebidOwnSuitAfterFourthSuitForcing(ResponderRebid):
     """After our fourth-suit-forcing call and opener's reply, the rebid of our first suit at
     the three level shows six cards and is forcing (p76 h2)."""
+    purpose = "Answer"
     preconditions = [
         LastBidHasAnnotation(positions.Me, annotations.FourthSuitForcing),
         DidBidSuit(positions.Me),
@@ -1550,6 +1260,8 @@ class RaiseAfterJumpShiftResponse(ResponderRebid):
     h24: 3D, "again followed by support for spades").  Opener's rebid of his suit is raised
     to game; the slam try comes later (over 4S opener bids on with extras).  Owns the raise
     in this auction so that the natural slam bids do not jump to 6N over the fit."""
+    purpose = "Support"
+    conditional_purposes = [(minor_raise_before_notrump, "SupportMinorWithFour"), (minor_raise_with_five, "SupportMinorWithFive")]  # see constraints.minor_raise_before_notrump
     preconditions = [
         LastBidHasAnnotation(positions.Me, annotations.JumpShiftResponse),
         RaiseOfPartnersLastSuit(),
@@ -1558,19 +1270,16 @@ class RaiseAfterJumpShiftResponse(ResponderRebid):
     shared_constraints = MinLength(3)
 
 
-# The raise after a jump shift beats the natural games and slams in notrump (6N on the
-# 21-count is what the natural rules did with AKJ95.65.KQ3.AKJ over 1S P 3C P 3S).
-rule_order.order(natural_games, RaiseAfterJumpShiftResponse)
-rule_order.order(natural_slams, RaiseAfterJumpShiftResponse)
-
-
 class ThreeLevelSuitRebidByResponder(ResponderSuitRebid):
+    purpose = "RebidSuit"
+    conditional_purposes = [(MinLength(6), "RebidLong")]  # a sixth card is worth showing first
     preconditions = [
         InvertedPrecondition(RaiseOfPartnersLastSuit()),
         MaxShownLength(positions.Partner, 0),
         MaxShownLength(positions.Me, 5),
     ]
     call_names = ['3C', '3D', '3H', '3S']
+    constraints = {('3H', '3S'): points <= 12}  # a major rebid invites (10-12); with more the game is bid
     # FIXME: Page 74 says "second round jump bid of partner's major is normally a game force".
     # Seems we should promise a bit more than just 10hcp here, or partner will be left guessing?
     # FIXME: We should want 3o5 or better?  Partner may just leave us here...
@@ -1584,6 +1293,7 @@ class WeakNewSuitAfterOneNotrumpResponse(OneLevelOpeningResponderRebid):
     """1x P 1N P 2y P: responder's new suit at the two level is a weak six-card suit to play
     (p71 h12), not forcing.  Before this rule responder could only pass or sign off in
     opener's suit."""
+    purpose = "Discovery"
     preconditions = [
         LastBidWas(positions.Me, '1N'),
         LastBidHasSuit(positions.Partner),
@@ -1598,13 +1308,16 @@ class WeakNewSuitAfterOneNotrumpResponse(OneLevelOpeningResponderRebid):
     forcing = False
 
 
-responder_preferences = enum.Enum(
-    "WithoutStopper",  # an unbid suit is unstopped: the preference rather than notrump
-    "WithStopper",     # notrump is available and comes first
-)
-
-
 class ResponderSignoffInPartnersSuit(OneLevelOpeningResponderRebid):
+    """Responder's preference for one of opener's suits with up to 11.  Without a stopper in an
+    unbid suit it limits the hand before a notrump part score does (p73 h18: 2S on
+    KJ643.9863.A9.K9, 11 with diamonds unstopped, rather than 2N; from play: 2C on
+    KQT4.AT96.632.T8 rather than 1N).  With the unbid suits stopped a notrump part score says
+    it better (1N, not 2D, on K953.972.T986.A9 with clubs stopped), and the preference is the
+    forced minimum when no notrump call is possible (the base purpose, above the default
+    pass)."""
+    purpose = "Forced"
+    conditional_purposes = [(ConstraintNot(StoppersInUnbidSuits()), "CharacterizeStrength")]
     preconditions = [
         InvertedPrecondition(RaiseOfPartnersLastSuit()),
         # z3 is often smart enough to know that partner has 3 in a suit
@@ -1614,18 +1327,8 @@ class ResponderSignoffInPartnersSuit(OneLevelOpeningResponderRebid):
         DidBidSuit(positions.Partner),
     ]
     call_names = ['2C', '2D', '2H', '2S']
-    # A preference with up to 11: the 10-11 hands with the unbid suits stopped invite in notrump
-    # instead (ordering), 12+ bid on (p73 h18: 2S on KJ643.9863.A9.K9, 11 with diamonds
-    # unstopped, rather than 2N; from play: 2C on KQT4.AT96.632.T8 rather than 1N).
     shared_constraints = [MinimumCombinedLength(7), points <= 11]
-    # The unconditional priority is the low one (a rule keeps every priority it can reach):
-    # with the unbid suits stopped a notrump part score comes first, without a stopper the
-    # preference does (p73 h18: diamonds 9863; from play: hearts 632; and 1N, not 2D, on
-    # K953.972.T986.A9 with clubs stopped).
-    priority = responder_preferences.WithStopper
-    conditional_priorities = [
-        (ConstraintNot(StoppersInUnbidSuits()), responder_preferences.WithoutStopper),
-    ]
+    prefer = []
 
 
 # class ResponderSignoffInMinorGame(ResponderRebid):
@@ -1645,6 +1348,8 @@ class ResponderNotrumpInvitation(OneLevelOpeningResponderRebid):
     (p70 h7: KJ64.652.KT.A754, 11; p71 h11: QJ4.T42.K9.A8765, 10).  This rule owns the 2N in
     responder's rebid auctions (one rule per call), so a 9-count takes a preference and a
     13-count bids game; over opener's reverse the 2N is the Ingberman relay instead."""
+    purpose = "CharacterizeStrength"
+    conditional_purposes = [(semi_balanced, "BalancedLimit")]  # a hand without a singleton tells its strength here
     preconditions = [
         NotJumpFromLastContract(),
         InvertedPrecondition(LastBidHasAnnotation(positions.Partner, annotations.OpenerReverse)),
@@ -1654,6 +1359,7 @@ class ResponderNotrumpInvitation(OneLevelOpeningResponderRebid):
 
 
 class ResponderReverse(OneLevelOpeningResponderRebid):
+    purpose = "Discovery"
     preconditions = reverse_preconditions
     # Min: 1C,1D,2C,2H, Max: 1S,2D,2S,3H
     call_names = Call.suited_names_between('2H', '3H')
@@ -1661,21 +1367,15 @@ class ResponderReverse(OneLevelOpeningResponderRebid):
 
 
 class JumpShiftResponderRebid(JumpShift, OneLevelOpeningResponderRebid):
+    purpose = "GameForce"
     # Smallest: 1D,1H,1S,3C
     # Largest: 1S,2H,3C,4D (anything above 4D is game)
     call_names = Call.suited_names_between('3C', '4D')
     # 16+: with 14-15 responder reverses or bids 3N instead (p71 h13, p72 h15); the jump shift
     # is the slam-suggesting rebid.
     shared_constraints = [MinLength(4), points >= 16]
-    priorities_per_call = lower_calls_first(call_names)
-
-
-rule_order.order(
-    RebidResponderSuitByResponder,
-    ThreeLevelSuitRebidByResponder,
-    ResponderReverse,
-    all_priorities_for_rule(JumpShiftResponderRebid),
-)
+    preconditions = InvertedPrecondition(LastBidHasAnnotation(positions.Me, annotations.NegativeDouble))  # after our negative double the cuebid is the game force
+    prefer = []
 
 
 class FourthSuitForcingPrecondition(Precondition):
@@ -1690,10 +1390,6 @@ class SufficientPointsForFourthSuitForcing(Constraint):
         return points >= max(0, points_for_sound_notrump_bid_at_level[call.level] - history.partner.min_points)
 
 
-fourth_suit_forcing = enum.Enum(
-    "TwoLevel",
-    "ThreeLevel",
-)
 # No need for ordering because at most one is available at any time.
 
 class FourthSuitForcing(Rule):
@@ -1713,9 +1409,6 @@ class FourthSuitForcing(Rule):
 # Fourth suit forcing with four-card support for opener's second suit and only invitational
 # values: raise the suit instead (p73 h20).  Its own enum, not a member of fourth_suit_forcing,
 # so that it can sit below the natural part scores while fourth_suit_forcing stays above them.
-fourth_suit_forcing_with_support = enum.Enum(
-    "WithSupport",
-)
 
 
 # Fourth suit forcing with the fourth suit stopped: with 12+ (24 combined) the ask is still
@@ -1723,12 +1416,20 @@ fourth_suit_forcing_with_support = enum.Enum(
 # find the 5-3 fit first), but a hand that can bid the notrump game bids it instead, and a
 # 10-11 count with a stopper invites in notrump rather than asks (ordering below); its own
 # enum for the same reason as above.
-fourth_suit_forcing_with_stopper = enum.Enum(
-    "WithStopper",
-)
 
 
 class NonJumpFourthSuitForcing(FourthSuitForcing):
+    # Without a stopper in the fourth suit the ask comes first; with one, a game in notrump is
+    # bid when it fits and the ask comes before a limit bid; with support for partner's suit
+    # the raise and the limit bids are better.
+    purpose = "Miscellaneous"
+    # Without a stopper in the fourth suit the bid asks for one; with a stopper and game values
+    # it waits behind a natural game; with four-card support for opener's second suit and a
+    # weak hand it is neither (Miscellaneous).
+    conditional_purposes = [
+        (ConstraintAnd(ConstraintNot(ConstraintAnd(SupportForPartnerLastBid(4), points <= 12)), ConstraintNot(Stopper())), "Ask"),
+        (ConstraintAnd(ConstraintNot(ConstraintAnd(SupportForPartnerLastBid(4), points <= 12)), MinimumCombinedPoints(24)), "AskLater"),
+    ]
     preconditions = NotJumpFromPartnerLastBid()
     # Smallest: 1D,1H,1S,2C
     # Largest: 1H,2D,3C,3S
@@ -1736,67 +1437,32 @@ class NonJumpFourthSuitForcing(FourthSuitForcing):
     # the demoted cases must be the default); without four-card support for opener's second
     # suit, or with game-going values, the call has its stopped or unstopped fourth-suit rank.
     call_names = ['2C', '2D', '2H', '2S', '3C', '3D', '3H', '3S']
-    priority = fourth_suit_forcing_with_support.WithSupport
-    conditional_priorities_per_call = {
-        ('2C', '2D', '2H', '2S'): [
-            (ConstraintAnd(ConstraintNot(ConstraintAnd(SupportForPartnerLastBid(4), points <= 12)), ConstraintNot(Stopper())), fourth_suit_forcing.TwoLevel),
-            (ConstraintAnd(ConstraintNot(ConstraintAnd(SupportForPartnerLastBid(4), points <= 12)), MinimumCombinedPoints(24)), fourth_suit_forcing_with_stopper.WithStopper),
-        ],
-        ('3C', '3D', '3H', '3S'): [
-            (ConstraintAnd(ConstraintNot(ConstraintAnd(SupportForPartnerLastBid(4), points <= 12)), ConstraintNot(Stopper())), fourth_suit_forcing.ThreeLevel),
-            (ConstraintAnd(ConstraintNot(ConstraintAnd(SupportForPartnerLastBid(4), points <= 12)), MinimumCombinedPoints(24)), fourth_suit_forcing_with_stopper.WithStopper),
-        ],
-    }
-
-
-# With four-card support and invitational values the raise says more than the fourth suit;
-# the demoted ask also loses to a natural notrump part score (a 10-11 count with the fourth
-# suit stopped invites in notrump).
-rule_order.order(DefaultPass, fourth_suit_forcing_with_support, natural_suited_part_scores)
-rule_order.order(fourth_suit_forcing_with_support, natural_nt_part_scores)
+    prefer = []
 
 
 # We'd rather explore for NT than rebid a 5-card major, but with
 # six or more, we prefer the major.
-rule_order.order(
-    major_responses_to_opener_reverse.WithFive,
-    fourth_suit_forcing,
-    major_responses_to_opener_reverse.WithSixOrMore
-)
-rule_order.order(
-    major_responses_to_opener_reverse.WithFive,
-    fourth_suit_forcing_with_stopper,
-    major_responses_to_opener_reverse.WithSixOrMore
-)
 
 
 class TwoSpadesJumpFourthSuitForcing(FourthSuitForcing):
+    purpose = "Ask"
     preconditions = JumpFromPartnerLastBid(exact_size=1)
     call_names = '2S'
-    priority = fourth_suit_forcing.TwoLevel
+    prefer = []
 
 
-fourth_suit_forcing_response_priorities = enum.Enum(
-    "JumpToThreeNotrump",
-    "Notrump",
-    "DelayedSupport",
-    # "SecondSuit",
-    "FourthSuit",
-)
-rule_order.order(*reversed(fourth_suit_forcing_response_priorities))
+class MaxLengthInPartnersFirstSuit(Constraint):
+    """At most max_length cards in the first suit partner bid."""
+    def __init__(self, max_length):
+        self.max_length = max_length
 
-rebid_response_to_fourth_suit_forcing_priorities = enum.Enum(*Call.suited_names_between('2D', '4H'))
-# Rebid is the lowest priority, so we want lower bids to be higher priority, hence the reverse, right?
-rule_order.order(*reversed(rebid_response_to_fourth_suit_forcing_priorities))
-# RHO's double of the fourth suit does not relieve opener of answering it (before the double he
-# was forced and passing was not on offer; after it DefaultPass would otherwise be unordered).
-rule_order.order(DefaultPass, fourth_suit_forcing_response_priorities)
-rule_order.order(DefaultPass, rebid_response_to_fourth_suit_forcing_priorities)
+    def expr(self, history, call):
+        suits = [view.last_call.strain for view in history.partner.walk
+                 if view.last_call is not None and view.last_call.strain in suit.SUITS]
+        if not suits:
+            return NO_CONSTRAINTS
+        return expr_for_suit(suits[-1]) <= self.max_length
 
-rule_order.order(
-    rebid_response_to_fourth_suit_forcing_priorities,
-    fourth_suit_forcing_response_priorities
-)
 
 class ResponseToFourthSuitForcing(Rule):
     category = categories.Gadget
@@ -1810,20 +1476,24 @@ class StopperInFouthSuit(Constraint):
 
 
 class NotrumpResponseToFourthSuitForcing(ResponseToFourthSuitForcing):
+    purpose = "Answer"
     preconditions = NotJumpFromLastContract()
     call_names = ['2N', '3N']
-    priority = fourth_suit_forcing_response_priorities.Notrump
     shared_constraints = StopperInFouthSuit()
+    prefer = []
+    constraints = {'2N': points <= 14}  # a minimum; with more the jump to 3N
 
 
 class NotrumpJumpResponseToFourthSuitForcing(ResponseToFourthSuitForcing):
+    purpose = "Answer"
     preconditions = JumpFromLastContract()
     call_names = '3N'
-    priority = fourth_suit_forcing_response_priorities.JumpToThreeNotrump
-    shared_constraints = [StopperInFouthSuit(), MinimumCombinedPoints(25)]
+    shared_constraints = [StopperInFouthSuit(), points >= 15]
+    prefer = []
 
 
 class DelayedSupportResponseToFourthSuitForcing(ResponseToFourthSuitForcing):
+    purpose = "Answer"
     preconditions = [
         NotJumpFromLastContract(),
         DidBidSuit(positions.Partner),
@@ -1831,31 +1501,35 @@ class DelayedSupportResponseToFourthSuitForcing(ResponseToFourthSuitForcing):
         InvertedPrecondition(DidBidSuit(positions.Me)),
     ]
     call_names = Call.suited_names_between('2D', '4H')
-    priority = fourth_suit_forcing_response_priorities.DelayedSupport
-    shared_constraints = MinimumCombinedLength(7)
+    # Three-card support without a stopper in the fourth suit (with one, notrump).
+    shared_constraints = [MinimumCombinedLength(7), ConstraintNot(StopperInFouthSuit())]
+    prefer = []
 
 
 class RebidResponseToFourthSuitForcing(ResponseToFourthSuitForcing):
+    purpose = "Answer"
     preconditions = [
         NotJumpFromLastContract(),
         DidBidSuit(positions.Me),
     ]
     # FIXME: The higher call should show additional length in that suit.
-    priorities_per_call = copy_dict(rebid_response_to_fourth_suit_forcing_priorities, Call.suited_names_between('2D', '4H'))
+    call_names = Call.suited_names_between('2D', '4H')
     shared_constraints = NO_CONSTRAINTS
+    fallback = 1  # the rebid says nothing more: no stopper, no delayed support
 
 
 class FourthSuitResponseToFourthSuitForcing(ResponseToFourthSuitForcing):
+    """Raising the fourth suit: four cards there without a stopper (with one, notrump)."""
+    purpose = "Answer"
     preconditions = [
         NotJumpFromLastContract(),
         UnbidSuit(),
     ]
     call_names = Call.suited_names_between('3C', '4S')
-    priority = fourth_suit_forcing_response_priorities.FourthSuit
-    shared_constraints = [
-        MinLength(4),
-        SufficientCombinedPoints(),
-    ]
+    # Four cards there, no stopper (with one, notrump), and no three-card support for
+    # partner's first suit (with it, the delayed support).
+    shared_constraints = [MinLength(4), SufficientCombinedPoints(), ConstraintNot(StopperInFouthSuit()), MaxLengthInPartnersFirstSuit(2)]
+    prefer = []
 
 
 # FIXME: We should add an OpenerRebid of 3N over 2C P 2N P to show a minimum 22-24 HCP
@@ -1877,14 +1551,14 @@ class RebidAfterSecondNegative(Rule):
 
 
 class RebidSuitAfterSecondNegative(RebidAfterSecondNegative):
+    purpose = "Answer"
     preconditions = RebidSameSuit()
     call_names = ['3D', '3H', '3S']
     shared_constraints = MinLength(6)
 
 
-
-
 class SecondNegative(ResponderRebid):
+    purpose = "Answer"
     preconditions = [
         StrongTwoClubOpeningBook(),
         LastBidWas(positions.Me, '2D'),
@@ -1897,27 +1571,6 @@ class SecondNegative(ResponderRebid):
     annotations = annotations.Artificial
 
 
-nt_response_priorities = enum.Enum(
-    "QuantitativeFourNotrumpJump",
-    "LongMajorSlamInvitation",
-    "MinorGameForceStayman",
-    "FourFiveStayman",
-    "JacobyTransferToLongerMajor",
-    "JacobyTransferToSpadesWithGameForcingValues",
-    "JacobyTransferToHeartsWithGameForcingValues",
-    "JacobyTransferToHearts",
-    "JacobyTransferToSpades",
-    "Stayman",
-    "NotrumpGameAccept",
-    "NotrumpGameInvitation",
-    "LongMinorGameInvitation",
-    "RedoubleTransferToMinor",
-    "TwoSpadesRelay",
-    "GarbageStayman",
-)
-rule_order.order(*reversed(nt_response_priorities))
-
-
 class NotrumpResponse(Rule):
     category = categories.NotrumpSystem
     preconditions = [
@@ -1927,19 +1580,21 @@ class NotrumpResponse(Rule):
 
 
 class NotrumpGameInvitation(NotrumpResponse):
+    purpose = "CharacterizeStrength"
     # This is an explicit descriptive rule, not a ToPlay rule.
     # ToPlay is 7-9, but 7 points isn't in game range.
     # Opposite 15-17: 9+, or 8 with a 5-card suit; a flat 8 passes (p6, h2).  Opposite a
     # balancing 1N (12-14) the combined 23 needs 9+ anyway.
     constraints = { '2N': ConstraintOr(MinimumCombinedPoints(24), ConstraintAnd(MinimumCombinedPoints(23), z3.Or(a_five_card_suit, points >= 9))) }
-    priority = nt_response_priorities.NotrumpGameInvitation
+    prefer = []
 
 
 class NotrumpGameAccept(NotrumpResponse):
+    purpose = "Game"
     # This is an explicit descriptive rule, not a ToPlay rule.
     # FIXME: p13, h30 suggests we should make this jump with 7 in a minor topped by the AK.
     constraints = { '3N': MinimumCombinedPoints(25) }
-    priority = nt_response_priorities.NotrumpGameAccept
+    prefer = []
 
 
 two_club_stayman_constraint = ConstraintAnd(
@@ -1963,6 +1618,12 @@ minor_game_force_stayman_constraints = z3.And(
 
 # 2C is a very special snowflake and can lead into many sequences, thus it gets its own class.
 class TwoLevelStayman(NotrumpResponse):
+    purpose = "Miscellaneous"  # garbage Stayman is what is left for a weak hand; the asks are promoted below
+    conditional_purposes = [
+        (ConstraintAnd(z3.And(z3.Or(hearts == 4, spades == 4), hearts <= 5, spades <= 5), two_club_stayman_constraint), "Ask"),  # four-four: ask; a six-card major transfers
+        (four_five_stayman_constraint, "Ask"),  # five-four: ask
+        (minor_game_force_stayman_constraints, "Ask"),
+    ]
     annotations = annotations.Stayman
     call_names = '2C'
 
@@ -1977,37 +1638,34 @@ class TwoLevelStayman(NotrumpResponse):
             ),
         ),
     )
-    conditional_priorities = [
-        (minor_game_force_stayman_constraints, nt_response_priorities.MinorGameForceStayman),
-        (four_five_stayman_constraint, nt_response_priorities.FourFiveStayman),
-        (two_club_stayman_constraint, nt_response_priorities.Stayman),
-    ]
-    priority = nt_response_priorities.GarbageStayman
+    prefer = []
 
 
 class BasicStayman(NotrumpResponse):
     annotations = annotations.Stayman
-    priority = nt_response_priorities.Stayman
     shared_constraints = [z3.Or(hearts >= 4, spades >= 4)]
-    conditional_priorities = [
-        # 3-level and stolen stayman still also prefer stayman over transfers with 4-5.
-        (four_five_stayman_constraint, nt_response_priorities.FourFiveStayman),
-    ]
+    prefer = []
 
 
 class ThreeLevelStayman(BasicStayman):
+    purpose = "AskLater"
+    conditional_purposes = [(z3.Or(hearts == 4, spades == 4), "Ask")]  # four-four or five-four: ask; one long major: transfer
     preconditions = NotJumpFromPartnerLastBid()
     call_names = '3C'
     shared_constraints = MinimumCombinedPoints(25)
 
 
 class StolenTwoClubStayman(BasicStayman):
+    purpose = "AskLater"
+    conditional_purposes = [(z3.Or(hearts == 4, spades == 4), "Ask")]  # four-four or five-four: ask; one long major: transfer
     preconditions = LastBidWas(positions.RHO, '2C')
     call_names = 'X'
     shared_constraints = MinimumCombinedPoints(23)
 
 
 class StolenThreeClubStayman(BasicStayman):
+    purpose = "AskLater"
+    conditional_purposes = [(z3.Or(hearts == 4, spades == 4), "Ask")]  # four-four or five-four: ask; one long major: transfer
     preconditions = LastBidWas(positions.RHO, '3C')
     call_names = 'X'
     shared_constraints = MinimumCombinedPoints(25)
@@ -2017,39 +1675,31 @@ class NotrumpTransferResponse(NotrumpResponse):
     annotations = annotations.Transfer
 
 
-class JacobyTransferToHearts(NotrumpTransferResponse):
+class JacobyTransfer(NotrumpTransferResponse):
+    """A transfer to a five-card major: the longer major; with five-five, hearts first with a
+    weak hand and spades first with game values (p11 h20)."""
+    purpose = "MajorDiscovery"
     preconditions = NotJumpFromPartnerLastBid()
-    call_names = ['2D', '3D', '4D']
-    shared_constraints = hearts >= 5
-    # Two-level transfers have special rules for setting up a game force sequence with 5-5
-    conditional_priorities_per_call = {
-        '2D': [(z3.And(hearts == spades, points >= 10), nt_response_priorities.JacobyTransferToHeartsWithGameForcingValues)],
+    call_names = ['2D', '3D', '4D', '2H', '3H', '4H']
+    constraints = {
+        ('2D', '3D', '4D'): hearts >= 5,
+        ('2H', '3H', '4H'): spades >= 5,
     }
-    conditional_priorities = [
-        (hearts > spades, nt_response_priorities.JacobyTransferToLongerMajor),
+    prefer = [
+        (('2D', '3D', '4D'), hearts > spades),
+        (('2H', '3H', '4H'), spades > hearts),
+        (('2H', '3H', '4H'), z3.And(hearts == spades, points >= 10)),
+        Cheapest('2D', '3D', '4D'), Cheapest('2H', '3H', '4H'),
     ]
-    priority = nt_response_priorities.JacobyTransferToHearts
-
-
-class JacobyTransferToSpades(NotrumpTransferResponse):
-    preconditions = NotJumpFromPartnerLastBid()
-    call_names = ['2H', '3H', '4H']
-    shared_constraints = spades >= 5
-    # Two-level transfers have special rules for setting up a game force sequence with 5-5
-    conditional_priorities_per_call = {
-        '2H': [(z3.And(hearts == spades, points >= 10), nt_response_priorities.JacobyTransferToSpadesWithGameForcingValues)],
-    }
-    conditional_priorities = [
-        (spades > hearts, nt_response_priorities.JacobyTransferToLongerMajor),
-    ]
-    priority = nt_response_priorities.JacobyTransferToSpades
 
 
 class TwoSpadesRelay(NotrumpTransferResponse):
+    purpose = "Ask"
+    preconditions = InvertedPrecondition(LastBidWas(positions.RHO, 'X'))  # over their double the redouble transfers
     constraints = {
-        '2S': z3.Or(diamonds >= 6, clubs >= 6),
+        '2S': z3.And(z3.Or(diamonds >= 6, clubs >= 6), hearts <= 3, spades <= 3, points <= 7),  # weak; with a four-card major, Stayman
     }
-    priority = nt_response_priorities.TwoSpadesRelay
+    prefer = []
 
 
 class QuantitativeFourNotrumpJumpConstraint(Constraint):
@@ -2059,20 +1709,35 @@ class QuantitativeFourNotrumpJumpConstraint(Constraint):
 
 
 class QuantitativeFourNotrumpJump(NotrumpResponse):
+    purpose = "Slam"  # a slam invitation outranks the game accept it would otherwise negate
     call_names = '4N'
     preconditions = JumpFromLastContract()
     shared_constraints = QuantitativeFourNotrumpJumpConstraint()
-    priority = nt_response_priorities.QuantitativeFourNotrumpJump
     annotations = annotations.QuantitativeFourNotrumpJump
+    prefer = []
 
 
 class ResponseToQuantitativeFourNotrump(Rule):
+    purpose = "Answer"
     preconditions = LastBidHasAnnotation(positions.Partner, annotations.QuantitativeFourNotrumpJump)
     constraints = {
         # This is only needed to make the P vs. 5N decision, 6N == 17 is provided by NaturalNotrump.
         'P': points == 15,
         '5N': points == 16,
     }
+
+
+doubled_transfer_redouble_hand = ConstraintAnd(MinLengthInLastContractSuit(5), ThreeOfTheTopFiveInLastContractSuit())
+
+
+class RedoubleHandOverDoubledTransfer(Constraint):
+    """RHO doubled partner's transfer and we hold five good cards in the doubled suit: the
+    redouble (p18 h43).  Undoubled, no such hand."""
+    def expr(self, history, call):
+        rho = history.rho.last_call
+        if rho is None or not rho.is_double():
+            return z3.BoolVal(False)
+        return doubled_transfer_redouble_hand.expr(history, call)
 
 
 class AcceptTransfer(Rule):
@@ -2083,21 +1748,24 @@ class AcceptTransfer(Rule):
         NotJumpFromLastContract(),
     ]
     shared_constraints = SupportForTransferOverInterference()
-    priority = relay_priorities.Accept
+    fallback = 1  # completing the transfer is what is left when no better answer fits
     # FIXME: Should these generically be artifical?  Is a double of a transfer accept lead-directing?
 
 
 class AcceptTransferToHearts(AcceptTransfer):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Partner, suit.DIAMONDS)
     call_names = ['2H', '3H']
 
 
 class AcceptTransferToSpades(AcceptTransfer):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Partner, suit.HEARTS)
     call_names = ['2S', '3S']
 
 
 class AcceptTransferToClubs(AcceptTransfer):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Partner, suit.SPADES)
     call_names = '3C'
     # We aren't actually showing clubs, so maybe a double is lead-directing and thus this is artificial?
@@ -2114,17 +1782,19 @@ class SuperAcceptTransfer(Rule):
         InvertedPrecondition(LastBidHasSuit(positions.RHO)),
     ]
     # FIXME: This should use support points, but MinimumSupportPointsForPartnersLastSuit will be confused by the transfer.
-    shared_constraints = points >= 17
-    priority = relay_priorities.SuperAccept
+    shared_constraints = [points >= 17, ConstraintNot(RedoubleHandOverDoubledTransfer())]
+    prefer = []
 
 
 class SuperAcceptTransferToHearts(SuperAcceptTransfer):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Partner, suit.DIAMONDS)
     call_names = '3H'
     shared_constraints = hearts >=4
 
 
 class SuperAcceptTransferToSpades(SuperAcceptTransfer):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Partner, suit.HEARTS)
     call_names = '3S'
     shared_constraints = spades >=4
@@ -2143,24 +1813,27 @@ class OpenerOverDoubledTransfer(Rule):
 
 
 class PassDoubledTransferToHearts(OpenerOverDoubledTransfer):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Partner, suit.DIAMONDS)
     call_names = 'P'
-    shared_constraints = hearts <= 2
-    priority = relay_priorities.PassDoubledTransfer
+    shared_constraints = [hearts <= 2, ConstraintNot(RedoubleHandOverDoubledTransfer())]
+    prefer = []
 
 
 class PassDoubledTransferToSpades(OpenerOverDoubledTransfer):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Partner, suit.HEARTS)
     call_names = 'P'
-    shared_constraints = spades <= 2
-    priority = relay_priorities.PassDoubledTransfer
+    shared_constraints = [spades <= 2, ConstraintNot(RedoubleHandOverDoubledTransfer())]
+    prefer = []
 
 
 class RedoubleDoubledTransfer(OpenerOverDoubledTransfer):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Partner, (suit.DIAMONDS, suit.HEARTS))
     call_names = 'XX'
-    shared_constraints = [MinLengthInLastContractSuit(5), ThreeOfTheTopFiveInLastContractSuit()]
-    priority = relay_priorities.RedoubleDoubledTransfer
+    shared_constraints = doubled_transfer_redouble_hand
+    prefer = []
 
 
 class CompleteOwnTransferAfterDouble(Rule):
@@ -2175,20 +1848,23 @@ class CompleteOwnTransferAfterDouble(Rule):
         LastBidWas(positions.RHO, 'P'),
     ]
     shared_constraints = points <= 7
-    priority = relay_priorities.Accept
+    prefer = []
 
 
 class CompleteOwnTransferToHeartsAfterDouble(CompleteOwnTransferAfterDouble):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Me, suit.DIAMONDS)
     call_names = '2H'
 
 
 class CompleteOwnTransferToSpadesAfterDouble(CompleteOwnTransferAfterDouble):
+    purpose = "Answer"
     preconditions = LastBidHasStrain(positions.Me, suit.HEARTS)
     call_names = '2S'
 
 
 class ResponseAfterTransferToClubs(Rule):
+    purpose = "Answer"
     category = categories.Relay # Is this right?
     preconditions = [
         LastBidWas(positions.Partner, '3C'),
@@ -2198,7 +1874,7 @@ class ResponseAfterTransferToClubs(Rule):
         'P': clubs >= 6,
         '3D': diamonds >= 6,
     }
-    priority = relay_priorities.Accept # This priority is bogus.
+    prefer = []
 
 
 class RebidAfterJacobyTransfer(Rule):
@@ -2210,35 +1886,32 @@ class RebidAfterJacobyTransfer(Rule):
 class NotrumpRebidAfterJacobyTransfer(RebidAfterJacobyTransfer):
     """After a completed transfer, 2N invites with 8-9 (p6); without this rule the natural 2N
     read 7-9 and opener's game acceptance needed a point too many."""
+    purpose = "CharacterizeStrength"
     call_names = '2N'
     shared_constraints = points <= 9
 
 
 # FIXME: We need this over higher-level transfers as well to replace the NaturalSuited responses.
 class SpadesRebidAfterHeartsTransfer(RebidAfterJacobyTransfer):
+    purpose = "MajorDiscovery"
     preconditions = LastBidWas(positions.Me, '2D')
     # FIXME: We should not need to manually cap 2S.  We can infer that we have < 10 or we would have transfered to hearts first.
     # FIXME: If we had a 6-5 we would raise directly to game instead of bothering to mention the other major?
     constraints = { '2S': z3.And(spades >= 5, points >= 8, points <= 9) }
 
 
-hearts_rebids_after_spades_transfers = enum.Enum(
-    "SlamInterest",
-    "NoSlamInterest",
-)
-rule_order.order(*reversed(hearts_rebids_after_spades_transfers))
-
-
 class HeartsRebidAfterSpadesTransfer(RebidAfterJacobyTransfer):
+    purpose = "MajorDiscovery"
     preconditions = LastBidWas(positions.Me, '2H')
     constraints = {
         # A 3H rebid shows slam interest.  Currently assuming that's 13+?
         # Maybe the 3H bid requires_planning?
-        '3H': (points >= 13, hearts_rebids_after_spades_transfers.SlamInterest),
+        '3H': points >= 13,
         # A jump to 4H and partner choses 4H or 4S, no slam interest. p11
-        '4H': (points >= 10, hearts_rebids_after_spades_transfers.NoSlamInterest),
+        '4H': points >= 10,
     }
     shared_constraints = hearts >= 5
+    prefer = []
 
 
 class GameRaiseAfterJacobyTransfer(RebidAfterJacobyTransfer):
@@ -2249,25 +1922,22 @@ class GameRaiseAfterJacobyTransfer(RebidAfterJacobyTransfer):
 
 
 class GameRaiseAfterTransferToHearts(GameRaiseAfterJacobyTransfer):
+    purpose = "Support"
     preconditions = LastBidWas(positions.Partner, '2H')
     call_names = '4H'
 
 
 class GameRaiseAfterTransferToSpades(GameRaiseAfterJacobyTransfer):
+    purpose = "Support"
     preconditions = LastBidWas(positions.Partner, '2S')
     call_names = '4S'
 
 
 game_raises_after_transfer = set([GameRaiseAfterTransferToHearts, GameRaiseAfterTransferToSpades])
-# The game raise says more than the invitational raise to three, which is what is left for
-# the weaker hand.
-rule_order.order(natural_suited_part_scores, game_raises_after_transfer)
-# With six of the transferred major and five of the other, the game raise rather than the
-# exploratory 2S (A.3.KJ8532.JT764: "with 6-5 and weak, no need to explore spades").
-rule_order.order(SpadesRebidAfterHeartsTransfer, game_raises_after_transfer)
 
 
 class NewMinorRebidAfterJacobyTransfer(RebidAfterJacobyTransfer):
+    purpose = "MinorDiscovery"
     call_names = '3C', '3D'
     # Minors are not worth mentioning after a jacoby transfer unless we have 5 of them and game-going values.
     # FIXME: It seems like this should imply some number of honors in the bid suit, but there may be times
@@ -2275,36 +1945,55 @@ class NewMinorRebidAfterJacobyTransfer(RebidAfterJacobyTransfer):
     shared_constraints = [MinLength(5), MinimumCombinedPoints(25)]
 
 
-stayman_response_priorities = enum.Enum(
-    "HeartStaymanResponse",
-    "SpadeStaymanResponse",
-    "DiamondStaymanResponse",
-    "RedoubleAfterDoubledStayman",
-    "PassStaymanResponse",
-)
-rule_order.order(*reversed(stayman_response_priorities))
-
-
 class StaymanResponse(Rule):
     preconditions = LastBidHasAnnotation(positions.Partner, annotations.Stayman)
     category = categories.NotrumpSystem
 
 
+class NoStolenMajor(Constraint):
+    """RHO overcalled Stayman in a major: four cards there are shown by the double, not by
+    bidding the other major."""
+    def expr(self, history, call):
+        rho = history.rho.last_call
+        if rho is None or rho.strain not in suit.MAJORS:
+            return NO_CONSTRAINTS
+        return expr_for_suit(rho.strain) <= 3
+
+
 class NaturalStaymanResponse(StaymanResponse):
+    purpose = "Answer"
     preconditions = NotJumpFromPartnerLastBid()
     constraints = {
-        ('2H', '3H'): (hearts >= 4, stayman_response_priorities.HeartStaymanResponse),
-        ('2S', '3S'): (spades >= 4, stayman_response_priorities.SpadeStaymanResponse),
+        ('2H', '3H'): hearts >= 4,
+        ('2S', '3S'): spades >= 4,
     }
+    shared_constraints = NoStolenMajor()  # over their overcall of a major, four of it is the double
+    prefer = []  # four-four: hearts (up the line)
+
+
+stayman_redouble_hand = clubs >= 5
+
+
+class RedoubleHandOverDoubledStayman(Constraint):
+    """RHO doubled Stayman and we hold five clubs: the redouble (p17 h38)."""
+    def expr(self, history, call):
+        rho = history.rho.last_call
+        if rho is None or not rho.is_double():
+            return z3.BoolVal(False)
+        return stayman_redouble_hand
 
 
 class PassStaymanResponse(StaymanResponse):
+    purpose = "Answer"
     call_names = 'P'
-    shared_constraints = NO_CONSTRAINTS
-    priority = stayman_response_priorities.PassStaymanResponse
+    # Over their double or overcall (p17 h37-39), or over partner's Stayman double of their 2C.
+    preconditions = EitherPrecondition(InvertedPrecondition(LastBidWas(positions.RHO, 'P')), LastBidWas(positions.Partner, 'X'))
+    shared_constraints = [hearts <= 3, spades <= 3, ConstraintNot(RedoubleHandOverDoubledStayman())]  # no major to show, no redouble
+    prefer = []
 
 
 class DiamondStaymanResponse(StaymanResponse):
+    purpose = "Answer"
     preconditions = [
         NotJumpFromPartnerLastBid(),
         # If RHO called a new suit or doubled, pass takes on this meaning.
@@ -2312,8 +2001,8 @@ class DiamondStaymanResponse(StaymanResponse):
     ]
     call_names = ['2D', '3D']
     shared_constraints = NO_CONSTRAINTS
-    priority = stayman_response_priorities.DiamondStaymanResponse
     annotations = annotations.Artificial
+    fallback = 1  # no major to show
 
 
 # FIXME: There must be a simpler way to write history-variant rules like this.
@@ -2322,14 +2011,16 @@ class StolenHeartStaymanResponse(StaymanResponse):
     constraints = { 'X': hearts >= 4 }
     # The double stands in for the Stayman response RHO's bid took away.
     annotations = annotations.Artificial
-    priority = stayman_response_priorities.HeartStaymanResponse
+    prefer = []
 
 
 class StolenTwoHeartStaymanResponse(StolenHeartStaymanResponse):
+    purpose = "Answer"
     preconditions = LastBidWas(positions.RHO, '2H')
 
 
 class StolenThreeHeartStaymanResponse(StolenHeartStaymanResponse):
+    purpose = "Answer"
     preconditions = LastBidWas(positions.RHO, '3H')
 
 
@@ -2337,21 +2028,24 @@ class StolenSpadeStaymanResponse(StaymanResponse):
     constraints = { 'X': spades >= 4 }
     # The double stands in for the Stayman response RHO's bid took away.
     annotations = annotations.Artificial
-    priority = stayman_response_priorities.SpadeStaymanResponse
+    prefer = []
 
 
 class StolenTwoSpadeStaymanResponse(StolenSpadeStaymanResponse):
+    purpose = "Answer"
     preconditions = LastBidWas(positions.RHO, '2S')
 
 
 class StolenThreeSpadeStaymanResponse(StolenSpadeStaymanResponse):
+    purpose = "Answer"
     preconditions = LastBidWas(positions.RHO, '3S')
 
 
 class RedoubleAfterDoubledStayman(StaymanResponse):
+    purpose = "Answer"
     preconditions = LastBidWas(positions.RHO, 'X')
-    constraints = { 'XX': clubs >= 5 }
-    priority = stayman_response_priorities.RedoubleAfterDoubledStayman
+    constraints = { 'XX': z3.And(stayman_redouble_hand, hearts <= 3, spades <= 3) }  # with a major to show, show it
+    prefer = []
 
 
 class ResponseToOneNotrump(NotrumpResponse):
@@ -2359,17 +2053,19 @@ class ResponseToOneNotrump(NotrumpResponse):
 
 
 class LongMinorGameInvitation(ResponseToOneNotrump):
+    purpose = "LongSuitInvitation"
     call_names = ['3C', '3D']
-    shared_constraints = [MinLength(6), TwoOfTheTopThree(), points >= 5]
+    shared_constraints = [MinLength(6), TwoOfTheTopThree(), points >= 5, points <= 12]  # with more, Stayman then the minor forces to game
     # FIXME: Should use the longer suit preference pattern.
-    priority = nt_response_priorities.LongMinorGameInvitation
+    prefer = []
 
 
 class LongMajorSlamInvitation(ResponseToOneNotrump):
+    purpose = "LongSuitInvitation"
     call_names = ['3H', '3S']
     shared_constraints = [MinLength(6), TwoOfTheTopThree(), points >= 14]
     # FIXME: Should use the longer suit preference pattern.
-    priority = nt_response_priorities.LongMajorSlamInvitation
+    prefer = []
 
 
 class StaymanRebid(Rule):
@@ -2378,43 +2074,40 @@ class StaymanRebid(Rule):
 
 
 class GarbagePassStaymanRebid(StaymanRebid):
+    purpose = "Answer"
     # GarbageStayman only exists at the 2-level
     preconditions = LastBidWas(positions.Me, '2C')
     call_names = 'P'
     shared_constraints = points <= 7
 
 
-stayman_rebid_priorities = enum.Enum(
-    "MinorGameForceRebid",
-    "GameForcingOtherMajor",
-    "InvitationalOtherMajor",
-)
-rule_order.order(*reversed(stayman_rebid_priorities))
-
-
 class MinorGameForceRebid(StaymanRebid):
+    purpose = "Discovery"  # a game-forcing minor keeps the slam exploration alive before 3N
     call_names = ['3C', '3D']
     shared_constraints = [MinLength(5), minor_game_force_stayman_constraints]
-    priority = stayman_rebid_priorities.MinorGameForceRebid
+    prefer = []
 
 
 class OtherMajorRebidAfterStayman(StaymanRebid):
+    purpose = "MajorDiscovery"
     preconditions = [
         InvertedPrecondition(RaiseOfPartnersLastSuit()),
     ]
     # Rebidding the other major shows 5-4, with invitational or game-force values.
     constraints = {
-        '2H': ([points >= 8, hearts == 5, spades == 4], stayman_rebid_priorities.InvitationalOtherMajor),
-        '2S': ([points >= 8, spades == 5, hearts == 4], stayman_rebid_priorities.InvitationalOtherMajor),
+        '2H': [points >= 8, hearts == 5, spades == 4],
+        '2S': [points >= 8, spades == 5, hearts == 4],
 
         # # Use MinimumCombinedPoints instead of MinHighCardPoints as 3-level bids
         # # are game forcing over both 2C and 3C Stayman responses.
-        '3H': ([MinimumCombinedPoints(25), hearts == 5, spades == 4], stayman_rebid_priorities.GameForcingOtherMajor),
-        '3S': ([MinimumCombinedPoints(25), spades == 5, hearts == 4], stayman_rebid_priorities.GameForcingOtherMajor),
+        '3H': [MinimumCombinedPoints(25), hearts == 5, spades == 4],
+        '3S': [MinimumCombinedPoints(25), spades == 5, hearts == 4],
     }
+    prefer = [Highest('2H', '2S', '3H', '3S')]  # the game force before the invitation
 
 
 class RedoubleTransferToMinor(NotrumpResponse):
+    purpose = "Ask"
     preconditions = [
         LastBidWas(positions.Partner, '1N'),
         LastBidWas(positions.RHO, 'X'),
@@ -2426,11 +2119,12 @@ class RedoubleTransferToMinor(NotrumpResponse):
         z3.Or(diamonds >= 6, clubs >= 6),
         points <= 4, # NT is likely to be uncomfortable.
     )
-    priority = nt_response_priorities.RedoubleTransferToMinor
+    prefer = []
 
 
 # FIXME: Should share code with AcceptTransfer, except NotJumpFromPartner's LastBid is confused by 'XX'
 class AcceptTransferToTwoClubs(Rule):
+    purpose = "Answer"
     category = categories.Relay
     call_names = '2C'
     preconditions = [
@@ -2439,11 +2133,12 @@ class AcceptTransferToTwoClubs(Rule):
         LastBidHasAnnotation(positions.Partner, annotations.Transfer),
     ]
     annotations = annotations.Artificial
-    priority = relay_priorities.Accept
     shared_constraints = NO_CONSTRAINTS
+    prefer = []
 
 
 class ResponseAfterTransferToTwoClubs(Rule):
+    purpose = "Answer"
     category = categories.Relay
     preconditions = [
         LastBidWas(positions.Partner, '2C'),
@@ -2493,30 +2188,12 @@ class StandardDirectOvercall(DirectOvercall):
     forcing = False # We're limited by the fact that we didn't double.  Partner is allowed to pass.
 
 
-# FIXME: We need finer-grain ordering of suits, no?
-# If 4-card 1-level overcalls are allowed, we have a priority problem:
-# This will order 5 clubs over 4 spades when both 1S and 2C are available, no?
-# If we require 5-card overcalls, whenever we have 2 avaiable, we'll have michaels/unusual 2n instead.
-new_suit_overcalls = enum.Enum(
-    "LongestMajor",
-    "Major",
-    "LongestMinor",
-    "Minor",
-)
-rule_order.order(*reversed(new_suit_overcalls))
-
-
 class OneLevelStandardOvercall(StandardDirectOvercall):
+    purpose = "MajorDiscovery"
     shared_constraints = points >= 8
-    priorities_per_call = {
-        '1D': new_suit_overcalls.Minor,
-        '1H': new_suit_overcalls.Major,
-        '1S': new_suit_overcalls.Major,
-    }
-    conditional_priorities_per_call = {
-        '1H': [(hearts > spades, new_suit_overcalls.LongestMajor)],
-        '1S': [(spades >= hearts, new_suit_overcalls.LongestMajor)],
-    }
+    call_names = ['1D', '1H', '1S']
+    # A five-card major before a minor, the longer major first, spades with five-five.
+    prefer = [('1H', hearts > spades), '1S', '1H', '1D']
 
 # This is replaced by Cappelletti for now.  We could do that with a category instead.
 # class DirectNotrumpDouble(DirectOvercall):
@@ -2526,6 +2203,7 @@ class OneLevelStandardOvercall(StandardDirectOvercall):
 
 
 class TwoLevelStandardOvercall(StandardDirectOvercall):
+    purpose = "Discovery"
     # 10+, or 9 with "a substantial suit or excellent distribution -- two five-card suits, for
     # example" (p99): a six-card suit (the shared three-of-the-top-five applies) or 5-5.
     shared_constraints = ConstraintOr(
@@ -2533,18 +2211,9 @@ class TwoLevelStandardOvercall(StandardDirectOvercall):
         ConstraintAnd(points >= 9, MinLength(6)),
         ConstraintAnd(points >= 9, MinLength(5), z3.Not(at_most_one_five_card_suit)),
     )
-    priorities_per_call = {
-        '2C': new_suit_overcalls.Minor,
-        '2D': new_suit_overcalls.Minor,
-        '2H': new_suit_overcalls.Major,
-        '2S': new_suit_overcalls.Major,
-    }
-    conditional_priorities_per_call = {
-        '2C': [(clubs > diamonds, new_suit_overcalls.LongestMinor)],
-        '2D': [(diamonds >= clubs, new_suit_overcalls.LongestMinor)],
-        '2H': [(hearts > spades, new_suit_overcalls.LongestMajor)],
-        '2S': [(spades >= hearts, new_suit_overcalls.LongestMajor)],
-    }
+    call_names = ['2C', '2D', '2H', '2S']
+    # A major before a minor, the longer suit first, the higher of two equal suits.
+    prefer = [('2H', hearts > spades), '2S', '2H', ('2C', clubs > diamonds), '2D', '2C']
 
 
 class ResponseToStandardOvercall(Rule):
@@ -2554,6 +2223,8 @@ class ResponseToStandardOvercall(Rule):
 # This is nearly identical to TheLaw, it just notes that you have 6 points.
 # All it does is cause one test to fail.  It may not be worth having.
 class RaiseResponseToStandardOvercall(ResponseToStandardOvercall):
+    purpose = "Support"
+    conditional_purposes = [(minor_raise_before_notrump, "SupportMinorWithFour"), (minor_raise_with_five, "SupportMinorWithFive")]  # see constraints.minor_raise_before_notrump
     preconditions = [
         RaiseOfPartnersLastSuit(),
         NotJumpFromLastContract()
@@ -2561,11 +2232,15 @@ class RaiseResponseToStandardOvercall(ResponseToStandardOvercall):
     call_names = Call.suited_names_between('2D', '3S')
     shared_constraints = [
         SupportForPartnerLastBid(3),
+        MaxLengthInPartnersLastSuit(3),  # with four the jump raise is preemptive (p101 h9), the cuebid a limit raise
         points >= 6,
+        MaximumSupportPointsForPartnersLastSuit(10),  # the cuebid shows 11+
     ]
 
 
 class CuebidResponseToStandardOvercall(ResponseToStandardOvercall):
+    purpose = partner_suit_support_purpose
+    conditional_purposes = [(partner_minor_raise_before_notrump, "SupportMinorWithFour", "SupportMinors"), (partner_minor_raise_with_five, "SupportMinorWithFive", "SupportMinors")]  # see constraints.minor_raise_before_notrump
     preconditions = [
         CueBid(positions.LHO),
         NotJumpFromLastContract()
@@ -2580,17 +2255,8 @@ class CuebidResponseToStandardOvercall(ResponseToStandardOvercall):
     annotations = [annotations.Artificial, annotations.CuebidAdvance, annotations.SupportsPartnersSuit]
 
 
-cuebid_advance_rebids = enum.Enum(
-    "Extras",
-    "Minimum",
-)
 # The natural game (SufficientCombinedPoints over the eleven the cuebid promised) when the
 # combined support points are there, else the extras jump, else the cheapest rebid.
-rule_order.order(*reversed(cuebid_advance_rebids))
-rule_order.order(cuebid_advance_rebids, natural_exact_games)
-# The structure owns the auction: no natural dribble beside the retreat, and a maximum
-# bids the game rather than tying with a natural raise (3S vs 4S was unordered).
-rule_order.order(natural_suited_part_scores, cuebid_advance_rebids)
 
 
 class RebidAfterCuebidResponseToOvercall(Rule):
@@ -2609,30 +2275,38 @@ class RebidAfterCuebidResponseToOvercall(Rule):
 
 
 class MinimumRebidAfterCuebidResponse(RebidAfterCuebidResponseToOvercall):
+    purpose = "Answer"
     preconditions = NotJumpFromLastContract()
     call_names = ('2D', '2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D')
-    shared_constraints = NO_CONSTRAINTS
-    priority = cuebid_advance_rebids.Minimum
+    shared_constraints = MaximumSupportPointsForSuitOfCall(14)  # fifteen jumps
     annotations_per_call = dict.fromkeys(('2D', '2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D'),
                                          annotations.Signoff)
     forcing = False
+    prefer = []
 
 
 class ExtrasRebidAfterCuebidResponse(RebidAfterCuebidResponseToOvercall):
     """The single-jump rebid of our suit: extra values, still short of bidding game
     ourselves."""
+    purpose = "Answer"
     preconditions = JumpFromLastContract(exact_size=1)
     call_names = ('3C', '3D', '3H', '3S', '4C', '4D')
     # Fifteen support points: opposite the cuebid's eleven that is short of the table's
     # game (25 for a major, 28 for a minor); advancer's natural raise adds up from a maximum.
     shared_constraints = MinimumSupportPointsForSuitOfCall(15)
-    priority = cuebid_advance_rebids.Extras
+    # In a major, 16 opposite the cuebid's 10 is the game; in a minor it is still an invitation.
+    constraints = {
+        ('3H', '3S'): MaximumSupportPointsForSuitOfCall(15),
+        ('3C', '3D', '4C', '4D'): MaximumSupportPointsForSuitOfCall(16),
+    }
     annotations_per_call = dict.fromkeys(('3C', '3D', '3H', '3S', '4C', '4D'),
                                          annotations.Signoff)
     forcing = False
+    prefer = []
 
 
 class NewSuitResponseToStandardOvercall(ResponseToStandardOvercall):
+    purpose = "Discovery"
     preconditions = [
         TheyOpened(),
         LastBidHasAnnotation(positions.Partner, annotations.StandardOvercall),
@@ -2670,6 +2344,7 @@ class LeadDirectingDoubleOfArtificialSuitBid(LeadDirectingDouble):
     (Michaels over our opening) is about values, not the lead.  Not above game (the contract
     is settled; doubles there are penalty).  The response to an ace-ask has its own holding
     requirement in the rule below, which outranks this one."""
+    purpose = "Penalize"
     preconditions = [
         LastBidWasBelowGame(),
         InvertedPrecondition(LastContractSuitBidBy(positions.Me)),
@@ -2682,6 +2357,7 @@ class LeadDirectingDoubleOfAceAskingResponse(LeadDirectingDouble):
     """A double of the response to Blackwood or Gerber asks for that suit: a void (for the
     ruff) or the ace and king (p124 h32).  Gadget category: the more specific meaning wins
     over the general five-card holding (two rules of one category for one call drop it)."""
+    purpose = "Penalize"
     category = categories.Gadget
     preconditions = EitherPrecondition(
         LastBidHasAnnotation(positions.LHO, annotations.Blackwood),
@@ -2691,13 +2367,10 @@ class LeadDirectingDoubleOfAceAskingResponse(LeadDirectingDouble):
 
 
 lead_directing_doubles = set([LeadDirectingDoubleOfArtificialSuitBid, LeadDirectingDoubleOfAceAskingResponse])
-# A lead-directing double beats passing; a suit we can overcall beats the double (the overcall
-# also directs the lead and may buy the contract).
-rule_order.order(DefaultPass, lead_directing_doubles)
-rule_order.order(lead_directing_doubles, new_suit_overcalls)
 
 
 class DirectOvercall1N(DirectOvercall):
+    purpose = "EnterNotrumpSystem"
     call_names = '1N'
     shared_constraints = [points >= 15, points <= 18, balanced, StopperInRHOSuit()]
     annotations = annotations.NotrumpSystemsOn
@@ -2717,16 +2390,17 @@ two_level_balancing_precondition = AndPrecondition(
     InvertedPrecondition(HasBid(positions.Partner)),
 )
 
-two_level_balancing_suits = SuitPreference(['2H', '2S', '3C', '3D'])
+two_level_balancing_suits = suit_preference(['2H', '2S', '3C', '3D'])
 
 class BalancingSuitedOvercallOverRaise(Rule):
+    purpose = "Compete"
     preconditions = [
         two_level_balancing_precondition,
         NotJumpFromLastContract(),
         UnbidSuit(),
     ]
-    priorities_per_call = two_level_balancing_suits.per_call
-    conditional_priorities_per_call = two_level_balancing_suits.conditional
+    call_names = two_level_balancing_suits.call_names
+    prefer = two_level_balancing_suits
     shared_constraints = [
         points >= 7,
         MinLength(5),
@@ -2736,6 +2410,7 @@ class BalancingSuitedOvercallOverRaise(Rule):
 
 
 class BalancingDoubleOverRaise(Rule):
+    purpose = "Ask"
     preconditions = two_level_balancing_precondition
     call_names = 'X'
     annotations = annotations.TakeoutDouble
@@ -2746,26 +2421,21 @@ class BalancingDoubleOverRaise(Rule):
     ]
 
 
-rule_order.order(DefaultPass, BalancingDoubleOverRaise, two_level_balancing_suits.all)
-
-
-balancing_notrumps = enum.Enum(
-    "OneNotrump",
-    "TwoNotrumpJump",
-)
-
 class BalancingNotrumpOvercall(BalancingOvercallOverSuitedOpen):
+    purpose = "EnterNotrumpSystem"
     constraints = {
-        '1N': (z3.And(points >= 12, points <= 14), balancing_notrumps.OneNotrump),
-        '2N': (z3.And(points >= 19, points <= 21), balancing_notrumps.TwoNotrumpJump),
+        '1N': z3.And(points >= 12, points <= 14),
+        '2N': z3.And(points >= 19, points <= 21),
     }
     shared_constraints = [balanced, StoppersInOpponentsSuits()] # Only RHO has a suit.
     annotations = annotations.NotrumpSystemsOn
+    prefer = []
 
 
-balancing_suited_overcalls = SuitPreference(['1D', '1H', '1S', '2C', '2D', '2H', '2S'])
+balancing_suited_overcalls = suit_preference(['1D', '1H', '1S', '2C', '2D', '2H', '2S'])
 
 class BalancingSuitedOvercall(BalancingOvercallOverSuitedOpen):
+    purpose = "Compete"
     preconditions = [
         NotJumpFromLastContract(),
         UnbidSuit(),
@@ -2774,8 +2444,8 @@ class BalancingSuitedOvercall(BalancingOvercallOverSuitedOpen):
         (      '1D', '1H', '1S'): points >= 5,
         ('2C', '2D', '2H', '2S'): points >= 7,
     }
-    priorities_per_call = balancing_suited_overcalls.per_call
-    conditional_priorities_per_call = balancing_suited_overcalls.conditional
+    call_names = balancing_suited_overcalls.call_names
+    prefer = balancing_suited_overcalls
     shared_constraints = [
         MinLength(5),
         ThreeOfTheTopFiveOrBetter(),
@@ -2784,13 +2454,6 @@ class BalancingSuitedOvercall(BalancingOvercallOverSuitedOpen):
     ]
     annotations = annotations.BalancingOvercall
     forcing = False # We're limited by the fact that we didn't double.  Partner is allowed to pass.
-
-
-balancing_overcall_advances = enum.Enum(
-    "JumpRaise",
-    "Raise",
-)
-rule_order.order(*reversed(balancing_overcall_advances))
 
 
 class ResponseToBalancingOvercall(Rule):
@@ -2806,47 +2469,53 @@ class RaiseResponseToBalancingOvercall(ResponseToBalancingOvercall):
 
 
 class SingleRaiseResponseToBalancingOvercall(RaiseResponseToBalancingOvercall):
+    purpose = "Support"
+    conditional_purposes = [(minor_raise_before_notrump, "SupportMinorWithFour"), (minor_raise_with_five, "SupportMinorWithFive")]  # see constraints.minor_raise_before_notrump
     preconditions = NotJumpFromLastContract()
     call_names = Call.suited_names_between('2D', '3S')
     shared_constraints = z3.And(points >= 7, points <= 11)
-    priority = balancing_overcall_advances.Raise
+    prefer = []
 
 
 class JumpRaiseResponseToBalancingOvercall(RaiseResponseToBalancingOvercall):
+    purpose = "Support"
     preconditions = JumpFromLastContract(exact_size=1)
     call_names = Call.suited_names_between('3D', '4S')
     shared_constraints = [z3.And(points >= 12, points <= 14), SupportForPartnerLastBid(4)]
-    priority = balancing_overcall_advances.JumpRaise
-
-
-balancing_overcall_notrump_advances = enum.Enum(
-    "ThreeNotrump",
-    "TwoNotrump",
-    "OneNotrump",
-)
-rule_order.order(*reversed(balancing_overcall_notrump_advances))
+    prefer = []
 
 
 class NotrumpResponseToBalancingOvercall(ResponseToBalancingOvercall):
     """Notrump over partner's balancing suited overcall (p144): 1N 9-12, 2N 12-14, 3N 15+,
     with a stopper in their suit and tolerance for partner's."""
+    purpose = "CharacterizeStrength"
     constraints = {
-        '1N': (z3.And(points >= 9, points <= 12), balancing_overcall_notrump_advances.OneNotrump),
-        '2N': (z3.And(points >= 12, points <= 14), balancing_overcall_notrump_advances.TwoNotrump),
-        '3N': (points >= 15, balancing_overcall_notrump_advances.ThreeNotrump),
+        '1N': z3.And(points >= 9, points <= 11),  # twelve invites with 2N
+        '2N': z3.And(points >= 12, points <= 14),
+        '3N': points >= 15,
     }
     shared_constraints = [StoppersInOpponentsSuits(), SupportForPartnerLastBid(2)]
+    prefer = [Highest('1N', '2N', '3N')]  # the highest the hand is worth
 
 
-balancing_jump_suited_overcalls = SuitPreference(Call.suited_names_between('2D', '3H'))
+balancing_jump_suited_overcalls = suit_preference(Call.suited_names_between('2D', '3H'))
+
+# A preempt is for less than an opening hand.  An opening preempt is for a hand that would not
+# open at the one level (the opening rule for the seat); a weak jump overcall is for at most
+# eleven high card points, however long the suit.
+preempt_weak_opening = ConstraintNot(OpeningRuleConstraint())
+preempt_weak_overcall = high_card_points <= 11
+
 
 class BalancingJumpSuitedOvercall(BalancingOvercallOverSuitedOpen):
+    purpose = "Preempt"
+    conditional_purposes = [(preempt_weak_overcall, "PreemptWeak")]
     preconditions = [
         JumpFromLastContract(exact_size=1),
         UnbidSuit(),
     ]
-    priorities_per_call = balancing_jump_suited_overcalls.per_call
-    conditional_priorities_per_call = balancing_jump_suited_overcalls.conditional
+    call_names = balancing_jump_suited_overcalls.call_names
+    prefer = balancing_jump_suited_overcalls
     shared_constraints = [
         points >= 12,
         MinLength(6),
@@ -2891,10 +2560,12 @@ class MichaelsCuebid(object):
 
 
 class DirectMichaelsCuebid(MichaelsCuebid, DirectOvercall):
+    purpose = "TwoSuiter"
     preconditions = CueBid(positions.RHO)
 
 
 class BalancingMichaelsCuebid(MichaelsCuebid, BalancingOvercall):
+    purpose = "TwoSuiter"
     preconditions = CueBid(positions.LHO)
 
 
@@ -2911,32 +2582,25 @@ sandwich_precondition = AndPrecondition(
 
 
 class SandwichMichaelsCuebid(MichaelsCuebid, Rule):
+    purpose = "TwoSuiter"
     preconditions = [sandwich_precondition, CueBid(positions.LHO)]
 
 
 class SandwichOvercall(Rule):
     """A natural overcall in the sandwich seat: 11+ with a good five-card suit (both
     opponents have shown values, so it is sounder than a direct overcall)."""
+    purpose = "Compete"
     preconditions = [sandwich_precondition, NotJumpFromLastContract(), UnbidSuit()]
     call_names = ['2C', '2D', '2H', '2S']
     shared_constraints = [MinLength(5), ThreeOfTheTopFiveOrBetter(), points >= 11]
-    priorities_per_call = {
-        '2C': new_suit_overcalls.Minor,
-        '2D': new_suit_overcalls.Minor,
-        '2H': new_suit_overcalls.Major,
-        '2S': new_suit_overcalls.Major,
-    }
-    conditional_priorities_per_call = {
-        '2C': [(clubs > diamonds, new_suit_overcalls.LongestMinor)],
-        '2D': [(diamonds >= clubs, new_suit_overcalls.LongestMinor)],
-        '2H': [(hearts > spades, new_suit_overcalls.LongestMajor)],
-        '2S': [(spades >= hearts, new_suit_overcalls.LongestMajor)],
-    }
+    # A major before a minor, the longer suit first, the higher of two equal suits.
+    prefer = [('2H', hearts > spades), '2S', '2H', ('2C', clubs > diamonds), '2D', '2C']
     annotations = annotations.StandardOvercall
     forcing = False
 
 
 class MichaelsMinorRequest(Rule):
+    purpose = "Planned"
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.MichaelsCuebid),
         # The minor is only ambigious if the cuebid was a major.
@@ -2956,6 +2620,7 @@ class ResponseToMichaelsMinorRequest(Rule):
 
 
 class SuitResponseToMichaelsMinorRequest(ResponseToMichaelsMinorRequest):
+    purpose = "Forced"
     preconditions = NotJumpFromLastContract()
     call_names = (
         '3C', '3D',
@@ -2969,30 +2634,40 @@ class JumpSuitResponseToMichaelsMinorRequest(ResponseToMichaelsMinorRequest):
     """The jump reply to the minor request shows the maximum Michaels hand (15+, the strong
     range of mini-maxi; standard practice, agreed 2026-08-29): 4C on K9874.3.AQ.AKQ72 after
     P 1H 2H P 2N.  A minimum names the minor at the three level."""
+    purpose = "Answer"
     preconditions = JumpFromLastContract(exact_size=1)
     call_names = ['4C', '4D']
     shared_constraints = [MinLength(5), points >= 15]
 
 
-# The maximum's jump says more than the minimum's simple reply.
-rule_order.order(SuitResponseToMichaelsMinorRequest, JumpSuitResponseToMichaelsMinorRequest)
+class NoFitForMichaelsMajor(Constraint):
+    """Advancer's 3C over a major-suit Michaels cuebid: at most two cards in the major partner
+    showed (hearts over their spades, spades over their hearts) and a weak hand."""
+    def expr(self, history, call):
+        shown = suit.HEARTS if history.partner.last_call.strain == suit.SPADES else suit.SPADES
+        return z3.And(expr_for_suit(shown) <= 2, points <= 9)
+
+
+michaels_minor_preference_hand = NoFitForMichaelsMajor()
 
 
 class MichaelsMinorPreference(Rule):
     """Advancer's 3C over a major-suit Michaels cuebid (hearts or spades plus an unknown minor):
     no fit for the major, weak, willing to play in partner's minor -- pass-or-correct."""
+    purpose = "Answer"
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.MichaelsCuebid),
         LastBidHasStrain(positions.Partner, suit.MAJORS),
         LastBidWas(positions.RHO, 'P'),
     ]
     call_names = '3C'
-    shared_constraints = [MaxLengthInUnbidMajors(2), points <= 9]
+    shared_constraints = michaels_minor_preference_hand
     annotations = annotations.Artificial
 
 
 class CorrectMichaelsMinor(Rule):
     """Partner's 3C was pass-or-correct: pass with clubs, correct to 3D with diamonds (p104 h6)."""
+    purpose = "Answer"
     preconditions = [
         LastBidHasAnnotation(positions.Me, annotations.MichaelsCuebid),
         LastBidWas(positions.Partner, '3C'),
@@ -3003,15 +2678,12 @@ class CorrectMichaelsMinor(Rule):
 
 
 class PassResponseToMichaelsMinorRequest(ResponseToMichaelsMinorRequest):
+    purpose = "Answer"
     # The book doesn't cover this, but if 4C was the minor request, lets interpret a pass
     # as meaning "I have clubs" and am weak (game is already remote).
     preconditions = LastBidWas(positions.Partner, '4C')
     call_names = 'P'
     shared_constraints = clubs >= 5
-
-
-# Pass instead of 5C when we can.
-rule_order.order(SuitResponseToMichaelsMinorRequest, PassResponseToMichaelsMinorRequest)
 
 
 # FIXME: Missing Jump responses to Michael's minor request.
@@ -3036,15 +2708,18 @@ class SimplePreference(object):
     ]
 
 
-michaels_preferences = SuitPreference(Call.suited_names_between('2H', '4H'))
+michaels_preferences = suit_preference(Call.suited_names_between('2H', '4H'))
 
 class MichaelsSimplePreferenceResponse(SimplePreference, ForcedResponseToMichaelsCuebid):
+    purpose = "Answer"  # partner asked for a preference
     # Min: 1C 2C P 2H, Max: 2S 3S 4H
-    priorities_per_call = michaels_preferences.per_call
-    conditional_priorities_per_call = michaels_preferences.conditional
+    call_names = michaels_preferences.call_names
+    prefer = michaels_preferences
+    shared_constraints = ConstraintNot(michaels_minor_preference_hand)  # that hand bids 3C
 
 
 class Unusual2N(Rule):
+    purpose = "TwoSuiter"
     preconditions = [
         # Unusual2N only exists immediately after RHO opens.
         LastBidHasAnnotation(positions.RHO, annotations.Opening),
@@ -3071,12 +2746,13 @@ class ForcedResponseToUnusual2N(Rule):
     ]
 
 
-unusual_2n_preferences = SuitPreference(['3C', '3D', '3H'])
+unusual_2n_preferences = suit_preference(['3C', '3D', '3H'])
 
 class Unusual2NSimplePreferenceResponse(SimplePreference, ForcedResponseToUnusual2N):
+    purpose = "Answer"  # partner asked for a preference
     # Min: 1D 2N P 3C, Max: 1D 2N P 3H
-    priorities_per_call = unusual_2n_preferences.per_call
-    conditional_priorities_per_call = unusual_2n_preferences.conditional
+    call_names = unusual_2n_preferences.call_names
+    prefer = unusual_2n_preferences
 
 
 two_suited_direct_overcalls = set([
@@ -3099,7 +2775,6 @@ notrump_auction_passout_precondition = AndPrecondition(
     LastBidWas(positions.RHO, 'P'),
     InvertedPrecondition(HasBid(positions.Me)),
 )
-
 
 
 class TakeoutDouble(Rule):
@@ -3150,6 +2825,7 @@ overcallable_five_card_major = z3.Or(
 
 
 class OneLevelTakeoutDouble(OvercallTakeoutDouble):
+    purpose = "Ask"
     preconditions = [
         Level(1),
         InvertedPrecondition(takeout_double_after_preempt_precondition),
@@ -3171,6 +2847,7 @@ class OneLevelTakeoutDouble(OvercallTakeoutDouble):
 
 
 class TwoLevelTakeoutDouble(OvercallTakeoutDouble):
+    purpose = "Ask"
     preconditions = [
         Level(2),
         InvertedPrecondition(takeout_double_after_preempt_precondition),
@@ -3190,6 +2867,7 @@ standard_takeout_doubles = set([
 
 
 class TakeoutDoubleAfterPreempt(OvercallTakeoutDouble):
+    purpose = "Ask"
     # Takeout only below game: doubles of opening bids at game or higher are penalty
     # (booklet; the reference stops takeout at 4D), and a 0-count advancer was being
     # FORCED to bid 5C over 4S X P (round-18 review, A2).
@@ -3204,6 +2882,7 @@ class PenaltyDoubleOfGameOpening(Rule):
     """Doubles are takeout over opening partscore bids and penalty over opening bids at
     game or higher (booklet), 3N included.  Deliberately NOT a TakeoutDouble: advancer
     passes with nothing instead of being forced to advance."""
+    purpose = "Penalize"
     preconditions = [
         LastBidHasAnnotation(positions.RHO, annotations.Opening),
         LastBidWasGameOrAbove(),
@@ -3213,14 +2892,12 @@ class PenaltyDoubleOfGameOpening(Rule):
     shared_constraints = points >= 15
 
 
-rule_order.order(DefaultPass, PenaltyDoubleOfGameOpening)
-
-
 class TwoNotrumpOvercallOfWeakTwo(Rule):
     """"The bid of 2NT over a weak two-bid shows the equivalent of a strong notrump opener"
     (p107): 15-20 balanced with a stopper in their suit and no five-card suit (the harness's
     KT98.KQ2.AK4.KQT, a 20-count, bids 2N over 2S; p108: AT6.KJ864.A4.A42, 16 with five
     diamonds, doubles).  Owns the 2N over a weak two, where the unusual 2N is off."""
+    purpose = "EnterNotrumpSystem"
     preconditions = [
         LastBidHasAnnotation(positions.RHO, annotations.Preemptive),
         LastBidHasLevel(positions.RHO, 2),
@@ -3234,11 +2911,8 @@ class TwoNotrumpOvercallOfWeakTwo(Rule):
     annotations = annotations.NotrumpSystemsOn
 
 
-# A strong balanced hand with their suit stopped overcalls 2N rather than doubling.
-rule_order.order(TakeoutDoubleAfterPreempt, TwoNotrumpOvercallOfWeakTwo)
-
-
 class BalancingDouble(OvercallTakeoutDouble):
+    purpose = "Ask"
     preconditions = [
         Level(1),
         balancing_precondition,
@@ -3253,6 +2927,7 @@ class BalancingDouble(OvercallTakeoutDouble):
 
 
 class ReopeningDouble(TakeoutDouble):
+    purpose = "Penalize"  # reopening protects partner's penalty pass before anything else
     # These only apply when partner hasn't mentioned a suit, right?
     preconditions = [
         Opened(positions.Me),
@@ -3271,6 +2946,7 @@ class BalancingDoubleAfterNotrumpAuction(Rule):
     takeout.  Previously no rule ever contested these auctions (and when the 2-level
     response is natural, TwoLevelTakeoutDouble claiming the same X at the same category
     made the call selector drop the call entirely)."""
+    purpose = "Ask"
     call_names = 'X'
     preconditions = [
         notrump_auction_passout_precondition,
@@ -3282,51 +2958,6 @@ class BalancingDoubleAfterNotrumpAuction(Rule):
         SupportForSuitsOtherThanLastContract(),
         MaxLengthInLastContractSuit(2),
     ]
-
-
-rule_order.order(
-    DefaultPass,
-    ReopeningDouble,
-)
-
-rule_order.order(
-    DefaultPass,
-    BalancingDoubleAfterNotrumpAuction,
-)
-
-
-takeout_double_responses = enum.Enum(
-    "ThreeNotrump",
-    "CuebidResponseToTakeoutDouble",
-
-    "JumpSpadeResponseToTakeoutDouble",
-    "JumpHeartResponseToTakeoutDouble",
-
-    "TwoNotrumpJump",
-
-    "JumpDiamondResponseToTakeoutDouble",
-    "JumpClubResponseToTakeoutDouble",
-
-    "ThreeCardJumpSpadeResponseToTakeoutDouble",
-    "ThreeCardJumpHeartResponseToTakeoutDouble",
-    "ThreeCardJumpDiamondResponseToTakeoutDouble",
-    "ThreeCardJumpClubResponseToTakeoutDouble",
-
-    "SpadeResponseToTakeoutDouble",
-    "HeartResponseToTakeoutDouble",
-
-    "TwoNotrump",
-    "OneNotrump",
-
-    "DiamondResponseToTakeoutDouble",
-    "ClubResponseToTakeoutDouble",
-
-    "ThreeCardSpadeResponseToTakeoutDouble",
-    "ThreeCardHeartResponseToTakeoutDouble",
-    "ThreeCardDiamondResponseToTakeoutDouble",
-    "ThreeCardClubResponseToTakeoutDouble",
-)
-rule_order.order(*reversed(takeout_double_responses))
 
 
 # Response indicates longest suit (excepting opponent's) with 3+ cards support.
@@ -3347,6 +2978,7 @@ class ResponseToTakeoutDouble(Rule):
 class PenaltyPassOfTakeoutDouble(ResponseToTakeoutDouble):
     """Partner's takeout (or reopening / balancing) double is passed for penalties with five
     or more of their suit and some values (p145, h20)."""
+    purpose = "Penalize"
     preconditions = LastBidWas(positions.RHO, 'P')
     call_names = 'P'
     # Six of their suit with 8+, or five with 9+ (a weak five-bagger and 8 advances instead).
@@ -3355,27 +2987,30 @@ class PenaltyPassOfTakeoutDouble(ResponseToTakeoutDouble):
         ConstraintAnd(MinLengthInLastContractSuit(5), points >= 9),
     )
 
-rule_order.order(takeout_double_responses, PenaltyPassOfTakeoutDouble)
-
 
 class NotrumpResponseToTakeoutDouble(ResponseToTakeoutDouble):
+    purpose = "CharacterizeStrength"
     preconditions = [LastBidWas(positions.RHO, 'P'), NotJumpFromLastContract()]
     constraints = {
-        '1N': (points >= 6, takeout_double_responses.OneNotrump),
-        '2N': (points >= 11, takeout_double_responses.TwoNotrump),
-        '3N': (points >= 13, takeout_double_responses.ThreeNotrump),
+        '1N': points >= 6,
+        '2N': points >= 11,
+        '3N': points >= 13,
     }
     shared_constraints = [balanced, StoppersInOpponentsSuits()]
+    prefer = [Highest('1N', '2N', '3N')]  # the highest the hand is worth: 6-10, 11-12, 13+
 
 
 # FIXME: This could probably be handled by suited to play if we could get the priorities right!
 class JumpNotrumpResponseToTakeoutDouble(ResponseToTakeoutDouble):
+    purpose = "CharacterizeStrength"
+    conditional_purposes = [(semi_balanced, "BalancedLimit")]  # a hand without a singleton tells its strength here
     preconditions = [LastBidWas(positions.RHO, 'P'), JumpFromLastContract()]
     constraints = {
-        '2N': (points >= 11, takeout_double_responses.TwoNotrumpJump),
-        '3N': (points >= 13, takeout_double_responses.ThreeNotrump),
+        '2N': points >= 11,
+        '3N': points >= 13,
     }
     shared_constraints = [balanced, StoppersInOpponentsSuits()]
+    prefer = [Highest('2N', '3N')]
 
 
 class SuitResponseToTakeoutDouble(ResponseToTakeoutDouble):
@@ -3388,43 +3023,35 @@ class SuitResponseToTakeoutDouble(ResponseToTakeoutDouble):
     # over P 3D X P the spade advance is 3S, over 4S X P the club advance is 5C.  Before
     # 2026-08-31 the spade row stopped at 2S and clubs at 3C, so advancer of a doubled
     # three-level preempt had no call at all in those suits.
-    priorities_per_call = {
-        (      '2C', '3C', '4C', '5C'): takeout_double_responses.ThreeCardClubResponseToTakeoutDouble,
-        ('1D', '2D', '3D', '4D', '5D'): takeout_double_responses.ThreeCardDiamondResponseToTakeoutDouble,
-        ('1H', '2H', '3H', '4H', '5H'): takeout_double_responses.ThreeCardHeartResponseToTakeoutDouble,
-        ('1S', '2S', '3S', '4S'      ): takeout_double_responses.ThreeCardSpadeResponseToTakeoutDouble,
-    }
-    conditional_priorities_per_call = {
-        (      '2C', '3C', '4C', '5C'): [(clubs >= 4, takeout_double_responses.ClubResponseToTakeoutDouble)],
-        ('1D', '2D', '3D', '4D', '5D'): [(diamonds >= 4, takeout_double_responses.DiamondResponseToTakeoutDouble)],
-        ('1H', '2H', '3H', '4H', '5H'): [(hearts >= 4, takeout_double_responses.HeartResponseToTakeoutDouble)],
-        ('1S', '2S', '3S', '4S'      ): [(spades >= 4, takeout_double_responses.SpadeResponseToTakeoutDouble)],
-    }
+    call_names = ['2C', '3C', '4C', '5C', '1D', '2D', '3D', '4D', '5D', '1H', '2H', '3H', '4H', '5H', '1S', '2S', '3S', '4S']
+    call_names = ['1D', '1H', '1S', '2C', '2D', '2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D', '4H', '4S', '5C', '5D', '5H']
+    # A four-card suit before a three-card one, the higher suit first.
+    prefer = [(call_names, MinLength(4), HigherSuit), HigherSuit(*call_names)]
 
 
 class ForcedSuitResponseToTakeoutDouble(SuitResponseToTakeoutDouble):
     """RHO passed: we must bid, with nothing if need be."""
+    purpose = "Forced"
     preconditions = LastBidWas(positions.RHO, 'P')
 
 
 class FreeSuitResponseToTakeoutDouble(SuitResponseToTakeoutDouble):
     """RHO bid over partner's double (1D X 1H): a non-jump suit is a free bid showing some
     values (p120 h21: 1S on 9 hcp), a little more at the three level; with nothing we pass."""
+    purpose = "Discovery"
     preconditions = LastBidHasSuit(positions.RHO)
     constraints = {
-        ('1D', '1H', '1S', '2C', '2D', '2H', '2S'): points >= 6,
-        ('3C', '3D', '3H', '3S'): points >= 8,
+        ('1D', '1H', '1S', '2C', '2D', '2H', '2S'): z3.And(points >= 6, points <= 9),  # ten jumps
+        ('3C', '3D', '3H', '3S'): z3.And(points >= 8, points <= 9),
         ('4C', '4D', '4H', '4S'): points >= 10,
         ('5C', '5D', '5H'): points >= 12,
     }
 
 
-# A free bid over partner's takeout double beats passing (when RHO passed we were forced
-# and passing was never a choice).
-rule_order.order(DefaultPass, takeout_double_responses)
 
 
 class JumpSuitResponseToTakeoutDouble(ResponseToTakeoutDouble):
+    purpose = "Discovery"
     preconditions = [SuitUnbidByOpponents(), JumpFromLastContract(exact_size=1)]
     # You can have 10 points, but no stopper in opponents suit and only a 3 card suit to bid.
     # 1C X P, xxxx.Axx.Kxx.Kxx
@@ -3432,27 +3059,18 @@ class JumpSuitResponseToTakeoutDouble(ResponseToTakeoutDouble):
     # Jumps are invitational and stop at the THREE level: over a doubled two-level contract
     # the old 4-level entries put 10-counts (sometimes with 3-card suits) in game.  Strong
     # advances over a doubled preempt go through the cuebid instead.
-    priorities_per_call = {
-        (      '3C',): takeout_double_responses.ThreeCardJumpClubResponseToTakeoutDouble,
-        ('2D', '3D'): takeout_double_responses.ThreeCardJumpDiamondResponseToTakeoutDouble,
-        ('2H', '3H'): takeout_double_responses.ThreeCardJumpHeartResponseToTakeoutDouble,
-        ('2S', '3S'): takeout_double_responses.ThreeCardJumpSpadeResponseToTakeoutDouble,
-    }
-    conditional_priorities_per_call = {
-        (      '3C',): [(clubs >= 4, takeout_double_responses.JumpClubResponseToTakeoutDouble)],
-        ('2D', '3D'): [(diamonds >= 4, takeout_double_responses.JumpDiamondResponseToTakeoutDouble)],
-        ('2H', '3H'): [(hearts >= 4, takeout_double_responses.JumpHeartResponseToTakeoutDouble)],
-        ('2S', '3S'): [(spades >= 4, takeout_double_responses.JumpSpadeResponseToTakeoutDouble)],
-    }
+    call_names = ['3C', '2D', '3D', '2H', '3H', '2S', '3S']
+    call_names = ['2D', '2H', '2S', '3C', '3D', '3H', '3S']
+    prefer = [(call_names, MinLength(4), HigherSuit), HigherSuit(*call_names)]
 
 
 class CuebidResponseToTakeoutDouble(ResponseToTakeoutDouble):
+    purpose = "Ask"
     preconditions = [
         LastBidWas(positions.RHO, 'P'),
         CueBid(positions.LHO),
         NotJumpFromLastContract(),
     ]
-    priority = takeout_double_responses.CuebidResponseToTakeoutDouble
     # Through 4S so the cuebid exists over a doubled three-level preempt (4D over P 3D X P).
     call_names = Call.suited_names_between('2C', '4S')
     # A cuebid of their suit shows nothing in it.
@@ -3462,39 +3080,10 @@ class CuebidResponseToTakeoutDouble(ResponseToTakeoutDouble):
         points >= 13,
         SupportForPartnersSuits(),
     ]
+    prefer = []
 
 
 # NOTE: I don't think we're going to end up needing most of these.
-rebids_after_takeout_double = enum.Enum(
-    "JumpMajorRaise",
-    "MajorRaise",
-
-    "ThreeNotrump",
-
-    "JumpSpadesNewSuit",
-    "SpadesNewSuit",
-    "JumpHeartsNewSuit",
-    "HeartsNewSuit",
-
-    "JumpTwoNotrump",
-    "CueBid",
-    "TwoNotrump",
-    "OneNotrump",
-
-    "JumpMinorRaise",
-    "MinorRaise",
-    "OneNotrumpNoStopper",  # 1N without a stopper in their suit: raise partner's minor first
-
-    "JumpDiamondsNewSuit",
-    "DiamondsNewSuit",
-    "JumpClubsNewSuit",
-    "ClubsNewSuit",
-
-    "TakeoutDouble",
-)
-rule_order.order(*reversed(rebids_after_takeout_double))
-
-
 class RebidAfterTakeoutDouble(Rule):
     # FIXME: These only apply after a minimum (non-jump?) response from partner.
     preconditions = LastBidHasAnnotation(positions.Me, annotations.TakeoutDouble)
@@ -3502,6 +3091,7 @@ class RebidAfterTakeoutDouble(Rule):
 
 
 class PassAfterTakeoutDouble(Rule):
+    purpose = "CharacterizeStrength"
     preconditions = [
         LastBidHasAnnotation(positions.Me, annotations.TakeoutDouble),
         LastBidWas(positions.LHO, 'P'), # If LHO bid up, we don't necessarily have < 17hcp.
@@ -3512,6 +3102,8 @@ class PassAfterTakeoutDouble(Rule):
 
 
 class RaiseAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "Support"
+    conditional_purposes = [(MinLength(4), "SupportMinorWithFour")]  # four-card support for a minor before notrump (the double already showed the majors)
     preconditions = [
         LastBidWas(positions.RHO, 'P'),
         RaiseOfPartnersLastSuit(),
@@ -3519,32 +3111,31 @@ class RaiseAfterTakeoutDouble(RebidAfterTakeoutDouble):
     ]
     # Min: 1C X 1D P 2D, Max: 2S X P 3H P 4H
     # FIXME: Game doesn't seem like a raise here?
-    priorities_per_call = {
-        (      '3C', '4C'): rebids_after_takeout_double.MinorRaise,
-        ('2D', '3D', '4D'): rebids_after_takeout_double.MinorRaise,
-        ('2H', '3H', '4H'): rebids_after_takeout_double.MajorRaise,
-        ('2S', '3S'      ): rebids_after_takeout_double.MajorRaise,
-    }
-    shared_constraints = MinLength(4)
+    call_names = ['2D', '2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D', '4H']
+    shared_constraints = [MinLength(4), points <= 18]  # the jump raise shows 19+
+    prefer = []
 
 
 class JumpRaiseAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "Support"
+    conditional_purposes = [(MinLength(4), "SupportMinorWithFour")]  # four-card support for a minor before notrump (the double already showed the majors)
     preconditions = [
         RaiseOfPartnersLastSuit(),
         JumpFromPartnerLastBid(exact_size=1)
     ]
     # Min: 1C X 1D P 3D, Max: 2S X P 3D P 5D
     # FIXME: Game doesn't seem like a raise here?
-    priorities_per_call = {
-        (      '3C', '4C', '5C'): rebids_after_takeout_double.JumpMinorRaise,
-        ('2D', '3D', '4D', '5D'): rebids_after_takeout_double.JumpMinorRaise,
-        ('2H', '3H', '4H'      ): rebids_after_takeout_double.JumpMajorRaise,
-        ('2S', '3S', '4S'      ): rebids_after_takeout_double.JumpMajorRaise,
-    }
+    call_names = ['2D', '2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D', '4H', '4S', '5C', '5D']
     shared_constraints = [MinLength(4), points >= 19]
+    prefer = []
+    # With more the doubler cuebids before raising a minor to game; a major game is the goal.
+    constraints = {
+        ('3C', '4C', '5C', '2D', '3D', '4D', '5D'): points <= 20,
+    }
 
 
 class NewSuitAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "RebidLong"  # the double denied a five-card suit: showing one comes before a limit bid
     preconditions = [
         UnbidSuit(),
         NotJumpFromLastContract(),
@@ -3553,16 +3144,13 @@ class NewSuitAfterTakeoutDouble(RebidAfterTakeoutDouble):
         InvertedPrecondition(RaiseOfPartnersLastSuit()),
     ]
     # Min: 1C X XX P P 1D, Max: 3C X P 3H P 3S
-    priorities_per_call = {
-        (      '2C', '3C'): rebids_after_takeout_double.ClubsNewSuit,
-        ('1D', '2D', '3D'): rebids_after_takeout_double.DiamondsNewSuit,
-        ('1H', '2H', '3H'): rebids_after_takeout_double.HeartsNewSuit,
-        ('1S', '2S', '3S'): rebids_after_takeout_double.SpadesNewSuit,
-    }
-    shared_constraints = MinLength(5)
+    call_names = ['1D', '1H', '1S', '2C', '2D', '2H', '2S', '3C', '3D', '3H', '3S']
+    shared_constraints = [MinLength(5), points <= 20]  # the jump shows 21+
+    prefer = [Longest(*call_names), Cheapest('1S', '2S', '3S'), Cheapest('1H', '2H', '3H'), Cheapest('1D', '2D', '3D'), Cheapest('2C', '3C')]
 
 
 class JumpNewSuitAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "RebidLong"  # six cards and 21+: the jump says it
     preconditions = [
         UnbidSuit(),
         JumpFromLastContract(exact_size=1),
@@ -3572,45 +3160,47 @@ class JumpNewSuitAfterTakeoutDouble(RebidAfterTakeoutDouble):
     ]
     # Min: 1C X XX P 2D, Max: 2S X P 3C 5D
     # FIXME: Jumping straight to game seems less useful than a cuebid would?
-    priorities_per_call = {
-        (      '3C', '4C', '5C'): rebids_after_takeout_double.JumpClubsNewSuit,
-        ('2D', '3D', '4D', '5D'): rebids_after_takeout_double.JumpDiamondsNewSuit,
-        ('2H', '3H', '4H'      ): rebids_after_takeout_double.JumpHeartsNewSuit,
-        ('2S', '3S', '4S'      ): rebids_after_takeout_double.JumpSpadesNewSuit,
-
-    }
+    call_names = ['2D', '2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D', '4H', '4S', '5C', '5D']
     shared_constraints = [MinLength(6), TwoOfTheTopThree(), points >= 21]
+    prefer = [Longest(*call_names), Cheapest('2S', '3S', '4S'), Cheapest('2H', '3H', '4H'), Cheapest('2D', '3D', '4D', '5D'), Cheapest('3C', '4C', '5C')]
 
 
 class NotrumpAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "CharacterizeStrength"
     constraints = {
-        '1N': (points >= 18, rebids_after_takeout_double.OneNotrumpNoStopper),
+        '1N': z3.And(points >= 18, points <= 20),
         # 2N depends on whether it is a jump.
-        '3N': (points >= 23, rebids_after_takeout_double.ThreeNotrump), # FIXME: Techincally means 9+ tricks.
+        '3N': points >= 23,  # FIXME: Techincally means 9+ tricks.
     }
     # 1N cannot require stoppers, or we have a hole (18 hcp, no 5-card suit, no support for
-    # partner has to have something to bid); with stoppers it outranks the minor raise, without
-    # them the raise comes first.
-    conditional_priorities_per_call = {
-        '1N': [(StoppersInOpponentsSuits(), rebids_after_takeout_double.OneNotrump)],
+    # partner has to have something to bid): with their suits stopped the notrump call
+    # describes the hand (BalancedLimit); without, a raise or a cuebid comes first.
+    conditional_purposes_per_call = {
+        '1N': [(StoppersInOpponentsSuits(), "BalancedLimit")],
+        '3N': [(StoppersInOpponentsSuits(), "BalancedLimit")],
     }
+    prefer = []
 
 
 class NonJumpTwoNotrumpAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "CharacterizeStrength"
     preconditions = NotJumpFromLastContract()
     call_names = '2N'
-    shared_constraints = [points >= 19, StoppersInOpponentsSuits()]
-    priority = rebids_after_takeout_double.TwoNotrump
+    shared_constraints = [points >= 19, points <= 22, StoppersInOpponentsSuits()]  # 23+ bids the game
+    prefer = []
 
 
 class JumpTwoNotrumpAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "CharacterizeStrength"
+    conditional_purposes = [(semi_balanced, "BalancedLimit")]  # a hand without a singleton tells its strength here
     preconditions = JumpFromLastContract()
     call_names = '2N'
-    shared_constraints = [points >= 21, StoppersInOpponentsSuits()]
-    priority = rebids_after_takeout_double.JumpTwoNotrump
+    shared_constraints = [points >= 21, points <= 22, StoppersInOpponentsSuits()]  # 23+ bids the game
+    prefer = []
 
 
 class CueBidAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "Ask"  # too strong for a limited call: a major game, or a six-card suit, still comes first
     preconditions = [
         NotJumpFromLastContract(),
         # The Cuebid here is defined as RHO's opening bid, not whatever their most recent one may be.
@@ -3623,10 +3213,11 @@ class CueBidAfterTakeoutDouble(RebidAfterTakeoutDouble):
     annotations = annotations.Artificial
     # The book says "with slam interest".  Unclear what that means for constraints.
     shared_constraints = points >= 21
-    priority = rebids_after_takeout_double.CueBid
+    prefer = []
 
 
 class TakeoutDoubleAfterTakeoutDouble(RebidAfterTakeoutDouble):
+    purpose = "AskLater"
     call_names = 'X'
     preconditions = [
         LastBidWas(positions.Partner, 'P'),
@@ -3636,85 +3227,37 @@ class TakeoutDoubleAfterTakeoutDouble(RebidAfterTakeoutDouble):
     # Doubling a second time shows both 17+ and shortness in the last bid contract.
     # We're asking partner to pick a suit, any suit but don't let them have it.
     shared_constraints = [points >= 17, MaxLengthInLastContractSuit(1)]
-    priority = rebids_after_takeout_double.TakeoutDouble
-
-
-
-preempt_priorities = enum.Enum(
-    "EightCardPreempt",
-    "SevenCardPreempt",
-    "SixCardPreempt",
-)
-rule_order.order(*reversed(preempt_priorities))
+    prefer = []
 
 
 class PreemptiveOpen(Opening):
+    purpose = "Preempt"
+    conditional_purposes = [(preempt_weak_opening, "PreemptWeak")]
     annotations = annotations.Preemptive
     preconditions = FourthSeatOpensPreemptsAtGameOnly()
     constraints = {
-        # 2-level preempts should not have a void. (p89)
-        # FIXME: p89 also says no outside 4-card major.
-        # 3C only promises 6 cards due to 2C being taken for strong bids.
-        (      '2D', '2H', '2S', '3C'): (
-                ConstraintAnd(
-                    MinLength(6),
-                    MinLength(1, suit.SUITS),
-                    MaxLengthInUnbidMajors(3),
-                ),
-                preempt_priorities.SixCardPreempt
-            ),
-        (      '3D', '3H', '3S'): (
-                ConstraintAnd(
-                    MinLength(7),
-                    # h10 and h12 on p86 seem to suggest we should avoid 3-level preempts with 3-card majors.
-                    # FIXME: Maybe only in first and second seat?  Maybe this is a planning concern?
-                    # FIXME: MaxLengthInUnbidMajors(2), can't work here as we'll just bid the 2-level version instead.
-                ),
-                preempt_priorities.SevenCardPreempt),
-        ('4C', '4D', '4H', '4S'): (MinLength(8), preempt_priorities.EightCardPreempt),
+        ('2D', '2H', '2S', '3C'): ConstraintAnd(MinLength(6), MinLength(1, suit.SUITS), MaxLengthInUnbidMajors(3)),
+        ('3D', '3H', '3S'): MinLength(7),
+        ('4C', '4D', '4H', '4S'): MinLength(8),
     }
     shared_constraints = [
         ThreeOfTheTopFiveOrBetter(),
         points >= 5,
     ]
-
-
-weak_preemptive_overcalls = enum.Enum(
-    "WeakFourLevel",
-    "WeakThreeLevel",
-    "WeakTwoLevel",
-)
-rule_order.order(*reversed(weak_preemptive_overcalls))
-
-
-preemptive_overcalls = enum.Enum(
-    "FourLevel",
-    "ThreeLevel",
-    "TwoLevel",
-)
-rule_order.order(*reversed(preemptive_overcalls))
-
-
-# rule_order.order(
-#     # If weak preempts are available, they're the priority.
-#     preemptive_overcalls,
-#     weak_preemptive_overcalls,
-# )
+    prefer = [Highest('2D', '2H', '2S', '3C', '3D', '3H', '3S', '4C', '4D', '4H', '4S')]  # the level is the length
 
 
 class PreemptiveOvercall(DirectOvercall):
+    purpose = "Preempt"
+    conditional_purposes = [(preempt_weak_overcall, "PreemptWeak")]
     annotations = annotations.Preemptive
     preconditions = [JumpFromLastContract(), UnbidSuit()]
     constraints = {
-        ('2C', '2D', '2H', '2S'): (MinLength(6), preemptive_overcalls.TwoLevel),
-        ('3C', '3D', '3H', '3S'): (MinLength(7), preemptive_overcalls.ThreeLevel),
-        ('4C', '4D', '4H', '4S'): (MinLength(8), preemptive_overcalls.FourLevel),
+        ('2C', '2D', '2H', '2S'): MinLength(6),
+        ('3C', '3D', '3H', '3S'): MinLength(7),
+        ('4C', '4D', '4H', '4S'): MinLength(8),
     }
-    conditional_priorities_per_call = {
-        ('2C', '2D', '2H', '2S'): [(points <= 11, weak_preemptive_overcalls.WeakTwoLevel)],
-        ('3C', '3D', '3H', '3S'): [(points <= 11, weak_preemptive_overcalls.WeakThreeLevel)],
-        ('4C', '4D', '4H', '4S'): [(points <= 11, weak_preemptive_overcalls.WeakFourLevel)],
-    }
+    prefer = [Highest(*Call.suited_names_between('2C', '4S'))]  # the level is the length
     shared_constraints = [ThreeOfTheTopFiveOrBetter(), points >= 5]
 
 
@@ -3726,21 +3269,23 @@ class ResponseToPreempt(Rule):
 # suit we can't correct w/o forcing to game.
 # This is basically just a version of SuitGameIsRemote w/o the fit requirement.
 class PassResponseToPreempt(ResponseToPreempt):
+    purpose = "Forced"  # unconstrained: anything with a reason to bid comes first
     call_names = 'P'
     # FIXME: Partner can always have up to 16 hcp when preempting.
     # This should be Max over his minimum?
     shared_constraints = NO_CONSTRAINTS
 
 
-new_suit_responses_to_preempt = SuitPreference(Call.suited_names_between('2D', '4D'))
+new_suit_responses_to_preempt = suit_preference(Call.suited_names_between('2D', '4D'))
 
 class NewSuitResponseToPreempt(ResponseToPreempt):
+    purpose = "AskLater"  # forcing, but a game in hand (3N with stoppers) comes first
     preconditions = [
         UnbidSuit(),
         NotJumpFromLastContract()
     ]
-    priorities_per_call = new_suit_responses_to_preempt.per_call
-    conditional_priorities_per_call = new_suit_responses_to_preempt.conditional
+    call_names = new_suit_responses_to_preempt.call_names
+    prefer = new_suit_responses_to_preempt
     shared_constraints = [
         MinLength(5),
         # Should this deny support for partner's preempt suit?
@@ -3751,20 +3296,26 @@ class NewSuitResponseToPreempt(ResponseToPreempt):
     ]
 
 
-rule_order.order(
-    PassResponseToPreempt,
-    natural_bids, # This puts the law above passing, which makes us extend preempts preferentially, is that correct?
-    new_suit_responses_to_preempt.all,
-)
-
-
 class PassAfterPreempt(Rule):
+    purpose = "Forced"
     preconditions = [
         LastBidHasAnnotation(positions.Me, annotations.Preemptive),
         InvertedPrecondition(ForcedToBid()),
     ]
     call_names = 'P'
     shared_constraints = NO_CONSTRAINTS
+
+
+class UnbidSuitOfLength(Constraint):
+    """Some unbid suit has at least min_length cards."""
+    def __init__(self, min_length):
+        self.min_length = min_length
+
+    def expr(self, history, call):
+        unbid = history.unbid_suits
+        if not unbid:
+            return z3.BoolVal(False)
+        return z3.Or([expr_for_suit(s) >= self.min_length for s in unbid])
 
 
 class ForcedRebidAfterPreempt(Rule):
@@ -3784,6 +3335,7 @@ class ForcedRebidAfterNewSuitResponseToPreempt(ForcedRebidAfterPreempt):
 
 # This applies both after a new suit, or after 2N feature request.
 class MinimumRebidOfPreemptSuit(ForcedRebidAfterPreempt):
+    purpose = "Forced"
     preconditions = [
         RebidSameSuit(),
         NotJumpFromLastContract(),
@@ -3796,6 +3348,7 @@ class MinimumRebidOfPreemptSuit(ForcedRebidAfterPreempt):
 
 
 class RaiseOfPartnersPreemptResponse(ForcedRebidAfterNewSuitResponseToPreempt):
+    purpose = "Answer"
     preconditions = [
         RaiseOfPartnersLastSuit(),
         NotJumpFromLastContract(),
@@ -3804,58 +3357,46 @@ class RaiseOfPartnersPreemptResponse(ForcedRebidAfterNewSuitResponseToPreempt):
     call_names = Call.suited_names_between('3D', '4D')
     # FIXME: This can also be made with doubleton honors according to p85
     shared_constraints = MinimumCombinedLength(8)
+    prefer = []
 
 
 class NewSuitAfterPreempt(ForcedRebidAfterNewSuitResponseToPreempt):
+    purpose = "Answer"
     preconditions = [
         NotJumpFromLastContract(),
         UnbidSuit(),
     ]
     # Min: 1S 2D P 2H P 2S, Unclear what the max is.
     call_names = Call.suited_names_between('2S', '4D')
-    shared_constraints = [points >= 9, MinLength(4)]
+    # Without support for partner's suit (with it, the raise).
+    shared_constraints = [points >= 9, MinLength(4), ConstraintNot(MinimumCombinedLength(8, use_partners_last_suit=True))]
+    prefer = []
 
 
 class NotrumpAfterPreempt(ForcedRebidAfterNewSuitResponseToPreempt):
+    purpose = "Answer"
     preconditions = NotJumpFromLastContract()
     # Min: 2D P 2H P 2N, Unclear if 3N is viable?
     call_names = ('2N', '3N')
-    shared_constraints = points >= 9
+    # Without support for partner's suit and without a four-card suit to show (p85 h4).
+    shared_constraints = [points >= 9, ConstraintNot(MinimumCombinedLength(8, use_partners_last_suit=True)), ConstraintNot(UnbidSuitOfLength(4))]
+    prefer = []
 
 
 # With a minimum we would rather raise his suit than rebid our own.
 # With a maximum we would still rather raise, failing that a new suit, and otherwise NT.
-rule_order.order(
-    natural_bids, # FIXME: Is this right?  Natural rebids make no sense after a preempt.
-    MinimumRebidOfPreemptSuit,
-    NotrumpAfterPreempt,
-    NewSuitAfterPreempt,
-    RaiseOfPartnersPreemptResponse,
-)
 
-
-feature_asking_priorities = enum.Enum(
-    "Gerber",
-    "Blackwood",
-)
-rule_order.order(*reversed(feature_asking_priorities))
-
-feature_response_priorities = enum.Enum(
-    "Gerber",
-    "Blackwood",
-    "TwoNotrumpFeatureResponse",
-    "TwoNotrumpMaximumResponse",
-)
 
 class Gerber(Rule):
     category = categories.Gadget
     requires_planning = True
     shared_constraints = NO_CONSTRAINTS
     annotations = annotations.Gerber
-    priority = feature_asking_priorities.Gerber
+    prefer = []
 
 
 class GerberForAces(Gerber):
+    purpose = "Planned"
     call_names = '4C'
     preconditions = [
         LastBidHasStrain(positions.Partner, suit.NOTRUMP),
@@ -3864,11 +3405,13 @@ class GerberForAces(Gerber):
 
 
 class GerberForKings(Gerber):
+    purpose = "Planned"
     call_names = '5C'
     preconditions = LastBidHasAnnotation(positions.Me, annotations.Gerber)
 
 
 class ResponseToGerber(Rule):
+    purpose = "Answer"
     category = categories.Relay
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.Gerber),
@@ -3884,8 +3427,8 @@ class ResponseToGerber(Rule):
         '5S': number_of_kings == 2,
         '5N': number_of_kings == 3,
     }
-    priority = feature_response_priorities.Gerber
     annotations = annotations.Artificial
+    prefer = []
 
 
 class Blackwood(Rule):
@@ -3893,10 +3436,11 @@ class Blackwood(Rule):
     requires_planning = True
     shared_constraints = NO_CONSTRAINTS
     annotations = annotations.Blackwood
-    priority = feature_asking_priorities.Blackwood
+    prefer = []
 
 
 class BlackwoodForAces(Blackwood):
+    purpose = "Planned"
     call_names = '4N'
     preconditions = [
         LastBidHasSuit(positions.Partner),
@@ -3909,11 +3453,13 @@ class BlackwoodForAces(Blackwood):
 
 
 class BlackwoodForKings(Blackwood):
+    purpose = "Planned"
     call_names = '5N'
     preconditions = LastBidHasAnnotation(positions.Me, annotations.Blackwood)
 
 
 class ResponseToBlackwood(Rule):
+    purpose = "Answer"
     category = categories.Relay
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.Blackwood),
@@ -3929,11 +3475,12 @@ class ResponseToBlackwood(Rule):
         '6H': number_of_kings == 2,
         '6S': number_of_kings == 3,
     }
-    priority = feature_response_priorities.Blackwood
     annotations = annotations.Artificial
+    prefer = []
 
 
 class TwoNotrumpFeatureRequest(ResponseToPreempt):
+    purpose = "Planned"
     category = categories.Gadget
     annotations = annotations.FeatureRequest
     requires_planning = True
@@ -3944,19 +3491,20 @@ class TwoNotrumpFeatureRequest(ResponseToPreempt):
     constraints = { '2N': MinimumCombinedPoints(22) }
 
 
-rule_order.order(
-    PassResponseToPreempt,
-    TwoNotrumpFeatureRequest,
-)
-
-
 class ResponseToTwoNotrumpFeatureRequest(Rule):
     category = categories.Gadget
     preconditions = LastBidHasAnnotation(positions.Partner, annotations.FeatureRequest)
-    priority = feature_response_priorities.TwoNotrumpFeatureResponse
+
+
+class OutsideThirdRoundStopper(Constraint):
+    """A third-round stopper in a suit other than the one we preempted in: the feature."""
+    def expr(self, history, call):
+        mine = history.me.last_call.strain
+        return z3.Or([ThirdRoundStopper().expr(history, Call.from_level_and_strain(3, s)) for s in suit.SUITS if s != mine])
 
 
 class FeatureResponseToTwoNotrumpFeatureRequest(ResponseToTwoNotrumpFeatureRequest):
+    purpose = "Answer"
     category = categories.Gadget
     preconditions = InvertedPrecondition(RebidSameSuit())
     annotations = annotations.Artificial
@@ -3965,26 +3513,22 @@ class FeatureResponseToTwoNotrumpFeatureRequest(ResponseToTwoNotrumpFeatureReque
     # (QJTxxx in our main suit + Qxx in our outside honor suit)
     # p86 seems to suggest we need 9+ hcp.
     shared_constraints = [points >= 9, ThirdRoundStopper()]
+    prefer = []
 
 
 class MaximumNotrumpResponseToTwoNotrumpFeatureRequest(ResponseToTwoNotrumpFeatureRequest):
     """A maximum with no feature to show rebids 3N (both authorities; round-18 review,
     A1): the feature bid outranks it, so 3N means no outside third-round stopper, and the
     minimum suit rebid sits below both."""
+    purpose = "Answer"
     category = categories.Gadget
     call_names = '3N'
-    shared_constraints = points >= 9
-    priority = feature_response_priorities.TwoNotrumpMaximumResponse
-
-
-rule_order.order(
-    MinimumRebidOfPreemptSuit,
-    feature_response_priorities.TwoNotrumpMaximumResponse,
-    feature_response_priorities.TwoNotrumpFeatureResponse,
-)
+    shared_constraints = [points >= 9, ConstraintNot(OutsideThirdRoundStopper())]
+    prefer = []
 
 
 class GrandSlamForce(Rule):
+    purpose = "Planned"
     preconditions = [
         LastBidHasSuit(positions.Partner),
         # Since ACBL requires 8hcp to open naturally, I suspect partner has to have opened for GSF to be on.
@@ -3997,641 +3541,14 @@ class GrandSlamForce(Rule):
     annotations = annotations.GrandSlamForce
 
 
-grand_slam_force_responses = enum.Enum(
-    "GrandSlam",
-    "SmallSlam",
-)
-rule_order.order(*reversed(grand_slam_force_responses))
-
-
 class ResponseToGrandSlamForce(Rule):
+    purpose = "Answer"
     preconditions = [
         LastBidHasAnnotation(positions.Partner, annotations.GrandSlamForce),
         RebidSameSuit(),
     ]
     constraints = {
-        ('6C', '6D', '6H', '6S'): (NO_CONSTRAINTS, grand_slam_force_responses.SmallSlam),
-        ('7C', '7D', '7H', '7S'): (TwoOfTheTopThree(), grand_slam_force_responses.GrandSlam),
+        ('6C', '6D', '6H', '6S'): NO_CONSTRAINTS,
+        ('7C', '7D', '7H', '7S'): TwoOfTheTopThree(),
     }
-
-
-rule_order.order(preempt_priorities, opening_priorities)
-rule_order.order(natural_bids, preempt_priorities)
-rule_order.order(natural_games, nt_response_priorities, natural_slams)
-# A new suit at the two level (forcing) before a direct slam bid: 1H P -> 2C on AKJ8.J42.AKJ.KJ4
-# used to tie with 6N and drop both.
-rule_order.order(natural_slams, new_two_level_responses)
-rule_order.order(natural_bids, stayman_response_priorities)
-rule_order.order(natural_bids, GarbagePassStaymanRebid)
-rule_order.order(natural_bids, PassAfterTakeoutDouble)
-rule_order.order(natural_bids, two_clubs_opener_rebid_priorities)
-rule_order.order(natural_bids, opener_suited_rebids_after_two_clubs.all)
-rule_order.order(natural_exact_notrump_game, stayman_rebid_priorities.GameForcingOtherMajor, natural_exact_major_games)
-rule_order.order(natural_nt_part_scores, stayman_rebid_priorities.InvitationalOtherMajor, natural_suited_part_scores)
-rule_order.order(takeout_double_responses, natural_bids)
-rule_order.order(ForcedRebidOriginalSuitByOpener, natural_bids)
-rule_order.order(natural_bids, NewSuitResponseToStandardOvercall, CuebidResponseToStandardOvercall)
-rule_order.order(RaiseResponseToStandardOvercall, natural_bids)
-rule_order.order(DefaultPass, RaiseResponseToStandardOvercall)
-# The preference to opener's suit beats a notrump part score when an unbid suit is unstopped
-# (p73 h18) and loses to it otherwise; never a natural suit part score of our own, a game, a
-# slam, or the rebid of our own six-card suit.
-rule_order.order(DefaultPass, responder_preferences.WithStopper, natural_nt_part_scores,
-                 responder_preferences.WithoutStopper, natural_suited_part_scores)
-rule_order.order(responder_preferences, natural_games)
-rule_order.order(responder_preferences, natural_slams)
-rule_order.order(responder_preferences, RebidResponderSuitByResponder)
-rule_order.order(DefaultPass, opening_priorities)
-rule_order.order(rebids_after_takeout_double, natural_bids)
-rule_order.order(natural_bids, SecondNegative)
-rule_order.order(DefaultPass, rebids_after_takeout_double)
-
-rule_order.order(
-    DefaultPass,
-    RebidOneNotrumpByOpener,
-    opener_one_level_new_major,
-    opener_support_majors,
-)
-rule_order.order(
-    RebidOneNotrumpByOpener,
-    opener_higher_level_new_suits,
-)
-rule_order.order(
-    RebidOneNotrumpByOpener,
-    opener_reverses,
-)
-rule_order.order(
-    ForcedRebidOriginalSuitByOpener,
-    opener_higher_level_new_suits,
-    opener_one_level_new_major,
-)
-rule_order.order(
-    DefaultPass,
-    opener_higher_level_new_minors,
-    opener_jumpshifts_to_minors,
-)
-rule_order.order(
-    opener_higher_level_new_major,
-    opener_reverse_to_a_major,
-    opener_jumpshifts_to_majors,
-)
-rule_order.order(
-    opener_reverse_to_a_minor,
-    opener_one_level_new_major,
-    opener_jumpshifts_to_majors,
-)
-rule_order.order(
-    NotrumpJumpRebid,
-    opener_support_majors,
-)
-rule_order.order(
-    # Don't jump to game immediately, even if we have the points for it.
-    natural_exact_notrump_game,
-    opener_one_level_new_major,
-)
-rule_order.order(
-    ThreeNotrumpMajorResponse,
-    new_one_level_major_responses,
-)
-rule_order.order(
-    # Without a stopper in the fourth suit the ask comes before a natural 3N.
-    natural_exact_notrump_game,
-    fourth_suit_forcing,
-)
-# With the fourth suit stopped the natural 3N comes first (p76 h5: "if you had spades covered,
-# you would already be bidding notrump from your side"); the stopped ask still beats the
-# part scores, like the unstopped one.
-rule_order.order(
-    natural_nt_part_scores,
-    fourth_suit_forcing_with_stopper,
-    natural_exact_notrump_game,
-)
-rule_order.order(
-    natural_suited_part_scores,
-    fourth_suit_forcing_with_stopper,
-)
-# The unstopped rank is the higher of the two the rule can reach.
-rule_order.order(
-    fourth_suit_forcing_with_stopper,
-    fourth_suit_forcing,
-)
-rule_order.order(
-    natural_nt_part_scores,
-    fourth_suit_forcing.TwoLevel,
-)
-rule_order.order(
-    # FIXME: This seems backwards.
-    natural_suited_part_scores,
-    fourth_suit_forcing.TwoLevel,
-)
-rule_order.order(
-    fourth_suit_forcing,
-    ThreeLevelSuitRebidByResponder,
-)
-rule_order.order(
-    # The stopped ask, like the unstopped one, yields to a rebid of our own six-card suit.
-    fourth_suit_forcing_with_stopper,
-    ThreeLevelSuitRebidByResponder,
-)
-rule_order.order(
-    # If we already see game, why use FSF?
-    fourth_suit_forcing,
-    natural_exact_major_games,
-)
-rule_order.order(
-    fourth_suit_forcing_with_stopper,
-    natural_exact_major_games,
-)
-rule_order.order(
-    DefaultPass,
-    # Mention a 4-card major before rebidding a 6-card minor.
-    UnforcedRebidOriginalSuitByOpener,
-    opener_one_level_new_major,
-)
-rule_order.order(
-    ForcedRebidOriginalSuitByOpener,
-    opener_higher_level_new_suits,
-)
-rule_order.order(
-    ForcedRebidOriginalSuitByOpener,
-    RebidOneNotrumpByOpener,
-    UnforcedRebidOriginalSuitByOpener,
-)
-# With shortness the five-card rebid beats the natural 2N (the 2N rebid is balanced) but not
-# the 1N rebid the author's from-play lines keep, nor the six-card rebid.
-rule_order.order(
-    ForcedRebidOriginalSuitByOpener,
-    set([notrump_with_stoppers.get('2N'), notrump_without_stoppers.get('2N')]),
-    forced_suit_rebid_with_shortness,
-    RebidOneNotrumpByOpener,
-)
-# Otherwise the rebid with shortness ranks where the five-card rebid does: below a new suit,
-# a raise, the reply to a negative double, and every natural game or slam.
-rule_order.order(forced_suit_rebid_with_shortness, opener_higher_level_new_suits)
-rule_order.order(forced_suit_rebid_with_shortness, opener_one_level_new_major)
-rule_order.order(forced_suit_rebid_with_shortness, NewSuitResponseToNegativeDouble)
-rule_order.order(forced_suit_rebid_with_shortness, natural_games)
-rule_order.order(forced_suit_rebid_with_shortness, natural_slams)
-rule_order.order(forced_suit_rebid_with_shortness, natural_suited_part_scores)
-rule_order.order(
-    # Rebids will only ever consider one suit, so we won't be comparing majors/minors here.
-    ForcedRebidOriginalSuitByOpener,
-    UnforcedRebidOriginalSuitByOpener,
-    opener_unsupported_rebids,
-)
-rule_order.order(
-    # We'd rather mention a new minor (heading towards NT) than rebid one?
-    opener_unsupported_rebids.InvitationalMinor,
-    opener_higher_level_new_minors,
-)
-rule_order.order(
-    natural_suited_part_scores,
-    NotrumpInvitationByOpener,
-    all_priorities_for_rule(HelpSuitGameTry),
-)
-rule_order.order(
-    # If we have a new suit to mention, we'd rather do that than sign off in game?
-    # Maybe game with stoppers should be higher priority and game without lower?
-    # 1S P 2C P 2H seems higher priority than a straight jump to game...
-    # but 1S P 2C P 2D doesn't seem very useful if we have everything stopped?
-    natural_exact_notrump_game,
-    opener_higher_level_new_suits,
-)
-rule_order.order(
-    opener_higher_level_new_suits,
-    opener_support_majors,
-)
-rule_order.order(
-    # Definitely rather jump to NT rather than mention a new minor.  Unclear about 2H vs. NT.
-    opener_higher_level_new_minors,
-    NotrumpJumpRebid,
-)
-rule_order.order(
-    responder_preferences,
-    ResponderReverse,
-)
-# The invitational 2N beats the natural notrump part score it refines, and a suit part score
-# with a fit (p70 h9 raises 3D) or a six-card suit rebid still comes first; a reverse (12+
-# with a four-card suit) and the stopped fourth-suit ask (12+) say more than the invitation.
-rule_order.order(
-    natural_nt_part_scores,
-    ResponderNotrumpInvitation,
-    natural_suited_part_scores,
-)
-rule_order.order(
-    ResponderNotrumpInvitation,
-    ThreeLevelSuitRebidByResponder,
-)
-rule_order.order(
-    ResponderNotrumpInvitation,
-    ResponderReverse,
-)
-rule_order.order(
-    ResponderNotrumpInvitation,
-    fourth_suit_forcing_with_stopper,
-)
-# At 10-11 both may fit: the invitation (p71 h11) rather than the preference; and a preference
-# is a real call where the demoted fourth-suit ask (four-card support for opener's second suit)
-# is not.
-rule_order.order(
-    fourth_suit_forcing_with_support,
-    responder_preferences,
-    ResponderNotrumpInvitation,
-)
-rule_order.order(
-    # If we see that game is remote, just stop.
-    UnforcedRebidOriginalSuitByOpener,
-    natural_passses,
-)
-rule_order.order(
-    # FIXME: This may be unecessary once we have responses to negative doubles.
-    # But we'd rather place the contract in a suited part score than in NT.
-    RebidOneNotrumpByOpener,
-    natural_suited_part_scores,
-)
-rule_order.order(
-    # We'd rather disclose a 6-card major suit than just jump to NT.
-    # FIXME: It's possible this is only an issue due to NaturalNotrump missing stoppers!
-    natural_exact_notrump_game,
-    opener_unsupported_major_rebid,
-)
-rule_order.order(
-    # Showing a second minor seems more useful than showing a longer one.
-    opener_unsupported_minor_rebid,
-    opener_reverse_to_a_minor,
-)
-rule_order.order(
-    OneNotrumpResponse,
-    raise_responses,
-)
-rule_order.order(
-    # We don't need to put this above all raise responses, but it shouldn't hurt.
-    raise_responses,
-    MajorJumpToGame,
-)
-rule_order.order(
-    DefaultPass,
-    OneNotrumpResponse, # Any time we can respond we should.
-    new_minor_responses, # But we prefer suits to NT.
-    major_raise_responses, # But we'd much rather support our partner's major!
-)
-rule_order.order(
-    OneNotrumpResponse,
-    new_two_level_major_responses,
-)
-rule_order.order(
-    # Relays are extremely high priority, this is likely redundant with other orderings.
-    natural_bids,
-    relay_priorities
-)
-rule_order.order(
-    # Rather jump to NT than mention a new minor.
-    new_minor_responses,
-    NotrumpResponseToMinorOpen,
-    new_one_level_major_responses,
-)
-rule_order.order(
-    new_two_level_minor_responses,
-    new_one_level_major_responses,
-)
-rule_order.order(
-    natural_bids,
-    two_clubs_response_priorities,
-)
-rule_order.order(
-    natural_bids,
-    feature_response_priorities,
-)
-rule_order.order(
-    # We want to start constructive, not just jump to slam.
-    natural_slams,
-    # FIXME: This should be a group of game-forcing responses, no?
-    JumpShiftResponseToOpen,
-)
-rule_order.order(
-    OneNotrumpResponse,
-    natural_bids,
-)
-rule_order.order(
-    OneNotrumpResponse,
-    OneLevelNegativeDouble,
-)
-rule_order.order(
-    raise_responses,
-    JumpShiftResponseToOpen,
-)
-rule_order.order(
-    new_one_level_minor_responses,
-    # We'd rather mention a new major than raise partner's minor or mention our own.
-    minor_raise_responses,
-    new_one_level_major_responses,
-    # But we'd rather raise a major than mention a new one.
-    major_raise_responses
-)
-rule_order.order(
-    # NegativeDouble is more descriptive than any one-level new suit (when it fits).
-    new_one_level_suit_responses,
-    OneLevelNegativeDouble,
-)
-rule_order.order(
-    OneNotrumpResponse,
-    OneLevelNegativeDouble,
-)
-# Constructive responses are always better than placement responses.
-rule_order.order(
-    natural_bids,
-    new_one_level_suit_responses,
-)
-rule_order.order(
-    DefaultPass,
-    TwoLevelNegativeDouble,
-)
-rule_order.order(
-    OneNotrumpResponse,
-    jacoby_2n.Jacoby2NWithThree,
-    new_two_level_responses,
-)
-rule_order.order(
-    major_raise_responses,
-    jacoby_2n.Jacoby2NWithFour,
-)
-rule_order.order(
-    natural_bids,
-    jacoby_2n_responses,
-)
-rule_order.order(
-    new_one_level_suit_responses,
-    defenses_against_takeout_double,
-)
-rule_order.order(
-    minimum_raise_responses,
-    defenses_against_takeout_double,
-    MajorJumpToGame,
-)
-rule_order.order(
-    OneNotrumpResponse,
-    NotrumpResponseToMinorOpen,
-    defenses_against_takeout_double,
-)
-# The rebid-after-transfer bids are more descriptive than jumping to NT game.
-rule_order.order(
-    natural_exact_notrump_game,
-    hearts_rebids_after_spades_transfers
-)
-rule_order.order(
-    natural_suited_part_scores,
-    SpadesRebidAfterHeartsTransfer
-)
-# The invitational 2N is the least descriptive rebid after a transfer: any suit rebid or natural
-# raise that fits comes first; passing comes last.
-rule_order.order(
-    DefaultPass,
-    NotrumpRebidAfterJacobyTransfer,
-    natural_suited_part_scores,
-)
-rule_order.order(
-    NotrumpRebidAfterJacobyTransfer,
-    set([SpadesRebidAfterHeartsTransfer, NewMinorRebidAfterJacobyTransfer]) | set(hearts_rebids_after_spades_transfers),
-)
-rule_order.order(
-    natural_exact_notrump_game,
-    NewMinorRebidAfterJacobyTransfer
-)
-rule_order.order(
-    # Even a jumpshift to a major seems less descriptive than a 2N rebid.
-    opener_jumpshifts,
-    NotrumpJumpRebid,
-)
-rule_order.order(
-    # Better to raise partner's major than show minors.
-    negative_doubles,
-    major_raise_responses,
-)
-rule_order.order(
-    # Better to show a major than raise partner's minor.
-    minor_raise_responses,
-    negative_doubles,
-)
-rule_order.order(
-    # Better to show points for NT game than mention a new minor?
-    new_two_level_minor_responses,
-    ThreeNotrumpMajorResponse,
-)
-rule_order.order(
-    natural_nt_part_scores,
-    negative_doubles,
-)
-rule_order.order(
-    # If we can rebid, that's always better than escaping to a NT partscore.
-    # FIXME: This should be escape_to_nt_partscore instead of natural_nt.
-    # This ordering is probably overbroad as written!
-    natural_nt_part_scores,
-    UnforcedRebidOriginalSuitByOpener,
-)
-rule_order.order(
-    opener_unsupported_major_rebid,
-    opener_jumpshifts,
-)
-rule_order.order(
-    # Jumpshift shows 19+ vs. 16+
-    all_priorities_for_rule(HelpSuitGameTry),
-    opener_jumpshifts,
-)
-rule_order.order(
-    # Rebidding a 6-card major seems better than mentioning any new suit?  Including a new major?
-    # FIXME: What about when we're 6-5 in the majors?
-    opener_higher_level_new_suits,
-    opener_unsupported_major_rebid,
-)
-
-# FIXME: This is a very rough approximation, and needs much more refinement
-# particularly in the ordering of new majors vs. notrump.
-rule_order.order(
-    DefaultPass,
-    balancing_suited_overcalls.all,
-    BalancingMichaelsCuebid,
-    balancing_notrumps.OneNotrump,
-    BalancingDouble,
-    balancing_notrumps.TwoNotrumpJump,
-    balancing_jump_suited_overcalls.all,
-)
-rule_order.order(
-    DefaultPass,
-    new_suit_overcalls,
-)
-rule_order.order(
-    # FIXME: This is wrong.  p118, h10 seems to say we should prefer 5-card majors over a takeout double?
-    new_suit_overcalls,
-    standard_takeout_doubles,
-)
-rule_order.order(
-    new_suit_overcalls,
-    TakeoutDoubleAfterPreempt,
-)
-rule_order.order(
-    # FIXME: Is this always true?  What if partner has passed?  Is there a point range at which we'd rather preempt?
-    preemptive_overcalls,
-    standard_takeout_doubles,
-)
-rule_order.order(
-    # It seems we'd always rather show a major and a minor instead of just a single suit when possible?
-    new_suit_overcalls,
-    two_suited_direct_overcalls,
-)
-rule_order.order(
-    # Unusual2N and Michaels show two 5 card suits which is better than one.
-    # If we have a 5-card major it will always be shown as part of one of these.
-    standard_takeout_doubles,
-    two_suited_direct_overcalls,
-)
-rule_order.order(
-    # Even when we're weak, we'd rather find a fit with partner, than jump in our own suit.
-    weak_preemptive_overcalls,
-    two_suited_direct_overcalls,
-)
-rule_order.order(
-    new_suit_overcalls,
-    Unusual2N,
-)
-rule_order.order(
-    # FIXME: Is this always true?  What about if partner has passed?
-    preemptive_overcalls,
-    new_suit_overcalls,
-)
-rule_order.order(
-    DefaultPass,
-    preemptive_overcalls,
-)
-rule_order.order(
-    # If we can preempt, that's more descriptive than a standard overcall.
-    new_suit_overcalls,
-    weak_preemptive_overcalls,
-)
-rule_order.order(
-    # 1N overcall is more descriptive than a takeout double.
-    standard_takeout_doubles,
-    DirectOvercall1N,
-)
-rule_order.order(
-    ForcedRebidOriginalSuitByOpener,
-    NewSuitResponseToNegativeDouble,
-    UnforcedRebidOriginalSuitByOpener,
-    negative_double_jump_responses,
-    CuebidReponseToNegativeDouble,
-)
-
-rule_order.order(
-    minimum_raise_responses,
-    JumpRaiseResponseToNegativeDouble,
-    CuebidReponseToNegativeDouble,
-)
-# Negative doubles possibly show majors, and are more descriptive than NT responses.
-rule_order.order(
-    NotrumpResponseToMinorOpen,
-    negative_doubles,
-)
-rule_order.order(
-    natural_passses,
-    all_priorities_for_rule(HelpSuitGameTry),
-)
-rule_order.order(
-    natural_bids,
-    ThreeNotrumpMajorResponse,
-)
-# A negative double (4-4 in the unbid suits) says more than a 3N raise; support can follow.
-rule_order.order(
-    ThreeNotrumpMajorResponse,
-    negative_doubles,
-)
-# A five-card major is bid rather than doubled: the negative double shows exactly four (p129);
-# 1D (1S): 2H on Q832.QT.AQT93.K4.
-rule_order.order(
-    negative_doubles,
-    new_two_level_major_responses,
-)
-# ...but a limit raise of partner's major (three-card support, 10-12) still beats a five-card
-# suit of our own: P P 1H (2C): 3H on 52.A95.AT3.KT843.  (Before the five-card major moved above
-# the negative double this followed from raise > double > new suit.)
-rule_order.order(
-    new_two_level_major_responses,
-    major_raise_responses,
-)
-# With a suit worth a weak jump, preempt rather than make a shape double.
-rule_order.order(
-    standard_takeout_doubles,
-    weak_preemptive_overcalls,
-)
-# Opener reopening: a double beats a non-jump new suit or reverse; a jump shift beats the double.
-rule_order.order(
-    set(opener_one_level_new_major) | set(opener_higher_level_new_suits) | set(opener_reverses),
-    ReopeningDouble,
-    opener_jumpshifts,
-)
-# Responder's rebids of his own suit yield to a natural major game once it is in sight.
-# (Not the minor games / 3N: those sit below fourth suit forcing, which sits below these rebids.)
-rule_order.order(
-    set([ThreeLevelSuitRebidByResponder, RebidResponderSuitByResponder]),
-    natural_exact_major_games,
-)
-# A found major fit is bid on rather than converted to a minor game force.
-rule_order.order(
-    stayman_rebid_priorities.MinorGameForceRebid,
-    natural_exact_major_games,
-)
-# Over partner's preempt, an overly sufficient 4N/5N is no reason not to pass.
-rule_order.order(
-    natural_overly_sufficient_games,
-    PassAfterPreempt,
-)
-# Raising partner's suit beats an unforced rebid of our own.
-rule_order.order(
-    UnforcedRebidOriginalSuitByOpener,
-    natural_suited_part_scores,
-)
-rule_order.order(
-    # We'd rather raise a major than rebid our minor.
-    opener_unsupported_rebids.InvitationalMinor,
-    negative_double_jump_responses.RaiseMajor,
-)
-
-
-# Opener's unforced three-level suit rebid ranks below a new suit over partner's negative double
-# (1C 1S X 2S: 3D with 6-5, not 3C).
-rule_order.order(DefaultPass, unforced_three_level_suit_rebid, NewSuitResponseToNegativeDouble)
-
-
-# Responder's weak six-card suit after a 1N response is more descriptive than a sign-off in
-# opener's suit on a doubleton, and either beats passing (p71 h12).
-rule_order.order(DefaultPass, responder_preferences, WeakNewSuitAfterOneNotrumpResponse)
-# After fourth suit forcing, the rebid of our own six-card suit (forcing) outranks a natural
-# part score in it, but a natural game bid still comes first (p76 h2).
-rule_order.order(DefaultPass, natural_suited_part_scores, RebidOwnSuitAfterFourthSuitForcing, natural_games)
-# Michaels pass-or-correct: both calls carry information, so they beat a default pass.
-rule_order.order(DefaultPass, MichaelsMinorPreference)
-rule_order.order(DefaultPass, CorrectMichaelsMinor)
-
-
-# The weak pass loses to every call responder can make (one edge each: order() chains its
-# arguments, and these sets are already ordered among themselves).
-rule_order.order(DefaultPass, trap_pass.Weak)
-for _responder_call in (natural_bids, negative_doubles, new_two_level_responses, new_one_level_suit_responses,
-                        OneNotrumpResponse, NewSuitAtTheThreeLevelOverJumpOvercall, JumpShiftResponseToOpen,
-                        trap_pass.Trap):
-    rule_order.order(trap_pass.Weak, _responder_call)
-# The trap pass beats the calls a hand with length in their suit would otherwise make: 1N/2N
-# (the length is not a stopper we want to declare behind), a negative double on a side
-# four-card major, a new suit, and a raise of partner's minor (which already sits below a
-# new major).  A raise of partner's major still comes first.
-for _call_with_their_suit in (negative_doubles, new_two_level_responses, new_one_level_suit_responses,
-                              OneNotrumpResponse, natural_nt_part_scores, NewSuitAtTheThreeLevelOverJumpOvercall,
-                              minor_raise_responses):
-    rule_order.order(_call_with_their_suit, trap_pass.Trap)
-rule_order.order(trap_pass.Trap, major_raise_responses)
-
-
-# Advancing a balancing overcall: a raise or notrump with values says more than a natural
-# part score, but a natural game bid still comes first; with support we raise rather than
-# bid notrump (the notrump bids only need tolerance for partner's suit).
-rule_order.order(natural_suited_part_scores, balancing_overcall_advances, natural_exact_games)
-rule_order.order(natural_nt_part_scores, balancing_overcall_notrump_advances, natural_exact_games)
-rule_order.order(balancing_overcall_notrump_advances, balancing_overcall_advances)
+    prefer = [Highest(*Call.suited_names_between('6C', '7S'))]  # the grand slam when the trumps allow it

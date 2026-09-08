@@ -2,33 +2,24 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from z3b import enum
 from z3b.constraints import *
 from z3b.model import *
 from z3b.preconditions import *
 from z3b.rules import *
 
 
-cappelletti_calls = enum.Enum(
-    "PenaltyDouble",
-    "TwoSuits",
-    "LongSuit",
-)
-rule_order.order(*reversed(cappelletti_calls))
-
-
 # Shared call schedule for defending against a 1N opening, direct or balancing seat
 # (mixin pattern, like MichaelsCuebid): the responses key off annotations.Cappelletti either way.
 class CappellettiEntries(object):
     constraints = {
-        '2C': [z3.Or(clubs >= 6, diamonds >= 6, hearts >= 6, spades >= 6), cappelletti_calls.LongSuit],
-        '2D': [z3.And(hearts >= 5, spades >= 5), cappelletti_calls.TwoSuits],
-        '2H': [z3.And(hearts >= 5, z3.Or(clubs >= 5, diamonds >= 5)), cappelletti_calls.TwoSuits],
-        '2S': [z3.And(spades >= 5, z3.Or(clubs >= 5, diamonds >= 5)), cappelletti_calls.TwoSuits],
-        '2N': [z3.And(clubs >= 5, diamonds >= 5), cappelletti_calls.TwoSuits],
+        '2C': z3.Or(clubs >= 6, diamonds >= 6, hearts >= 6, spades >= 6),
+        '2D': z3.And(hearts >= 5, spades >= 5),
+        '2H': z3.And(hearts >= 5, z3.Or(clubs >= 5, diamonds >= 5)),
+        '2S': z3.And(spades >= 5, z3.Or(clubs >= 5, diamonds >= 5)),
+        '2N': z3.And(clubs >= 5, diamonds >= 5),
         # I think the logic here is that with such an uneven distribution of points
         # in the opponents, we don't really want to play a game anyway, so we just penalize them.
-        'X': [points >= 15, cappelletti_calls.PenaltyDouble],
+        'X': points >= 15,
     }
     annotations_per_call = {
         ('2C', '2D', '2N'): annotations.Artificial
@@ -43,10 +34,12 @@ class CappellettiEntries(object):
 Responder can pass with enough points to penalize opener, but more likely should escape to a suit fit.""",
         '2C': "Indicates one-suited hand (6+ cards in an un-named suit).",
     }
+    prefer = ['X', Cheapest('2D', '2H', '2S', '2N'), '2C']  # the penalty double, a two-suiter, a long suit
 
 
 # Cappelletti may promise < 15 hcp, since 3-level overcalls are also on and may be preferred.
 class Cappelletti(CappellettiEntries, Rule):
+    purpose = "Compete"
     preconditions = [
         LastBidHasAnnotation(positions.RHO, annotations.Opening),
         LastBidWas(positions.RHO, '1N'),
@@ -58,6 +51,7 @@ class BalancingCappelletti(CappellettiEntries, Rule):
     """1N-P-P was previously a rule desert: every balancing rule requires a one-level SUIT
     opening, so classic balance hands passed out 1N.  Same schedule as Cappelletti, slightly
     lighter (the direct seat's pass has shown weakness, so the points are marked)."""
+    purpose = "Compete"
     preconditions = [
         balancing_precondition,
         LastBidWas(positions.LHO, '1N'),
@@ -65,18 +59,8 @@ class BalancingCappelletti(CappellettiEntries, Rule):
     # The double still shows a 1N-opening HAND, not just 15+ points: with an unbalanced 15+
     # we bid a suit or pass and defend (test_sayc "1N P P" expects P on KQ986.K.AK7.J942).
     constraints = dict(CappellettiEntries.constraints,
-                       X=[z3.And(points >= 15, balanced), cappelletti_calls.PenaltyDouble])
+                       X=z3.And(points >= 15, balanced))
     shared_constraints = points >= 9, playing_points >= 11
-
-
-rule_order.order(
-    DefaultPass,
-    cappelletti_calls,
-    # p112, h14 seems to imply we'd rather preempt than cappelletti when available.
-    set([weak_preemptive_overcalls.WeakFourLevel, weak_preemptive_overcalls.WeakThreeLevel]),
-)
-# ... and the same with a 7-card suit that is not weak.
-rule_order.order(cappelletti_calls, preemptive_overcalls)
 
 
 class ResponseToCappelletti(Rule):
@@ -87,49 +71,36 @@ class ResponseToCappelletti(Rule):
 
 
 class PassResponseToOneNotrumpPenaltyDouble(ResponseToCappelletti):
+    purpose = "Penalize"
     preconditions = LastBidWas(positions.Partner, 'X')
     constraints = {
         'P': MinimumCombinedPoints(21), # We have a point majority and should penalize 1N.
     }
 
 
-new_suit_responses_to_penalty_double = SuitPreference(['2C', '2D', '2H', '2S'])
+new_suit_responses_to_penalty_double = suit_preference(['2C', '2D', '2H', '2S'])
 
 class NewSuitResponseToOneNotrumpPenaltyDouble(ResponseToCappelletti):
+    purpose = "Discovery"
     preconditions = [
         LastBidWas(positions.Partner, 'X'),
         UnbidSuit(),
         NotJumpFromLastContract(),
     ]
-    priorities_per_call = new_suit_responses_to_penalty_double.per_call
-    conditional_priorities_per_call = new_suit_responses_to_penalty_double.conditional
+    call_names = new_suit_responses_to_penalty_double.call_names
+    prefer = new_suit_responses_to_penalty_double
     shared_constraints = [MinLength(4), LongestSuitExceptOpponentSuits()]
 
 
-rule_order.order(
-    new_suit_responses_to_penalty_double.all,
-    PassResponseToOneNotrumpPenaltyDouble,
-)
-
-
-cappelletti_two_club_responses = enum.Enum(
-    "StrongSpades",
-    "StrongHearts",
-    "LongClubs",
-    "BalancedWithPoints",
-    "Waiting",
-)
-rule_order.order(*reversed(cappelletti_two_club_responses))
-
-
 class ResponseToCappellettiTwoClubs(ResponseToCappelletti):
+    purpose = "Answer"
     preconditions = LastBidWas(positions.Partner, '2C')
     constraints = {
-        'P':  [(clubs >= 6, ThreeOfTheTopFiveOrBetter(suit.CLUBS)), cappelletti_two_club_responses.LongClubs],
-        '2D': [NO_CONSTRAINTS, cappelletti_two_club_responses.Waiting],
-        '2H': [(hearts >= 5, ThreeOfTheTopFiveOrBetter()), cappelletti_two_club_responses.StrongHearts],
-        '2S': [(spades >= 5, ThreeOfTheTopFiveOrBetter()), cappelletti_two_club_responses.StrongSpades],
-        '2N': [(points >= 11, balanced), cappelletti_two_club_responses.BalancedWithPoints],
+        'P': (clubs >= 6, ThreeOfTheTopFiveOrBetter(suit.CLUBS)),
+        '2D': NO_CONSTRAINTS,
+        '2H': (hearts >= 5, ThreeOfTheTopFiveOrBetter()),
+        '2S': (spades >= 5, ThreeOfTheTopFiveOrBetter()),
+        '2N': (points >= 11, balanced),
         # Could 3C be strong long clubs?
         # And 3D be long diamonds?
     }
@@ -139,14 +110,15 @@ class ResponseToCappellettiTwoClubs(ResponseToCappelletti):
     explanations_per_call = {
         '2D': "Waiting. Asks partners to name their 6-card suit.",
     }
+    prefer = ['2S', '2H', 'P', '2N', '2D']  # a strong major, long clubs, a balanced 11+, else the waiting 2D
 
 
 class RebidAfterCappelleti(Rule):
     preconditions = LastBidHasAnnotation(positions.Me, annotations.Cappelletti)
 
 
-
 class SuitRebidAfterCappellettiTwoClubs(RebidAfterCappelleti):
+    purpose = "Discovery"
     preconditions = [
         LastBidWas(positions.Me, '2C'),
         UnbidSuit(),
@@ -156,60 +128,24 @@ class SuitRebidAfterCappellettiTwoClubs(RebidAfterCappelleti):
     shared_constraints = MinLength(6)
 
 
-# With a real suit, run from the doubled 2C rather than sit.
-rule_order.order(DefaultPass, SuitRebidAfterCappellettiTwoClubs)
-
-
-
-cappelletti_two_diamonds_responses = enum.Enum(
-    "InvitationalHeartSupport",
-    "InvitationalSpadeSupport",
-    "HeartPreference",
-    "SpadePreference",
-    "BothMinors",
-    "LongClubs",
-    "LongDiamonds",
-)
-rule_order.order(*reversed(cappelletti_two_diamonds_responses))
-
-cappelletti_two_diamonds_invitational_responses = set([
-    cappelletti_two_diamonds_responses.InvitationalHeartSupport,
-    cappelletti_two_diamonds_responses.InvitationalSpadeSupport,
-])
-
-# Law bids (supporting a major) are better than BothMinors
-rule_order.order(cappelletti_two_diamonds_responses.BothMinors, natural_suited_part_scores)
-# We'd rather be invitational to game than just a law bid.
-rule_order.order(natural_suited_part_scores, cappelletti_two_diamonds_invitational_responses)
-
-
 class ResponseToCappellettiTwoDiamonds(ResponseToCappelletti):
+    purpose = "Answer"
     preconditions = LastBidWas(positions.Partner, '2D')
     constraints = {
-        'P':  [(diamonds >= 6, ThreeOfTheTopFiveOrBetter(suit.DIAMONDS)), cappelletti_two_diamonds_responses.LongDiamonds],
+        'P': (diamonds >= 6, ThreeOfTheTopFiveOrBetter(suit.DIAMONDS)),
         # Partner has already said he's 5-5 in the majors, so he has at most 3 in the minors.
-        '2N': [(clubs >= 5, diamonds >= 5), cappelletti_two_diamonds_responses.BothMinors],
-        '3C': [(clubs >= 6, ThreeOfTheTopFiveOrBetter(suit.CLUBS)), cappelletti_two_diamonds_responses.LongClubs],
+        '2N': (clubs >= 5, diamonds >= 5),
+        '3C': (clubs >= 6, ThreeOfTheTopFiveOrBetter(suit.CLUBS)),
 
         # Could these be natural too?  They imply invitational points?  But how many does partner have?
         # Currently we're assuming that 2D promises 5-5 in the majors.
-        '3H': [(MinimumCombinedLength(9), MinimumCombinedSupportPoints(22)), cappelletti_two_diamonds_responses.InvitationalHeartSupport],
-        '3S': [(MinimumCombinedLength(9), MinimumCombinedSupportPoints(22)), cappelletti_two_diamonds_responses.InvitationalSpadeSupport],
+        '3H': (MinimumCombinedLength(9), MinimumCombinedSupportPoints(22)),
+        '3S': (MinimumCombinedLength(9), MinimumCombinedSupportPoints(22)),
     }
     annotations_per_call = {
         '2N': annotations.Artificial,
     }
-
-
-cappelletti_major_raise_responses = enum.Enum(
-    "InvitationalHeartSupport",
-    "InvitationalSpadeSupport"
-)
-
-rule_order.order(
-    DefaultPass,
-    cappelletti_major_raise_responses,
-)
+    prefer = ['3H', '3S', '2N', '3C', 'P']  # the invitational raise, both minors, a long minor, else pass
 
 
 class ResponseToMajorCappelletti(ResponseToCappelletti):
@@ -217,6 +153,7 @@ class ResponseToMajorCappelletti(ResponseToCappelletti):
 
 
 class NewSuitResponseToMajorCappelletti(ResponseToMajorCappelletti):
+    purpose = "Discovery"
     preconditions = UnbidSuit()
     call_names = ('2S', '3C', '3D', '3H')
     shared_constraints = [
@@ -226,30 +163,23 @@ class NewSuitResponseToMajorCappelletti(ResponseToMajorCappelletti):
 
 
 class RaiseResponseToMajorCappelletti(ResponseToMajorCappelletti):
+    purpose = "SupportMajors"
     preconditions = [
         LastBidHasStrain(positions.Partner, suit.MAJORS),
         RaiseOfPartnersLastSuit(),
     ]
-    priorities_per_call = {
-        '3H': cappelletti_major_raise_responses.InvitationalHeartSupport, 
-        '3S': cappelletti_major_raise_responses.InvitationalSpadeSupport,
-    }
     shared_constraints = [
         MinimumCombinedLength(8),
         # Should this be support points?
         # Partner could have as few as 10 points!
         MinimumCombinedPoints(18)
     ]
-
-
-rule_order.order(
-    DefaultPass,
-    NewSuitResponseToMajorCappelletti,
-    cappelletti_major_raise_responses,
-)
+    call_names = ['3H', '3S']
+    prefer = []
 
 
 class CappellettiMinorRequest(ResponseToMajorCappelletti):
+    purpose = "Planned"
     call_names = '2N'
     requires_planning = True # FIXME: Can't we do this with constraints?
     annotations = annotations.CappellettiMinorRequest
@@ -257,6 +187,7 @@ class CappellettiMinorRequest(ResponseToMajorCappelletti):
 
 
 class ResponseToCappellettiMinorRequest(RebidAfterCappelleti):
+    purpose = "Answer"
     preconditions = [
         NotJumpFromLastContract(),
         LastBidHasAnnotation(positions.Partner, annotations.CappellettiMinorRequest),
@@ -266,6 +197,7 @@ class ResponseToCappellettiMinorRequest(RebidAfterCappelleti):
 
 
 class RaiseAfterCappellettiMinorRequest(Rule):
+    purpose = "Answer"
     preconditions = [
         LastBidHasAnnotation(positions.Me, annotations.CappellettiMinorRequest),
         PartnerHasAtLeastLengthInSuit(5),
@@ -276,7 +208,4 @@ class RaiseAfterCappellettiMinorRequest(Rule):
         MinimumCombinedSupportPoints(22), # Matches limit raise
     ]
 
-rule_order.order(
-    DefaultPass,
-    RaiseAfterCappellettiMinorRequest,
-)
+

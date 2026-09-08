@@ -211,6 +211,7 @@ number_of_kings = king_of_spades + \
     king_of_hearts + king_of_diamonds + king_of_clubs
 
 balanced = z3.And(doubletons <= 1, singletons == 0, voids == 0)
+semi_balanced = z3.And(singletons == 0, voids == 0)
 
 a_five_card_suit = z3.Or(spades >= 5, hearts >= 5, diamonds >= 5, clubs >= 5)
 

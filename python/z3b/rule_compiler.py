@@ -6,8 +6,9 @@ from core.call import Call
 from itertools import chain
 from functools import cache
 from z3b import enum
+from z3b import purposes
+from z3b import prefer
 from z3b import model
-from z3b import ordering
 from z3b.constraints import Constraint
 from z3b.preconditions import implies_artificial, annotations
 import z3
@@ -31,59 +32,44 @@ categories = enum.Enum(
     "DefaultPass",
 )
 
-# This class exists so that we can add asserts specific to how how orderings work for saycbridge.
-
-
-class RuleOrdering(object):
-    def __init__(self):
-        self.ordering = ordering.Ordering()
-
-    def _check_key(self, key):
-        assert not hasattr(key, '__dict__') or not (
-            'priority' in key.__dict__), "%s has a priority property and is being used as a priority" % key
-        return key
-
-    def order(self, *args):
-        return self.ordering.order(*list(map(self._check_key, args)))
-
+class PriorityOrdering(object):
+    """Compares two variants of possible calls (purposes.Priority)."""
     def lt(self, left, right):
-        try:
-            return self.ordering.lt(left, right)
-        except TypeError as e:
-            print("Exception during lt(%s, %s)" % (left, right))
-            raise
+        """left is a worse call than right: a worse purpose; the same purpose and a worse
+        strain under the purpose's preference; a deeper fallback; or, within one rule, a
+        worse place in the rule's own preference.  Two rules of one purpose and strain are
+        otherwise incomparable: a collision if both are possible (their meanings should not
+        both admit one hand)."""
+        if left.rank != right.rank:
+            return left.rank > right.rank  # a lower rank number is a better purpose
+        if left.strain != right.strain and left.strain is not None and right.strain is not None:
+            return left.strain > right.strain
+        if left.fallback != right.fallback:
+            return left.fallback > right.fallback  # a deeper fallback loses
+        same_rule = left.rule is right.rule or (
+            left.rule is not None and right.rule is not None and left.rule.name == right.rule.name)
+        if same_rule:
+            return left.key > right.key
+        return False
 
 
-rule_order = RuleOrdering()
-
-
-# FIXME: We should integrate this function into RuleOrdering.
-def all_priorities_for_rule(dsl_rule):
-    compiled_rule = RuleCompiler.compile(dsl_rule)
-    return compiled_rule.all_priorities
+priority_ordering = PriorityOrdering()
 
 
 # This is a public interface from DSL Rules to the rest of the system.
 class CompiledRule(object):
-    def __init__(self, rule, preconditions, known_calls, shared_constraints, annotations, constraints, default_priority, conditional_priorities_per_call, priorities_per_call):
+    def __init__(self, rule, preconditions, known_calls, shared_constraints, annotations, constraints, purposes_per_call=None, conditional_purposes_per_call=None, preconditions_per_call=None):
         self.dsl_rule = rule
+        self.preconditions_per_call = preconditions_per_call or {}
+        self.purposes_per_call = purposes_per_call or {}
+        self.conditional_purposes_per_call = conditional_purposes_per_call or {}
         self.preconditions = preconditions
         self.known_calls = known_calls
         self.shared_constraints = shared_constraints
         self._annotations = annotations
         self.constraints = constraints
-        self.default_priority = default_priority
-        self.conditional_priorities_per_call = conditional_priorities_per_call
-        self.priorities_per_call = priorities_per_call
         # FIXME: Should forcing be an annotation instead?  It has an awkward tri-state currently.
         self.forcing = self.dsl_rule.forcing
-
-    @property
-    def all_priorities(self):
-        # conditional_priorities_per_call maps a call to a LIST of (condition, priority) pairs.
-        conditional_priorities = [priority for pairs in self.conditional_priorities_per_call.values()
-                                  for _, priority in pairs]
-        return set([self.default_priority] + list(self.priorities_per_call.values()) + conditional_priorities)
 
     @property
     def requires_planning(self):
@@ -119,7 +105,7 @@ class CompiledRule(object):
 
     def _fits_preconditions(self, history, call, expected_call=None):
         try:
-            for precondition in self.preconditions:
+            for precondition in self.preconditions + list(RuleCompiler._ensure_list(self.preconditions_per_call.get(call.name, []))):
                 if not precondition.fits(history, call):
                     if call == expected_call and expected_call in self.known_calls:
                         print(" %s failed: %s" % (self, precondition))
@@ -136,8 +122,7 @@ class CompiledRule(object):
 
     def _constraint_exprs_for_call(self, history, call):
         exprs = []
-        per_call_constraints, _ = self.per_call_constraints_and_priority(
-            history, call)
+        per_call_constraints = self.constraints.get(call.name)
         if per_call_constraints is not None:
             exprs.extend(RuleCompiler.exprs_from_constraints(
                 per_call_constraints, history, call))
@@ -145,52 +130,67 @@ class CompiledRule(object):
             self.shared_constraints, history, call))
         return exprs
 
+    def purpose_for_call(self, history, call):
+        """The declared purpose of this rule making `call`: per call, else the rule's; a
+        callable purpose is asked with the auction (a natural bid raises, rebids or
+        discovers depending on who bid the suit)."""
+        purpose = self.purposes_per_call.get(call.name, self.dsl_rule.purpose)
+        assert purpose, "%s declares no purpose" % self.name
+        if callable(purpose) and not isinstance(purpose, str):
+            purpose = purpose(history, call)
+        return purposes.resolve(purpose, call)
+
     def meaning_of(self, history, call):
+        """(priority, meaning) pairs, one per variant of the call: the rule's purpose (or a
+        conditional purpose, its condition folded into the meaning), the purpose's strain
+        preference, and the rule's own preference (prefer)."""
         try:
             exprs = self._constraint_exprs_for_call(history, call)
-            per_call_conditionals = self.conditional_priorities_per_call.get(
-                call.name)
-            if per_call_conditionals:
-                for condition, priority in per_call_conditionals:
-                    condition_exprs = RuleCompiler.exprs_from_constraints(
-                        condition, history, call)
-                    yield priority, z3.And(exprs + condition_exprs)
+            purpose = self.purpose_for_call(history, call)
 
-            for condition, priority in self.dsl_rule.conditional_priorities:
-                condition_exprs = RuleCompiler.exprs_from_constraints(
-                    condition, history, call)
-                yield priority, z3.And(exprs + condition_exprs)
+            def variants():
+                """(key, exprs): the rule's own preference, one variant per entry that fits."""
+                for key, condition in prefer.variants(self.dsl_rule.prefer or [], self.known_calls, history, call):
+                    yield key, ([] if condition is None else RuleCompiler.exprs_from_constraints(condition, history, call))
 
-            _, priority = self.per_call_constraints_and_priority(history, call)
-            assert priority
-            yield priority, z3.And(exprs)
+            def strain_variants(purpose_name):
+                """(rank, exprs) under the purpose's strain preference; a pass takes the
+                strain of the contract it passes."""
+                target = call if call.is_contract() else history.call_history.last_contract()
+                if target is None:
+                    yield None, []
+                    return
+                for rank, condition_name in purposes.strain_variants(purpose_name, target):
+                    condition = [] if condition_name is None else RuleCompiler.exprs_from_constraints(
+                        purposes.CONDITIONS[condition_name], history, call)
+                    yield rank, condition
+
+            def priority(purpose_name, key, strain):
+                return purposes.Priority(purpose_name, rule=self, key=key, strain=strain,
+                                         fallback=int(self.dsl_rule.fallback))
+
+            # A conditional purpose promotes the call when the hand meets the condition.
+            conditional_purposes = list(self.conditional_purposes_per_call.get(call.name, []))
+            conditional_purposes += list(self.dsl_rule.conditional_purposes)
+            for entry in conditional_purposes:
+                condition, promoted = entry[0], entry[1]
+                # A third element names the base purpose the promotion applies to (a natural
+                # bid is a raise only when partner bid the suit).
+                if len(entry) > 2 and entry[2] is not None and purposes.resolve(entry[2], call) != purpose:
+                    continue
+                assert len(entry) <= 3, "%s: a conditional purpose is (condition, purpose[, base purpose])" % self.name
+                promoted_name = purposes.resolve(promoted, call)
+                condition_exprs = RuleCompiler.exprs_from_constraints(condition, history, call)
+                for key, key_exprs in variants():
+                    for strain, strain_exprs in strain_variants(promoted_name):
+                        yield priority(promoted_name, key, strain), z3.And(exprs + key_exprs + condition_exprs + strain_exprs)
+            for key, key_exprs in variants():
+                for strain, strain_exprs in strain_variants(purpose):
+                    yield priority(purpose, key, strain), z3.And(exprs + key_exprs + strain_exprs)
         except:
             print("Exception compiling meaning_of %s over %s with %s" %
                   (call, history.call_history.calls_string(), self))
             raise
-
-    # constraints accepts various forms including:
-    # constraints = { '1H': hearts > 5 }
-    # constraints = { '1H': (hearts > 5, priority) }
-    # constraints = { ('1H', '2H'): hearts > 5 }
-
-    # FIXME: Should we split this into two methods? on for priority and one for constraints?
-    def per_call_constraints_and_priority(self, history, call):
-        constraints_tuple = self.constraints.get(call.name)
-        try:
-            list(constraints_tuple)
-        except TypeError:
-            priority = self.priorities_per_call.get(
-                call.name, self.default_priority)
-            constraints_tuple = (constraints_tuple, priority)
-        assert len(constraints_tuple) == 2
-        # FIXME: Is it possible to not end up with a priority anymore?
-        assert constraints_tuple[1], "" + self.name + " is missing priority"
-        # A per-call value that is a two-element list of constraints would silently become
-        # (constraint, priority=constraint): priorities are enum values or rule classes.
-        assert isinstance(constraints_tuple[1], (enum.Enum.EnumValue, type)), \
-            "%s: %r is not a priority" % (self.name, constraints_tuple[1])
-        return constraints_tuple
 
 
 class RuleCompiler(object):
@@ -229,16 +229,12 @@ class RuleCompiler(object):
         return list(chain.from_iterable(mapped_values))
 
     @classmethod
-    def _compile_known_calls(cls, dsl_class, constraints, priorities_per_call):
+    def _compile_known_calls(cls, dsl_class, constraints):
         if dsl_class.call_names:
             call_names = cls._ensure_list(dsl_class.call_names)
-        elif priorities_per_call:
-            call_names = list(priorities_per_call.keys())
-            assert _is_not_empty_or_none(dsl_class.shared_constraints) or list(
-                priorities_per_call.keys()) == list(constraints.keys())
         else:
             call_names = list(constraints.keys())
-        assert call_names, "%s: call_names or priorities_per_call or constraints map is required." % dsl_class.__name__
+        assert call_names, "%s: call_names or a constraints map is required." % dsl_class.__name__
         return list(map(Call.from_string, call_names))
 
     @classmethod
@@ -272,9 +268,6 @@ class RuleCompiler(object):
         # Rules have to apply some constraints to the hand.
         assert _is_not_empty_or_none(dsl_class.constraints) or _is_not_empty_or_none(dsl_class.shared_constraints), "" + \
             dsl_class.name() + " is missing constraints"
-        # conditional_priorities doesn't work with self.constraints
-        assert not dsl_class.conditional_priorities or not dsl_class.constraints
-        assert not dsl_class.conditional_priorities or dsl_class.call_names
         properties = list(dsl_class.__dict__.keys())
         public_properties = [p for p in properties if not p.startswith("_")]
         unexpected_properties = set(public_properties) - Rule.ALLOWED_KEYS
@@ -282,34 +275,26 @@ class RuleCompiler(object):
             dsl_class, unexpected_properties)
 
     @classmethod
-    def _default_priority(cls, dsl_rule):
-        if dsl_rule.priority:
-            return dsl_rule.priority
-        return dsl_rule  # Use the class as the default priority.
-
-    @classmethod
     @cache
     def compile(cls, dsl_rule):
         try:
             cls._validate_rule(dsl_rule)
             constraints = cls._flatten_tuple_keyed_dict(dsl_rule.constraints)
-            priorities_per_call = cls._flatten_tuple_keyed_dict(
-                dsl_rule.priorities_per_call)
+            known_calls = cls._compile_known_calls(dsl_rule, constraints)
+            unknown = prefer.names(dsl_rule.prefer or []) - set(call.name for call in known_calls)
+            assert not unknown, "%s: prefer names calls it cannot make: %s" % (dsl_rule.name(), sorted(unknown))
             # Unclear if compiled results should be cached on the rule?
             return CompiledRule(dsl_rule,
-                                known_calls=cls._compile_known_calls(
-                                    dsl_rule, constraints, priorities_per_call),
+                                known_calls=known_calls,
                                 annotations=cls._compile_annotations(dsl_rule),
                                 preconditions=cls._joined_list_from_ancestors(
                                     dsl_rule, 'preconditions'),
                                 shared_constraints=cls._joined_list_from_ancestors(
                                     dsl_rule, 'shared_constraints'),
                                 constraints=constraints,
-                                default_priority=cls._default_priority(
-                                    dsl_rule),
-                                conditional_priorities_per_call=cls._flatten_tuple_keyed_dict(
-                                    dsl_rule.conditional_priorities_per_call),
-                                priorities_per_call=priorities_per_call,
+                                purposes_per_call=cls._flatten_tuple_keyed_dict(dsl_rule.purposes_per_call),
+                                conditional_purposes_per_call=cls._flatten_tuple_keyed_dict(dsl_rule.conditional_purposes_per_call),
+                                preconditions_per_call=cls._flatten_tuple_keyed_dict(dsl_rule.preconditions_per_call),
                                 )
         except:
             print("Exception compiling %s" % dsl_rule)
@@ -326,16 +311,22 @@ class Rule(object):
     annotations_per_call = {}  # { '1C' : (annotations.Foo, annotations.Bar) }
     call_names = None  # For when all calls share the same constraints
     category = categories.Default  # Intra-bid priority
-    # e.g. [(condition, priority), (condition, priority)]
-    conditional_priorities = []
-    # e.g. {'1C': [(condition, priority), (condition, priority)]}
-    conditional_priorities_per_call = {}
-    # { '1C' : constraints, '1D': (constraints, priority), '1H' : constraints }
+    # { '1C' : constraints, ('1H', '1S'): [constraints, constraints] }
     constraints = {}
     forcing = None
     preconditions = []
-    priorities_per_call = {}  # { '1C': priority, '1D': another_priority }
-    priority = None  # Defaults to the class if None.
+    preconditions_per_call = {}  # { '3N': precondition, ('2N', '3N'): [preconditions] }
+    # The rule's own order among its calls (z3b.prefer); None or []: the cheaper call first.
+    prefer = None
+    # The call of last resort for its purpose (and strain, where the purpose prefers one):
+    # loses to every rule of the purpose that is not one, and partner reads it as denying
+    # their calls.  An integer for a deeper level of last resort (2 loses to 1).
+    fallback = 0
+    # Why the call is made (z3b.purposes): the ordering between calls of different purposes.
+    purpose = None
+    purposes_per_call = {}  # { '1C': purpose }
+    conditional_purposes = []  # [(condition, purpose)]: the hand meeting the condition promotes the call
+    conditional_purposes_per_call = {}  # { '1C': [(condition, purpose)] }
     requires_planning = False
     # constraints which apply to call possible call_names.
     shared_constraints = []
@@ -350,13 +341,16 @@ class Rule(object):
         "annotations_per_call",
         "call_names",
         "category",
-        "conditional_priorities",
-        "conditional_priorities_per_call",
         "constraints",
         "forcing",
         "preconditions",
-        "priorities_per_call",
-        "priority",
+        "preconditions_per_call",
+        "prefer",
+        "fallback",
+        "purpose",
+        "purposes_per_call",
+        "conditional_purposes",
+        "conditional_purposes_per_call",
         "requires_planning",
         "shared_constraints",
         "explanations_per_call",

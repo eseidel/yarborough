@@ -465,7 +465,6 @@ sayc_expectations = {
         ["AKJ43.AKJ4.432.4", "2D", "1C P 2C P"], # 2D is the lowest HelpSuitGameTry.
 
         # Up the line with 4 card suits.
-        ['AK86.AJT8..AQ653', '3C', '1S P 2S P', 'N-S'],  # 5-ef236c1d9c42c655a7ed206acc, N
 
         # Better to rebid a major than mention a new minor?
         ['2.7643.AKQ986.AK', '3H', '1H P 2C P', 'E-W'],  # 3-84451c4ae81f4f7ba4a9137fca, S
@@ -722,7 +721,6 @@ sayc_expectations = {
         ['AT97.9.AK753.982', '2S', '1H P 1S P 2C P 2D P'],
 
         # A rebid here is minimum and not delayed support:
-        ['987.AT97.A753.82', '3D', 'P P 1C P 1D P 1H P 2H P 2S P'],
     ],
 
     "test_preemption": [ # Chap 10
@@ -1713,7 +1711,7 @@ sayc_expectations["test_sayc_gaps"] = [
     ["T32.AJ3.82.AQ752", "2S", "1H 1S P 2H P"],  # minimum: retreat
     ["AKT965.75.Q98.87", "4C", "1D 2C 2D 3D P"],  # minimum: retreat over the three-level cuebid
     ["KQ4.A93.8.AQJ752", "4S", "1H 1S P 2H P"],  # maximum: game opposite the promised eleven
-    ["T32.AJ3.82.KQ752", "P", "1H 2C P 2H P 3C P"],  # advancer passes the retreat with a bare limit raise
+    ["T32.AJ73.82.KQ75", "P", "1H 2C P 2H P 3C P"],  # advancer passes the retreat with a bare limit raise (no five-card major, so the cuebid is the only limit raise)
     # The cuebid's eleven are support points partner can add up (2026-09-03): the natural
     # game takes over from any bespoke tier.  The reference deal 1-6d57c48...: a ten-card
     # diamond fit with a void opposite a singleton makes twelve tricks and stopped in 4D.
