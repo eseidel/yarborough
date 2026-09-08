@@ -1703,10 +1703,15 @@ class TwoSpadesRelay(NotrumpTransferResponse):
 
 
 class QuantitativeFourNotrumpJumpConstraint(Constraint):
+    """Invites opener to bid 6N if at a maximum, otherwise pass: the notrump slam number is
+    reached opposite partner's maximum but not opposite the minimum (a hand that reaches it
+    opposite the minimum bids the slam itself)."""
+    def slam_points(self):
+        return points_for_sound_notrump_bid_at_level[6]
+
     def expr(self, history, call):
-        # Invites opener to bid 6N if at a maximum, otherwise pass: slam is possible but not
-        # certain (a hand that makes 33 opposite partner's minimum bids the slam itself).
-        return z3.And(points + history.partner.max_points >= 33, points + history.partner.min_points < 33)
+        slam = self.slam_points()
+        return z3.And(points + history.partner.max_points >= slam, points + history.partner.min_points < slam)
 
 
 class QuantitativeFourNotrumpJump(NotrumpResponse):
