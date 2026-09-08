@@ -238,7 +238,7 @@ test_slam_biding:
 FAIL: 4H (expected 5H) for .AKQ.QT76432.AKQ (hcp: 20 lp: 23 sp: 25), history: 1H P 3H P
 FAIL: P (expected 5H) for .AKQ.KJ76432.AKQ (hcp: 22 lp: 25 sp: 27), history: 2C P 2N P 3H P 4H P
 FAIL: 2N (expected 5N) for AKQJT987...QJT43 (hcp: 13 lp: 18 sp: 23), history: 1S P (subtest of 1S P 5N P 6S P)
-Pass 22 of 25 hands
+Pass 23 of 26 hands
 
 test_slam_invitations_over_one_nt:
 Pass 29 of 29 hands
@@ -282,7 +282,7 @@ Pass 5 of 5 hands
 test_weak_game_jump_over_one_nt:
 Pass 3 of 3 hands
 
-Pass 1392 (90.7%) of 1535 total hands
+Pass 1393 (90.7%) of 1536 total hands
 Collisions 0 (the bidder's choice was not ordered; 0 with a pass or double), no call 5, dropped calls 0
 
 Tested call generation of 202 rules of 209 total (excluding 8 requires_planning rules).

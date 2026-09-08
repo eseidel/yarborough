@@ -513,6 +513,7 @@ A93.Q762.K832.J3-N:EW:1D,P,1H,P,1S,P,2N,P,3N,P	P	NotrumpSlamIsRemote	DefaultPass
 A94.KQ87.874.KJ6-N:NO:	1D	OneLevelSuitOpening	None,None,None
 A94.KQ87.874.KJ6-N:NO:1D,1S,X,P	1N	NotrumpResponseToNegativeDouble	OneLevelStandardOvercall,OneLevelNegativeDouble,DefaultPass
 A9432.A8652.AKQ.-N:NO:3S,P	3N	NaturalNotrump	None,PreemptiveOpen,DefaultPass
+A96.AT62.AQ5.KJ3-N:NO:1N,P	6N	NaturalNotrump	None,NotrumpOpening,DefaultPass
 A964.KQ874.K7.A8-N:NO:	1D	OneLevelSuitOpening	None,None,None
 A964.KQ874.K7.A8-N:NO:1D,1S,X,P	2N	JumpNotrumpResponseToNegativeDouble	OneLevelStandardOvercall,OneLevelNegativeDouble,DefaultPass
 A96432.5.KJ8.AQJ-N:NS:P,1D	P	DefaultPass	None,DefaultPass,OneLevelSuitOpening
