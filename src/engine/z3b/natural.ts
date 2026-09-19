@@ -8,7 +8,7 @@
 
 import { NO_CONSTRAINTS } from "./model";
 import { ForcedToBid, InvertedPrecondition } from "./preconditions";
-import { categories, Rule, rule } from "./rule_compiler";
+import { categories, Rule, rule, type RuleClass } from "./rule_compiler";
 
 export const pointsForSoundSuitedBidAtLevel: (number | null)[] = [
   //  0   1   2   3   4   5   6   7
@@ -51,3 +51,8 @@ export class DefaultPass extends Rule {
     fallback: 1, // the pass of last resort: any forced minimum call comes first
   });
 }
+
+/** The concrete rules of this module, by name (see sayc.ts). */
+export const RULE_CLASSES: Readonly<Record<string, RuleClass>> = {
+  DefaultPass,
+};
