@@ -8,7 +8,6 @@ import {
   POSITION_NAMES,
   SUITS,
   cardsBySuit,
-  displayRank,
   handForPosition,
   highCardPoints,
   vulnerabilityLabel,
@@ -33,20 +32,41 @@ const CELL_ALIGN: Record<Align, string> = {
   end: "text-right",
 };
 
-/** One suit's holding, "♠ AK32", or a dash where the hand is void. */
+/**
+ * Every rank in a box of its own width, so the cards of one hand line up in
+ * columns down the four suits. The font is the page's, not a monospaced
+ * one, and its ranks are far from equal: a J is 4px wide against a Q's 11,
+ * which is enough to throw a holding out of line with the one above it. The
+ * box is a shade under the widest rank, near the average of them all, so
+ * the hand takes no more room than it did ragged.
+ */
+const RANK_CELL = "inline-block w-[0.72em] text-center";
+
+/**
+ * The suit's own box, wider and centred, so the symbols line up as a column
+ * whatever their widths — they are often a fallback font's, and need not
+ * match each other at all.
+ */
+const SUIT_CELL = "inline-block w-[1em] text-center font-bold";
+
+/** One suit's holding, "♠AK32", or a dash where the hand is void. */
 function SuitLine({ suit, cards }: { suit: SuitName; cards: Card[] }) {
   return (
     <div className="leading-tight" data-testid={`suit-line-${suit}`}>
-      <span className={`${SUITS[suit].color} font-bold`}>
+      <span className={`${SUITS[suit].color} ${SUIT_CELL} mr-1`}>
         {SUITS[suit].symbol}
-      </span>{" "}
-      <span className="tabular-nums tracking-wide">
-        {cards.length === 0 ? (
-          <span className="text-gray-400">&mdash;</span>
-        ) : (
-          cards.map((card) => displayRank(card.rank)).join("")
-        )}
       </span>
+      {cards.length === 0 ? (
+        <span className={`${RANK_CELL} text-gray-400`}>&mdash;</span>
+      ) : (
+        // The rank as the deck writes it: a ten is a T, one glyph in one
+        // column, where "10" reads as two cards.
+        cards.map((card) => (
+          <span key={card.rank} className={RANK_CELL}>
+            {card.rank}
+          </span>
+        ))
+      )}
     </div>
   );
 }

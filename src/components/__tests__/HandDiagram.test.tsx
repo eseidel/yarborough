@@ -36,9 +36,9 @@ describe("HandDiagram", () => {
 
   it("gives each hand its seat, its points, and a line per suit", () => {
     render(<HandDiagram deal={MOCK_DEAL} userPosition="S" {...BOARD} />);
-    expect(holdings("N")).toEqual(["♠ AK32", "♥ QJ4", "♦ 987", "♣ 654"]);
-    // Tens read as "10", so a holding is never ambiguous.
-    expect(holdings("E")).toEqual(["♠ QJ9", "♥ 1098", "♦ AKJ", "♣ 10982"]);
+    expect(holdings("N")).toEqual(["♠AK32", "♥QJ4", "♦987", "♣654"]);
+    // A ten is a T: one glyph in one column, where "10" reads as two cards.
+    expect(holdings("E")).toEqual(["♠QJ9", "♥T98", "♦AKJ", "♣T982"]);
 
     const north = screen.getByTestId("hand-N");
     // The seat and its points; the column is too narrow to spell out "HCP".
@@ -55,7 +55,7 @@ describe("HandDiagram", () => {
 
   it("keeps a void's line, so the hands read row for row", () => {
     render(<HandDiagram deal={MOCK_VOID_DEAL} {...BOARD} />);
-    expect(holdings("W")).toEqual(["♠ AKQ", "♥ —", "♦ AKQJ10", "♣ AKQJ10"]);
+    expect(holdings("W")).toEqual(["♠AKQ", "♥—", "♦AKQJT", "♣AKQJT"]);
   });
 
   it("hugs East against the middle, its suit symbols still in a column", () => {
