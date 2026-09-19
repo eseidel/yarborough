@@ -23,9 +23,10 @@
 // registered rules only, and the coverage is printed.  The test that ALL
 // manifest rules are registered is a todo until phase 5 completes.
 
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Call, sortCalls } from "../../core/call";
 import { Strain } from "../../core/suit";
+import { RuleSelector, setBidderLog } from "../bidder";
 import { Constraint } from "../constraints";
 import { EnumValue, sortedEnumValues } from "../enum";
 import { SAYCForcingOracle } from "../forcing";
@@ -246,40 +247,17 @@ function manifestEntry(rule: CompiledRule): ManifestRule {
  * tie at the best category.
  */
 function callToRule(history: ReturnType<RecordedHistories["historyFor"]>): {
-  chosen: Map<Call, CompiledRule>;
-  dropped: Map<Call, CompiledRule[]>;
+  chosen: ReadonlyMap<Call, CompiledRule>;
+  dropped: Map<Call, readonly CompiledRule[]>;
 } {
-  const maximal = new Map<
-    Call,
-    { category: EnumValue; rules: CompiledRule[] }
-  >();
-  for (const rule of StandardAmericanYellowCard.rules) {
-    for (const [category, call] of rule.callsOver(history)) {
-      if (!history.callHistory.isLegalCall(call)) {
-        continue;
-      }
-      const current = maximal.get(call);
-      if (!current) {
-        maximal.set(call, { category, rules: [rule] });
-      } else if (category.lt(current.category)) {
-        // FIXME: It's lame that enum's < is backwards.
-        maximal.set(call, { category, rules: [rule] });
-      } else if (category === current.category) {
-        current.rules.push(rule);
-      }
-    }
-  }
-  const chosen = new Map<Call, CompiledRule>();
-  const dropped = new Map<Call, CompiledRule[]>();
-  for (const call of sortCalls([...maximal.keys()])) {
-    const { rules } = maximal.get(call)!;
-    if (rules.length > 1) {
-      dropped.set(call, rules);
-    } else {
-      chosen.set(call, rules[0]);
-    }
-  }
-  return { chosen, dropped };
+  // The kernel's selector, on a recorded history.
+  const selector = new RuleSelector(StandardAmericanYellowCard, history);
+  return {
+    chosen: selector._callToRule,
+    dropped: new Map(
+      selector.droppedCalls.map((entry) => [entry.call, entry.rules]),
+    ),
+  };
 }
 
 describe("vocabulary.json", () => {
@@ -358,6 +336,15 @@ describe("rules-manifest.json", () => {
 });
 
 describe("auction-snapshots.jsonl", () => {
+  let restoreLog: ReturnType<typeof setBidderLog>;
+  beforeAll(() => {
+    // The selector prints a WARNING for each dropped call.
+    restoreLog = setBidderLog(() => {});
+  });
+  afterAll(() => {
+    setBidderLog(restoreLog);
+  });
+
   it("holds a record per auction the corpus visits", () => {
     expect(snapshots.length).toBeGreaterThan(1000);
     expect(store.size).toBe(snapshots.length);

@@ -10,6 +10,7 @@
 // in TypeScript for the same reason (and to stay synchronous).
 
 import auctionSnapshotsText from "../../../../tests/engine-fixtures/auction-snapshots.jsonl?raw";
+import decisionsText from "../../../../tests/engine-fixtures/decisions.jsonl?raw";
 import meaningsText from "../../../../tests/engine-fixtures/meanings.jsonl?raw";
 import modelExpressionsText from "../../../../tests/engine-fixtures/model-expressions.json?raw";
 import rulesManifestText from "../../../../tests/engine-fixtures/rules-manifest.json?raw";
@@ -17,6 +18,7 @@ import vocabularyText from "../../../../tests/engine-fixtures/vocabulary.json?ra
 
 const TEXTS: Record<string, string> = {
   "auction-snapshots.jsonl": auctionSnapshotsText,
+  "decisions.jsonl": decisionsText,
   "meanings.jsonl": meaningsText,
   "model-expressions.json": modelExpressionsText,
   "rules-manifest.json": rulesManifestText,
