@@ -99,6 +99,8 @@ function renderReview() {
             }),
             h(PracticeReview, {
               deal: MOCK_DEAL,
+              boardNumber: 3,
+              dealer: "N",
               history: MOCK_CALL_HISTORY,
               verdicts: VERDICTS,
               userPosition: "S",
