@@ -41,23 +41,20 @@ describe("PlayAnalysis", () => {
         analysis={{ table: TABLE, lead: LEAD, tricksAfterLead: 11 }}
       />,
     );
+    // The contract is named by the summary this sits under, not again here.
     expect(screen.getByTestId("double-dummy-contract").textContent).toBe(
-      "4♠ by North goes down 1 (9 tricks) with all four hands in view and best play by both sides.",
+      "It goes down 1 (9 tricks) with all four hands in view and best play by both sides.",
     );
     const afterLead = screen.getByTestId("double-dummy-after-lead");
     expect(afterLead.textContent).toBe(
       "After East’s normal lead, the ♥8 (fourth best), it makes 5 (11 tricks): the defense no longer sees declarer’s cards before the first trick.",
     );
-    // The verdict judges; the result above and the lists below are not repeated.
+    // The verdict judges; the result above is not repeated, and what each
+    // side can make belongs to the hand diagram now.
     expect(screen.getByTestId("play-verdict").textContent).toBe(
       "Too high for these cards.",
     );
-    expect(screen.getByTestId("makeable-NS").textContent).toBe(
-      "N-S can make 3♠, 3♦, 1NT.",
-    );
-    expect(screen.getByTestId("makeable-EW").textContent).toBe(
-      "E-W can make 3♥, 3♣.",
-    );
+    expect(screen.queryByTestId("makeable-NS")).toBeNull();
   });
 
   it("says when the lead changes nothing", () => {
@@ -101,9 +98,6 @@ describe("PlayAnalysis", () => {
     expect(screen.queryByTestId("double-dummy-contract")).toBeNull();
     expect(screen.getByTestId("play-verdict").textContent).toBe(
       "Passed out with only a partscore available to N-S.",
-    );
-    expect(screen.getByTestId("makeable-NS").textContent).toBe(
-      "N-S can make 3♠, 3♦, 1NT.",
     );
   });
 

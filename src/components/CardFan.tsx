@@ -2,26 +2,18 @@ import {
   type Hand,
   type Card,
   type Position,
-  type SuitName,
   SUITS,
   FAN_SUIT_ORDER,
   POSITION_NAMES,
   cardsBySuit,
   displayRank,
-  highCardPoints,
 } from "../bridge/types";
-
-/**
- * Height of a mini card. A void's blank line matches it so the suits of two
- * `list` hands side by side stay on the same rows.
- */
-const CARD_HEIGHT = "h-14";
 
 function MiniCard({ card }: { card: Card }) {
   const suit = SUITS[card.suit];
   return (
     <div
-      className={`relative w-10 ${CARD_HEIGHT} bg-white rounded-md border border-gray-300 shadow-sm select-none shrink-0`}
+      className="relative w-10 h-14 bg-white rounded-md border border-gray-300 shadow-sm select-none shrink-0"
       data-testid="mini-card"
     >
       <span
@@ -44,15 +36,9 @@ function MiniCard({ card }: { card: Card }) {
  * room, so a long suit in a narrow column overlaps more instead of spilling
  * out of its box.
  */
-function SuitRow({
-  cards,
-  align = "start",
-}: {
-  cards: Card[];
-  align?: "start" | "end";
-}) {
+function SuitRow({ cards }: { cards: Card[] }) {
   return (
-    <div className={`flex min-w-0 ${align === "end" ? "justify-end" : ""}`}>
+    <div className="flex min-w-0">
       {cards.map((card, i) => (
         <div
           key={`${card.suit}${card.rank}`}
@@ -69,33 +55,17 @@ function SuitRow({
   );
 }
 
-/** The blank line a void gets in the `list` variant, as tall as a suit row. */
-function VoidRow({ suit }: { suit: SuitName }) {
-  return <div className={CARD_HEIGHT} data-testid={`void-row-${suit}`} />;
-}
-
 /**
- * A hand as mini cards, either fanned by suit in a row (`fan`, for a hand
- * that has the full width) or one suit per line (`list`, for a hand sharing
- * a row with another).
+ * A hand as mini cards, fanned by suit in a wrapped row. The user bids
+ * looking at this; the review shows all four hands as text instead, which
+ * costs a fraction of the height.
  */
 export function CardFan({
   hand,
   position,
-  variant = "fan",
-  showPoints = false,
-  isUser = false,
-  align = "start",
 }: {
   hand: Hand;
   position?: Position;
-  variant?: "fan" | "list";
-  /** Show the hand's high-card points beside its name. */
-  showPoints?: boolean;
-  /** Mark the hand as the user's. */
-  isUser?: boolean;
-  /** Which side of the column each suit's cards hug (`list` variant only). */
-  align?: "start" | "end";
 }) {
   const bySuit = cardsBySuit(hand);
 
@@ -104,43 +74,23 @@ export function CardFan({
       className="bg-white rounded-lg shadow p-3 min-w-0"
       data-testid={position ? `hand-${position}` : undefined}
     >
-      {(position || showPoints) && (
-        <div className="flex items-baseline justify-between gap-2 mb-2">
-          {position && (
-            <div
-              data-testid={`position-label-${position}`}
-              className="font-bold text-xs text-gray-500 uppercase tracking-wider"
-            >
-              {POSITION_NAMES[position]}
-              {isUser && (
-                <span className="ml-1 text-emerald-700 normal-case tracking-normal">
-                  (you)
-                </span>
-              )}
-            </div>
-          )}
-          {showPoints && (
-            <div className="text-xs text-gray-500 tabular-nums">
-              {highCardPoints(hand)} HCP
-            </div>
-          )}
+      {position && (
+        <div
+          data-testid={`position-label-${position}`}
+          className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2"
+        >
+          {POSITION_NAMES[position]}
         </div>
       )}
       <div
         data-testid="suit-rows"
-        className={`flex ${variant === "fan" ? "justify-center flex-wrap gap-1.5 items-end min-h-[60px]" : "flex-col gap-1"}`}
+        className="flex justify-center flex-wrap gap-1.5 items-end min-h-[60px]"
       >
         {FAN_SUIT_ORDER.map((suit) => {
           const cards = bySuit[suit];
-          if (cards.length === 0) {
-            // A fan is one wrapped row, so a void there is simply fewer
-            // cards; a list keeps every suit's line, blank for a void, so
-            // West's and East's suits line up row for row.
-            return variant === "list" ? (
-              <VoidRow key={suit} suit={suit} />
-            ) : null;
-          }
-          return <SuitRow key={suit} cards={cards} align={align} />;
+          // A fan is one wrapped row, so a void is simply fewer cards.
+          if (cards.length === 0) return null;
+          return <SuitRow key={suit} cards={cards} />;
         })}
       </div>
     </div>

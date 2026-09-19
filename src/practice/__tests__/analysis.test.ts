@@ -4,7 +4,7 @@ import {
   bestClass,
   biddingVerdict,
   contractClass,
-  describeMakeable,
+  listMakeable,
   describePlay,
   formatContract,
   formatContractBy,
@@ -44,8 +44,8 @@ describe("analysis", () => {
       "C",
     ]);
     expect(makeableContracts(NOTHING, "NS")).toEqual([]);
-    expect(describeMakeable("NS", ns)).toBe("N-S can make 4♠, 3NT, 2♦");
-    expect(describeMakeable("EW", [])).toBe("E-W can make nothing");
+    expect(listMakeable(ns)).toBe("4♠, 3NT, 2♦");
+    expect(listMakeable([])).toBe("nothing");
   });
 
   it("classifies contracts", () => {
