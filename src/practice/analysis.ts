@@ -129,9 +129,8 @@ export function describePlay(level: number, tricks: number): string {
   return `makes ${tricks - 6} (${tricks} ${plural})`;
 }
 
-/** "4♠, 3NT, 2♦", or "nothing" where a side can make none. */
+/** "4♠, 3NT, 2♦", and empty where a side can make none. */
 export function listMakeable(contracts: MakeableContract[]): string {
-  if (contracts.length === 0) return "nothing";
   return contracts.map((c) => formatContract(c.level, c.strain)).join(", ");
 }
 

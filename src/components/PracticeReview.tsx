@@ -23,7 +23,6 @@ import { ShareButton } from "./ShareButton";
 import { SuitText } from "./SuitText";
 import {
   CARD,
-  EYEBROW,
   LINK,
   PILL,
   PRIMARY_BUTTON,
@@ -35,7 +34,10 @@ import {
 /**
  * What the hand came to, as the card's headline: the contract, and whether
  * it makes. The result is the first thing a learner looks for, so it reads
- * with the contract rather than from the middle of a paragraph below.
+ * with the contract rather than from the middle of a paragraph below. It
+ * needs no label — a contract at the top of the review is not mistakable
+ * for anything else — and the double dummy's "with all four hands in view"
+ * is a footnote the sentences below spend their space better than.
  */
 function ContractResult({
   history,
@@ -54,27 +56,21 @@ function ContractResult({
     contract && tricks !== null && describePlay(contract.level, tricks);
   return (
     <div className="space-y-1 text-center">
-      <h2 className={EYEBROW}>Contract</h2>
       <p className="text-2xl font-bold text-gray-900" data-testid="contract">
         <SuitText text={contractHeadline(history)} />
       </p>
       {contract && tricks !== null && play && (
-        <>
-          <p data-testid="contract-result">
-            <span
-              className={`${PILL} ${
-                contractMakes(contract.level, tricks)
-                  ? TONE_PILL.good
-                  : TONE_PILL.bad
-              }`}
-            >
-              {play.charAt(0).toUpperCase() + play.slice(1)}
-            </span>
-          </p>
-          <p className="mx-auto max-w-[30ch] text-xs text-gray-500">
-            with all four hands in view and best play by both sides
-          </p>
-        </>
+        <p data-testid="contract-result">
+          <span
+            className={`${PILL} ${
+              contractMakes(contract.level, tricks)
+                ? TONE_PILL.good
+                : TONE_PILL.bad
+            }`}
+          >
+            {play.charAt(0).toUpperCase() + play.slice(1)}
+          </span>
+        </p>
       )}
     </div>
   );

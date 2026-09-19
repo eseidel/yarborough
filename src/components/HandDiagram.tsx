@@ -19,7 +19,7 @@ import {
   listMakeable,
   makeableContracts,
 } from "../practice/analysis";
-import { sideFits, sideHcp } from "../practice/deal";
+import { sideHcp } from "../practice/deal";
 import { SuitText } from "./SuitText";
 import { CARD } from "./ui";
 
@@ -33,14 +33,18 @@ const CELL_ALIGN: Record<Align, string> = {
 };
 
 /**
- * Every rank in a box of its own width, so the cards of one hand line up in
- * columns down the four suits. The font is the page's, not a monospaced
- * one, and its ranks are far from equal: a J is 4px wide against a Q's 11,
- * which is enough to throw a holding out of line with the one above it. The
- * box is a shade under the widest rank, near the average of them all, so
- * the hand takes no more room than it did ragged.
+ * Every rank centred in a box of its own width, so the cards of one hand
+ * line up in columns down the four suits. The font is the page's, not a
+ * monospaced one, and its ranks are far from equal: a J is 0.296em wide
+ * against a Q's 0.788em, which is enough to throw a holding out of line
+ * with the one above it.
+ *
+ * The box is a shade wider than the widest rank, so no glyph spills over
+ * its edges into the space of the card beside it — at 0.72em a Q did, and
+ * a Q before a 9 read as tight. It is the narrowest width that cannot,
+ * which keeps the hand as close to the room it took ragged as boxes allow.
  */
-const RANK_CELL = "inline-block w-[0.72em] text-center";
+const RANK_CELL = "inline-block w-[0.8em] text-center";
 
 /**
  * The suit's own box, wider and centred, so the symbols line up as a column
@@ -125,10 +129,15 @@ function TextHand({
 }
 
 /**
- * What a side holds and what it is worth: points, fits, and the contracts
- * it can make on best play. The last comes from the double-dummy solver and
- * joins the others here, since all three are facts about the cards rather
- * than about the auction. It is left off until the solver answers.
+ * What a side holds and what it could have made on best play: the two
+ * things about its cards that the diagram beside it cannot be read off at
+ * a glance. Its fits can be — they are four holdings away, in front of the
+ * reader — so they are not spelled out.
+ *
+ * The contracts need no words in front of them: a list of them under a
+ * side's points, beside the deal, is read for what it is. They wait on the
+ * double-dummy solver, so the line is left off until it answers, and is a
+ * dash where the side can make nothing.
  */
 function SideSummary({
   deal,
@@ -141,7 +150,7 @@ function SideSummary({
   table: DoubleDummyTable | null;
   align: Align;
 }) {
-  const fits = sideFits(deal, side);
+  const makeable = table ? listMakeable(makeableContracts(table, side)) : null;
   return (
     <div
       className={`${CELL_ALIGN[align]} text-xs leading-tight text-gray-600`}
@@ -150,24 +159,13 @@ function SideSummary({
       <div className="font-semibold text-gray-700">
         {SIDE_LABEL[side]} {sideHcp(deal, side)} HCP
       </div>
-      <div>
-        {fits.length === 0
-          ? "no 8-card fit"
-          : fits.map((fit, i) => (
-              <span key={fit.suit}>
-                {i > 0 && ", "}
-                {fit.length}-card{" "}
-                <span className={`${SUITS[fit.suit].color} font-bold`}>
-                  {SUITS[fit.suit].symbol}
-                </span>{" "}
-                fit
-              </span>
-            ))}
-      </div>
-      {table && (
+      {makeable !== null && (
         <div data-testid={`makeable-${side}`}>
-          can make{" "}
-          <SuitText text={listMakeable(makeableContracts(table, side))} />
+          {makeable === "" ? (
+            <span className="text-gray-400">&mdash;</span>
+          ) : (
+            <SuitText text={makeable} />
+          )}
         </div>
       )}
     </div>
@@ -207,7 +205,7 @@ function BoardNote({
  * A cross leaves its middle and its corners empty, which on a phone is most
  * of the width. They carry what a printed diagram would put there: the
  * board, its dealer and its vulnerability in the middle, and beside North
- * what each side's cards are worth.
+ * what each side holds and could have made.
  */
 export function HandDiagram({
   deal,
@@ -235,11 +233,14 @@ export function HandDiagram({
   );
   return (
     <div
-      className={`${CARD} grid grid-cols-3 gap-x-2 gap-y-2 p-3`}
+      // The middle column takes its width from what is in it, so North and
+      // South share one left edge instead of being centred separately and
+      // landing at two, and the equal sides keep the pair in the middle.
+      className={`${CARD} grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-2 p-3`}
       data-testid="hand-diagram"
     >
       <SideSummary deal={deal} side="NS" table={table} align="start" />
-      {hand("N", "center")}
+      {hand("N", "start")}
       <SideSummary deal={deal} side="EW" table={table} align="end" />
       {hand("W", "start")}
       <BoardNote
@@ -249,7 +250,7 @@ export function HandDiagram({
       />
       {hand("E", "end")}
       <div />
-      {hand("S", "center")}
+      {hand("S", "start")}
       <div />
     </div>
   );
