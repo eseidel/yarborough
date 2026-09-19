@@ -15,6 +15,7 @@ import { getCallInterpretations } from "../bridge/engine";
 import { dealerFromBoardNumber, explorePath } from "../bridge/identifier";
 import { initAnalytics, trackPageView } from "../analytics";
 import { setCanonical, setTitle } from "../seo";
+import { CARD } from "../components/ui";
 
 export function ExplorePage() {
   const { exploreId } = useParams<{ exploreId: string }>();
@@ -102,7 +103,7 @@ export function ExplorePage() {
           {vulnerabilityLabel(vulnerability)}
         </div>
         <CallTable callHistory={history} />
-        <div className="flex-1 overflow-y-auto bg-white rounded-lg shadow">
+        <div className={`${CARD} flex-1 overflow-y-auto`}>
           {loading ? (
             <div className="p-4 text-center text-gray-400">Loading...</div>
           ) : (

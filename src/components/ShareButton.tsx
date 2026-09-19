@@ -43,7 +43,7 @@ export function ShareButton({
 
   return (
     <button type="button" onClick={handleShare} className={className}>
-      {copied ? "Link copied!" : "Share Hand"}
+      {copied ? "Link copied!" : "Share hand"}
     </button>
   );
 }

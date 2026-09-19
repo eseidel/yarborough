@@ -22,6 +22,7 @@ import {
 } from "../practice/analysis";
 import { sideFits, sideHcp } from "../practice/deal";
 import { SuitText } from "./SuitText";
+import { CARD } from "./ui";
 
 /** Which edge of its cell a block of the diagram hugs. */
 type Align = "start" | "center" | "end";
@@ -75,7 +76,7 @@ function TextHand({
         data-testid={`hand-${position}`}
       >
         <div
-          className="text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap"
+          className="whitespace-nowrap text-xs font-semibold uppercase tracking-wider text-gray-500"
           data-testid={`position-label-${position}`}
         >
           {POSITION_NAMES[position]}
@@ -123,7 +124,7 @@ function SideSummary({
   const fits = sideFits(deal, side);
   return (
     <div
-      className={`${CELL_ALIGN[align]} text-[11px] leading-tight text-gray-600`}
+      className={`${CELL_ALIGN[align]} text-xs leading-tight text-gray-600`}
       data-testid={`side-${side}`}
     >
       <div className="font-semibold text-gray-700">
@@ -165,7 +166,7 @@ function BoardNote({
 }) {
   return (
     <div
-      className="self-center text-center text-[11px] leading-tight text-gray-500"
+      className="self-center rounded-lg bg-gray-50 px-2 py-1.5 text-center text-xs leading-snug text-gray-500"
       data-testid="board-note"
     >
       <div className="font-semibold text-gray-700">Board {boardNumber}</div>
@@ -214,7 +215,7 @@ export function HandDiagram({
   );
   return (
     <div
-      className="bg-white rounded-lg shadow p-3 grid grid-cols-3 gap-x-2 gap-y-1.5"
+      className={`${CARD} grid grid-cols-3 gap-x-2 gap-y-2 p-3`}
       data-testid="hand-diagram"
     >
       <SideSummary deal={deal} side="NS" table={table} align="start" />

@@ -21,12 +21,9 @@ import {
 } from "../practice/usePracticeSession";
 import { initAnalytics, trackPageView } from "../analytics";
 import { setCanonical, setTitle, CANONICAL_ORIGIN } from "../seo";
+import { SECONDARY_BUTTON, TEXT_BUTTON } from "../components/ui";
 
 const USER_POSITION = "S";
-
-const SECONDARY_BUTTON =
-  "flex-1 py-2.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
-const TEXT_BUTTON = "text-sm text-gray-500 hover:text-gray-800 hover:underline";
 
 export function PracticePage({ boardId: boardIdProp }: { boardId?: string }) {
   const { boardId: boardIdParam } = useParams<{ boardId: string }>();
@@ -128,7 +125,7 @@ function PracticeBoard({
           onDismiss={() => session.setError(null)}
         />
       )}
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
+      <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-3">
         <PracticeHeader
           boardNumber={parsed.boardNumber}
           dealer={parsed.dealer}
@@ -189,7 +186,7 @@ function PracticeBoard({
                   session.showOptions({ history, index: history.calls.length })
                 }
                 disabled={!userToCall}
-                className={SECONDARY_BUTTON}
+                className={`${SECONDARY_BUTTON} flex-1`}
               >
                 Options
               </button>
@@ -199,7 +196,7 @@ function PracticeBoard({
                   session.hintShown ? session.hideSaycBid : session.showSaycBid
                 }
                 disabled={!userToCall}
-                className={SECONDARY_BUTTON}
+                className={`${SECONDARY_BUTTON} flex-1`}
               >
                 {session.hintShown ? "Hide SAYC bid" : "Show SAYC bid"}
               </button>

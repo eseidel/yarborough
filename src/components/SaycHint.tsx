@@ -17,7 +17,7 @@ export function SaycHint({
   if (!suggestion) {
     return (
       <div
-        className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 animate-pulse"
+        className="animate-pulse rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
         data-testid="sayc-hint-loading"
       >
         Working out the SAYC bid…

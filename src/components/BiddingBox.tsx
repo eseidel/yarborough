@@ -7,6 +7,7 @@ import {
   strainColor,
 } from "../bridge";
 import { isCallLegal } from "../bridge/auction";
+import { CARD } from "./ui";
 
 const STRAINS: StrainName[] = ["C", "D", "H", "S", "N"];
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
@@ -48,7 +49,7 @@ export function BiddingBox({
 
   return (
     <div
-      className={`bg-white rounded-lg shadow p-3 space-y-2 ${disabled ? "opacity-60" : ""}`}
+      className={`${CARD} space-y-2 p-3 ${disabled ? "opacity-60" : ""}`}
       data-testid="bidding-box"
       aria-disabled={disabled}
     >
@@ -57,7 +58,7 @@ export function BiddingBox({
         <button
           disabled={!rdblLegal}
           onClick={() => onBid({ type: "redouble" })}
-          className={`flex-1 py-2.5 rounded font-semibold transition-colors ${
+          className={`flex-1 rounded-lg py-2.5 font-semibold transition-colors ${
             rdblLegal ? "bg-blue-100 hover:bg-blue-200 text-blue-700" : idle
           }`}
         >
@@ -66,7 +67,7 @@ export function BiddingBox({
         <button
           disabled={!passLegal}
           onClick={() => onBid({ type: "pass" })}
-          className={`flex-1 py-2.5 rounded font-semibold transition-colors ${
+          className={`flex-1 rounded-lg py-2.5 font-semibold transition-colors ${
             passLegal ? "bg-gray-200 hover:bg-gray-300 text-gray-700" : idle
           }`}
         >
@@ -75,7 +76,7 @@ export function BiddingBox({
         <button
           disabled={!dblLegal}
           onClick={() => onBid({ type: "double" })}
-          className={`flex-1 py-2.5 rounded font-semibold transition-colors ${
+          className={`flex-1 rounded-lg py-2.5 font-semibold transition-colors ${
             dblLegal ? "bg-red-100 hover:bg-red-200 text-red-700" : idle
           }`}
         >
@@ -94,7 +95,7 @@ export function BiddingBox({
                 key={`${level}${strain}`}
                 disabled={!legal}
                 onClick={() => onBid(call)}
-                className={`py-2.5 rounded text-base font-semibold transition-colors ${
+                className={`rounded-lg py-2.5 text-base font-semibold transition-colors ${
                   legal ? "bg-gray-100 hover:bg-emerald-100" : idle
                 }`}
               >

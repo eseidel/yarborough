@@ -9,6 +9,7 @@ import {
   describePlay,
 } from "../practice/analysis";
 import { SuitText } from "./SuitText";
+import { EYEBROW } from "./ui";
 
 export interface DoubleDummyAnalysis {
   table: DoubleDummyTable;
@@ -17,12 +18,12 @@ export interface DoubleDummyAnalysis {
 }
 
 /** The rule and spacing that join this to the summary above, in one card. */
-const SECTION = "border-t border-gray-100 pt-3 text-sm";
+const SECTION = "space-y-2 border-t border-gray-100 pt-3 text-sm";
 
 const TONE_CLASSES = {
-  good: "bg-emerald-50 border-emerald-200 text-emerald-900",
-  mixed: "bg-amber-50 border-amber-200 text-amber-900",
-  bad: "bg-red-50 border-red-200 text-red-900",
+  good: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  mixed: "border-amber-200 bg-amber-50 text-amber-900",
+  bad: "border-red-200 bg-red-50 text-red-900",
 };
 
 function leadName(lead: OpeningLead): string {
@@ -30,15 +31,12 @@ function leadName(lead: OpeningLead): string {
 }
 
 /**
- * How the auction turned out, one job per line: the contract's
- * double-dummy result, what the textbook lead does to it, and a judgment of
- * the bidding. What each side could have made belongs to the cards rather
- * than to the auction, so the hand diagram carries it, beside that side's
- * points and fits. The trick table itself is never shown; these sentences
- * are what a learner needs from it.
- * It is the lower half of the review's result card, under the contract the
- * summary names, so its lines say "it" rather than naming the contract
- * again, and it draws a dividing rule instead of a card of its own.
+ * How the auction turned out, one job per line: what the textbook lead does
+ * to the contract, and a judgment of the bidding. The contract's own result
+ * is the card's headline, above this, and what each side could have made
+ * belongs to the cards rather than to the auction, so the hand diagram
+ * carries it. The trick table itself is never shown; these sentences are
+ * what a learner needs from it.
  */
 export function PlayAnalysis({
   history,
@@ -69,7 +67,7 @@ export function PlayAnalysis({
   if (loading || !analysis) {
     return (
       <div
-        className={`${SECTION} text-gray-400 animate-pulse`}
+        className={`${SECTION} animate-pulse text-gray-400`}
         data-testid="double-dummy-loading"
       >
         Working out how the cards play…
@@ -82,27 +80,10 @@ export function PlayAnalysis({
   const tricks = contract && declarer ? table[contract.strain][declarer] : null;
 
   return (
-    <div className={`${SECTION} space-y-2 text-gray-800`}>
-      <h2 className="font-bold text-xs text-gray-500 uppercase tracking-wider">
-        How the cards play
-      </h2>
-      {contract && declarer && tricks !== null && (
-        <p data-testid="double-dummy-contract">
-          It{" "}
-          <span
-            className={
-              contractMakes(contract.level, tricks)
-                ? "text-emerald-700 font-semibold"
-                : "text-red-700 font-semibold"
-            }
-          >
-            {describePlay(contract.level, tricks)}
-          </span>{" "}
-          with all four hands in view and best play by both sides.
-        </p>
-      )}
+    <section className={`${SECTION} text-gray-700`}>
+      <h2 className={EYEBROW}>How the cards play</h2>
       {contract && lead && tricksAfterLead !== null && (
-        <p data-testid="double-dummy-after-lead" className="text-gray-700">
+        <p data-testid="double-dummy-after-lead">
           {tricksAfterLead === tricks ? (
             <>
               {POSITION_NAMES[lead.leader]}&rsquo;s normal lead, the{" "}
@@ -123,8 +104,8 @@ export function PlayAnalysis({
               <span
                 className={
                   contractMakes(contract.level, tricksAfterLead)
-                    ? "text-emerald-700 font-semibold"
-                    : "text-red-700 font-semibold"
+                    ? "font-semibold text-emerald-700"
+                    : "font-semibold text-red-700"
                 }
               >
                 {describePlay(contract.level, tricksAfterLead)}
@@ -136,11 +117,11 @@ export function PlayAnalysis({
         </p>
       )}
       <p
-        className={`rounded border px-2.5 py-2 ${TONE_CLASSES[verdict.tone]}`}
+        className={`rounded-lg border px-3 py-2 ${TONE_CLASSES[verdict.tone]}`}
         data-testid="play-verdict"
       >
         <SuitText text={verdict.text} />
       </p>
-    </div>
+    </section>
   );
 }

@@ -19,8 +19,8 @@ export function NavBar() {
             to={pathPrefix === "/bid" ? "/" : pathPrefix}
             className={`px-4 py-2 rounded text-base font-medium transition-colors ${
               active
-                ? "bg-emerald-600 text-white"
-                : "text-emerald-300 hover:text-white hover:bg-emerald-700"
+                ? "bg-emerald-600 text-white shadow-sm"
+                : "text-emerald-100 hover:bg-emerald-700 hover:text-white"
             }`}
           >
             {label}

@@ -1,3 +1,5 @@
+import { LINK } from "./ui";
+
 export function AboutFooter() {
   return (
     <footer className="mt-8 mb-4 px-4 text-sm text-gray-600 space-y-3">
@@ -8,7 +10,7 @@ export function AboutFooter() {
         Practice bidding{" "}
         <a
           href="https://en.wikipedia.org/wiki/Standard_American"
-          className="text-blue-600 hover:underline"
+          className={LINK}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -20,7 +22,7 @@ export function AboutFooter() {
         The autobidder is designed to follow the official{" "}
         <a
           href="http://web2.acbl.org/documentlibrary/play/SP3%20(bk)%20single%20pages.pdf"
-          className="text-blue-600 hover:underline"
+          className={LINK}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -29,7 +31,7 @@ export function AboutFooter() {
         as well as the excellent{" "}
         <a
           href="https://www.amazon.com/gp/product/1897106033"
-          className="text-blue-600 hover:underline"
+          className={LINK}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -38,7 +40,7 @@ export function AboutFooter() {
         by{" "}
         <a
           href="http://www.mauibridge.com/"
-          className="text-blue-600 hover:underline"
+          className={LINK}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -47,7 +49,7 @@ export function AboutFooter() {
         and{" "}
         <a
           href="http://www.bridge-forum.com/"
-          className="text-blue-600 hover:underline"
+          className={LINK}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -61,16 +63,13 @@ export function AboutFooter() {
       </p>
       <p>
         We would love to hear your suggestions! Reach us via{" "}
-        <a
-          href="mailto:contact@saycbridge.com"
-          className="text-blue-600 hover:underline"
-        >
+        <a href="mailto:contact@saycbridge.com" className={LINK}>
           email
         </a>{" "}
         or{" "}
         <a
           href="https://twitter.com/SAYCBridge"
-          className="text-blue-600 hover:underline"
+          className={LINK}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -79,7 +78,7 @@ export function AboutFooter() {
         . You can find the{" "}
         <a
           href="https://github.com/eseidel/yarborough"
-          className="text-blue-600 hover:underline"
+          className={LINK}
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import type { CallHistory, Position, Vulnerability } from "../bridge/types";
 import { callLabel } from "../bridge/types";
-import { getContract, getDeclarer, isPassOut } from "../bridge/auction";
-import { formatContractBy } from "../practice/analysis";
+import { contractHeadline } from "../practice/analysis";
 import {
   type CallVerdict,
   callIndicesFor,
@@ -12,13 +11,7 @@ import { useCallExplanation } from "../hooks/useCallExplanation";
 import { CallTable } from "./CallTable";
 import { ConstraintsDisplay } from "./ConstraintsDisplay";
 import { SuitText } from "./SuitText";
-
-function contractHeadline(history: CallHistory): string {
-  if (isPassOut(history)) return "Passed out";
-  const contract = getContract(history);
-  const declarer = getDeclarer(history);
-  return contract && declarer ? formatContractBy(contract, declarer) : "";
-}
+import { EYEBROW, LINK_SMALL, NOTE, PILL, TONE_PILL } from "./ui";
 
 function MissedCall({
   verdict,
@@ -33,7 +26,7 @@ function MissedCall({
   return (
     <li className="py-2 first:pt-0 last:pb-0" data-testid="missed-call">
       <div>
-        <span className="text-red-600 font-bold mr-1">✗</span>
+        <span className="mr-1 font-bold text-red-600">✗</span>
         You bid{" "}
         <span className="font-semibold">
           <SuitText text={callLabel(verdict.call)} />
@@ -53,12 +46,12 @@ function MissedCall({
           <span className="text-gray-500"> (SAYC bid shown first)</span>
         )}
       </div>
-      <div className="flex gap-3 mt-0.5 text-xs">
+      <div className="mt-1 flex gap-3">
         {canExplain && (
           <button
             type="button"
             onClick={() => setWhy((prev) => !prev)}
-            className="text-blue-600 hover:underline"
+            className={LINK_SMALL}
             aria-expanded={why}
           >
             {why ? "Hide why" : "Why?"}
@@ -68,21 +61,21 @@ function MissedCall({
           <button
             type="button"
             onClick={() => onShowOptions(verdict.index)}
-            className="text-blue-600 hover:underline"
+            className={LINK_SMALL}
           >
             All options here
           </button>
         )}
       </div>
       {why && (
-        <div className="mt-1 text-xs bg-blue-50 rounded p-2 text-blue-900 space-y-0.5">
+        <div className={`${NOTE} mt-1 space-y-0.5`}>
           {sayc.constraints && (
             <div>
               <ConstraintsDisplay constraints={sayc.constraints} />
             </div>
           )}
           {sayc.description && (
-            <div className="text-blue-700">{sayc.description}</div>
+            <div className="text-gray-500">{sayc.description}</div>
           )}
         </div>
       )}
@@ -104,7 +97,7 @@ function SaycAuction({
   const [open, setOpen] = useState(false);
   const explanation = useCallExplanation(auction, vulnerability, onError);
   return (
-    <div className="pt-2 border-t border-gray-100" data-testid="sayc-auction">
+    <div data-testid="sayc-auction">
       <div className="text-gray-700">
         Bidding on system throughout, SAYC reaches{" "}
         <span className="font-semibold">
@@ -114,7 +107,7 @@ function SaycAuction({
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
-          className="text-blue-600 hover:underline text-xs"
+          className={LINK_SMALL}
           data-testid="sayc-auction-toggle"
           aria-expanded={open}
         >
@@ -146,9 +139,9 @@ function SaycAuction({
 }
 
 /**
- * The top of the review: the contract, then how the user's calls compared
- * with SAYC, call by call. It shares one card with the play analysis below
- * it, so it draws no card of its own.
+ * How the user's calls compared with SAYC, call by call. It is a section of
+ * the review's result card, under the contract that card leads with, so it
+ * draws no card of its own.
  */
 export function ReviewSummary({
   history,
@@ -175,45 +168,36 @@ export function ReviewSummary({
   const plural = (n: number) => (n === 1 ? "call" : "calls");
 
   return (
-    <div className="space-y-2 text-sm" data-testid="review-summary">
-      <div className="text-center">
-        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-          Contract
-        </div>
-        <div
-          className="text-2xl font-bold text-gray-900"
-          data-testid="contract"
-        >
-          <SuitText text={contractHeadline(history)} />
-        </div>
-      </div>
+    <section className="space-y-2 text-sm" data-testid="review-summary">
+      <h2 className={EYEBROW}>Your bidding</h2>
       {pending ? (
         <p
-          className="text-center text-gray-400 animate-pulse"
+          className="animate-pulse text-gray-400"
           data-testid="verdict-pending"
         >
           Checking your calls against SAYC…
         </p>
       ) : summary.missed.length === 0 ? (
-        <p
-          className="text-center font-semibold text-emerald-700"
-          data-testid="verdict-on-system"
-        >
-          ✓{" "}
-          {summary.total === 1
-            ? "Your call followed SAYC"
-            : `All ${summary.total} of your calls followed SAYC`}
-          {summary.assisted > 0 &&
-            ` (${summary.assisted} after seeing the SAYC bid)`}
+        <p data-testid="verdict-on-system">
+          <span className={`${PILL} ${TONE_PILL.good}`}>
+            ✓{" "}
+            {summary.total === 1
+              ? "Your call followed SAYC"
+              : `All ${summary.total} of your calls followed SAYC`}
+          </span>
+          {summary.assisted > 0 && (
+            <span className="ml-2 text-xs text-gray-500">
+              {summary.assisted} after seeing the SAYC bid
+            </span>
+          )}
         </p>
       ) : (
         <>
-          <p
-            className="text-center font-semibold text-red-700"
-            data-testid="verdict-missed"
-          >
-            {summary.missed.length} of your {summary.total}{" "}
-            {plural(summary.total)} differed from SAYC
+          <p data-testid="verdict-missed">
+            <span className={`${PILL} ${TONE_PILL.bad}`}>
+              {summary.missed.length} of your {summary.total}{" "}
+              {plural(summary.total)} differed from SAYC
+            </span>
           </p>
           <ul className="divide-y divide-gray-100">
             {summary.missed.map((verdict) => (
@@ -238,6 +222,6 @@ export function ReviewSummary({
           onError={onError}
         />
       )}
-    </div>
+    </section>
   );
 }

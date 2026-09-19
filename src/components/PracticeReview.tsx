@@ -6,6 +6,12 @@ import type {
   Position,
   Vulnerability,
 } from "../bridge/types";
+import { getContract, getDeclarer } from "../bridge/auction";
+import {
+  contractHeadline,
+  contractMakes,
+  describePlay,
+} from "../practice/analysis";
 import type { CallVerdict } from "../practice/verdicts";
 import { type Summary, formatAccuracy } from "../practice/stats";
 import type { FeedbackTiming } from "../practice/usePracticeSession";
@@ -14,18 +20,71 @@ import { HandDiagram } from "./HandDiagram";
 import { PlayAnalysis, type DoubleDummyAnalysis } from "./PlayAnalysis";
 import { ReviewSummary } from "./ReviewSummary";
 import { ShareButton } from "./ShareButton";
+import { SuitText } from "./SuitText";
+import {
+  CARD,
+  EYEBROW,
+  LINK,
+  PILL,
+  PRIMARY_BUTTON,
+  SECONDARY_BUTTON,
+  TEXT_BUTTON,
+  TONE_PILL,
+} from "./ui";
 
-const PRIMARY_BUTTON =
-  "flex-1 py-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-base transition-colors disabled:opacity-50";
-const SECONDARY_BUTTON =
-  "px-3 py-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold text-sm transition-colors";
-const TEXT_BUTTON = "text-sm text-gray-500 hover:text-gray-800 hover:underline";
+/**
+ * What the hand came to, as the card's headline: the contract, and whether
+ * it makes. The result is the first thing a learner looks for, so it reads
+ * with the contract rather than from the middle of a paragraph below.
+ */
+function ContractResult({
+  history,
+  analysis,
+}: {
+  history: CallHistory;
+  analysis: DoubleDummyAnalysis | null;
+}) {
+  const contract = getContract(history);
+  const declarer = getDeclarer(history);
+  const tricks =
+    contract && declarer && analysis
+      ? analysis.table[contract.strain][declarer]
+      : null;
+  const play =
+    contract && tricks !== null && describePlay(contract.level, tricks);
+  return (
+    <div className="space-y-1 text-center">
+      <h2 className={EYEBROW}>Contract</h2>
+      <p className="text-2xl font-bold text-gray-900" data-testid="contract">
+        <SuitText text={contractHeadline(history)} />
+      </p>
+      {contract && tricks !== null && play && (
+        <>
+          <p data-testid="contract-result">
+            <span
+              className={`${PILL} ${
+                contractMakes(contract.level, tricks)
+                  ? TONE_PILL.good
+                  : TONE_PILL.bad
+              }`}
+            >
+              {play.charAt(0).toUpperCase() + play.slice(1)}
+            </span>
+          </p>
+          <p className="mx-auto max-w-[30ch] text-xs text-gray-500">
+            with all four hands in view and best play by both sides
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
 
 /** The learner's record, where it means most: under the hand just bid. */
 function RecordLine({ summary }: { summary: Summary }) {
   return (
     <div
-      className="flex items-baseline justify-between gap-2 border-t border-gray-100 pt-2 text-xs text-gray-500"
+      className="flex items-baseline justify-between gap-2 border-t border-gray-100 pt-3 text-xs text-gray-500"
       data-testid="record-line"
     >
       <span>
@@ -39,10 +98,7 @@ function RecordLine({ summary }: { summary: Summary }) {
           {summary.streak > 0 && ` · 🔥 ${summary.streak}`}
         </span>
       </span>
-      <Link
-        to="/progress"
-        className="shrink-0 font-semibold text-emerald-700 hover:underline"
-      >
+      <Link to="/progress" className={`${LINK} shrink-0 text-xs`}>
         Progress
       </Link>
     </div>
@@ -116,18 +172,24 @@ export function PracticeReview({
     <>
       <div
         ref={result}
-        className="bg-white rounded-lg shadow p-3 space-y-3 scroll-mt-4"
+        className={`${CARD} scroll-mt-4 space-y-3 p-4`}
         data-testid="result-card"
       >
-        <ReviewSummary
+        <ContractResult
           history={history}
-          verdicts={verdicts}
-          userPosition={userPosition}
-          saycAuction={saycAuction}
-          vulnerability={vulnerability}
-          onShowOptions={onShowOptions}
-          onError={onError}
+          analysis={doubleDummy?.analysis ?? null}
         />
+        <div className="border-t border-gray-100 pt-3">
+          <ReviewSummary
+            history={history}
+            verdicts={verdicts}
+            userPosition={userPosition}
+            saycAuction={saycAuction}
+            vulnerability={vulnerability}
+            onShowOptions={onShowOptions}
+            onError={onError}
+          />
+        </div>
         <PlayAnalysis
           history={history}
           analysis={doubleDummy?.analysis ?? null}
@@ -160,7 +222,7 @@ export function PracticeReview({
       <AboutFooter />
 
       <div
-        className="sticky bottom-0 -mx-4 -mb-4 flex gap-2 border-t border-gray-200 bg-gray-50/95 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm"
+        className="sticky bottom-0 -mx-4 -mb-4 flex gap-2 border-t border-gray-200 bg-gray-50/90 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
         data-testid="review-actions"
       >
         <button type="button" onClick={onRestart} className={SECONDARY_BUTTON}>
@@ -176,7 +238,7 @@ export function PracticeReview({
           type="button"
           onClick={onNextHand}
           disabled={thinking}
-          className={PRIMARY_BUTTON}
+          className={`${PRIMARY_BUTTON} flex-1`}
         >
           Next hand
         </button>
