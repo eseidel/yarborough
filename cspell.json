@@ -10,6 +10,7 @@
     "python/core",
     "python/z3b",
     "python/tests/test_sayc_data.py",
+    "src/engine/harness/sayc_data.ts",
     "python/tests/baselines",
     "src/dds/wasm",
     "src/z3/wasm",
@@ -185,6 +186,13 @@
     "sexpr",
     "unsat",
     "emcmake",
-    "SMTLIB"
+    "SMTLIB",
+    "subtest",
+    "subtests",
+    "splitlines",
+    "difflib",
+    "NOTSET",
+    "extensionless",
+    "jsonl"
   ]
 }

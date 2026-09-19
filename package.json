@@ -16,7 +16,9 @@
     "test:production": "pnpm build && node scripts/test-production-build.mjs",
     "deploy": "pnpm build && wrangler deploy --env=\"\"",
     "deploy:preview": "pnpm build && wrangler deploy --env preview",
-    "test:python": ".venv/bin/python -m unittest discover -s python -p 'test_*.py'"
+    "test:python": ".venv/bin/python -m unittest discover -s python -p 'test_*.py'",
+    "baseline:check": "node scripts/check-baseline.mjs",
+    "baseline:accept": "node scripts/check-baseline.mjs --accept"
   },
   "dependencies": {
     "pyodide": "314.0.6",
