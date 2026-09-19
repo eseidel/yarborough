@@ -51,6 +51,8 @@ to WebAssembly by `native/dds/build.sh`, distributed under the
 
 The browser runtime installs `z3-solver` version 5.1.0.0, distributed under
 the [MIT License](https://github.com/Z3Prover/z3/blob/master/LICENSE.txt).
+`src/z3/wasm/z3.mjs` is `libz3` from the same Z3 release (tag `z3-5.1.0`)
+compiled to WebAssembly by `native/z3/build.sh`, with no source changes.
 
 ## Pyodide
 
