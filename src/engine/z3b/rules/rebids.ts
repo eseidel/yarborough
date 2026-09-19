@@ -48,17 +48,12 @@ import {
   singletons,
   spades,
   stopperExprForSuit,
-  supportPointsExprForSuit,
   threeOfTheTopFiveClubsOrBetter,
   threeOfTheTopFiveDiamondsOrBetter,
   threeOfTheTopFiveHeartsOrBetter,
   threeOfTheTopFiveSpadesOrBetter,
   voids,
 } from "../model";
-import {
-  pointsForSoundNotrumpBidAtLevel,
-  pointsForSoundSuitedBidAtLevel,
-} from "../natural";
 import {
   annotations,
   DidBidSuit,
@@ -88,13 +83,7 @@ import {
   UnbidSuit,
 } from "../preconditions";
 import { Cheapest, Highest, Longest } from "../prefer";
-import {
-  categories,
-  type ConditionalPurpose,
-  Rule,
-  rule,
-  type RuleClass,
-} from "../rule_compiler";
+import { categories, Rule, rule, type RuleClass } from "../rule_compiler";
 import {
   JumpShift,
   OpenerRebid,
@@ -102,66 +91,12 @@ import {
   suitPreference,
 } from "../rules";
 import { type Expr, z3 } from "../z3";
-
-// --- From python/z3b/natural.py -----------------------------------------
-//
-// natural.ts is another agent's file in this phase; until it lands, the three
-// definitions this section reads from it live here.
-
-/**
- * Partner's minimum (total points: with length or, after a raise, support points) plus this
- * hand's high-card points reach the table's number -- the booklet's own arithmetic for the hand
- * that has not revalued (a raise counts support points through MinimumCombinedSupportPoints).
- */
-class SufficientCombinedPoints extends Constraint {
-  tables(): [(number | null)[], (number | null)[]] {
-    return [pointsForSoundSuitedBidAtLevel, pointsForSoundNotrumpBidAtLevel];
-  }
-
-  expr(history: History, call: Call): Expr {
-    const strain = call.strain!;
-    const [suited, notrump] = this.tables();
-    let minPoints: number;
-    if (!SUITS.includes(strain)) {
-      minPoints = notrump[call.level!]!;
-    } else {
-      minPoints = suited[call.level!]!;
-    }
-    const implied = Math.max(0, minPoints - history.partner.minPoints);
-    // Once both hands have agreed a suit the fit is known and shortness counts on both
-    // sides: the bid is valued in support points for that suit, the way partner reads it.
-    // A first raise stays on hcp plus length (the corpus: 3H, not 4H, on nine with a
-    // doubleton after Stayman).
-    if (
-      SUITS.includes(strain) &&
-      call.level! <= 5 &&
-      history.bidSuitNaturally(strain, positions.Partner) &&
-      history.bidSuitNaturally(strain, positions.Me)
-    ) {
-      return supportPointsExprForSuit(strain).ge(implied);
-    }
-    return points.ge(implied);
-  }
-}
-
-/**
- * A new suit is discovery; a four-card minor shown at the two level or above waits
- * behind a six-card rebid (a fifth card promotes it, see the rules' conditional purposes).
- */
-function newSuitPurpose(history: History, call: Call): string {
-  void history;
-  if ("HS".includes(call.strain!.char)) {
-    return "MajorDiscovery";
-  }
-  if (call.level === 1) {
-    return "MinorDiscovery";
-  }
-  return "MinorDiscoveryWithFour";
-}
-
-const newMinorWithFive: readonly ConditionalPurpose[] = [
-  [new MinLength(5), "MinorDiscovery", "MinorDiscoveryWithFour"],
-];
+import {
+  newMinorWithFive,
+  newSuitPurpose,
+  pointsForSoundNotrumpBidAtLevel,
+  SufficientCombinedPoints,
+} from "../natural";
 
 // --- Opener's rebids ----------------------------------------------------
 

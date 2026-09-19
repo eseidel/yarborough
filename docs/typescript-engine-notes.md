@@ -130,3 +130,8 @@ decisions, and the next action.
   Exemplars agree with the fixtures: 1,650 of 13,988 meaning records, 1,615
   call-to-rule pairs; 35 corpus auctions lack a recorded prefix for the forcing
   oracle and are skipped by the gate.
+- 2026-09-19: phase 5 landed in seven batches (cba316c, ddd256e, 5e8f08b,
+  b8614c0, 0b6f1c1, b684c92, 4aa176b, plus the reconciliation commit that
+  replaced private cross-section copies with imports). The DSL gate now
+  registers 217 of 217 rules and matches every meaning record; it takes about
+  45 s, so `vite.config.ts` sets `testTimeout: 60000`.
