@@ -774,10 +774,10 @@ describe("PracticePage", () => {
       expect(screen.getByTestId("play-verdict")).toHaveTextContent(
         "N-S stopped short of game.",
       );
-      // What the cards are worth reads with the points and fits, in the
-      // hand diagram, rather than as a line of the play analysis.
-      expect(screen.getByTestId("side-NS")).toHaveTextContent(
-        "can make 4NT, 4♠, 4♥, 4♦, 4♣",
+      // The diagram gives each side's points and what it could have made.
+      expect(screen.getByTestId("side-NS")).toHaveTextContent(/N-S \d+ HCP/);
+      expect(screen.getByTestId("makeable-NS")).toHaveTextContent(
+        "4NT, 4♠, 4♥, 4♦, 4♣",
       );
     });
 

@@ -13,7 +13,6 @@ const TABLE: DoubleDummyTable = {
   C: { N: 6, E: 7, S: 6, W: 7 },
   N: { N: 9, E: 4, S: 6, W: 4 },
 };
-
 /** Board 3: North deals, N-S vulnerable. */
 const BOARD = { boardNumber: 3, dealer: "N", vulnerability: "NS" } as const;
 
@@ -73,10 +72,12 @@ describe("HandDiagram", () => {
     expect(screen.getByTestId("hand-W").parentElement!.className).toContain(
       "text-left",
     );
+    // North and South start at one left edge rather than being centred
+    // separately, which landed them at two.
     for (const position of ["N", "S"]) {
       expect(
         screen.getByTestId(`hand-${position}`).parentElement!.className,
-      ).toContain("text-center");
+      ).toContain("text-left");
     }
   });
 
@@ -88,26 +89,33 @@ describe("HandDiagram", () => {
     expect(note).toHaveTextContent("N-S Vul");
   });
 
-  it("states each side's points and fits beside North", () => {
+  it("states each side's points beside North", () => {
     render(<HandDiagram deal={MOCK_DEAL} {...BOARD} />);
-    // N-S: 10 + 13 = 23 HCP with 4+4 spades.
-    const ns = screen.getByTestId("side-NS");
-    expect(ns).toHaveTextContent("N-S 23 HCP");
-    expect(ns).toHaveTextContent("8-card ♠ fit");
-    // E-W: 11 + 6 = 17 HCP, no eight-card suit.
-    const ew = screen.getByTestId("side-EW");
-    expect(ew).toHaveTextContent("E-W 17 HCP");
-    expect(ew).toHaveTextContent("no 8-card fit");
+    // N-S: 10 + 13 = 23 HCP. Their 4+4 spade fit is four holdings away,
+    // in front of the reader, so the diagram does not spell it out.
+    expect(screen.getByTestId("side-NS").textContent).toBe("N-S 23 HCP");
+    // E-W: 11 + 6 = 17 HCP.
+    expect(screen.getByTestId("side-EW").textContent).toBe("E-W 17 HCP");
   });
 
-  it("adds what each side can make once the solver answers", () => {
-    // The points, the fits and the makeable contracts are all facts about
-    // the cards, so they read as one summary per side.
+  it("lists what each side can make once the solver answers", () => {
+    // No words in front of them: a list of contracts under a side's
+    // points, beside the deal, is read for what it is.
     render(<HandDiagram deal={MOCK_DEAL} table={TABLE} {...BOARD} />);
-    expect(screen.getByTestId("side-NS")).toHaveTextContent(
-      "can make 4♠, 3NT, 2♦",
+    expect(screen.getByTestId("makeable-NS").textContent).toBe("4♠, 3NT, 2♦");
+    expect(screen.getByTestId("makeable-EW").textContent).toBe("2♥, 1♣");
+  });
+
+  it("dashes a side that can make nothing", () => {
+    const nothing = { N: 6, E: 6, S: 6, W: 6 };
+    render(
+      <HandDiagram
+        deal={MOCK_DEAL}
+        table={{ S: nothing, H: nothing, D: nothing, C: nothing, N: nothing }}
+        {...BOARD}
+      />,
     );
-    expect(screen.getByTestId("side-EW")).toHaveTextContent("can make 2♥, 1♣");
+    expect(screen.getByTestId("makeable-NS").textContent).toBe("—");
   });
 
   it("says nothing about the play until the solver answers", () => {

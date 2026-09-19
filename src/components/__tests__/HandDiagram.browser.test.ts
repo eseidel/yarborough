@@ -5,7 +5,6 @@ import { createRoot, type Root } from "react-dom/client";
 import { HandDiagram } from "../HandDiagram";
 import { MOCK_DEAL, MOCK_VOID_DEAL } from "../../bridge/mock";
 import type { Deal, Position } from "../../bridge/types";
-import type { DoubleDummyTable } from "../../dds/dds-core";
 import "../../index.css";
 
 let root: Root | undefined;
@@ -21,15 +20,6 @@ afterEach(() => {
 /** The narrowest column the diagram is laid out in: an iPhone SE, less padding. */
 const NARROW = 375 - 32;
 
-// N-S make 4♠ and 3NT; E-W make 2♥ and 1♣. Long enough to wrap a line.
-const TABLE: DoubleDummyTable = {
-  S: { N: 10, E: 3, S: 10, W: 3 },
-  H: { N: 5, E: 8, S: 5, W: 8 },
-  D: { N: 8, E: 5, S: 8, W: 5 },
-  C: { N: 6, E: 7, S: 6, W: 7 },
-  N: { N: 9, E: 4, S: 6, W: 4 },
-};
-
 function renderDiagram(deal: Deal, width = NARROW) {
   container = document.createElement("div");
   container.style.width = `${width}px`;
@@ -39,7 +29,6 @@ function renderDiagram(deal: Deal, width = NARROW) {
     root!.render(
       createElement(HandDiagram, {
         deal,
-        table: TABLE,
         boardNumber: 3,
         dealer: "N",
         vulnerability: "NS",
@@ -116,6 +105,42 @@ describe("HandDiagram layout", () => {
     }
   });
 
+  it("puts North and South on one left edge, between West and East", () => {
+    renderDiagram(MOCK_DEAL);
+    const left = (position: Position) =>
+      container!
+        .querySelector(`[data-testid="hand-${position}"]`)!
+        .getBoundingClientRect().left;
+    // Centred separately, the two hands landed at two edges, since each
+    // block is only as wide as its own longest holding.
+    expect(left("N")).toBe(left("S"));
+    expect(left("W")).toBeLessThan(left("N"));
+    expect(left("E")).toBeGreaterThan(left("N"));
+  });
+
+  it("gives every rank a box it fits inside", () => {
+    renderDiagram(MOCK_DEAL);
+    // A rank wider than its box spills over both edges and crowds the card
+    // beside it: at 0.72em a Q did, and a Q before a 9 read as tight. The
+    // widest rank is measured in the browser's own font rather than
+    // assumed, since the page names no font of its own.
+    const ruler = document.createElement("span");
+    ruler.style.display = "inline-block";
+    container!.querySelector('[data-testid="hand-N"]')!.append(ruler);
+    let widest = 0;
+    for (const rank of "AKQJT98765432") {
+      ruler.textContent = rank;
+      widest = Math.max(widest, ruler.getBoundingClientRect().width);
+    }
+    ruler.remove();
+    expect(widest).toBeGreaterThan(0);
+
+    const cell = container!
+      .querySelector('[data-testid="suit-line-S"] span:nth-child(2)')!
+      .getBoundingClientRect().width;
+    expect(cell).toBeGreaterThan(widest);
+  });
+
   it("holds no holding outside its column", () => {
     // Thirteen ranks have to fit a third of a phone's width. The void deal
     // has the longest suits of the mocks, six cards with two tens.
@@ -132,8 +157,8 @@ describe("HandDiagram layout", () => {
   it("stands a fraction of a phone screen tall", () => {
     // The same four hands as fanned cards stood 708px tall, most of a
     // phone screen, and pushed the review's buttons out of reach. As text,
-    // with each side's points, fits and makeable contracts underneath, the
-    // whole deal takes little more than half of that.
+    // with the board and each side's points in the room a cross leaves
+    // empty, the whole deal takes little more than a third of that.
     renderDiagram(MOCK_DEAL);
     const height = container!
       .querySelector('[data-testid="hand-diagram"]')!
