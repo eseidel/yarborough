@@ -79,6 +79,43 @@ describe("HandDiagram layout", () => {
     expect(lineTops("E")).toEqual(lineTops("W"));
   });
 
+  it("lines a hand's ranks up in columns down its four suits", () => {
+    renderDiagram(MOCK_DEAL);
+    // The page's font is not monospaced — its J is 4px wide against its
+    // Q's 11 — so every rank sits in a box of one width, and the cards of
+    // a hand read down its four suits as columns.
+    for (const position of ["N", "E", "S", "W"] as Position[]) {
+      const hand = container!.querySelector(
+        `[data-testid="hand-${position}"]`,
+      )!;
+      const lines = [...hand.querySelectorAll('[data-testid^="suit-line-"]')];
+      expect(lines).toHaveLength(4);
+
+      const widths = new Set<string>();
+      const pitches = new Set<string>();
+      const firstRank = new Set<string>();
+      for (const line of lines) {
+        // A suit's box, then one box per card: a holding rendered as a
+        // single run of text would leave a line with two children.
+        const cells = [...line.children];
+        expect(cells.length).toBe(1 + (line.textContent!.length - 1));
+        const ranks = cells
+          .slice(1)
+          .map((cell) => cell.getBoundingClientRect());
+        firstRank.add(ranks[0].left.toFixed(2));
+        for (const [i, rank] of ranks.entries()) {
+          widths.add(rank.width.toFixed(2));
+          if (i > 0) pitches.add((rank.left - ranks[i - 1].left).toFixed(2));
+        }
+      }
+      // A zero width here would mean Tailwind never loaded.
+      expect([...widths][0]).not.toBe("0.00");
+      expect(widths.size).toBe(1);
+      expect(pitches.size).toBe(1);
+      expect(firstRank.size).toBe(1);
+    }
+  });
+
   it("holds no holding outside its column", () => {
     // Thirteen ranks have to fit a third of a phone's width. The void deal
     // has the longest suits of the mocks, six cards with two tens.
