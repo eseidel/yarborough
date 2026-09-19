@@ -30,6 +30,12 @@ T8753 hearts, and JT432 spades.
   requests serialized: z3b owns mutable solver and history caches.
 - Browser assets are prepared by `pnpm assets:prepare`, checksum-verified, and
   served locally. Do not add a server-side bidding fallback.
+- The upstream Z3 wheel lands in `vendor/z3/upstream/`; what is served is a
+  slimmed copy in `vendor/z3/`, half the size, with the duplicate `libz3.so`
+  and the C headers removed by `scripts/slim-wheel.mjs`. Both are pinned by
+  digest, so changing the drop list means updating `slimZ3WheelSha256` in
+  `scripts/prepare-pyodide-assets.mjs` — it prints the digest it computed.
+  `docs/payload-size-analysis.md` measures the whole payload and what is left.
 - `tests/bidding/sayc_standard.yaml` is a source reference from the SAYC book:
   never change expected bids. The executable corpus is
   `python/tests/test_sayc_data.py` (hand, expected call, auction); every hand in
