@@ -116,7 +116,8 @@ class CompiledRule(object):
         return True
 
     def calls_over(self, history, expected_call=None):
-        for call in history.legal_calls.intersection(self.known_calls):
+        # A set intersection iterates in hash order; yield the calls in Call order instead.
+        for call in sorted(history.legal_calls.intersection(self.known_calls)):
             if self._fits_preconditions(history, call, expected_call):
                 yield self.dsl_rule.category, call
 

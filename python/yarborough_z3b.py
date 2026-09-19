@@ -151,7 +151,8 @@ def _knowledge_string(position_view, interpreter):
     if annotations_for_last_call:
         pretty_string = "%s %s" % (
             explore_string,
-            ", ".join(map(str, annotations_for_last_call)),
+            # Enum order: a set of annotations iterates in an order no port can reproduce.
+            ", ".join(str(a) for a in sorted(annotations_for_last_call, key=lambda a: a.index)),
         )
     else:
         pretty_string = explore_string

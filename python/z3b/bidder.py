@@ -74,13 +74,14 @@ class GroupView(object):
     def annotations(self):
         return chain.from_iterable(list(map(self.history.annotations_for_position, self.positions)))
 
+    # Lists in suit order, not sets: constraints iterate them into z3 expressions.
     @property
     def unbid_suits(self):
-        return set(suit.SUITS) - self.bid_suits
+        return [_suit for _suit in suit.SUITS if _suit not in self.bid_suits]
 
     @property
     def bid_suits(self):
-        return set([_suit for _suit in suit.SUITS if any(self.history.is_bid_suit(_suit, position) for position in self.positions)])
+        return [_suit for _suit in suit.SUITS if any(self.history.is_bid_suit(_suit, position) for position in self.positions)]
 
     @property
     def min_points(self):
@@ -138,13 +139,14 @@ class PositionView(object):
     def is_balanced(self):
         return self.history.is_balanced_for_position(self.position)
 
+    # Lists in suit order, not sets: constraints iterate them into z3 expressions.
     @property
     def unbid_suits(self):
-        return set(suit.SUITS) - self.bid_suits
+        return [_suit for _suit in suit.SUITS if _suit not in self.bid_suits]
 
     @property
     def bid_suits(self):
-        return set([_suit for _suit in suit.SUITS if self.history.is_bid_suit(_suit, self.position)])
+        return [_suit for _suit in suit.SUITS if self.history.is_bid_suit(_suit, self.position)]
 
 
 # This class is immutable.
@@ -559,7 +561,11 @@ class PossibleCalls(object):
 
     def maximal_calls_and_priorities(self):
         maximal_calls_and_priorities = []
-        for call, priority in self._calls_and_priorities:
+        # The ordering is not transitive (a strain of None compares with neither strain, and
+        # only a deeper fallback or one rule's own key orders equal strains), so the maximal
+        # set depends on the order the calls are visited: always Call order, each call's
+        # variants in the order meaning_of yields them (the sort is stable).
+        for call, priority in sorted(self._calls_and_priorities, key=lambda pair: pair[0]):
             if self._is_dominated(priority, maximal_calls_and_priorities):
                 continue
             maximal_calls_and_priorities = [max_call_max_priority for max_call_max_priority in maximal_calls_and_priorities if not self.ordering.lt(
@@ -682,7 +688,9 @@ class RuleSelector(object):
                         existing_rules.append(rule)
 
         result = {}
-        for call, best in maximal.items():
+        # Call order: constraints_for_call negates the other calls in this order, so the
+        # meaning of a call must not depend on which rule happened to claim a call first.
+        for call, best in sorted(maximal.items(), key=lambda item: item[0]):
             category, rules = best
             if len(rules) > 1:
                 print("WARNING: Multiple rules have maximal category (%s) for %s: %s over: %s" % (
@@ -718,7 +726,8 @@ class RuleSelector(object):
     def possible_calls_for_hand(self, hand, expected_call):
         possible_calls = PossibleCalls(self.system.priority_ordering)
         solver = _solver_pool.borrow_solver_for_hand(hand)
-        for call in self.history.legal_calls:
+        # legal_calls is a set: visit it in Call order (see maximal_calls_and_priorities).
+        for call in sorted(self.history.legal_calls):
             rule = self.rule_for_call(call)
             if not rule or rule.requires_planning:
                 continue  # planning rules are interpreted when bid, never chosen

@@ -50,7 +50,7 @@ def variants_by_group(selector, history, ordering):
     variant's meaning excludes the hands where a better variant of the same call fits: on
     those the bidder never chooses this variant, so it cannot collide."""
     groups = collections.defaultdict(list)
-    for call in history.legal_calls:
+    for call in sorted(history.legal_calls):  # legal_calls is a set; Call order, like the bidder
         rule = selector.rule_for_call(call)
         if not rule or rule.requires_planning:
             continue
