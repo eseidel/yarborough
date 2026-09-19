@@ -105,10 +105,13 @@ silently.
    partner's last call is not artificial). An assertion aborts the request.
    Port every assertion as a throw at the same point.
 9. **Expression construction.** Python's `sum(list)` starts from the integer
-   `0` (so `(+ 0 a)` appears in the AST); `a + b + c` nests binary `+`;
-   `z3.Sum` and `z3.And(list)` are n-ary; `z3.And([])` is `true`. The
-   printed-form fixture (below) forces the port to mirror this exactly, which
-   is the point: it catches transcription slips in 313 expression sites.
+   `0` (so `(+ 0 a ...)` appears in the printed form); Z3's printer flattens
+   nested associative operators, so `a + b + c` prints `(+ a b c)` whether
+   built binary or n-ary; `z3.And([])` prints `and`. The fixtures print with
+   `pp.min_alias_size` raised (no `let` aliases) and whitespace collapsed; the
+   TypeScript binding must print the same way. The printed-form fixture forces
+   the port to mirror the Python construction, which is the point: it catches
+   transcription slips in 313 expression sites.
 10. **Ordering helpers.** `Call.__lt__` (passes, doubles, then contracts by
     level then strain), `Strain` order `C D H S N`, the annotations enum order
     (`implies_artificial` is "greater than `Artificial`"), and `sorted(...)`
