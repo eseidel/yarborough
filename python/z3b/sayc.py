@@ -15,8 +15,10 @@ def _concrete_rule_classes():
 
 
 class StandardAmericanYellowCard(object):
-    # Rule ordering does not matter.  We could have python crawl the files to generate this list instead.
-    # rules cannot currently be a set() as CompiledRule is not hashable.
-    rules = [RuleCompiler.compile(description_class) for description_class in _concrete_rule_classes()]
+    # Rule ordering never decides a call (a category tie between two rules drops the call),
+    # but it shows in warnings and in every walk over the rules: sorted by name so the order
+    # is the same whatever __subclasses__ returns.  Not a set(): CompiledRule is not hashable.
+    rules = sorted((RuleCompiler.compile(description_class) for description_class in _concrete_rule_classes()),
+                   key=lambda rule: rule.name)
     assert len(rules) == len(set(rule.name for rule in rules)), "Duplicate rules!"
     priority_ordering = priority_ordering

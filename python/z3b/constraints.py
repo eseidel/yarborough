@@ -307,7 +307,7 @@ class SupportForPartnerLastBid(Constraint):
 
 class SupportForMultipleSuits(Constraint):
     def _four_in_almost_every_suit(self, missing_suit, suits):
-        return z3.And([expr_for_suit(suit) >= 4 for suit in set(suits) - set([missing_suit])])
+        return z3.And([expr_for_suit(suit) >= 4 for suit in suits if suit != missing_suit])
 
     def _support_for_suits(self, suits, history):
         if len(suits) == 3:
@@ -386,7 +386,7 @@ class SupportForSuitsOtherThanLastContract(SupportForMultipleSuits):
     other three suits."""
     def expr(self, history, call):
         contract_suit = history.last_contract.strain
-        return self._support_for_suits(set(suit.SUITS) - set([contract_suit]), history)
+        return self._support_for_suits([s for s in suit.SUITS if s != contract_suit], history)
 
 
 # We support any suit partner has shown life in.  Used for cuebid responses to doubles.
@@ -399,9 +399,9 @@ class SupportForPartnersSuits(SupportForMultipleSuits):
         # Suits the opponents only PROMISED with a double (a negative double shows the majors)
         # do not count: after 1C 1D X P 2C X the doubler's partner supports hearts and spades
         # (them.bid_suits would leave one suit; bank U, 2026-08-30).
-        their_contract_suits = set(s for s in suit.SUITS
-                                   if any(history._has_shown_suit(s, p, contracts_only=True) for p in history.them.positions))
-        partners_suits = set(suit.SUITS) - their_contract_suits
+        # A list in suit order, not a set: the suits are iterated into the expression.
+        partners_suits = [s for s in suit.SUITS
+                          if not any(history._has_shown_suit(s, p, contracts_only=True) for p in history.them.positions)]
         return self._support_for_suits(partners_suits, history)
 
 
