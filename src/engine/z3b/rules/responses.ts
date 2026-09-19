@@ -76,13 +76,7 @@ import {
 } from "../preconditions";
 import { Cheapest, Highest, Longest } from "../prefer";
 import { tuple } from "../py";
-import {
-  categories,
-  type ConditionalPurpose,
-  Rule,
-  rule,
-  type RuleClass,
-} from "../rule_compiler";
+import { categories, Rule, rule, type RuleClass } from "../rule_compiler";
 import {
   JumpShift,
   partnerSuitSupportPurpose,
@@ -90,29 +84,7 @@ import {
   ResponseToOneLevelSuitedOpen,
 } from "../rules";
 import { type Expr, z3 } from "../z3";
-
-// --- from python/z3b/natural.py -----------------------------------------
-// natural.ts is another phase-5 batch's file; these two definitions live here
-// until it lands, so that this section reads as the Python does.
-
-/**
- * A new suit is discovery; a four-card minor shown at the two level or above waits
- * behind a six-card rebid (a fifth card promotes it, see the rules' conditional purposes).
- */
-export function newSuitPurpose(history: History, call: Call): string {
-  void history;
-  if ("HS".includes(call.strain!.char)) {
-    return "MajorDiscovery";
-  }
-  if (call.level === 1) {
-    return "MinorDiscovery";
-  }
-  return "MinorDiscoveryWithFour";
-}
-
-export const newMinorWithFive: readonly ConditionalPurpose[] = [
-  [new MinLength(5), "MinorDiscovery", "MinorDiscoveryWithFour"],
-];
+import { newMinorWithFive, newSuitPurpose } from "../natural";
 
 // --- Responses to a suit opening ----------------------------------------
 

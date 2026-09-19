@@ -343,8 +343,7 @@ describe("rules-manifest.json", () => {
     );
   });
 
-  // Phase 5 turns this on when the last batch of rules lands.
-  it.todo("registers every manifest rule", () => {
+  it("registers every manifest rule", () => {
     expect([...registered.keys()].sort()).toEqual(
       manifest.map((entry) => entry.name),
     );

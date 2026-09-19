@@ -64,50 +64,19 @@ import {
   MaxLevel,
   NotJumpFromLastContract,
   Opened,
-  OpeningBidWas,
   RaiseOfPartnersLastSuit,
   SuitUnbidByOpponents,
-  TheyOpened,
-  TheyRaisedToTwoAndStopped,
   UnbidSuit,
   UnbidSuitCountRange,
 } from "../preconditions";
 import { Cheapest, HigherSuit, Highest, Longest } from "../prefer";
 import { Rule, rule, type RuleClass } from "../rule_compiler";
 import { z3 } from "../z3";
-
-// The overcall section of rules.py owns these three preconditions (they sit above this
-// section in the Python module); until that section is ported they are declared here.
-
-// The pass-out seat over the opponents' one-level opening that died (1D P P), p140-142.
-const balancingPrecondition = new AndPrecondition(
-  new LastBidHasAnnotation(positions.LHO, annotations.Opening),
-  new LastBidWas(positions.Partner, "P"),
-  new LastBidWas(positions.RHO, "P"),
-);
-
-// Balancing after their raised partscore dies: 1D P 2D P P or 1H P 2H P P (p140-142).
-// Either opponent may have opened: 1D P 2C P 2D P P is opener's own rebid dying at the two
-// level, the same balancing spot as a raise (from play, 2026-08-29).
-const twoLevelBalancingPrecondition = new AndPrecondition(
-  new TheyOpened(),
-  new TheyRaisedToTwoAndStopped(),
-  new InvertedPrecondition(new HasBid(positions.Me)),
-  new InvertedPrecondition(new HasBid(positions.Partner)),
-);
-
-// The pass-out seat over a dying two-level suit contract in the opponents' 1N auction
-// (the last contract is always LHO's bid there).  Named so standard takeout doubles can
-// exclude it, the way they exclude balancing_precondition.
-const notrumpAuctionPassoutPrecondition = new AndPrecondition(
-  new TheyOpened(),
-  new OpeningBidWas("1N"),
-  new LastBidHasSuit(positions.LHO),
-  new LastBidHasLevel(positions.LHO, 2),
-  new LastBidWas(positions.Partner, "P"),
-  new LastBidWas(positions.RHO, "P"),
-  new InvertedPrecondition(new HasBid(positions.Me)),
-);
+import {
+  balancingPrecondition,
+  notrumpAuctionPassoutPrecondition,
+  twoLevelBalancingPrecondition,
+} from "./overcalls";
 
 // --- Takeout doubles ----------------------------------------------------
 

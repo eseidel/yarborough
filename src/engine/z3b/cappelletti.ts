@@ -30,7 +30,6 @@ import {
   spades,
 } from "./model";
 import {
-  AndPrecondition,
   annotations,
   LastBidHasAnnotation,
   LastBidHasStrain,
@@ -45,14 +44,7 @@ import { tuple } from "./py";
 import { type MixinBase, Rule, rule, type RuleClass } from "./rule_compiler";
 import { suitPreference } from "./rules";
 import { z3 } from "./z3";
-
-// A private copy of rules.py's `balancing_precondition`, which the section of rules.py
-// that owns it (the overcalls) has not been ported yet; it is the same declaration.
-const balancingPrecondition = new AndPrecondition(
-  new LastBidHasAnnotation(positions.LHO, annotations.Opening),
-  new LastBidWas(positions.Partner, "P"),
-  new LastBidWas(positions.RHO, "P"),
-);
+import { balancingPrecondition } from "./rules/overcalls";
 
 // Shared call schedule for defending against a 1N opening, direct or balancing seat
 // (mixin pattern, like MichaelsCuebid): the responses key off annotations.Cappelletti either way.
