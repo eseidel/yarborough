@@ -20,8 +20,9 @@ pnpm dev
 ```
 
 `pnpm dev` prepares checksum-verified Pyodide and Z3 assets in ignored
-`vendor/` before starting Vite. Use `pnpm build` for a production build, which
-is served from the domain root by Cloudflare.
+`vendor/` before starting Vite, slimming the Z3 wheel to half its upstream size
+on the way through. Use `pnpm build` for a production build, which is served
+from the domain root by Cloudflare.
 
 ## Architecture
 

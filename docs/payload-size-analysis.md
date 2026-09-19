@@ -2,42 +2,54 @@
 
 # Payload size analysis
 
-The site ships about **12.7 MB** to the browser before it can bid the first
-hand. This document measures where those bytes go, what the bidding engine
-actually uses of them, and what the realistic options are for making the
-number smaller. Nothing here has been changed; it is a study.
+The site shipped **12.7 MB** to the browser before it could bid the first hand.
+Slimming the Z3 wheel (the one fix here that needed no change to how the engine
+works and no cooperation from the CDN) has taken that to **9.7 MB**. This
+document records where the bytes go, what the bidding engine actually uses of
+them, what was changed, and what is left.
 
 All "served" figures were measured against `https://saycbridge.com` with
 `Accept-Encoding: br, gzip`, so they are real transfer sizes, not disk sizes.
 
-## What the browser downloads today
+## Status
 
-| Asset                                     |         Served | Compressed by Cloudflare?  |
-| ----------------------------------------- | -------------: | -------------------------- |
-| `assets/z3/z3_solver-…whl`                |      6,046,959 | **no** (no content type)   |
-| `assets/pyodide/pyodide.asm.wasm`         |      3,503,414 | brotli                     |
-| `assets/pyodide/python_stdlib.zip`        |      2,545,564 | **no** (`application/zip`) |
-| `assets/pyodide/pyodide.asm.mjs`          |        258,732 | brotli                     |
-| `assets/pyodide/micropip-…whl`            |        115,486 | **no**                     |
-| `assets/index-*.js`                       |         99,341 | brotli                     |
-| `assets/z3b.worker-*.js`                  |         97,890 | brotli                     |
-| `assets/pyodide/pyodide-lock.json`        |         24,581 | brotli                     |
-| `assets/index-*.css`                      |          5,465 | brotli                     |
-| `index.html`                              |          1,072 | brotli                     |
-| **Total to first bid**                    | **12,698,504** |                            |
-| `assets/dds.worker-*.js` (first analysis) |        127,204 | brotli                     |
-| **Total**                                 | **12,825,708** |                            |
+| Fix                                                   |  Saving | State                       |
+| ----------------------------------------------------- | ------: | --------------------------- |
+| Drop the duplicate `libz3.so` and the C headers       | 3.03 MB | **done**                    |
+| Serve the wheel and stdlib zip compressed             | 1.80 MB | blocked on a CDN check      |
+| Pre-compress `pyodide.asm.wasm` at brotli 11          | 0.76 MB | blocked on the same check   |
+| Trim `python_stdlib.zip` to the modules that are used | 0.82 MB | wants its own change        |
+| Ship DDS as a separate `.wasm`                        | 0.04 MB | wants an Emscripten rebuild |
 
-Two things stand out before looking inside anything. First, the Z3 wheel alone
-is 48% of the payload. Second, the three `.whl`/`.zip` assets — 8.7 MB, 69% of
-the total — are served with **no compression at all**, because Cloudflare skips
-archive content types on the assumption that an archive is already compressed.
-They are compressed, but only per-file with `deflate`, which is much weaker
-than brotli over the whole stream.
+## What the browser downloads
+
+| Asset                                     |        Was |           Now | Compressed by Cloudflare?  |
+| ----------------------------------------- | ---------: | ------------: | -------------------------- |
+| `assets/pyodide/pyodide.asm.wasm`         |  3,503,414 |     3,503,414 | brotli                     |
+| `assets/z3/z3_solver-…whl`                |  6,046,959 |     3,021,362 | **no** (no content type)   |
+| `assets/pyodide/python_stdlib.zip`        |  2,545,564 |     2,545,564 | **no** (`application/zip`) |
+| `assets/pyodide/pyodide.asm.mjs`          |    258,732 |       258,732 | brotli                     |
+| `assets/pyodide/micropip-…whl`            |    115,486 |       115,486 | **no**                     |
+| `assets/index-*.js`                       |     99,341 |        99,341 | brotli                     |
+| `assets/z3b.worker-*.js`                  |     97,890 |        97,890 | brotli                     |
+| `assets/pyodide/pyodide-lock.json`        |     24,581 |        24,581 | brotli                     |
+| `assets/index-*.css`                      |      5,465 |         5,465 | brotli                     |
+| `index.html`                              |      1,072 |         1,072 | brotli                     |
+| **Total to first bid**                    | 12,698,504 | **9,672,907** |                            |
+| `assets/dds.worker-*.js` (first analysis) |    127,204 |       127,204 | brotli                     |
+| **Total**                                 | 12,825,708 | **9,800,111** |                            |
+
+Two things stand out. First, Pyodide is now the bulk: CPython plus its standard
+library is 6.05 MB of the 9.67 MB, against Z3's 3.02 MB. Second, the two
+remaining archive assets — 2.66 MB, 27% of the payload — are still served with
+**no compression at all**, because Cloudflare skips archive content types on
+the assumption that an archive is already compressed. They are compressed, but
+only per-file with `deflate`, which is much weaker than brotli over the whole
+stream.
 
 ## Inside each blob
 
-### The Z3 wheel — 6.05 MB, roughly half of it redundant
+### The Z3 wheel — was 6.05 MB, half of it redundant
 
 | Entry                 | Uncompressed |  In wheel |
 | --------------------- | -----------: | --------: |
@@ -58,6 +70,17 @@ meaningless in a browser: nothing compiles against Z3 at runtime.
 
 `libz3.so` itself is 93.1% `code` section, 5.8% `data`. It is already stripped
 — there is no name or DWARF section to remove.
+
+**Fixed.** `scripts/prepare-pyodide-assets.mjs` now slims the wheel after the
+checksum-verified download, dropping `libz3.so.5.1` and `z3/include/`, and
+`scripts/slim-wheel.mjs` does the zip surgery. Entries that stay keep their
+upstream compressed bytes, so the served wheel is a deterministic derivation of
+the verified download and is checksum-pinned in turn; its RECORD manifest is
+rewritten to match. The served wheel went from 6,046,959 to 3,021,362 bytes,
+and Pyodide's virtual filesystem holds 8.2 MB less. `tests/slim-wheel.test.ts`
+covers the surgery, and `src/bridge/__tests__/z3b-worker.browser.test.ts`
+installs the slimmed wheel in a real Chromium and bids the golden corpus with
+it.
 
 ### `pyodide.asm.wasm` — 9.6 MB on disk, 3.5 MB served
 
@@ -180,30 +203,58 @@ more work than the solver itself represents.
 
 These are measured, not estimated, and none of them changes a single bid.
 
-| Change                                                     | Served after |  Saving |
-| ---------------------------------------------------------- | -----------: | ------: |
-| Drop the duplicate `libz3.so.5.1` and `z3/include/*.h`     |    3,022,171 | 3.02 MB |
-| …and repack the wheel `ZIP_STORED` so brotli sees the wasm |    2,149,533 | 3.90 MB |
-| Repack `python_stdlib.zip` `ZIP_STORED` + brotli           |    1,613,230 | 0.93 MB |
-| …and trim it to the modules actually imported              |      789,229 | 1.76 MB |
-| Pre-compress `pyodide.asm.wasm` at brotli quality 11       |    2,739,674 | 0.76 MB |
-| Ship DDS as a separate `.wasm` instead of `SINGLE_FILE`    |       84,882 | 0.04 MB |
+| Change                                                     | Served after |  Saving | State   |
+| ---------------------------------------------------------- | -----------: | ------: | ------- |
+| Drop the duplicate `libz3.so.5.1` and `z3/include/*.h`     |    3,021,362 | 3.03 MB | done    |
+| …and repack the wheel `ZIP_STORED` so brotli sees the wasm |    2,149,533 | 0.87 MB | blocked |
+| Repack `python_stdlib.zip` `ZIP_STORED` + brotli           |    1,613,230 | 0.93 MB | blocked |
+| …and trim it to the modules actually imported              |      789,229 | 0.82 MB | open    |
+| Pre-compress `pyodide.asm.wasm` at brotli quality 11       |    2,739,674 | 0.76 MB | blocked |
+| Ship DDS as a separate `.wasm` instead of `SINGLE_FILE`    |       84,882 | 0.04 MB | open    |
 
-Each saving is measured against what that asset costs today, and an "…and" row
-is cumulative for its asset rather than additive with the row above it. Taking
-the best row per asset gives 5.63 MB, or 6.46 MB with the stdlib trim.
+An "…and" row is cumulative for its asset rather than additive with the row
+above it. Taking the best row per asset, the remaining Tier 0 work is 3.43 MB,
+which would land the payload at about 6.2 MB.
 
-Two notes on mechanism. The wheel and the stdlib zip are served uncompressed
-today purely because of their content type; the repack only pays off if they
-are also served under a type Cloudflare compresses, or pre-compressed. And
-Cloudflare's own brotli is not quality 11 — it serves `pyodide.asm.wasm` at
-3,503,414 bytes where quality 11 gives 2,739,674, so 0.76 MB is available just
-from compressing the artifact at build time.
+**What was done.** The first row, because it is the only one that neither
+depends on how the assets are served nor risks a runtime failure. It is
+described under the Z3 wheel above.
 
-Taken together, Tier 0 lands at roughly **7.0 MB** without trimming the stdlib,
-or **6.2 MB** with it — a 44–51% reduction with no change to how the engine
-works. The stdlib trim is the only item here with real risk, since a missing
-module surfaces as a runtime `ImportError` rather than a build failure.
+**Why the rest is blocked.** Three of the remaining rows need the asset to
+arrive brotli-compressed, and that is not a repo-side decision:
+
+- Gzip is no help. A deduplicated wheel is 3,005,419 bytes with `deflate`
+  inside it and 3,003,857 as `ZIP_STORED` + gzip — a wash. Only brotli moves
+  it, to 2,149,533. So compressing in the worker with `DecompressionStream` is
+  not an option either: the stream API supports gzip and deflate, not brotli.
+- The win requires `ZIP_STORED`, and that is a bet. A `ZIP_STORED` wheel is
+  8,914,259 bytes uncompressed. If Cloudflare compresses it, that is 2,149,533
+  over the wire; if it does not, the site regresses by 5.9 MB. Shipping it
+  without knowing which is reckless.
+
+Cloudflare picks what to compress by content type. It compresses
+`application/wasm`, `text/javascript`, `application/json`, `text/css` and
+`text/html` here, and skips `application/zip` and the wheel's missing type.
+So the experiment to run on dev.saycbridge.com, before changing anything, is:
+
+1. Set an explicit `Content-Type` on `/assets/z3/*.whl` and
+   `/assets/pyodide/python_stdlib.zip` in `public/_headers`.
+2. Deploy to preview and check for `content-encoding: br` on both.
+3. Only if it appears, switch the repack to `ZIP_STORED`.
+
+Nothing consumes those content types — `micropip` and Pyodide read the bytes —
+so step 1 is safe on its own. Whether `_headers` can instead set
+`Content-Encoding: br` on a pre-compressed file, which would also capture the
+0.76 MB still left on `pyodide.asm.wasm` (Cloudflare's brotli is not quality
+11: it serves that file at 3,503,414 where quality 11 gives 2,739,674), is part
+of the same experiment.
+
+**Why the stdlib trim is still open.** It is worth 0.82 MB on top of the
+compression work and does not depend on it, because trimming shrinks the raw
+bytes that are being served uncompressed today. But a module that turns out to
+be needed fails at runtime with an `ImportError` rather than at build time, and
+possibly only on an error path that no test covers. It deserves its own change
+with its own verification, not a ride-along here.
 
 ### Tier 1 — custom builds of the same components
 
@@ -229,7 +280,8 @@ this job: fifteen API names, one logic fragment, forty bounded variables, a
 decision procedure — interval propagation over the bounded domains with search,
 or a BDD over the shape/honor universe — is a few thousand lines.
 
-- **Saves** the whole Z3 wheel: 2.15 MB after Tier 0, 6.05 MB today.
+- **Saves** the whole Z3 wheel: 3.02 MB today, 2.15 MB once the rest of
+  Tier 0 lands.
 - **Also saves** the 36% of bid time spent in `ctypes` marshalling, which is
   worse under Pyodide than in the native profile.
 - **Risk** is the obvious one: it must agree with Z3 on every hand. The repo is
@@ -273,21 +325,51 @@ client-only, and board data and auction state never leave the browser.
 
 ## Trade-offs at a glance
 
-| Approach                      | Payload after | Effort    | Risk of behavior change  |
-| ----------------------------- | ------------: | --------- | ------------------------ |
-| Today                         |       12.7 MB | —         | —                        |
-| Tier 0, no stdlib trim        |       ~7.0 MB | low       | none                     |
-| Tier 0, with stdlib trim      |       ~6.2 MB | low       | runtime `ImportError`s   |
-| Tier 0 + custom Pyodide build |   ~5.4–5.9 MB | high      | low, but a fork to carry |
-| Tier 0 + bespoke solver (T2)  |       ~4.1 MB | high      | caught by the baselines  |
-| TypeScript port (T3a)         |       ~0.3 MB | very high | caught by the baselines  |
-| Rust/C++ to wasm (T3b)        |       ~0.5 MB | very high | caught by the baselines  |
+| Approach                       | Payload after | Effort    | Risk of behavior change  |
+| ------------------------------ | ------------: | --------- | ------------------------ |
+| Where it started               |       12.7 MB | —         | —                        |
+| **Today, after the wheel fix** |    **9.7 MB** | done      | none                     |
+| Rest of Tier 0                 |       ~6.2 MB | low       | an `ImportError` at most |
+| Tier 0 + custom Pyodide build  |   ~5.4–5.9 MB | high      | low, but a fork to carry |
+| Tier 0 + bespoke solver (T2)   |       ~4.1 MB | high      | caught by the baselines  |
+| TypeScript port (T3a)          |       ~0.3 MB | very high | caught by the baselines  |
+| Rust/C++ to wasm (T3b)         |       ~0.5 MB | very high | caught by the baselines  |
 
-The shape of the decision is that Tier 0 is close to free and cuts the payload
-roughly in half, Tier 2 halves it again but only pays off after Tier 0, and
-Tier 3 is the only thing that changes the order of magnitude. If the goal is
-"the site should not ship 12 MB", Tier 0 answers it this week. If the goal is
-"the site should feel like a web page", only Tier 3 gets there.
+## Recommendations
+
+**1. Run the Cloudflare compression experiment next.** It is three steps on
+dev.saycbridge.com, it is the cheapest 1.8 MB left anywhere on this list, and
+until it is answered three separate fixes stay blocked. It also decides whether
+`pyodide.asm.wasm` can be pre-compressed for another 0.76 MB. Nothing else in
+Tier 0 should be attempted before this, because the answer changes what the
+right repack is.
+
+**2. Then trim `python_stdlib.zip`,** as its own change, with the keep-list
+derived from an import trace rather than guessed, and with the browser test
+exercising the error paths as well as the happy path. 0.82 MB, and it is the
+last of the easy work.
+
+**3. Do not bother with a custom Pyodide or Z3 build.** Both are high effort,
+both mean carrying a fork across upstream releases, and the combined win is
+smaller than the solver replacement that makes the Z3 fork moot anyway. The one
+exception would be if Pyodide upstream ever ships a slimmer distribution — the
+`_sqlite3`, CJK-codec and test-only-extension baggage is theirs to drop, and
+asking upstream is cheaper than forking.
+
+**4. Treat everything past Tier 0 as one decision, not four.** After Tier 0 the
+payload is ~6.2 MB and roughly 6 MB of that is Pyodide and Z3 together. Neither
+a custom build nor a bespoke solver changes the order of magnitude; only
+leaving Python does. So the real question is not "what else can be shaved" but
+"is the engine staying in Python". If the answer is yes, Tier 0 is the end of
+the road and 6.2 MB is the number to live with. If the answer is no, the
+TypeScript port (T3a) is where the effort belongs, and the intermediate steps
+are wasted motion.
+
+**5. The baselines are the asset that makes a rewrite thinkable.**
+`python/tests/baselines/` fails on any behavior change at all, so a
+reimplemented solver or a ported engine can be validated against the whole
+corpus instead of argued about. That is unusual, and it is worth more than any
+of the packaging wins. Whatever happens, keep it working.
 
 ## Reproducing the measurements
 
@@ -297,8 +379,11 @@ pnpm install && pnpm assets:prepare && pnpm build
 # transfer sizes actually served
 curl -sSI -H 'Accept-Encoding: br, gzip' https://saycbridge.com/assets/…
 
-# wheel contents and the duplicate
-python3 -c "import zipfile,hashlib; z=zipfile.ZipFile('vendor/z3/z3_solver-5.1.0.0-py3-none-pyemscripten_2026_0_wasm32.whl'); print(hashlib.sha256(z.read('z3/lib/libz3.so')).hexdigest() == hashlib.sha256(z.read('z3/lib/libz3.so.5.1')).hexdigest())"
+# the duplicate, in the upstream wheel that assets:prepare now slims
+python3 -c "import zipfile,hashlib; z=zipfile.ZipFile('vendor/z3/upstream/z3_solver-5.1.0.0-py3-none-pyemscripten_2026_0_wasm32.whl'); print(hashlib.sha256(z.read('z3/lib/libz3.so')).hexdigest() == hashlib.sha256(z.read('z3/lib/libz3.so.5.1')).hexdigest())"
+
+# what is served, next to what was downloaded
+ls -l vendor/z3/z3_solver-*.whl vendor/z3/upstream/z3_solver-*.whl
 
 # the Z3 API surface the engine uses
 grep -rhoE '\bz3\.[A-Za-z_]+' python/z3b python/yarborough_z3b.py | sort | uniq -c | sort -rn
