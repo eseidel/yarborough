@@ -369,10 +369,13 @@ describe("PracticePage", () => {
         },
       ]);
       expect(hand.completedAt).toBeGreaterThan(0);
-      expect(screen.getByTestId("progress-strip")).toHaveTextContent(
+      // The review shows the record in the result card, not in the strip
+      // above the auction, which it drops to save the height.
+      expect(screen.queryByTestId("progress-strip")).toBeNull();
+      expect(screen.getByTestId("record-line")).toHaveTextContent(
         "100% on system",
       );
-      expect(screen.getByTestId("progress-strip")).toHaveTextContent("1 hand");
+      expect(screen.getByTestId("record-line")).toHaveTextContent("1 hand");
     });
 
     it("can hold feedback back until the hand is over", async () => {
@@ -681,7 +684,7 @@ describe("PracticePage", () => {
 
       await waitFor(() =>
         expect(screen.getByTestId("double-dummy-contract")).toHaveTextContent(
-          "4♠ by North makes 4 (10 tricks)",
+          "It makes 4 (10 tricks)",
         ),
       );
       expect(screen.getByTestId("double-dummy-after-lead")).toHaveTextContent(
@@ -718,12 +721,25 @@ describe("PracticePage", () => {
       ).toBeInTheDocument();
     });
 
+    it("scrolls the result into view when the auction ends", async () => {
+      const scrollIntoView = vi.fn();
+      vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(
+        scrollIntoView,
+      );
+      renderComplete();
+      const result = await screen.findByTestId("result-card");
+      // The auction the user watched is above the fold they are looking at.
+      expect(scrollIntoView.mock.instances).toContain(result);
+      vi.restoreAllMocks();
+    });
+
     it("does not record a hand that arrived complete from a permalink", async () => {
       renderComplete();
       await screen.findByTestId("verdict-on-system");
       await screen.findByTestId("double-dummy-contract");
       expect(await store.allHands()).toEqual([]);
-      expect(screen.queryByTestId("progress-strip")).toBeNull();
+      // Nothing recorded, so the result card has no record line to show.
+      expect(screen.queryByTestId("record-line")).toBeNull();
     });
 
     it("lists the calls that differed and where SAYC's own auction ends", async () => {
@@ -746,8 +762,10 @@ describe("PracticePage", () => {
       expect(screen.getByTestId("play-verdict")).toHaveTextContent(
         "N-S stopped short of game.",
       );
-      expect(screen.getByTestId("makeable-NS")).toHaveTextContent(
-        "N-S can make 4NT, 4♠, 4♥, 4♦, 4♣.",
+      // What the cards are worth reads with the points and fits, in the
+      // hand diagram, rather than as a line of the play analysis.
+      expect(screen.getByTestId("side-NS")).toHaveTextContent(
+        "can make 4NT, 4♠, 4♥, 4♦, 4♣",
       );
     });
 

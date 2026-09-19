@@ -146,8 +146,9 @@ function SaycAuction({
 }
 
 /**
- * The result card at the top of the review: the contract, then how the
- * user's calls compared with SAYC, call by call.
+ * The top of the review: the contract, then how the user's calls compared
+ * with SAYC, call by call. It shares one card with the play analysis below
+ * it, so it draws no card of its own.
  */
 export function ReviewSummary({
   history,
@@ -174,10 +175,7 @@ export function ReviewSummary({
   const plural = (n: number) => (n === 1 ? "call" : "calls");
 
   return (
-    <div
-      className="bg-white rounded-lg shadow p-3 space-y-2 text-sm"
-      data-testid="review-summary"
-    >
+    <div className="space-y-2 text-sm" data-testid="review-summary">
       <div className="text-center">
         <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">
           Contract

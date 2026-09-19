@@ -120,18 +120,10 @@ export function describePlay(level: number, tricks: number): string {
   return `makes ${tricks - 6} (${tricks} ${plural})`;
 }
 
-function listContracts(contracts: MakeableContract[]): string {
+/** "4♠, 3NT, 2♦", or "nothing" where a side can make none. */
+export function listMakeable(contracts: MakeableContract[]): string {
+  if (contracts.length === 0) return "nothing";
   return contracts.map((c) => formatContract(c.level, c.strain)).join(", ");
-}
-
-/** "N-S can make 4♠, 3NT, 2♦" or "E-W can make nothing". */
-export function describeMakeable(
-  side: Side,
-  contracts: MakeableContract[],
-): string {
-  const label = SIDE_LABEL[side];
-  if (contracts.length === 0) return `${label} can make nothing`;
-  return `${label} can make ${listContracts(contracts)}`;
 }
 
 export interface PlayVerdict {

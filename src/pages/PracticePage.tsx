@@ -12,9 +12,7 @@ import { ProgressStrip } from "../components/ProgressStrip";
 import { CallFeedback } from "../components/CallFeedback";
 import { SaycHint } from "../components/SaycHint";
 import { OptionsSheet } from "../components/OptionsSheet";
-import { ReviewSummary } from "../components/ReviewSummary";
-import { PlayAnalysis } from "../components/PlayAnalysis";
-import { HandDiagram } from "../components/HandDiagram";
+import { PracticeReview } from "../components/PracticeReview";
 import { ShareButton } from "../components/ShareButton";
 import { parseBoardId } from "../bridge/identifier";
 import {
@@ -26,8 +24,6 @@ import { setCanonical, setTitle, CANONICAL_ORIGIN } from "../seo";
 
 const USER_POSITION = "S";
 
-const PRIMARY_BUTTON =
-  "w-full py-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-base transition-colors disabled:opacity-50";
 const SECONDARY_BUTTON =
   "flex-1 py-2.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
 const TEXT_BUTTON = "text-sm text-gray-500 hover:text-gray-800 hover:underline";
@@ -135,10 +131,12 @@ function PracticeBoard({
           adaptive={session.adaptive}
           onShowAllWeakSpots={session.showAllWeakSpots}
         />
-        <ProgressStrip
-          summary={session.summary}
-          onReset={session.resetProgress}
-        />
+        {!auctionDone && (
+          <ProgressStrip
+            summary={session.summary}
+            onReset={session.resetProgress}
+          />
+        )}
 
         <CallTable
           callHistory={history}
@@ -231,63 +229,32 @@ function PracticeBoard({
           </>
         )}
 
-        {auctionDone && (
-          <>
-            <ReviewSummary
-              history={history}
-              verdicts={verdicts}
-              userPosition={USER_POSITION}
-              saycAuction={session.saycAuction}
-              vulnerability={vulnerability}
-              onShowOptions={(pointHistory, index) =>
-                session.showOptions({ history: pointHistory, index })
-              }
-              onError={session.reportError}
-            />
-            <PlayAnalysis
-              history={history}
-              analysis={session.doubleDummy?.analysis ?? null}
-              loading={session.doubleDummy === null}
-              error={session.doubleDummy?.error ?? null}
-              userSide="NS"
-            />
-            <HandDiagram deal={deal} userPosition={USER_POSITION} />
-            {feedbackTiming === "end" && (
-              <button
-                type="button"
-                onClick={() => session.setFeedbackTiming("immediate")}
-                className={`${TEXT_BUTTON} text-center`}
-              >
-                Show feedback after each call instead
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => session.dealNext("next hand")}
-              disabled={thinking}
-              className={PRIMARY_BUTTON}
-            >
-              Next hand
-            </button>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={session.restart}
-                className={SECONDARY_BUTTON}
-              >
-                Bid again
-              </button>
-              <ShareButton
-                url={shareUrl}
-                title="SAYC Bridge Practice Hand"
-                text="Try bidding this bridge hand"
-                className={SECONDARY_BUTTON}
-              />
-            </div>
-          </>
+        {auctionDone ? (
+          <PracticeReview
+            deal={deal}
+            history={history}
+            verdicts={verdicts}
+            userPosition={USER_POSITION}
+            saycAuction={session.saycAuction}
+            vulnerability={vulnerability}
+            doubleDummy={session.doubleDummy}
+            summary={session.summary}
+            feedbackTiming={feedbackTiming}
+            thinking={thinking}
+            shareUrl={shareUrl}
+            onShowOptions={(pointHistory, index) =>
+              session.showOptions({ history: pointHistory, index })
+            }
+            onError={session.reportError}
+            onShowFeedbackEachCall={() =>
+              session.setFeedbackTiming("immediate")
+            }
+            onNextHand={() => session.dealNext("next hand")}
+            onRestart={session.restart}
+          />
+        ) : (
+          <AboutFooter />
         )}
-
-        <AboutFooter />
       </div>
 
       {session.options && (
