@@ -193,6 +193,21 @@
     "difflib",
     "NOTSET",
     "extensionless",
-    "jsonl"
+    "jsonl",
+    "docstrings",
+    "rotr",
+    "hashlib",
+    "hexdigest",
+    "unranked",
+    "subterm",
+    "subterms",
+    "unaliased",
+    "inlines",
+    "functools",
+    "getitem",
+    "linearization",
+    "getattr",
+    "jumpshift",
+    "jumpshifts"
   ]
 }
