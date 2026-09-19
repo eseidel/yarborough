@@ -19,5 +19,18 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // A parameter a method keeps for its signature but does not read (the
+      // preconditions' `fits(history, _call)`) is named with a leading
+      // underscore, as the TypeScript compiler's noUnusedParameters allows.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
   },
 ]);
