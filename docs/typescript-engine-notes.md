@@ -1,3 +1,5 @@
+<!-- cspell:ignore unsat -->
+
 # Notes: the TypeScript engine port
 
 Running notes for `typescript-engine-plan.md`. Whoever continues the work
