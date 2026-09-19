@@ -20,20 +20,20 @@ decisions, and the next action.
 
 ## Status
 
-| Phase | State   | Notes                                                  |
-| ----- | ------- | ------------------------------------------------------ |
-| 0a    | running | canonical iteration order in the Python bidder         |
-| 0b    | running | fixture exporter, fixtures checked in                  |
-| 1     | running | single-threaded Z3 wasm and `src/z3/` binding          |
-| 2     | running | pure core, leads, categories                           |
-| 3     | pending | hand model                                             |
-| 4     | pending | DSL primitives against snapshots                       |
-| 5     | pending | rules, rule compiler, priority ordering                |
-| 6     | pending | kernel                                                 |
-| 7     | pending | harness, baselines, adapter, golden and random corpora |
-| 8     | pending | worker swap, Pyodide removal                           |
-| 9     | pending | retire Python                                          |
-| 10    | later   | optional bounded solver; separate decision             |
+| Phase | State   | Notes                                                       |
+| ----- | ------- | ----------------------------------------------------------- |
+| 0a    | done    | canonical order in the bidder; baseline unchanged (27f1a4a) |
+| 0b    | running | fixture exporter, fixtures checked in                       |
+| 1     | running | single-threaded Z3 wasm and `src/z3/` binding               |
+| 2     | running | pure core, leads, categories                                |
+| 3     | pending | hand model                                                  |
+| 4     | pending | DSL primitives against snapshots                            |
+| 5     | pending | rules, rule compiler, priority ordering                     |
+| 6     | pending | kernel                                                      |
+| 7     | pending | harness, baselines, adapter, golden and random corpora      |
+| 8     | pending | worker swap, Pyodide removal                                |
+| 9     | pending | retire Python                                               |
+| 10    | later   | optional bounded solver; separate decision                  |
 
 ## Decisions
 
@@ -70,3 +70,6 @@ decisions, and the next action.
   commits), 1 (worktree, commits), 2 core types and 2 leads/categories
   (worktrees, commit). The orchestrator merges worktree branches into this
   branch and commits the main-tree work.
+- 2026-09-19: phase 0a landed (27f1a4a). Bids on the corpus were already
+  seed-independent (seeds 0, 1, 2 identical); the order of negations inside
+  meanings was not, and now is Call order. Baseline unchanged.
