@@ -9,6 +9,7 @@
 // engine reports.  Phase 5 of docs/typescript-engine-plan.md completes the
 // list; tests/engine-fixtures/rules-manifest.json says what is missing.
 
+import * as cappelletti from "./cappelletti";
 import * as natural from "./natural";
 import {
   type CompiledRule,
@@ -17,10 +18,25 @@ import {
   RuleCompiler,
 } from "./rule_compiler";
 import * as rules from "./rules";
+import * as doubles from "./rules/doubles";
+import * as notrump from "./rules/notrump";
+import * as overcalls from "./rules/overcalls";
+import * as preemptsSlam from "./rules/preempts_slam";
+import * as rebids from "./rules/rebids";
+import * as responses from "./rules/responses";
 
 /** Every concrete rule, by name: the port of `_concrete_rule_classes()`. */
 export const RULE_CLASSES: Readonly<Record<string, RuleClass>> = {
-  DefaultPass: natural.DefaultPass,
+  // The sections of rules.py, each in its own file, plus natural.py and
+  // cappelletti.py.  A name listed twice is an error, as in Python.
+  ...responses.RULE_CLASSES,
+  ...rebids.RULE_CLASSES,
+  ...notrump.RULE_CLASSES,
+  ...overcalls.RULE_CLASSES,
+  ...doubles.RULE_CLASSES,
+  ...preemptsSlam.RULE_CLASSES,
+  ...natural.RULE_CLASSES,
+  ...cappelletti.RULE_CLASSES,
   JumpShiftByOpener: rules.JumpShiftByOpener,
   NotrumpOpening: rules.NotrumpOpening,
   OneLevelSuitOpening: rules.OneLevelSuitOpening,
@@ -32,6 +48,20 @@ export const RULE_CLASSES: Readonly<Record<string, RuleClass>> = {
 export interface BiddingSystem {
   readonly rules: readonly CompiledRule[];
   readonly priorityOrdering: typeof priorityOrdering;
+}
+
+const registryNames = [
+  responses,
+  rebids,
+  notrump,
+  overcalls,
+  doubles,
+  preemptsSlam,
+  natural,
+  cappelletti,
+].flatMap((section) => Object.keys(section.RULE_CLASSES));
+if (new Set(registryNames).size !== registryNames.length) {
+  throw new Error("Duplicate rules!");
 }
 
 export const StandardAmericanYellowCard: BiddingSystem = {
