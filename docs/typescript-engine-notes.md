@@ -50,6 +50,16 @@ decisions, and the next action.
 
 ## Decisions (continued)
 
+- 2026-09-19: Rule declaration convention is the header comment of
+  `src/engine/z3b/rule_compiler.ts`: one class per Python class, the DSL keys
+  in one `static override dsl = rule({...})`, mixins as class factories so the
+  prototype chain equals the Python MRO, leaves registered by name in
+  `sayc.ts`. Phase 5 batches live in `src/engine/z3b/rules/<section>.ts`, each
+  exporting its own `RULE_CLASSES`, so parallel agents never edit one file.
+- 2026-09-19: The wasm exports no `Z3_global_param_set`, so `printed.ts`
+  inlines Z3's `let` aliases instead of raising `pp.min_alias_size`; verified
+  exact against the Z3 5.1.0 printer and the fixtures.
+
 - 2026-09-19: Printed forms in the fixtures are produced with
   `pp.min_alias_size` raised (no `let` aliases) and whitespace collapsed; Z3's
   printer flattens associative operators, so `a + b + c` prints
@@ -116,3 +126,7 @@ decisions, and the next action.
   records for 1,536 baseline hands because four identifiers repeat across groups.
 - 2026-09-19: Z3 worker probe landed (Chromium browser test). Phase 8 needs no
   Vite config change for the 11 MB module.
+- 2026-09-19: phases 3 and 4 landed (364c91f): 550 TypeScript tests green.
+  Exemplars agree with the fixtures: 1,650 of 13,988 meaning records, 1,615
+  call-to-rule pairs; 35 corpus auctions lack a recorded prefix for the forcing
+  oracle and are skipped by the gate.
