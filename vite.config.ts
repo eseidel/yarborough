@@ -13,6 +13,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     exclude: [...configDefaults.exclude, "src/**/*.browser.test.ts"],
+    // The committed Z3 module is eleven megabytes on one line; letting Node
+    // import it directly instead of running it through Vite's transform turns
+    // forty seconds of test start-up into half a second.
+    server: { deps: { external: [/\/src\/z3\/wasm\/z3\.mjs$/] } },
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],

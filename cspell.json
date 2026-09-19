@@ -12,6 +12,7 @@
     "python/tests/test_sayc_data.py",
     "python/tests/baselines",
     "src/dds/wasm",
+    "src/z3/wasm",
     "tests/dd_golden_cases.json",
     "tests/engine-fixtures/**",
     "python/tests/test_leads.py",
@@ -170,6 +171,10 @@
     "vitest",
     "vuls",
     "wasm",
-    "yarborough"
+    "yarborough",
+    "sexpr",
+    "unsat",
+    "emcmake",
+    "SMTLIB"
   ]
 }
