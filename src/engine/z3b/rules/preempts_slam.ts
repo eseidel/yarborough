@@ -31,7 +31,6 @@ import {
 import type { History } from "../history";
 import {
   exprForSuit,
-  highCardPoints,
   NO_CONSTRAINTS,
   numberOfAces,
   numberOfKings,
@@ -39,7 +38,6 @@ import {
   positions,
 } from "../model";
 import {
-  AndPrecondition,
   annotations,
   EitherPrecondition,
   ForcedToBid,
@@ -49,7 +47,6 @@ import {
   LastBidHasAnnotation,
   LastBidHasStrain,
   LastBidHasSuit,
-  LastBidWas,
   LastBidWasBelowGame,
   NotJumpFromLastContract,
   NotJumpFromPartnerLastBid,
@@ -60,28 +57,8 @@ import {
 import { Highest } from "../prefer";
 import { categories, Rule, rule, type RuleClass } from "../rule_compiler";
 import { suitPreference } from "../rules";
+import { DirectOvercall, preemptWeakOvercall } from "./overcalls";
 import { type Expr, z3 } from "../z3";
-
-// The overcall section of rules.py (another file here) owns DirectOvercall and
-// preempt_weak_overcall; PreemptiveOvercall derives from the one and reads the
-// other, so both are repeated privately until that section lands.
-class DirectOvercall extends Rule {
-  static override dsl = rule({
-    preconditions: new EitherPrecondition(
-      new LastBidHasAnnotation(positions.RHO, annotations.Opening),
-      new AndPrecondition(
-        new LastBidHasAnnotation(positions.LHO, annotations.Opening),
-        new LastBidWas(positions.Partner, "P"),
-        new InvertedPrecondition(new LastBidWas(positions.RHO, "P")),
-      ),
-    ),
-  });
-}
-
-// A preempt is for less than an opening hand.  An opening preempt is for a hand that would not
-// open at the one level (the opening rule for the seat); a weak jump overcall is for at most
-// eleven high card points, however long the suit.
-const preemptWeakOvercall = highCardPoints.le(11);
 
 // --- Preempts -----------------------------------------------------------
 
