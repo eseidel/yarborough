@@ -13,6 +13,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     exclude: [...configDefaults.exclude, "src/**/*.browser.test.ts"],
+    // The fixture gates of the bidding engine port walk thousands of recorded
+    // auctions through Z3; under a parallel run they exceed the five-second
+    // default.
+    testTimeout: 60000,
     // The committed Z3 module is eleven megabytes on one line; letting Node
     // import it directly instead of running it through Vite's transform turns
     // forty seconds of test start-up into half a second.
