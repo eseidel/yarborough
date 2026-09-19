@@ -733,6 +733,19 @@ describe("PracticePage", () => {
       vi.restoreAllMocks();
     });
 
+    it("takes the next hand from the top of the page", async () => {
+      const scrollTo = vi
+        .spyOn(window, "scrollTo")
+        .mockImplementation(() => {});
+      renderComplete();
+      await screen.findByTestId("result-card");
+      // The review leaves the window at the foot of the page; the next
+      // hand is bid from the board line, the auction and the bidding box.
+      fireEvent.click(screen.getByRole("button", { name: /next hand/i }));
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0 });
+      vi.restoreAllMocks();
+    });
+
     it("does not record a hand that arrived complete from a permalink", async () => {
       renderComplete();
       await screen.findByTestId("verdict-on-system");

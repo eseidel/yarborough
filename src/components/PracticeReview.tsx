@@ -62,6 +62,8 @@ function RecordLine({ summary }: { summary: Summary }) {
  */
 export function PracticeReview({
   deal,
+  boardNumber,
+  dealer,
   history,
   verdicts,
   userPosition,
@@ -79,6 +81,8 @@ export function PracticeReview({
   onRestart,
 }: {
   deal: Deal;
+  boardNumber: number;
+  dealer: Position;
   history: CallHistory;
   verdicts: CallVerdict[];
   userPosition: Position;
@@ -138,6 +142,9 @@ export function PracticeReview({
         deal={deal}
         userPosition={userPosition}
         table={doubleDummy?.analysis?.table ?? null}
+        boardNumber={boardNumber}
+        dealer={dealer}
+        vulnerability={vulnerability}
       />
 
       {feedbackTiming === "end" && (

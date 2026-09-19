@@ -36,7 +36,15 @@ function renderDiagram(deal: Deal, width = NARROW) {
   document.body.append(container);
   root = createRoot(container);
   flushSync(() =>
-    root!.render(createElement(HandDiagram, { deal, table: TABLE })),
+    root!.render(
+      createElement(HandDiagram, {
+        deal,
+        table: TABLE,
+        boardNumber: 3,
+        dealer: "N",
+        vulnerability: "NS",
+      }),
+    ),
   );
 }
 

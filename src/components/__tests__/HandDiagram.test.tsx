@@ -14,6 +14,9 @@ const TABLE: DoubleDummyTable = {
   N: { N: 9, E: 4, S: 6, W: 4 },
 };
 
+/** Board 3: North deals, N-S vulnerable. */
+const BOARD = { boardNumber: 3, dealer: "N", vulnerability: "NS" } as const;
+
 /** A hand's four holdings, top to bottom, as they read on screen. */
 function holdings(position: Position): string[] {
   const rows = within(screen.getByTestId(`hand-${position}`)).getByTestId(
@@ -24,7 +27,7 @@ function holdings(position: Position): string[] {
 
 describe("HandDiagram", () => {
   it("lays the hands out as a bridge diagram: North, West, East, South", () => {
-    render(<HandDiagram deal={MOCK_DEAL} userPosition="S" />);
+    render(<HandDiagram deal={MOCK_DEAL} userPosition="S" {...BOARD} />);
     const order = screen
       .getAllByTestId(/^hand-[NESW]$/)
       .map((el) => el.getAttribute("data-testid"));
@@ -32,7 +35,7 @@ describe("HandDiagram", () => {
   });
 
   it("gives each hand its seat, its points, and a line per suit", () => {
-    render(<HandDiagram deal={MOCK_DEAL} userPosition="S" />);
+    render(<HandDiagram deal={MOCK_DEAL} userPosition="S" {...BOARD} />);
     expect(holdings("N")).toEqual(["♠ AK32", "♥ QJ4", "♦ 987", "♣ 654"]);
     // Tens read as "10", so a holding is never ambiguous.
     expect(holdings("E")).toEqual(["♠ QJ9", "♥ 1098", "♦ AKJ", "♣ 10982"]);
@@ -51,46 +54,64 @@ describe("HandDiagram", () => {
   });
 
   it("keeps a void's line, so the hands read row for row", () => {
-    render(<HandDiagram deal={MOCK_VOID_DEAL} />);
+    render(<HandDiagram deal={MOCK_VOID_DEAL} {...BOARD} />);
     expect(holdings("W")).toEqual(["♠ AKQ", "♥ —", "♦ AKQJ10", "♣ AKQJ10"]);
   });
 
-  it("hugs East against the middle of the diagram", () => {
-    render(<HandDiagram deal={MOCK_DEAL} />);
-    expect(screen.getByTestId("hand-E").className).toContain("text-right");
-    for (const position of ["N", "W", "S"]) {
+  it("hugs East against the middle, its suit symbols still in a column", () => {
+    render(<HandDiagram deal={MOCK_DEAL} {...BOARD} />);
+    // Each hand is one block, laid out left to right inside itself, so its
+    // suit symbols line up whichever edge of its cell the block hugs.
+    for (const position of ["N", "E", "S", "W"]) {
       expect(screen.getByTestId(`hand-${position}`).className).toContain(
         "text-left",
       );
     }
+    expect(screen.getByTestId("hand-E").parentElement!.className).toContain(
+      "text-right",
+    );
+    expect(screen.getByTestId("hand-W").parentElement!.className).toContain(
+      "text-left",
+    );
+    for (const position of ["N", "S"]) {
+      expect(
+        screen.getByTestId(`hand-${position}`).parentElement!.className,
+      ).toContain("text-center");
+    }
   });
 
-  it("states each side's points and fits", () => {
-    render(<HandDiagram deal={MOCK_DEAL} />);
+  it("keeps the board, its dealer and its vulnerability in the middle", () => {
+    render(<HandDiagram deal={MOCK_DEAL} {...BOARD} />);
+    const note = screen.getByTestId("board-note");
+    expect(note).toHaveTextContent("Board 3");
+    expect(note).toHaveTextContent("North deals");
+    expect(note).toHaveTextContent("N-S Vul");
+  });
+
+  it("states each side's points and fits beside North", () => {
+    render(<HandDiagram deal={MOCK_DEAL} {...BOARD} />);
     // N-S: 10 + 13 = 23 HCP with 4+4 spades.
-    expect(screen.getByTestId("side-NS").textContent).toBe(
-      "N-S 23 HCP · 8-card ♠ fit",
-    );
+    const ns = screen.getByTestId("side-NS");
+    expect(ns).toHaveTextContent("N-S 23 HCP");
+    expect(ns).toHaveTextContent("8-card ♠ fit");
     // E-W: 11 + 6 = 17 HCP, no eight-card suit.
-    expect(screen.getByTestId("side-EW").textContent).toBe(
-      "E-W 17 HCP · no 8-card fit",
-    );
+    const ew = screen.getByTestId("side-EW");
+    expect(ew).toHaveTextContent("E-W 17 HCP");
+    expect(ew).toHaveTextContent("no 8-card fit");
   });
 
   it("adds what each side can make once the solver answers", () => {
     // The points, the fits and the makeable contracts are all facts about
-    // the cards, so a side reads as one line.
-    render(<HandDiagram deal={MOCK_DEAL} table={TABLE} />);
-    expect(screen.getByTestId("side-NS").textContent).toBe(
-      "N-S 23 HCP · 8-card ♠ fit · can make 4♠, 3NT, 2♦",
+    // the cards, so they read as one summary per side.
+    render(<HandDiagram deal={MOCK_DEAL} table={TABLE} {...BOARD} />);
+    expect(screen.getByTestId("side-NS")).toHaveTextContent(
+      "can make 4♠, 3NT, 2♦",
     );
-    expect(screen.getByTestId("side-EW").textContent).toBe(
-      "E-W 17 HCP · no 8-card fit · can make 2♥, 1♣",
-    );
+    expect(screen.getByTestId("side-EW")).toHaveTextContent("can make 2♥, 1♣");
   });
 
   it("says nothing about the play until the solver answers", () => {
-    render(<HandDiagram deal={MOCK_DEAL} />);
+    render(<HandDiagram deal={MOCK_DEAL} {...BOARD} />);
     expect(screen.queryByTestId("makeable-NS")).toBeNull();
   });
 });

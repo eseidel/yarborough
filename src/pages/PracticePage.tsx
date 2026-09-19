@@ -111,6 +111,14 @@ function PracticeBoard({
     session.options.history === history &&
     session.options.index === history.calls.length;
 
+  // A hand is bid from the top of the page, where the board line, the
+  // auction and the bidding box are. Starting one from the review leaves
+  // the window at the foot of a page that has just been replaced.
+  const fromTheTop = (start: () => void) => () => {
+    start();
+    window.scrollTo({ top: 0 });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavBar />
@@ -207,14 +215,14 @@ function PracticeBoard({
               </button>
               <button
                 type="button"
-                onClick={session.restart}
+                onClick={fromTheTop(session.restart)}
                 className={TEXT_BUTTON}
               >
                 Restart hand
               </button>
               <button
                 type="button"
-                onClick={() => session.dealNext("skip hand")}
+                onClick={fromTheTop(() => session.dealNext("skip hand"))}
                 className={TEXT_BUTTON}
               >
                 Skip hand
@@ -232,6 +240,8 @@ function PracticeBoard({
         {auctionDone ? (
           <PracticeReview
             deal={deal}
+            boardNumber={parsed.boardNumber}
+            dealer={parsed.dealer}
             history={history}
             verdicts={verdicts}
             userPosition={USER_POSITION}
@@ -249,8 +259,8 @@ function PracticeBoard({
             onShowFeedbackEachCall={() =>
               session.setFeedbackTiming("immediate")
             }
-            onNextHand={() => session.dealNext("next hand")}
-            onRestart={session.restart}
+            onNextHand={fromTheTop(() => session.dealNext("next hand"))}
+            onRestart={fromTheTop(session.restart)}
           />
         ) : (
           <AboutFooter />
