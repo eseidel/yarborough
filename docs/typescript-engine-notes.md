@@ -48,6 +48,20 @@ decisions, and the next action.
   (storage.googleapis.com) is reachable. The Z3 build therefore clones the
   pinned tag with git.
 
+## Decisions (continued)
+
+- 2026-09-19: Printed forms in the fixtures are produced with
+  `pp.min_alias_size` raised (no `let` aliases) and whitespace collapsed; Z3's
+  printer flattens associative operators, so `a + b + c` prints
+  `(+ a b c)`. The TypeScript binding sets the same print mode and parameters.
+- 2026-09-19: Agents work in git worktrees under `.claude/worktrees/`; those
+  checkouts are picked up by Vitest, Prettier and cspell when run from the main
+  tree, so remove finished worktrees (`git worktree remove --force`) before
+  running the gates there. Worktree commits are cherry-picked onto this branch.
+- 2026-09-19: `npx cspell --no-progress --dot "**"` reports 51 pre-existing
+  unknown words in `docs/seo-baseline/*.csv` on main as well; not part of this
+  work.
+
 ## Measurements
 
 - Python harness: 956 corpus expectations plus sub-auctions, about 22 s wall on
@@ -55,13 +69,19 @@ decisions, and the next action.
 - One decision: median 37 solver checks, max about 220; median 19 ms, max
   about 220 ms with native Z3 (60-hand sample, cold history cache).
 - Abstract hand space: 560 distributions, 34,080,840 abstract hands.
+- Z3 wasm in Node: one push/add/check/pop cycle on the hand model about
+  0.5 to 1.0 ms; module parse 0.24 s, instantiate 0.52 s.
+- Fixture export: 1,510 auctions, 13,988 (call, rule) meanings, 1,540
+  decisions, 300 random deals; 11 to 14 minutes wall; `--check` as long again.
+- Python gates after phase 0: 112 tests, 53 s.
 
 ## Open questions
 
-- Which Z3 tag to build: the Pyodide wheel is `z3-solver 5.1.0.0`; build the
-  matching `z3-5.1.0` tag if it exists, else the nearest release. Sat/unsat
-  does not depend on the version; only speed and the printed form of
-  expressions could, and the fixtures will tell.
+- (resolved) Z3 tag `z3-5.1.0` exists and is what is built.
+- The forcing oracle reads `_history_after_last_call_for(LHO).us.unbid_suits`
+  and `OpponentsSilent` walks the history; snapshots pin them only through
+  `forced_to_bid` and the calls list. A recorded history answers them from the
+  prefix snapshot when it exists and throws otherwise.
 
 ## Log
 
@@ -73,3 +93,6 @@ decisions, and the next action.
 - 2026-09-19: phase 0a landed (27f1a4a). Bids on the corpus were already
   seed-independent (seeds 0, 1, 2 identical); the order of negations inside
   meanings was not, and now is Call order. Baseline unchanged.
+- 2026-09-19: phases 0b, 1 and 2 landed (c5647c1, 28d7170, a7b7efb, 4117de5).
+  All gates green: 438 TypeScript tests, 112 Python tests. Dispatched the DSL
+  foundation (phases 3 and 4) and the early harness port (part of phase 7).
