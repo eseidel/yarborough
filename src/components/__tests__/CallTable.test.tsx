@@ -61,13 +61,13 @@ describe("CallTable", () => {
       />,
     );
 
-    // The first call's wrapper div should have the amber highlight
+    // The first call's wrapper div carries the selection.
     const clubSpan = screen.getByText("♣").closest("div");
-    expect(clubSpan?.className).toContain("bg-amber-200");
+    expect(clubSpan?.className).toContain("bg-emerald-50");
 
     // The second call should not
     const passDiv = screen.getByText("Pass").closest("div");
-    expect(passDiv?.className).not.toContain("bg-amber-200");
+    expect(passDiv?.className).not.toContain("bg-emerald-50");
   });
 
   it("applies cursor-pointer when onCallClick is provided", () => {
@@ -243,7 +243,7 @@ describe("CallTable", () => {
   describe("vulnerability highlighting", () => {
     const vulnerableSeats = (): string[] =>
       CALL_TABLE_ORDER.filter((pos) =>
-        screen.getByText(POSITION_NAMES[pos]).className.includes("bg-red-100"),
+        screen.getByText(POSITION_NAMES[pos]).className.includes("bg-red-50"),
       );
 
     const cases: [Vulnerability, string[]][] = [
@@ -272,7 +272,7 @@ describe("CallTable", () => {
 
       for (const pos of CALL_TABLE_ORDER) {
         expect(screen.getByText(POSITION_NAMES[pos]).className).not.toContain(
-          "bg-red-100",
+          "bg-red-50",
         );
       }
     });

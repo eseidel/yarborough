@@ -8,6 +8,7 @@ import {
   cardsBySuit,
   displayRank,
 } from "../bridge/types";
+import { CARD, EYEBROW } from "./ui";
 
 function MiniCard({ card }: { card: Card }) {
   const suit = SUITS[card.suit];
@@ -71,13 +72,13 @@ export function CardFan({
 
   return (
     <div
-      className="bg-white rounded-lg shadow p-3 min-w-0"
+      className={`${CARD} min-w-0 p-3`}
       data-testid={position ? `hand-${position}` : undefined}
     >
       {position && (
         <div
           data-testid={`position-label-${position}`}
-          className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2"
+          className={`${EYEBROW} mb-2`}
         >
           {POSITION_NAMES[position]}
         </div>

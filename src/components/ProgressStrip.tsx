@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { type Summary, formatAccuracy } from "../practice/stats";
 import { SOURCE_OPTIONS } from "../practice/focus";
+import { CARD, LINK } from "./ui";
 
 /**
  * The learner's record: accuracy across checked calls, hands bid, and the
@@ -23,10 +24,7 @@ export function ProgressStrip({
   );
 
   return (
-    <div
-      className="bg-white rounded-lg shadow text-sm"
-      data-testid="progress-strip"
-    >
+    <div className={`${CARD} text-sm`} data-testid="progress-strip">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -91,10 +89,7 @@ export function ProgressStrip({
             </table>
           )}
           <div className="flex gap-4 text-xs">
-            <Link
-              to="/progress"
-              className="text-emerald-700 font-semibold hover:underline"
-            >
+            <Link to="/progress" className={LINK}>
               See your progress
             </Link>
             <button

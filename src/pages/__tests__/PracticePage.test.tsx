@@ -682,9 +682,10 @@ describe("PracticePage", () => {
       );
       expect(mockAddRobotBids).not.toHaveBeenCalled();
 
+      // The result reads with the contract, as the card's headline.
       await waitFor(() =>
-        expect(screen.getByTestId("double-dummy-contract")).toHaveTextContent(
-          "It makes 4 (10 tricks)",
+        expect(screen.getByTestId("contract-result")).toHaveTextContent(
+          "Makes 4 (10 tricks)",
         ),
       );
       expect(screen.getByTestId("double-dummy-after-lead")).toHaveTextContent(
@@ -700,11 +701,9 @@ describe("PracticePage", () => {
         { suit: "D", rank: "4" },
       );
 
-      const order = [
-        "review-summary",
-        "double-dummy-contract",
-        "hand-diagram",
-      ].map((id) => screen.getByTestId(id));
+      const order = ["contract", "review-summary", "hand-diagram"].map((id) =>
+        screen.getByTestId(id),
+      );
       expect(
         order[0].compareDocumentPosition(order[1]) &
           Node.DOCUMENT_POSITION_FOLLOWING,
@@ -749,7 +748,7 @@ describe("PracticePage", () => {
     it("does not record a hand that arrived complete from a permalink", async () => {
       renderComplete();
       await screen.findByTestId("verdict-on-system");
-      await screen.findByTestId("double-dummy-contract");
+      await screen.findByTestId("contract-result");
       expect(await store.allHands()).toEqual([]);
       // Nothing recorded, so the result card has no record line to show.
       expect(screen.queryByTestId("record-line")).toBeNull();

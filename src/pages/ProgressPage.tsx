@@ -17,6 +17,7 @@ import {
 } from "../practice/insights";
 import { initAnalytics, trackEvent, trackPageView } from "../analytics";
 import { setCanonical, setTitle } from "../seo";
+import { CARD } from "../components/ui";
 
 function Section({
   title,
@@ -28,10 +29,7 @@ function Section({
   testId?: string;
 }) {
   return (
-    <section
-      className="bg-white rounded-lg shadow p-3 space-y-2"
-      data-testid={testId}
-    >
+    <section className={`${CARD} space-y-2 p-3`} data-testid={testId}>
       <h2 className="font-bold text-xs text-gray-500 uppercase tracking-wider">
         {title}
       </h2>
@@ -168,7 +166,7 @@ export function ProgressPage() {
           </p>
         ) : insights.overall.hands === 0 ? (
           <div
-            className="bg-white rounded-lg shadow p-4 text-sm text-gray-700 space-y-2"
+            className={`${CARD} space-y-2 p-4 text-sm text-gray-700`}
             data-testid="no-record"
           >
             <p className="font-semibold text-gray-900">No hands bid yet.</p>

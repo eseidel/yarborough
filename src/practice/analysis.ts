@@ -2,9 +2,10 @@
 // contract does, what each side could have made, and how the bidding
 // compares with the cards.
 
-import type { Position, StrainName } from "../bridge/types";
+import type { CallHistory, Position, StrainName } from "../bridge/types";
 import { POSITION_NAMES, strainSymbol } from "../bridge/types";
 import type { ContractInfo } from "../bridge/auction";
+import { getContract, getDeclarer, isPassOut } from "../bridge/auction";
 import type { DoubleDummyTable } from "../dds/dds-core";
 import { tricksRequired } from "../dds/dds-core";
 
@@ -104,6 +105,14 @@ export function formatContractBy(
   declarer: Position,
 ): string {
   return `${formatContract(contract.level, contract.strain, contract.doubled)} by ${POSITION_NAMES[declarer]}`;
+}
+
+/** "3NT by North", or "Passed out" where nobody bid. */
+export function contractHeadline(history: CallHistory): string {
+  if (isPassOut(history)) return "Passed out";
+  const contract = getContract(history);
+  const declarer = getDeclarer(history);
+  return contract && declarer ? formatContractBy(contract, declarer) : "";
 }
 
 export function contractMakes(level: number, tricks: number): boolean {

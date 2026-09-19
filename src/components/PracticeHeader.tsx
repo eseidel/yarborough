@@ -2,6 +2,7 @@ import type { Position, Vulnerability } from "../bridge/types";
 import { POSITION_NAMES } from "../bridge/types";
 import type { HandSource } from "../practice/record/types";
 import { SOURCE_OPTIONS, focusLabel } from "../practice/focus";
+import { LINK } from "./ui";
 
 export interface AdaptiveState {
   /** There is at least one weak spot to aim at. */
@@ -66,15 +67,15 @@ export function PracticeHeader({
           {" · "}
           {POSITION_NAMES[dealer]}
           {" · "}
-          <span className={vulnerability === "None" ? "" : "text-red-700"}>
-            {vulnerabilityWords(vulnerability)}
-          </span>
+          {/* Quietly: the call table marks the vulnerable seats in red,
+              and two reds for one fact is one too many. */}
+          {vulnerabilityWords(vulnerability)}
         </span>
         <select
           aria-label="Focus"
           value={selected}
           onChange={(e) => onFocusChange(e.target.value as HandSource)}
-          className="shrink-0 px-2 py-1 rounded-full text-xs font-semibold text-emerald-700 bg-white border border-gray-200 shadow-sm hover:border-gray-300"
+          className="shrink-0 rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-emerald-700 shadow-sm hover:border-gray-300"
         >
           {SOURCE_OPTIONS.map((option) => {
             const disabled = option.value === "Adaptive" && !adaptive.available;
@@ -127,7 +128,7 @@ export function PracticeHeader({
               <button
                 type="button"
                 onClick={onShowAllWeakSpots}
-                className="text-emerald-700 hover:underline"
+                className={LINK}
               >
                 All weak spots
               </button>

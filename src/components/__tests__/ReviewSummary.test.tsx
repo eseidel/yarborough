@@ -64,7 +64,7 @@ const FINAL_PASS: CallVerdict = {
 };
 
 describe("ReviewSummary", () => {
-  it("shows the contract and waits for every call to be checked", () => {
+  it("waits for every call to be checked", () => {
     render(
       <ReviewSummary
         history={HISTORY}
@@ -74,7 +74,6 @@ describe("ReviewSummary", () => {
         vulnerability="None"
       />,
     );
-    expect(screen.getByTestId("contract").textContent).toBe("3♥ by North");
     expect(screen.getByTestId("verdict-pending")).toBeInTheDocument();
     expect(screen.queryByTestId("sayc-auction")).toBeNull();
   });
@@ -107,7 +106,7 @@ describe("ReviewSummary", () => {
       />,
     );
     expect(screen.getByTestId("verdict-on-system").textContent).toContain(
-      "(1 after seeing the SAYC bid)",
+      "1 after seeing the SAYC bid",
     );
   });
 
@@ -171,7 +170,7 @@ describe("ReviewSummary", () => {
     expect(engine.getCallInterpretations).toHaveBeenCalledWith("", "N", "NS");
   });
 
-  it("names a passed-out board", () => {
+  it("reads a passed-out board as a hand bid on system", () => {
     const passOut: CallHistory = {
       dealer: "N",
       calls: [
@@ -198,7 +197,6 @@ describe("ReviewSummary", () => {
         vulnerability="None"
       />,
     );
-    expect(screen.getByTestId("contract").textContent).toBe("Passed out");
     expect(screen.getByTestId("verdict-on-system").textContent).toBe(
       "✓ Your call followed SAYC",
     );
