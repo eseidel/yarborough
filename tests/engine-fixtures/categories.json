@@ -1,0 +1,1767 @@
+{
+  "known_rule_names": [
+    "AcceptTransferToClubs",
+    "AcceptTransferToHearts",
+    "AcceptTransferToSpades",
+    "AcceptTransferToTwoClubs",
+    "BalancingCappelletti",
+    "BalancingDouble",
+    "BalancingDoubleAfterNotrumpAuction",
+    "BalancingDoubleOverRaise",
+    "BalancingJumpSuitedOvercall",
+    "BalancingMichaelsCuebid",
+    "BalancingNotrumpOvercall",
+    "BalancingSuitedOvercall",
+    "BalancingSuitedOvercallOverRaise",
+    "BlackwoodForAces",
+    "BlackwoodForKings",
+    "Cappelletti",
+    "CappellettiMinorRequest",
+    "CompleteOwnTransferToHeartsAfterDouble",
+    "CompleteOwnTransferToSpadesAfterDouble",
+    "CorrectMichaelsMinor",
+    "CueBidAfterTakeoutDouble",
+    "CueBidRebidAfterNegativeDouble",
+    "CuebidReponseToNegativeDouble",
+    "CuebidResponseToStandardOvercall",
+    "CuebidResponseToTakeoutDouble",
+    "DefaultPass",
+    "DelayedSupportResponseToFourthSuitForcing",
+    "DiamondStaymanResponse",
+    "DirectMichaelsCuebid",
+    "DirectOvercall1N",
+    "ExtrasRebidAfterCuebidResponse",
+    "FeatureResponseToTwoNotrumpFeatureRequest",
+    "ForcedMajorRebid",
+    "ForcedRebidOriginalSuitByOpener",
+    "ForcedSuitResponseToTakeoutDouble",
+    "FourthSuitResponseToFourthSuitForcing",
+    "FreeSuitResponseToTakeoutDouble",
+    "GameAccept",
+    "GameForcingUnsupportedRebidByOpener",
+    "GameRaiseAfterTransferToHearts",
+    "GameRaiseAfterTransferToSpades",
+    "GarbagePassStaymanRebid",
+    "GerberForAces",
+    "GerberForKings",
+    "GrandSlamForce",
+    "HeartsRebidAfterSpadesTransfer",
+    "HelpSuitGameTry",
+    "InvitationalUnsupportedRebidByOpener",
+    "Jacoby2N",
+    "JacobyTransfer",
+    "JumpNewSuitAfterTakeoutDouble",
+    "JumpNotrumpResponseToNegativeDouble",
+    "JumpNotrumpResponseToTakeoutDouble",
+    "JumpRaiseAfterTakeoutDouble",
+    "JumpRaiseResponseToBalancingOvercall",
+    "JumpRaiseResponseToNegativeDouble",
+    "JumpShiftByOpener",
+    "JumpShiftResponderRebid",
+    "JumpShiftResponseToOpen",
+    "JumpShiftResponseToOpenAfterRHODouble",
+    "JumpSuitResponseToMichaelsMinorRequest",
+    "JumpSuitResponseToTakeoutDouble",
+    "JumpTwoNotrumpAfterTakeoutDouble",
+    "LawOfTotalTricks",
+    "LeadDirectingDoubleOfAceAskingResponse",
+    "LeadDirectingDoubleOfArtificialSuitBid",
+    "Lebensohl",
+    "LongMajorSlamInvitation",
+    "LongMinorGameInvitation",
+    "MaximumNotrumpResponseToTwoNotrumpFeatureRequest",
+    "MichaelsMinorPreference",
+    "MichaelsMinorRequest",
+    "MichaelsSimplePreferenceResponse",
+    "MinimumRebidAfterCuebidResponse",
+    "MinimumRebidOfPreemptSuit",
+    "MinimumResponseToJacoby2N",
+    "MinorGameForceRebid",
+    "NaturalNotrump",
+    "NaturalStaymanResponse",
+    "NaturalSuited",
+    "NewMinorRebidAfterJacobyTransfer",
+    "NewOneLevelMajorByOpener",
+    "NewSuitAfterPreempt",
+    "NewSuitAfterTakeoutDouble",
+    "NewSuitAtTheThreeLevelOverJumpOvercall",
+    "NewSuitAtTheTwoLevel",
+    "NewSuitAtTheTwoLevelAfterRHODouble",
+    "NewSuitByOpener",
+    "NewSuitResponseToMajorCappelletti",
+    "NewSuitResponseToNegativeDouble",
+    "NewSuitResponseToOneNotrumpPenaltyDouble",
+    "NewSuitResponseToPreempt",
+    "NewSuitResponseToStandardOvercall",
+    "NonJumpFourthSuitForcing",
+    "NonJumpTwoNotrumpAfterTakeoutDouble",
+    "NotrumpAfterPreempt",
+    "NotrumpAfterTakeoutDouble",
+    "NotrumpGameAccept",
+    "NotrumpGameInvitation",
+    "NotrumpInvitationByOpener",
+    "NotrumpJumpRebid",
+    "NotrumpJumpResponseToFourthSuitForcing",
+    "NotrumpOpening",
+    "NotrumpRebidAfterJacobyTransfer",
+    "NotrumpRebidOverTwoClubs",
+    "NotrumpResponseToBalancingOvercall",
+    "NotrumpResponseToFourthSuitForcing",
+    "NotrumpResponseToJacoby2N",
+    "NotrumpResponseToMinorOpen",
+    "NotrumpResponseToNegativeDouble",
+    "NotrumpResponseToStrongTwoClubs",
+    "NotrumpResponseToTakeoutDouble",
+    "NotrumpSlamIsRemote",
+    "OneLevelNegativeDouble",
+    "OneLevelNewSuitResponse",
+    "OneLevelStandardOvercall",
+    "OneLevelSuitOpening",
+    "OneLevelTakeoutDouble",
+    "OneNotrumpResponse",
+    "OpenerSuitedJumpRebidAfterStrongTwoClubs",
+    "OpenerSuitedRebidAfterStrongTwoClubs",
+    "OtherMajorRebidAfterStayman",
+    "PassAfterPreempt",
+    "PassAfterSignoff",
+    "PassAfterTakeoutDouble",
+    "PassDoubledTransferToHearts",
+    "PassDoubledTransferToSpades",
+    "PassPassedHandResponse",
+    "PassResponseOverOvercall",
+    "PassResponseToLimitRaise",
+    "PassResponseToMichaelsMinorRequest",
+    "PassResponseToOneNotrumpPenaltyDouble",
+    "PassResponseToPreempt",
+    "PassResponseToSuitedOpen",
+    "PassStaymanResponse",
+    "PenaltyDoubleOfGameOpening",
+    "PenaltyPassOfTakeoutDouble",
+    "PreemptiveOpen",
+    "PreemptiveOvercall",
+    "QuantitativeFourNotrumpJump",
+    "Raise",
+    "RaiseAfterCappellettiMinorRequest",
+    "RaiseAfterJumpShiftResponse",
+    "RaiseAfterTakeoutDouble",
+    "RaiseOfFirstSuitAfterReverse",
+    "RaiseOfPartnersPreemptResponse",
+    "RaiseOfReverseSuit",
+    "RaiseOverTakeoutDouble",
+    "RaiseResponseToMajorCappelletti",
+    "RaiseResponseToNegativeDouble",
+    "RaiseResponseToStandardOvercall",
+    "RebidFirstSuitAfterLebensohl",
+    "RebidOneNotrumpByOpener",
+    "RebidOwnSuitAfterFourthSuitForcing",
+    "RebidResponderSuitByResponder",
+    "RebidResponseToFourthSuitForcing",
+    "RebidSuitAfterSecondNegative",
+    "RedoubleAfterDoubledStayman",
+    "RedoubleDoubledTransfer",
+    "RedoubleResponseAfterRHOTakeoutDouble",
+    "RedoubleTransferToMinor",
+    "ReopeningDouble",
+    "ResponderNotrumpInvitation",
+    "ResponderReverse",
+    "ResponderSignoffInPartnersSuit",
+    "ResponseAfterTransferToClubs",
+    "ResponseAfterTransferToTwoClubs",
+    "ResponseToBlackwood",
+    "ResponseToCappellettiMinorRequest",
+    "ResponseToCappellettiTwoClubs",
+    "ResponseToCappellettiTwoDiamonds",
+    "ResponseToGerber",
+    "ResponseToGrandSlamForce",
+    "ResponseToJordan",
+    "ResponseToQuantitativeFourNotrump",
+    "ReverseByOpener",
+    "SandwichMichaelsCuebid",
+    "SandwichOvercall",
+    "SecondNegative",
+    "ShapeResponseToJacoby2N",
+    "SingleRaiseResponseToBalancingOvercall",
+    "SlamResponseToJacoby2N",
+    "SpadesRebidAfterHeartsTransfer",
+    "StolenThreeClubStayman",
+    "StolenThreeHeartStaymanResponse",
+    "StolenThreeSpadeStaymanResponse",
+    "StolenTwoClubStayman",
+    "StolenTwoHeartStaymanResponse",
+    "StolenTwoSpadeStaymanResponse",
+    "StrongTwoClubs",
+    "SuitGameIsRemote",
+    "SuitRebidAfterCappellettiTwoClubs",
+    "SuitResponseToMichaelsMinorRequest",
+    "SuitResponseToStrongTwoClubs",
+    "SuitSlamIsRemote",
+    "SuperAcceptTransferToHearts",
+    "SuperAcceptTransferToSpades",
+    "SupportPartnerMajorSuit",
+    "TakeoutDoubleAfterPreempt",
+    "TakeoutDoubleAfterTakeoutDouble",
+    "ThreeLevelStayman",
+    "ThreeLevelSuitRebidByResponder",
+    "ThreeNotrumpMajorResponse",
+    "ThreeNotrumpOpening",
+    "TwoLevelNegativeDouble",
+    "TwoLevelStandardOvercall",
+    "TwoLevelStayman",
+    "TwoLevelTakeoutDouble",
+    "TwoNotrumpFeatureRequest",
+    "TwoNotrumpOvercallOfWeakTwo",
+    "TwoSpadesJumpFourthSuitForcing",
+    "TwoSpadesRelay",
+    "UnforcedRebidOriginalSuitByOpener",
+    "Unusual2N",
+    "Unusual2NSimplePreferenceResponse",
+    "WaitingResponseToStrongTwoClubs",
+    "WeakNewSuitAfterOneNotrumpResponse"
+  ],
+  "roles": [
+    {
+      "calls": "",
+      "dealer": "N",
+      "natural_category": [
+        "Opening",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Opening",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Opening"
+    },
+    {
+      "calls": "P",
+      "dealer": "N",
+      "natural_category": [
+        "Opening",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Opening",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Opening"
+    },
+    {
+      "calls": "1S",
+      "dealer": "N",
+      "natural_category": [
+        "Competing",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Competing",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Competing"
+    },
+    {
+      "calls": "1S P",
+      "dealer": "N",
+      "natural_category": [
+        "Responding to an opening",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Responding to an opening",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Responding to an opening"
+    },
+    {
+      "calls": "P 1H",
+      "dealer": "E",
+      "natural_category": [
+        "Competing",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Competing",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Competing"
+    },
+    {
+      "calls": "1H 1S",
+      "dealer": "N",
+      "natural_category": [
+        "Responding to an opening",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Responding to an opening",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Responding to an opening"
+    },
+    {
+      "calls": "1S P 2S",
+      "dealer": "N",
+      "natural_category": [
+        "Competing",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Competing",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Competing"
+    },
+    {
+      "calls": "P P 1N X",
+      "dealer": "S",
+      "natural_category": [
+        "Responding to an opening",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Responding to an opening",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Responding to an opening"
+    },
+    {
+      "calls": "1C P 1H P",
+      "dealer": "N",
+      "natural_category": [
+        "Opener's rebid",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Opener's rebid",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Opener's rebid"
+    },
+    {
+      "calls": "1H 2C P P",
+      "dealer": "W",
+      "natural_category": [
+        "Opener's rebid",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Opener's rebid",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Opener's rebid"
+    },
+    {
+      "calls": "1N P 2C P 2D P",
+      "dealer": "N",
+      "natural_category": [
+        "Responder's rebid",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Responder's rebid",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Responder's rebid"
+    },
+    {
+      "calls": "P P P 1S P 2S P",
+      "dealer": "E",
+      "natural_category": [
+        "Opener's rebid",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Opener's rebid",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Opener's rebid"
+    },
+    {
+      "calls": "1S X P P",
+      "dealer": "N",
+      "natural_category": [
+        "Opener's rebid",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Opener's rebid",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Opener's rebid"
+    },
+    {
+      "calls": "1S X XX 2H",
+      "dealer": "W",
+      "natural_category": [
+        "Opener's rebid",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Opener's rebid",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Opener's rebid"
+    },
+    {
+      "calls": "P P",
+      "dealer": "S",
+      "natural_category": [
+        "Opening",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Opening",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Opening"
+    },
+    {
+      "calls": "1D 1H X 2H P P",
+      "dealer": "N",
+      "natural_category": [
+        "Responder's rebid",
+        "Natural bids",
+        "Natural Suited"
+      ],
+      "pass_category": [
+        "Responder's rebid",
+        "Passing",
+        "Pass"
+      ],
+      "role": "Responder's rebid"
+    }
+  ],
+  "rules": {
+    "AcceptTransferToClubs": {
+      "contextual": false,
+      "formatted": "Accept Transfer To Clubs",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "AcceptTransferToHearts": {
+      "contextual": false,
+      "formatted": "Accept Transfer To Hearts",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "AcceptTransferToSpades": {
+      "contextual": false,
+      "formatted": "Accept Transfer To Spades",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "AcceptTransferToTwoClubs": {
+      "contextual": false,
+      "formatted": "Accept Transfer To Two Clubs",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "BalancingCappelletti": {
+      "contextual": false,
+      "formatted": "Balancing Cappelletti",
+      "level_one": "Competing",
+      "level_two": "Over their 1NT"
+    },
+    "BalancingDouble": {
+      "contextual": false,
+      "formatted": "Balancing Double",
+      "level_one": "Competing",
+      "level_two": "Balancing"
+    },
+    "BalancingDoubleAfterNotrumpAuction": {
+      "contextual": false,
+      "formatted": "Balancing Double After Notrump Auction",
+      "level_one": "Competing",
+      "level_two": "Balancing"
+    },
+    "BalancingDoubleOverRaise": {
+      "contextual": false,
+      "formatted": "Balancing Double Over Raise",
+      "level_one": "Competing",
+      "level_two": "Balancing"
+    },
+    "BalancingJumpSuitedOvercall": {
+      "contextual": false,
+      "formatted": "Balancing Jump Suited Overcall",
+      "level_one": "Competing",
+      "level_two": "Balancing"
+    },
+    "BalancingMichaelsCuebid": {
+      "contextual": false,
+      "formatted": "Balancing Michaels Cuebid",
+      "level_one": "Competing",
+      "level_two": "Michaels and Unusual 2NT"
+    },
+    "BalancingNotrumpOvercall": {
+      "contextual": false,
+      "formatted": "Balancing Notrump Overcall",
+      "level_one": "Competing",
+      "level_two": "Balancing"
+    },
+    "BalancingSuitedOvercall": {
+      "contextual": false,
+      "formatted": "Balancing Suited Overcall",
+      "level_one": "Competing",
+      "level_two": "Balancing"
+    },
+    "BalancingSuitedOvercallOverRaise": {
+      "contextual": false,
+      "formatted": "Balancing Suited Overcall Over Raise",
+      "level_one": "Competing",
+      "level_two": "Balancing"
+    },
+    "BlackwoodForAces": {
+      "contextual": false,
+      "formatted": "Blackwood For Aces",
+      "level_one": "Slam bidding",
+      "level_two": "Blackwood"
+    },
+    "BlackwoodForKings": {
+      "contextual": false,
+      "formatted": "Blackwood For Kings",
+      "level_one": "Slam bidding",
+      "level_two": "Blackwood"
+    },
+    "Cappelletti": {
+      "contextual": false,
+      "formatted": "Cappelletti",
+      "level_one": "Competing",
+      "level_two": "Over their 1NT"
+    },
+    "CappellettiMinorRequest": {
+      "contextual": false,
+      "formatted": "Cappelletti Minor Request",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Cappelletti"
+    },
+    "CompleteOwnTransferToHeartsAfterDouble": {
+      "contextual": false,
+      "formatted": "Complete Own Transfer To Hearts After Double",
+      "level_one": "Responder's rebid",
+      "level_two": "After a transfer"
+    },
+    "CompleteOwnTransferToSpadesAfterDouble": {
+      "contextual": false,
+      "formatted": "Complete Own Transfer To Spades After Double",
+      "level_one": "Responder's rebid",
+      "level_two": "After a transfer"
+    },
+    "CorrectMichaelsMinor": {
+      "contextual": false,
+      "formatted": "Correct Michaels Minor",
+      "level_one": "Competing",
+      "level_two": "Michaels and Unusual 2NT"
+    },
+    "CueBidAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Cue Bid After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "CueBidRebidAfterNegativeDouble": {
+      "contextual": false,
+      "formatted": "Cue Bid Rebid After Negative Double",
+      "level_one": "Opener's rebid",
+      "level_two": "After a negative double"
+    },
+    "CuebidReponseToNegativeDouble": {
+      "contextual": false,
+      "formatted": "Cuebid Reponse To Negative Double",
+      "level_one": "Opener's rebid",
+      "level_two": "After a negative double"
+    },
+    "CuebidResponseToStandardOvercall": {
+      "contextual": false,
+      "formatted": "Cuebid Response To Standard Overcall",
+      "level_one": "After partner competes",
+      "level_two": "Replying to an overcall"
+    },
+    "CuebidResponseToTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Cuebid Response To Takeout Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to a takeout double"
+    },
+    "DefaultPass": {
+      "contextual": true,
+      "formatted": "Default Pass",
+      "level_one": null,
+      "level_two": "Passing"
+    },
+    "DelayedSupportResponseToFourthSuitForcing": {
+      "contextual": false,
+      "formatted": "Delayed Support Response To Fourth Suit Forcing",
+      "level_one": "Opener's rebid",
+      "level_two": "Replying to fourth-suit forcing"
+    },
+    "DiamondStaymanResponse": {
+      "contextual": false,
+      "formatted": "Diamond Stayman Response",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "DirectMichaelsCuebid": {
+      "contextual": false,
+      "formatted": "Direct Michaels Cuebid",
+      "level_one": "Competing",
+      "level_two": "Michaels and Unusual 2NT"
+    },
+    "DirectOvercall1N": {
+      "contextual": false,
+      "formatted": "Direct Overcall 1NT",
+      "level_one": "Competing",
+      "level_two": "Overcalls"
+    },
+    "ExtrasRebidAfterCuebidResponse": {
+      "contextual": false,
+      "formatted": "Extras Rebid After Cuebid Response",
+      "level_one": "Competing",
+      "level_two": "The overcaller's rebid"
+    },
+    "FeatureResponseToTwoNotrumpFeatureRequest": {
+      "contextual": false,
+      "formatted": "Feature Response To Two Notrump Feature Request",
+      "level_one": "Opener's rebid",
+      "level_two": "After a preempt"
+    },
+    "ForcedMajorRebid": {
+      "contextual": false,
+      "formatted": "Forced Major Rebid",
+      "level_one": "Responder's rebid",
+      "level_two": "After opener's reverse"
+    },
+    "ForcedRebidOriginalSuitByOpener": {
+      "contextual": false,
+      "formatted": "Forced Rebid Original Suit By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "Rebidding your suit"
+    },
+    "ForcedSuitResponseToTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Forced Suit Response To Takeout Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to a takeout double"
+    },
+    "FourthSuitResponseToFourthSuitForcing": {
+      "contextual": false,
+      "formatted": "Fourth Suit Response To Fourth Suit Forcing",
+      "level_one": "Opener's rebid",
+      "level_two": "Replying to fourth-suit forcing"
+    },
+    "FreeSuitResponseToTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Free Suit Response To Takeout Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to a takeout double"
+    },
+    "GameAccept": {
+      "contextual": false,
+      "formatted": "Game Accept",
+      "level_one": "Opener's rebid",
+      "level_two": "Raising responder"
+    },
+    "GameForcingUnsupportedRebidByOpener": {
+      "contextual": false,
+      "formatted": "Game Forcing Unsupported Rebid By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "Rebidding your suit"
+    },
+    "GameRaiseAfterTransferToHearts": {
+      "contextual": false,
+      "formatted": "Game Raise After Transfer To Hearts",
+      "level_one": "Responder's rebid",
+      "level_two": "After a transfer"
+    },
+    "GameRaiseAfterTransferToSpades": {
+      "contextual": false,
+      "formatted": "Game Raise After Transfer To Spades",
+      "level_one": "Responder's rebid",
+      "level_two": "After a transfer"
+    },
+    "GarbagePassStaymanRebid": {
+      "contextual": false,
+      "formatted": "Garbage Pass Stayman Rebid",
+      "level_one": "Responder's rebid",
+      "level_two": "After Stayman"
+    },
+    "GerberForAces": {
+      "contextual": false,
+      "formatted": "Gerber For Aces",
+      "level_one": "Slam bidding",
+      "level_two": "Gerber"
+    },
+    "GerberForKings": {
+      "contextual": false,
+      "formatted": "Gerber For Kings",
+      "level_one": "Slam bidding",
+      "level_two": "Gerber"
+    },
+    "GrandSlamForce": {
+      "contextual": false,
+      "formatted": "Grand Slam Force",
+      "level_one": "Slam bidding",
+      "level_two": "Grand slam force"
+    },
+    "HeartsRebidAfterSpadesTransfer": {
+      "contextual": false,
+      "formatted": "Hearts Rebid After Spades Transfer",
+      "level_one": "Responder's rebid",
+      "level_two": "After a transfer"
+    },
+    "HelpSuitGameTry": {
+      "contextual": false,
+      "formatted": "Help Suit Game Try",
+      "level_one": "Opener's rebid",
+      "level_two": "Raising responder"
+    },
+    "InvitationalUnsupportedRebidByOpener": {
+      "contextual": false,
+      "formatted": "Invitational Unsupported Rebid By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "Rebidding your suit"
+    },
+    "Jacoby2N": {
+      "contextual": false,
+      "formatted": "Jacoby 2NT",
+      "level_one": "Responding to an opening",
+      "level_two": "Raises"
+    },
+    "JacobyTransfer": {
+      "contextual": false,
+      "formatted": "Jacoby Transfer",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "JumpNewSuitAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Jump New Suit After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "JumpNotrumpResponseToNegativeDouble": {
+      "contextual": false,
+      "formatted": "Jump Notrump Response To Negative Double",
+      "level_one": "Opener's rebid",
+      "level_two": "After a negative double"
+    },
+    "JumpNotrumpResponseToTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Jump Notrump Response To Takeout Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to a takeout double"
+    },
+    "JumpRaiseAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Jump Raise After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "JumpRaiseResponseToBalancingOvercall": {
+      "contextual": false,
+      "formatted": "Jump Raise Response To Balancing Overcall",
+      "level_one": "After partner competes",
+      "level_two": "Replying to an overcall"
+    },
+    "JumpRaiseResponseToNegativeDouble": {
+      "contextual": false,
+      "formatted": "Jump Raise Response To Negative Double",
+      "level_one": "Opener's rebid",
+      "level_two": "After a negative double"
+    },
+    "JumpShiftByOpener": {
+      "contextual": false,
+      "formatted": "Jump Shift By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "New suits and reverses"
+    },
+    "JumpShiftResponderRebid": {
+      "contextual": false,
+      "formatted": "Jump Shift Responder Rebid",
+      "level_one": "Responder's rebid",
+      "level_two": "Invitations"
+    },
+    "JumpShiftResponseToOpen": {
+      "contextual": false,
+      "formatted": "Jump Shift Response To Open",
+      "level_one": "Responding to an opening",
+      "level_two": "New suits"
+    },
+    "JumpShiftResponseToOpenAfterRHODouble": {
+      "contextual": false,
+      "formatted": "Jump Shift Response To Open After RHO Double",
+      "level_one": "Responding to an opening",
+      "level_two": "New suits"
+    },
+    "JumpSuitResponseToMichaelsMinorRequest": {
+      "contextual": false,
+      "formatted": "Jump Suit Response To Michaels Minor Request",
+      "level_one": "Competing",
+      "level_two": "Michaels and Unusual 2NT"
+    },
+    "JumpSuitResponseToTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Jump Suit Response To Takeout Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to a takeout double"
+    },
+    "JumpTwoNotrumpAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Jump Two Notrump After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "LawOfTotalTricks": {
+      "contextual": true,
+      "formatted": "Law Of Total Tricks",
+      "level_one": null,
+      "level_two": "Competitive raises"
+    },
+    "LeadDirectingDoubleOfAceAskingResponse": {
+      "contextual": false,
+      "formatted": "Lead Directing Double Of Ace Asking Response",
+      "level_one": "Competing",
+      "level_two": "Penalty and lead-directing doubles"
+    },
+    "LeadDirectingDoubleOfArtificialSuitBid": {
+      "contextual": false,
+      "formatted": "Lead Directing Double Of Artificial Suit Bid",
+      "level_one": "Competing",
+      "level_two": "Penalty and lead-directing doubles"
+    },
+    "Lebensohl": {
+      "contextual": false,
+      "formatted": "Lebensohl",
+      "level_one": "Responder's rebid",
+      "level_two": "After opener's reverse"
+    },
+    "LongMajorSlamInvitation": {
+      "contextual": false,
+      "formatted": "Long Major Slam Invitation",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "LongMinorGameInvitation": {
+      "contextual": false,
+      "formatted": "Long Minor Game Invitation",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "MaximumNotrumpResponseToTwoNotrumpFeatureRequest": {
+      "contextual": false,
+      "formatted": "Maximum Notrump Response To Two Notrump Feature Request",
+      "level_one": "Opener's rebid",
+      "level_two": "After a preempt"
+    },
+    "MichaelsMinorPreference": {
+      "contextual": false,
+      "formatted": "Michaels Minor Preference",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Michaels or Unusual 2NT"
+    },
+    "MichaelsMinorRequest": {
+      "contextual": false,
+      "formatted": "Michaels Minor Request",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Michaels or Unusual 2NT"
+    },
+    "MichaelsSimplePreferenceResponse": {
+      "contextual": false,
+      "formatted": "Michaels Simple Preference Response",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Michaels or Unusual 2NT"
+    },
+    "MinimumRebidAfterCuebidResponse": {
+      "contextual": false,
+      "formatted": "Minimum Rebid After Cuebid Response",
+      "level_one": "Competing",
+      "level_two": "The overcaller's rebid"
+    },
+    "MinimumRebidOfPreemptSuit": {
+      "contextual": false,
+      "formatted": "Minimum Rebid Of Preempt Suit",
+      "level_one": "Opener's rebid",
+      "level_two": "After a preempt"
+    },
+    "MinimumResponseToJacoby2N": {
+      "contextual": false,
+      "formatted": "Minimum Response To Jacoby 2NT",
+      "level_one": "Opener's rebid",
+      "level_two": "After Jacoby 2NT"
+    },
+    "MinorGameForceRebid": {
+      "contextual": false,
+      "formatted": "Minor Game Force Rebid",
+      "level_one": "Responder's rebid",
+      "level_two": "After Stayman"
+    },
+    "NaturalNotrump": {
+      "contextual": true,
+      "formatted": "Natural Notrump",
+      "level_one": null,
+      "level_two": "Natural bids"
+    },
+    "NaturalStaymanResponse": {
+      "contextual": false,
+      "formatted": "Natural Stayman Response",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "NaturalSuited": {
+      "contextual": true,
+      "formatted": "Natural Suited",
+      "level_one": null,
+      "level_two": "Natural bids"
+    },
+    "NewMinorRebidAfterJacobyTransfer": {
+      "contextual": false,
+      "formatted": "New Minor Rebid After Jacoby Transfer",
+      "level_one": "Responder's rebid",
+      "level_two": "After a transfer"
+    },
+    "NewOneLevelMajorByOpener": {
+      "contextual": false,
+      "formatted": "New One Level Major By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "New suits and reverses"
+    },
+    "NewSuitAfterPreempt": {
+      "contextual": false,
+      "formatted": "New Suit After Preempt",
+      "level_one": "Opener's rebid",
+      "level_two": "After a preempt"
+    },
+    "NewSuitAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "New Suit After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "NewSuitAtTheThreeLevelOverJumpOvercall": {
+      "contextual": false,
+      "formatted": "New Suit At The Three Level Over Jump Overcall",
+      "level_one": "Responding to an opening",
+      "level_two": "New suits"
+    },
+    "NewSuitAtTheTwoLevel": {
+      "contextual": false,
+      "formatted": "New Suit At The Two Level",
+      "level_one": "Responding to an opening",
+      "level_two": "New suits"
+    },
+    "NewSuitAtTheTwoLevelAfterRHODouble": {
+      "contextual": false,
+      "formatted": "New Suit At The Two Level After RHO Double",
+      "level_one": "Responding to an opening",
+      "level_two": "New suits"
+    },
+    "NewSuitByOpener": {
+      "contextual": false,
+      "formatted": "New Suit By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "New suits and reverses"
+    },
+    "NewSuitResponseToMajorCappelletti": {
+      "contextual": false,
+      "formatted": "New Suit Response To Major Cappelletti",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Cappelletti"
+    },
+    "NewSuitResponseToNegativeDouble": {
+      "contextual": false,
+      "formatted": "New Suit Response To Negative Double",
+      "level_one": "Opener's rebid",
+      "level_two": "After a negative double"
+    },
+    "NewSuitResponseToOneNotrumpPenaltyDouble": {
+      "contextual": false,
+      "formatted": "New Suit Response To One Notrump Penalty Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Cappelletti"
+    },
+    "NewSuitResponseToPreempt": {
+      "contextual": false,
+      "formatted": "New Suit Response To Preempt",
+      "level_one": "Responding to an opening",
+      "level_two": "To a preempt"
+    },
+    "NewSuitResponseToStandardOvercall": {
+      "contextual": false,
+      "formatted": "New Suit Response To Standard Overcall",
+      "level_one": "After partner competes",
+      "level_two": "Replying to an overcall"
+    },
+    "NonJumpFourthSuitForcing": {
+      "contextual": false,
+      "formatted": "Non Jump Fourth Suit Forcing",
+      "level_one": "Responder's rebid",
+      "level_two": "Fourth-suit forcing"
+    },
+    "NonJumpTwoNotrumpAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Non Jump Two Notrump After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "NotrumpAfterPreempt": {
+      "contextual": false,
+      "formatted": "Notrump After Preempt",
+      "level_one": "Opener's rebid",
+      "level_two": "After a preempt"
+    },
+    "NotrumpAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Notrump After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "NotrumpGameAccept": {
+      "contextual": false,
+      "formatted": "Notrump Game Accept",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "NotrumpGameInvitation": {
+      "contextual": false,
+      "formatted": "Notrump Game Invitation",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "NotrumpInvitationByOpener": {
+      "contextual": false,
+      "formatted": "Notrump Invitation By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "Notrump rebids"
+    },
+    "NotrumpJumpRebid": {
+      "contextual": false,
+      "formatted": "Notrump Jump Rebid",
+      "level_one": "Opener's rebid",
+      "level_two": "Notrump rebids"
+    },
+    "NotrumpJumpResponseToFourthSuitForcing": {
+      "contextual": false,
+      "formatted": "Notrump Jump Response To Fourth Suit Forcing",
+      "level_one": "Opener's rebid",
+      "level_two": "Replying to fourth-suit forcing"
+    },
+    "NotrumpOpening": {
+      "contextual": false,
+      "formatted": "Notrump Opening",
+      "level_one": "Opening",
+      "level_two": "1NT, 2NT and 3NT"
+    },
+    "NotrumpRebidAfterJacobyTransfer": {
+      "contextual": false,
+      "formatted": "Notrump Rebid After Jacoby Transfer",
+      "level_one": "Responder's rebid",
+      "level_two": "After a transfer"
+    },
+    "NotrumpRebidOverTwoClubs": {
+      "contextual": false,
+      "formatted": "Notrump Rebid Over Two Clubs",
+      "level_one": "Opener's rebid",
+      "level_two": "After 2♣"
+    },
+    "NotrumpResponseToBalancingOvercall": {
+      "contextual": false,
+      "formatted": "Notrump Response To Balancing Overcall",
+      "level_one": "After partner competes",
+      "level_two": "Replying to an overcall"
+    },
+    "NotrumpResponseToFourthSuitForcing": {
+      "contextual": false,
+      "formatted": "Notrump Response To Fourth Suit Forcing",
+      "level_one": "Opener's rebid",
+      "level_two": "Replying to fourth-suit forcing"
+    },
+    "NotrumpResponseToJacoby2N": {
+      "contextual": false,
+      "formatted": "Notrump Response To Jacoby 2NT",
+      "level_one": "Opener's rebid",
+      "level_two": "After Jacoby 2NT"
+    },
+    "NotrumpResponseToMinorOpen": {
+      "contextual": false,
+      "formatted": "Notrump Response To Minor Open",
+      "level_one": "Responding to an opening",
+      "level_two": "Notrump responses"
+    },
+    "NotrumpResponseToNegativeDouble": {
+      "contextual": false,
+      "formatted": "Notrump Response To Negative Double",
+      "level_one": "Opener's rebid",
+      "level_two": "After a negative double"
+    },
+    "NotrumpResponseToStrongTwoClubs": {
+      "contextual": false,
+      "formatted": "Notrump Response To Strong Two Clubs",
+      "level_one": "Responding to an opening",
+      "level_two": "To 2♣"
+    },
+    "NotrumpResponseToTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Notrump Response To Takeout Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to a takeout double"
+    },
+    "NotrumpSlamIsRemote": {
+      "contextual": true,
+      "formatted": "Notrump Slam Is Remote",
+      "level_one": null,
+      "level_two": "Passing"
+    },
+    "OneLevelNegativeDouble": {
+      "contextual": false,
+      "formatted": "One Level Negative Double",
+      "level_one": "Responding to an opening",
+      "level_two": "Negative doubles"
+    },
+    "OneLevelNewSuitResponse": {
+      "contextual": false,
+      "formatted": "One Level New Suit Response",
+      "level_one": "Responding to an opening",
+      "level_two": "New suits"
+    },
+    "OneLevelStandardOvercall": {
+      "contextual": false,
+      "formatted": "One Level Standard Overcall",
+      "level_one": "Competing",
+      "level_two": "Overcalls"
+    },
+    "OneLevelSuitOpening": {
+      "contextual": false,
+      "formatted": "One Level Suit Opening",
+      "level_one": "Opening",
+      "level_two": "One of a suit"
+    },
+    "OneLevelTakeoutDouble": {
+      "contextual": false,
+      "formatted": "One Level Takeout Double",
+      "level_one": "Competing",
+      "level_two": "Takeout doubles"
+    },
+    "OneNotrumpResponse": {
+      "contextual": false,
+      "formatted": "One Notrump Response",
+      "level_one": "Responding to an opening",
+      "level_two": "Notrump responses"
+    },
+    "OpenerSuitedJumpRebidAfterStrongTwoClubs": {
+      "contextual": false,
+      "formatted": "Opener Suited Jump Rebid After Strong Two Clubs",
+      "level_one": "Opener's rebid",
+      "level_two": "After 2♣"
+    },
+    "OpenerSuitedRebidAfterStrongTwoClubs": {
+      "contextual": false,
+      "formatted": "Opener Suited Rebid After Strong Two Clubs",
+      "level_one": "Opener's rebid",
+      "level_two": "After 2♣"
+    },
+    "OtherMajorRebidAfterStayman": {
+      "contextual": false,
+      "formatted": "Other Major Rebid After Stayman",
+      "level_one": "Responder's rebid",
+      "level_two": "After Stayman"
+    },
+    "PassAfterPreempt": {
+      "contextual": true,
+      "formatted": "Pass After Preempt",
+      "level_one": null,
+      "level_two": "Passing"
+    },
+    "PassAfterSignoff": {
+      "contextual": true,
+      "formatted": "Pass After Signoff",
+      "level_one": null,
+      "level_two": "Passing"
+    },
+    "PassAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Pass After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "PassDoubledTransferToHearts": {
+      "contextual": false,
+      "formatted": "Pass Doubled Transfer To Hearts",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "PassDoubledTransferToSpades": {
+      "contextual": false,
+      "formatted": "Pass Doubled Transfer To Spades",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "PassPassedHandResponse": {
+      "contextual": false,
+      "formatted": "Pass Passed Hand Response",
+      "level_one": "Opener's rebid",
+      "level_two": "Passing as opener"
+    },
+    "PassResponseOverOvercall": {
+      "contextual": false,
+      "formatted": "Pass Response Over Overcall",
+      "level_one": "Responding to an opening",
+      "level_two": "Passing as responder"
+    },
+    "PassResponseToLimitRaise": {
+      "contextual": false,
+      "formatted": "Pass Response To Limit Raise",
+      "level_one": "Opener's rebid",
+      "level_two": "Raising responder"
+    },
+    "PassResponseToMichaelsMinorRequest": {
+      "contextual": false,
+      "formatted": "Pass Response To Michaels Minor Request",
+      "level_one": "Competing",
+      "level_two": "Michaels and Unusual 2NT"
+    },
+    "PassResponseToOneNotrumpPenaltyDouble": {
+      "contextual": false,
+      "formatted": "Pass Response To One Notrump Penalty Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Cappelletti"
+    },
+    "PassResponseToPreempt": {
+      "contextual": false,
+      "formatted": "Pass Response To Preempt",
+      "level_one": "Responding to an opening",
+      "level_two": "To a preempt"
+    },
+    "PassResponseToSuitedOpen": {
+      "contextual": false,
+      "formatted": "Pass Response To Suited Open",
+      "level_one": "Responding to an opening",
+      "level_two": "Passing as responder"
+    },
+    "PassStaymanResponse": {
+      "contextual": false,
+      "formatted": "Pass Stayman Response",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "PenaltyDoubleOfGameOpening": {
+      "contextual": false,
+      "formatted": "Penalty Double Of Game Opening",
+      "level_one": "Competing",
+      "level_two": "Penalty and lead-directing doubles"
+    },
+    "PenaltyPassOfTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Penalty Pass Of Takeout Double",
+      "level_one": "After partner competes",
+      "level_two": "Replying to a takeout double"
+    },
+    "PreemptiveOpen": {
+      "contextual": false,
+      "formatted": "Preemptive Open",
+      "level_one": "Opening",
+      "level_two": "Preempts"
+    },
+    "PreemptiveOvercall": {
+      "contextual": false,
+      "formatted": "Preemptive Overcall",
+      "level_one": "Competing",
+      "level_two": "Overcalls"
+    },
+    "QuantitativeFourNotrumpJump": {
+      "contextual": false,
+      "formatted": "Quantitative Four Notrump Jump",
+      "level_one": "Slam bidding",
+      "level_two": "Quantitative 4NT"
+    },
+    "Raise": {
+      "contextual": false,
+      "formatted": "Raise",
+      "level_one": "Responding to an opening",
+      "level_two": "Raises"
+    },
+    "RaiseAfterCappellettiMinorRequest": {
+      "contextual": false,
+      "formatted": "Raise After Cappelletti Minor Request",
+      "level_one": "Competing",
+      "level_two": "Over their 1NT"
+    },
+    "RaiseAfterJumpShiftResponse": {
+      "contextual": false,
+      "formatted": "Raise After Jump Shift Response",
+      "level_one": "Responder's rebid",
+      "level_two": "Support and sign-off"
+    },
+    "RaiseAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Raise After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "RaiseOfFirstSuitAfterReverse": {
+      "contextual": false,
+      "formatted": "Raise Of First Suit After Reverse",
+      "level_one": "Responder's rebid",
+      "level_two": "After opener's reverse"
+    },
+    "RaiseOfPartnersPreemptResponse": {
+      "contextual": false,
+      "formatted": "Raise Of Partners Preempt Response",
+      "level_one": "Opener's rebid",
+      "level_two": "After a preempt"
+    },
+    "RaiseOfReverseSuit": {
+      "contextual": false,
+      "formatted": "Raise Of Reverse Suit",
+      "level_one": "Responder's rebid",
+      "level_two": "After opener's reverse"
+    },
+    "RaiseOverTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Raise Over Takeout Double",
+      "level_one": "Responding to an opening",
+      "level_two": "Raises"
+    },
+    "RaiseResponseToMajorCappelletti": {
+      "contextual": false,
+      "formatted": "Raise Response To Major Cappelletti",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Cappelletti"
+    },
+    "RaiseResponseToNegativeDouble": {
+      "contextual": false,
+      "formatted": "Raise Response To Negative Double",
+      "level_one": "Opener's rebid",
+      "level_two": "After a negative double"
+    },
+    "RaiseResponseToStandardOvercall": {
+      "contextual": false,
+      "formatted": "Raise Response To Standard Overcall",
+      "level_one": "After partner competes",
+      "level_two": "Replying to an overcall"
+    },
+    "RebidFirstSuitAfterLebensohl": {
+      "contextual": false,
+      "formatted": "Rebid First Suit After Lebensohl",
+      "level_one": "Opener's rebid",
+      "level_two": "After a reverse"
+    },
+    "RebidOneNotrumpByOpener": {
+      "contextual": false,
+      "formatted": "Rebid One Notrump By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "Notrump rebids"
+    },
+    "RebidOwnSuitAfterFourthSuitForcing": {
+      "contextual": false,
+      "formatted": "Rebid Own Suit After Fourth Suit Forcing",
+      "level_one": "Responder's rebid",
+      "level_two": "Fourth-suit forcing"
+    },
+    "RebidResponderSuitByResponder": {
+      "contextual": false,
+      "formatted": "Rebid Responder Suit By Responder",
+      "level_one": "Responder's rebid",
+      "level_two": "Support and sign-off"
+    },
+    "RebidResponseToFourthSuitForcing": {
+      "contextual": false,
+      "formatted": "Rebid Response To Fourth Suit Forcing",
+      "level_one": "Opener's rebid",
+      "level_two": "Replying to fourth-suit forcing"
+    },
+    "RebidSuitAfterSecondNegative": {
+      "contextual": false,
+      "formatted": "Rebid Suit After Second Negative",
+      "level_one": "Opener's rebid",
+      "level_two": "After 2♣"
+    },
+    "RedoubleAfterDoubledStayman": {
+      "contextual": false,
+      "formatted": "Redouble After Doubled Stayman",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "RedoubleDoubledTransfer": {
+      "contextual": false,
+      "formatted": "Redouble Doubled Transfer",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "RedoubleResponseAfterRHOTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Redouble Response After RHO Takeout Double",
+      "level_one": "Responding to an opening",
+      "level_two": "Over their double"
+    },
+    "RedoubleTransferToMinor": {
+      "contextual": false,
+      "formatted": "Redouble Transfer To Minor",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "ReopeningDouble": {
+      "contextual": false,
+      "formatted": "Reopening Double",
+      "level_one": "Competing",
+      "level_two": "Takeout doubles"
+    },
+    "ResponderNotrumpInvitation": {
+      "contextual": false,
+      "formatted": "Responder Notrump Invitation",
+      "level_one": "Responder's rebid",
+      "level_two": "Invitations"
+    },
+    "ResponderReverse": {
+      "contextual": false,
+      "formatted": "Responder Reverse",
+      "level_one": "Responder's rebid",
+      "level_two": "Invitations"
+    },
+    "ResponderSignoffInPartnersSuit": {
+      "contextual": false,
+      "formatted": "Responder Signoff In Partners Suit",
+      "level_one": "Responder's rebid",
+      "level_two": "Support and sign-off"
+    },
+    "ResponseAfterTransferToClubs": {
+      "contextual": false,
+      "formatted": "Response After Transfer To Clubs",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "ResponseAfterTransferToTwoClubs": {
+      "contextual": false,
+      "formatted": "Response After Transfer To Two Clubs",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "ResponseToBlackwood": {
+      "contextual": false,
+      "formatted": "Response To Blackwood",
+      "level_one": "Slam bidding",
+      "level_two": "Blackwood"
+    },
+    "ResponseToCappellettiMinorRequest": {
+      "contextual": false,
+      "formatted": "Response To Cappelletti Minor Request",
+      "level_one": "Competing",
+      "level_two": "Over their 1NT"
+    },
+    "ResponseToCappellettiTwoClubs": {
+      "contextual": false,
+      "formatted": "Response To Cappelletti Two Clubs",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Cappelletti"
+    },
+    "ResponseToCappellettiTwoDiamonds": {
+      "contextual": false,
+      "formatted": "Response To Cappelletti Two Diamonds",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Cappelletti"
+    },
+    "ResponseToGerber": {
+      "contextual": false,
+      "formatted": "Response To Gerber",
+      "level_one": "Slam bidding",
+      "level_two": "Gerber"
+    },
+    "ResponseToGrandSlamForce": {
+      "contextual": false,
+      "formatted": "Response To Grand Slam Force",
+      "level_one": "Slam bidding",
+      "level_two": "Grand slam force"
+    },
+    "ResponseToJordan": {
+      "contextual": false,
+      "formatted": "Response To Jordan",
+      "level_one": "Opener's rebid",
+      "level_two": "After Jacoby 2NT"
+    },
+    "ResponseToQuantitativeFourNotrump": {
+      "contextual": false,
+      "formatted": "Response To Quantitative Four Notrump",
+      "level_one": "Slam bidding",
+      "level_two": "Quantitative 4NT"
+    },
+    "ReverseByOpener": {
+      "contextual": false,
+      "formatted": "Reverse By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "New suits and reverses"
+    },
+    "SandwichMichaelsCuebid": {
+      "contextual": false,
+      "formatted": "Sandwich Michaels Cuebid",
+      "level_one": "Competing",
+      "level_two": "Michaels and Unusual 2NT"
+    },
+    "SandwichOvercall": {
+      "contextual": false,
+      "formatted": "Sandwich Overcall",
+      "level_one": "Competing",
+      "level_two": "Overcalls"
+    },
+    "SecondNegative": {
+      "contextual": false,
+      "formatted": "Second Negative",
+      "level_one": "Responder's rebid",
+      "level_two": "After 2♣"
+    },
+    "ShapeResponseToJacoby2N": {
+      "contextual": false,
+      "formatted": "Shape Response To Jacoby 2NT",
+      "level_one": "Opener's rebid",
+      "level_two": "After Jacoby 2NT"
+    },
+    "SingleRaiseResponseToBalancingOvercall": {
+      "contextual": false,
+      "formatted": "Single Raise Response To Balancing Overcall",
+      "level_one": "After partner competes",
+      "level_two": "Replying to an overcall"
+    },
+    "SlamResponseToJacoby2N": {
+      "contextual": false,
+      "formatted": "Slam Response To Jacoby 2NT",
+      "level_one": "Opener's rebid",
+      "level_two": "After Jacoby 2NT"
+    },
+    "SpadesRebidAfterHeartsTransfer": {
+      "contextual": false,
+      "formatted": "Spades Rebid After Hearts Transfer",
+      "level_one": "Responder's rebid",
+      "level_two": "After a transfer"
+    },
+    "StolenThreeClubStayman": {
+      "contextual": false,
+      "formatted": "Stolen Three Club Stayman",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "StolenThreeHeartStaymanResponse": {
+      "contextual": false,
+      "formatted": "Stolen Three Heart Stayman Response",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "StolenThreeSpadeStaymanResponse": {
+      "contextual": false,
+      "formatted": "Stolen Three Spade Stayman Response",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "StolenTwoClubStayman": {
+      "contextual": false,
+      "formatted": "Stolen Two Club Stayman",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "StolenTwoHeartStaymanResponse": {
+      "contextual": false,
+      "formatted": "Stolen Two Heart Stayman Response",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "StolenTwoSpadeStaymanResponse": {
+      "contextual": false,
+      "formatted": "Stolen Two Spade Stayman Response",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "StrongTwoClubs": {
+      "contextual": false,
+      "formatted": "Strong Two Clubs",
+      "level_one": "Opening",
+      "level_two": "Strong 2♣"
+    },
+    "SuitGameIsRemote": {
+      "contextual": true,
+      "formatted": "Suit Game Is Remote",
+      "level_one": null,
+      "level_two": "Passing"
+    },
+    "SuitRebidAfterCappellettiTwoClubs": {
+      "contextual": false,
+      "formatted": "Suit Rebid After Cappelletti Two Clubs",
+      "level_one": "Competing",
+      "level_two": "Over their 1NT"
+    },
+    "SuitResponseToMichaelsMinorRequest": {
+      "contextual": false,
+      "formatted": "Suit Response To Michaels Minor Request",
+      "level_one": "Competing",
+      "level_two": "Michaels and Unusual 2NT"
+    },
+    "SuitResponseToStrongTwoClubs": {
+      "contextual": false,
+      "formatted": "Suit Response To Strong Two Clubs",
+      "level_one": "Responding to an opening",
+      "level_two": "To 2♣"
+    },
+    "SuitSlamIsRemote": {
+      "contextual": true,
+      "formatted": "Suit Slam Is Remote",
+      "level_one": null,
+      "level_two": "Passing"
+    },
+    "SuperAcceptTransferToHearts": {
+      "contextual": false,
+      "formatted": "Super Accept Transfer To Hearts",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "SuperAcceptTransferToSpades": {
+      "contextual": false,
+      "formatted": "Super Accept Transfer To Spades",
+      "level_one": "Opener's rebid",
+      "level_two": "After 1NT"
+    },
+    "SupportPartnerMajorSuit": {
+      "contextual": false,
+      "formatted": "Support Partner Major Suit",
+      "level_one": "Opener's rebid",
+      "level_two": "Raising responder"
+    },
+    "TakeoutDoubleAfterPreempt": {
+      "contextual": false,
+      "formatted": "Takeout Double After Preempt",
+      "level_one": "Competing",
+      "level_two": "Takeout doubles"
+    },
+    "TakeoutDoubleAfterTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Takeout Double After Takeout Double",
+      "level_one": "Competing",
+      "level_two": "The doubler's rebid"
+    },
+    "ThreeLevelStayman": {
+      "contextual": false,
+      "formatted": "Three Level Stayman",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "ThreeLevelSuitRebidByResponder": {
+      "contextual": false,
+      "formatted": "Three Level Suit Rebid By Responder",
+      "level_one": "Responder's rebid",
+      "level_two": "Support and sign-off"
+    },
+    "ThreeNotrumpMajorResponse": {
+      "contextual": false,
+      "formatted": "Three Notrump Major Response",
+      "level_one": "Responding to an opening",
+      "level_two": "Notrump responses"
+    },
+    "ThreeNotrumpOpening": {
+      "contextual": false,
+      "formatted": "Three Notrump Opening",
+      "level_one": "Opening",
+      "level_two": "1NT, 2NT and 3NT"
+    },
+    "TwoLevelNegativeDouble": {
+      "contextual": false,
+      "formatted": "Two Level Negative Double",
+      "level_one": "Responding to an opening",
+      "level_two": "Negative doubles"
+    },
+    "TwoLevelStandardOvercall": {
+      "contextual": false,
+      "formatted": "Two Level Standard Overcall",
+      "level_one": "Competing",
+      "level_two": "Overcalls"
+    },
+    "TwoLevelStayman": {
+      "contextual": false,
+      "formatted": "Two Level Stayman",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "TwoLevelTakeoutDouble": {
+      "contextual": false,
+      "formatted": "Two Level Takeout Double",
+      "level_one": "Competing",
+      "level_two": "Takeout doubles"
+    },
+    "TwoNotrumpFeatureRequest": {
+      "contextual": false,
+      "formatted": "Two Notrump Feature Request",
+      "level_one": "Responding to an opening",
+      "level_two": "To a preempt"
+    },
+    "TwoNotrumpOvercallOfWeakTwo": {
+      "contextual": false,
+      "formatted": "Two Notrump Overcall Of Weak Two",
+      "level_one": "Competing",
+      "level_two": "Overcalls"
+    },
+    "TwoSpadesJumpFourthSuitForcing": {
+      "contextual": false,
+      "formatted": "Two Spades Jump Fourth Suit Forcing",
+      "level_one": "Responder's rebid",
+      "level_two": "Fourth-suit forcing"
+    },
+    "TwoSpadesRelay": {
+      "contextual": false,
+      "formatted": "Two Spades Relay",
+      "level_one": "Responding to an opening",
+      "level_two": "To 1NT"
+    },
+    "UnforcedRebidOriginalSuitByOpener": {
+      "contextual": false,
+      "formatted": "Unforced Rebid Original Suit By Opener",
+      "level_one": "Opener's rebid",
+      "level_two": "Rebidding your suit"
+    },
+    "Unusual2N": {
+      "contextual": false,
+      "formatted": "Unusual 2NT",
+      "level_one": "Competing",
+      "level_two": "Michaels and Unusual 2NT"
+    },
+    "Unusual2NSimplePreferenceResponse": {
+      "contextual": false,
+      "formatted": "Unusual 2 N Simple Preference Response",
+      "level_one": "After partner competes",
+      "level_two": "Replying to Michaels or Unusual 2NT"
+    },
+    "WaitingResponseToStrongTwoClubs": {
+      "contextual": false,
+      "formatted": "Waiting Response To Strong Two Clubs",
+      "level_one": "Responding to an opening",
+      "level_two": "To 2♣"
+    },
+    "WeakNewSuitAfterOneNotrumpResponse": {
+      "contextual": false,
+      "formatted": "Weak New Suit After One Notrump Response",
+      "level_one": "Responder's rebid",
+      "level_two": "Support and sign-off"
+    }
+  }
+}

@@ -13,6 +13,7 @@
     "python/tests/baselines",
     "src/dds/wasm",
     "tests/dd_golden_cases.json",
+    "tests/engine-fixtures/**",
     "python/tests/test_leads.py",
     "native/dds/emscripten-hardware.patch",
     "python/**/*.egg-info/**",

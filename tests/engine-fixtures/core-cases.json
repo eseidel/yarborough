@@ -1,0 +1,5505 @@
+{
+  "bid_suits": [
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "P",
+        "1D",
+        "P",
+        "1S",
+        "P",
+        "2S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "C",
+          "D",
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1D",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "D"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1N",
+        "P",
+        "2C",
+        "P",
+        "2H",
+        "P",
+        "2N",
+        "P",
+        "3N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 2,
+      "result": [
+        [],
+        [
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1S",
+        "1N",
+        "P",
+        "3N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 2,
+      "result": [
+        [
+          "S"
+        ],
+        []
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "P",
+        "1C",
+        "P",
+        "1D",
+        "P",
+        "2N",
+        "P",
+        "3N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "C",
+          "D"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "X",
+        "XX",
+        "P",
+        "2C",
+        "P",
+        "3C",
+        "P",
+        "4C",
+        "P",
+        "5C",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 2,
+      "result": [
+        [],
+        [
+          "C",
+          "C",
+          "C",
+          "C",
+          "C"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1D",
+        "P",
+        "1S",
+        "P",
+        "3S",
+        "P",
+        "4S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "D",
+          "S",
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "P",
+        "1D",
+        "P",
+        "1S",
+        "P",
+        "2N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "C",
+          "D",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "1N",
+        "P",
+        "3N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 1,
+      "result": [
+        [],
+        []
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "1D",
+        "P",
+        "1S",
+        "P",
+        "4S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "D",
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "1H",
+        "P",
+        "2H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "H",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1S",
+        "1N",
+        "2H",
+        "P",
+        "2S",
+        "P",
+        "3H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 3,
+      "result": [
+        [],
+        [
+          "S",
+          "H",
+          "S",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "1S",
+        "X",
+        "4S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 3,
+      "result": [
+        [
+          "C"
+        ],
+        [
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1H",
+        "P",
+        "3H",
+        "P",
+        "4H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "H",
+          "H",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "P",
+        "1H",
+        "P",
+        "2H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 2,
+      "result": [
+        [],
+        [
+          "C",
+          "H",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "P",
+        "1S",
+        "X",
+        "2H",
+        "P",
+        "2S",
+        "P",
+        "3S",
+        "P",
+        "4S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 2,
+      "result": [
+        [],
+        [
+          "C",
+          "S",
+          "H",
+          "S",
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1D",
+        "1S",
+        "2D",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "D",
+          "D"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "P",
+        "1H",
+        "P",
+        "1N",
+        "P",
+        "3H",
+        "P",
+        "4H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "H",
+          "H",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "1D",
+        "1H",
+        "2D",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 2,
+      "result": [
+        [
+          "C"
+        ],
+        [
+          "D",
+          "D"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "1D",
+        "P",
+        "1H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 2,
+      "result": [
+        [],
+        [
+          "D",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "P",
+        "1S",
+        "P",
+        "3S",
+        "P",
+        "4S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "S",
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1H",
+        "P",
+        "2D",
+        "P",
+        "3H",
+        "P",
+        "3N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 2,
+      "result": [
+        [],
+        [
+          "H",
+          "D",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1S",
+        "P",
+        "3N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1N",
+        "P",
+        "2D",
+        "P",
+        "2H",
+        "P",
+        "3D",
+        "P",
+        "4H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "H",
+          "D",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1H",
+        "P",
+        "1N",
+        "P",
+        "2H",
+        "P",
+        "P",
+        "2S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1S",
+        "X",
+        "2N",
+        "P",
+        "3S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1S",
+        "P",
+        "2H",
+        "P",
+        "4H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "S",
+          "H",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "2D",
+        "P",
+        "3D",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 3,
+      "result": [
+        [
+          "C"
+        ],
+        [
+          "D",
+          "D"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1D",
+        "P",
+        "1S",
+        "P",
+        "2C",
+        "P",
+        "3S",
+        "P",
+        "4S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "D",
+          "S",
+          "C",
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "P",
+        "1S",
+        "P",
+        "1N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 2,
+      "result": [
+        [],
+        [
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "1C",
+        "P",
+        "1S",
+        "P",
+        "1N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "C",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1H",
+        "P",
+        "1S",
+        "P",
+        "2D",
+        "P",
+        "4H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 2,
+      "result": [
+        [],
+        [
+          "H",
+          "S",
+          "D",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1C",
+        "1D",
+        "P",
+        "P",
+        "X",
+        "P",
+        "1H",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 1,
+      "leader_index": 1,
+      "result": [
+        [
+          "D"
+        ],
+        [
+          "C",
+          "H"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "P",
+        "1D",
+        "P",
+        "1N",
+        "P",
+        "2N",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 1,
+      "result": [
+        [],
+        [
+          "C",
+          "D"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1C",
+        "P",
+        "1H",
+        "2S",
+        "3C",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 3,
+      "result": [
+        [
+          "S"
+        ],
+        [
+          "C",
+          "H",
+          "C"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1H",
+        "2C",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 2,
+      "result": [
+        [
+          "H"
+        ],
+        [
+          "C"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "P",
+        "1C",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 0,
+      "leader_index": 3,
+      "result": [
+        [],
+        [
+          "C"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "1S",
+        "P",
+        "3S",
+        "P",
+        "4S",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 3,
+      "leader_index": 0,
+      "result": [
+        [],
+        [
+          "S",
+          "S",
+          "S"
+        ]
+      ]
+    },
+    {
+      "artificial": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "calls": [
+        "P",
+        "1S",
+        "2C",
+        "P",
+        "P",
+        "P"
+      ],
+      "dealer_index": 2,
+      "leader_index": 1,
+      "result": [
+        [
+          "S"
+        ],
+        [
+          "C"
+        ]
+      ]
+    }
+  ],
+  "boards": [
+    {
+      "deal_identifier": "527472cbf5299c63283e8b9353",
+      "dealer": "W",
+      "hands": {
+        "E": "T8632.AQ87.4.QJ8",
+        "N": "Q94.92.QJ863.K94",
+        "S": "K5.KJT3.T95.7532",
+        "W": "AJ7.654.AK72.AT6"
+      },
+      "identifier": "4-527472cbf5299c63283e8b9353",
+      "number": 4,
+      "old_identifier": "15669500153047201168982245449093",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: Q94.92.QJ863.K94 (hcp: 8 lp: 9 sp: 9) E: T8632.AQ87.4.QJ8 (hcp: 9 lp: 10 sp: 12) S: K5.KJT3.T95.7532 (hcp: 7 lp: 7 sp: 8) W: AJ7.654.AK72.AT6 (hcp: 16 lp: 16 sp: 16)",
+      "round_trip": true,
+      "vulnerability": "Both"
+    },
+    {
+      "deal_identifier": "4a52f913c81036a35ffca1d96b",
+      "dealer": "N",
+      "hands": {
+        "E": "K762.T2.982.JT86",
+        "N": "A83.KQJ9863.6.52",
+        "S": "Q954.7.543.KQ943",
+        "W": "JT.A54.AKQJT7.A7"
+      },
+      "identifier": "9-4a52f913c81036a35ffca1d96b",
+      "number": 9,
+      "old_identifier": "18492128584388980951423504057761",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: A83.KQJ9863.6.52 (hcp: 10 lp: 13 sp: 14) E: K762.T2.982.JT86 (hcp: 4 lp: 4 sp: 5) S: Q954.7.543.KQ943 (hcp: 7 lp: 8 sp: 10) W: JT.A54.AKQJT7.A7 (hcp: 19 lp: 21 sp: 20)",
+      "round_trip": true,
+      "vulnerability": "E-W"
+    },
+    {
+      "deal_identifier": "6d625ab338634b4974267bfc0c",
+      "dealer": "W",
+      "hands": {
+        "E": "JT652.K9.AT874.3",
+        "N": "8.AJ853.QJ5.AQJT",
+        "S": "AKQ973.T7.K62.52",
+        "W": "4.Q642.93.K98764"
+      },
+      "identifier": "8-6d625ab338634b4974267bfc0c",
+      "number": 8,
+      "old_identifier": "3822736590064395724943547271545",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: 8.AJ853.QJ5.AQJT (hcp: 15 lp: 16 sp: 18) E: JT652.K9.AT874.3 (hcp: 8 lp: 10 sp: 12) S: AKQ973.T7.K62.52 (hcp: 12 lp: 14 sp: 14) W: 4.Q642.93.K98764 (hcp: 5 lp: 7 sp: 9)",
+      "round_trip": true,
+      "vulnerability": "None"
+    },
+    {
+      "deal_identifier": "5eddf68832cb0f828af5d95250",
+      "dealer": "W",
+      "hands": {
+        "E": "Q9732..A.QJ87642",
+        "N": ".AKT7542.965.AK9",
+        "S": "AK5.J83.JT874.T5",
+        "W": "JT864.Q96.KQ32.3"
+      },
+      "identifier": "12-5eddf68832cb0f828af5d95250",
+      "number": 12,
+      "old_identifier": "437427289859604592880710023093",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: .AKT7542.965.AK9 (hcp: 14 lp: 17 sp: 19) E: Q9732..A.QJ87642 (hcp: 9 lp: 13 sp: 17) S: AK5.J83.JT874.T5 (hcp: 9 lp: 10 sp: 10) W: JT864.Q96.KQ32.3 (hcp: 8 lp: 9 sp: 11)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "49fcabd39855acaed42837c14c",
+      "dealer": "W",
+      "hands": {
+        "E": "52.QJT962.T9.JT5",
+        "N": "93.83.QJ3.AQ9832",
+        "S": "QJT4.AK75.AK754.",
+        "W": "AK876.4.862.K764"
+      },
+      "identifier": "12-49fcabd39855acaed42837c14c",
+      "number": 12,
+      "old_identifier": "3903181611869651440252532440929",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: 93.83.QJ3.AQ9832 (hcp: 9 lp: 11 sp: 11) E: 52.QJT962.T9.JT5 (hcp: 4 lp: 6 sp: 6) S: QJT4.AK75.AK754. (hcp: 17 lp: 18 sp: 22) W: AK876.4.862.K764 (hcp: 10 lp: 11 sp: 13)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "cc2bbd3229256735ba5b4e104f",
+      "dealer": "N",
+      "hands": {
+        "E": "K.KQJ8.KQ762.J83",
+        "N": "A653.953.4.QT974",
+        "S": "T87.AT764.AJT8.6",
+        "W": "QJ942.2.953.AK52"
+      },
+      "identifier": "1-cc2bbd3229256735ba5b4e104f",
+      "number": 1,
+      "old_identifier": "19095440170485411051584622618675",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: A653.953.4.QT974 (hcp: 6 lp: 7 sp: 9) E: K.KQJ8.KQ762.J83 (hcp: 15 lp: 16 sp: 15) S: T87.AT764.AJT8.6 (hcp: 9 lp: 10 sp: 12) W: QJ942.2.953.AK52 (hcp: 10 lp: 11 sp: 13)",
+      "round_trip": true,
+      "vulnerability": "None"
+    },
+    {
+      "deal_identifier": "3e74f25f5c5603e96d8024a8af",
+      "dealer": "S",
+      "hands": {
+        "E": "A86.JT9652.J87.5",
+        "N": "Q92.AK8.AK2.T632",
+        "S": "K5.Q.Q965.QJ9874",
+        "W": "JT743.743.T43.AK"
+      },
+      "identifier": "11-3e74f25f5c5603e96d8024a8af",
+      "number": 11,
+      "old_identifier": "19820068024882805010847339847100",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: Q92.AK8.AK2.T632 (hcp: 16 lp: 16 sp: 16) E: A86.JT9652.J87.5 (hcp: 6 lp: 8 sp: 9) S: K5.Q.Q965.QJ9874 (hcp: 10 lp: 12 sp: 12) W: JT743.743.T43.AK (hcp: 8 lp: 9 sp: 9)",
+      "round_trip": true,
+      "vulnerability": "None"
+    },
+    {
+      "deal_identifier": "2c2b9e7093f68529ebdc5211f4",
+      "dealer": "S",
+      "hands": {
+        "E": "AJ.J6.K732.KT843",
+        "N": "652.A743.4.A9752",
+        "S": "KT873.KQ5.T965.6",
+        "W": "Q94.T982.AQJ8.QJ"
+      },
+      "identifier": "3-2c2b9e7093f68529ebdc5211f4",
+      "number": 3,
+      "old_identifier": "2477279069816713337306632087608",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: 652.A743.4.A9752 (hcp: 8 lp: 9 sp: 11) E: AJ.J6.K732.KT843 (hcp: 12 lp: 13 sp: 12) S: KT873.KQ5.T965.6 (hcp: 8 lp: 9 sp: 11) W: Q94.T982.AQJ8.QJ (hcp: 12 lp: 12 sp: 10)",
+      "round_trip": true,
+      "vulnerability": "E-W"
+    },
+    {
+      "deal_identifier": "e9399f2535b41ba7075c3388ca",
+      "dealer": "W",
+      "hands": {
+        "E": "J95.AJ8743.KQT6.",
+        "N": "A6.KQ5.98.QT8532",
+        "S": "T843.92.542.AK97",
+        "W": "KQ72.T6.AJ73.J64"
+      },
+      "identifier": "8-e9399f2535b41ba7075c3388ca",
+      "number": 8,
+      "old_identifier": "12924959855164333269035666271339",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: A6.KQ5.98.QT8532 (hcp: 11 lp: 13 sp: 13) E: J95.AJ8743.KQT6. (hcp: 11 lp: 13 sp: 16) S: T843.92.542.AK97 (hcp: 7 lp: 7 sp: 8) W: KQ72.T6.AJ73.J64 (hcp: 11 lp: 11 sp: 12)",
+      "round_trip": true,
+      "vulnerability": "None"
+    },
+    {
+      "deal_identifier": "d04a67b90f1073682a4bfde479",
+      "dealer": "N",
+      "hands": {
+        "E": "QT63.KT4.Q4.AJ96",
+        "N": "754.QJ965.K872.T",
+        "S": "AJ98.3.AJT965.K8",
+        "W": "K2.A872.3.Q75432"
+      },
+      "identifier": "9-d04a67b90f1073682a4bfde479",
+      "number": 9,
+      "old_identifier": "8644380408533603891666904260871",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: 754.QJ965.K872.T (hcp: 6 lp: 7 sp: 9) E: QT63.KT4.Q4.AJ96 (hcp: 12 lp: 12 sp: 11) S: AJ98.3.AJT965.K8 (hcp: 13 lp: 15 sp: 17) W: K2.A872.3.Q75432 (hcp: 9 lp: 11 sp: 13)",
+      "round_trip": true,
+      "vulnerability": "E-W"
+    },
+    {
+      "deal_identifier": "9b07ea68356e8174f41c43f26b",
+      "dealer": "N",
+      "hands": {
+        "E": "A83.987.KT643.J3",
+        "N": "76.A54.QJ72.9542",
+        "S": "KQJ42.KQT32..KQT",
+        "W": "T95.J6.A985.A876"
+      },
+      "identifier": "13-9b07ea68356e8174f41c43f26b",
+      "number": 13,
+      "old_identifier": "18504651791048243254441699692774",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: 76.A54.QJ72.9542 (hcp: 7 lp: 7 sp: 8) E: A83.987.KT643.J3 (hcp: 8 lp: 9 sp: 8) S: KQJ42.KQT32..KQT (hcp: 16 lp: 18 sp: 21) W: T95.J6.A985.A876 (hcp: 9 lp: 9 sp: 9)",
+      "round_trip": true,
+      "vulnerability": "Both"
+    },
+    {
+      "deal_identifier": "d80873b2a25178590de7bbf724",
+      "dealer": "S",
+      "hands": {
+        "E": "T3.KQT9.AJ754.K9",
+        "N": "Q9765.J73.983.AJ",
+        "S": "A84.8654.K62.Q53",
+        "W": "KJ2.A2.QT.T87642"
+      },
+      "identifier": "15-d80873b2a25178590de7bbf724",
+      "number": 15,
+      "old_identifier": "1970779818149157978855218946087",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: Q9765.J73.983.AJ (hcp: 8 lp: 9 sp: 8) E: T3.KQT9.AJ754.K9 (hcp: 13 lp: 14 sp: 15) S: A84.8654.K62.Q53 (hcp: 9 lp: 9 sp: 9) W: KJ2.A2.QT.T87642 (hcp: 10 lp: 12 sp: 10)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "e6506d00bea6f7c121184ffb66",
+      "dealer": "N",
+      "hands": {
+        "E": "KT764.J.KJ72.KJ3",
+        "N": "A98.432.QT865.42",
+        "S": "J53.QT985.A9.AQ9",
+        "W": "Q2.AK76.43.T8765"
+      },
+      "identifier": "5-e6506d00bea6f7c121184ffb66",
+      "number": 5,
+      "old_identifier": "12196167304490522003344056714651",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: A98.432.QT865.42 (hcp: 6 lp: 7 sp: 7) E: KT764.J.KJ72.KJ3 (hcp: 12 lp: 13 sp: 14) S: J53.QT985.A9.AQ9 (hcp: 13 lp: 14 sp: 14) W: Q2.AK76.43.T8765 (hcp: 9 lp: 10 sp: 9)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "366bd4ad582c8ce248cc66477f",
+      "dealer": "E",
+      "hands": {
+        "E": "QJ64.654.8.J9753",
+        "N": "K2.AQ98.KJ963.82",
+        "S": "A875.KT72.T75.64",
+        "W": "T93.J3.AQ42.AKQT"
+      },
+      "identifier": "10-366bd4ad582c8ce248cc66477f",
+      "number": 10,
+      "old_identifier": "20109592690271402890631870671260",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: K2.AQ98.KJ963.82 (hcp: 13 lp: 14 sp: 15) E: QJ64.654.8.J9753 (hcp: 4 lp: 5 sp: 7) S: A875.KT72.T75.64 (hcp: 7 lp: 7 sp: 8) W: T93.J3.AQ42.AKQT (hcp: 16 lp: 16 sp: 16)",
+      "round_trip": true,
+      "vulnerability": "Both"
+    },
+    {
+      "deal_identifier": "bc2c3665d18f93f5ae09b51238",
+      "dealer": "S",
+      "hands": {
+        "E": "AQ.A8643.76.8652",
+        "N": "T965.T7.KQ2.AJ97",
+        "S": "K72.K92.AJ98.KT3",
+        "W": "J843.QJ5.T543.Q4"
+      },
+      "identifier": "3-bc2c3665d18f93f5ae09b51238",
+      "number": 3,
+      "old_identifier": "3527005267736270401393196283966",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: T965.T7.KQ2.AJ97 (hcp: 10 lp: 10 sp: 11) E: AQ.A8643.76.8652 (hcp: 10 lp: 11 sp: 10) S: K72.K92.AJ98.KT3 (hcp: 14 lp: 14 sp: 14) W: J843.QJ5.T543.Q4 (hcp: 6 lp: 6 sp: 5)",
+      "round_trip": true,
+      "vulnerability": "E-W"
+    },
+    {
+      "deal_identifier": "f19be16ba78b1503e0b750632d",
+      "dealer": "S",
+      "hands": {
+        "E": "AK75.A7.A32.A743",
+        "N": "Q4.KT.JT654.J965",
+        "S": "J86.J96532.Q9.Q8",
+        "W": "T932.Q84.K87.KT2"
+      },
+      "identifier": "3-f19be16ba78b1503e0b750632d",
+      "number": 3,
+      "old_identifier": "9569593081897041276440041743951",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: Q4.KT.JT654.J965 (hcp: 7 lp: 8 sp: 7) E: AK75.A7.A32.A743 (hcp: 19 lp: 19 sp: 20) S: J86.J96532.Q9.Q8 (hcp: 6 lp: 8 sp: 4) W: T932.Q84.K87.KT2 (hcp: 8 lp: 8 sp: 8)",
+      "round_trip": true,
+      "vulnerability": "E-W"
+    },
+    {
+      "deal_identifier": "57bf0a61904abff04a8d917c2d",
+      "dealer": "S",
+      "hands": {
+        "E": "A432.964.8.A7642",
+        "N": "JT.T873.K976.JT5",
+        "S": "KQ6.KQJ52.QJT.Q3",
+        "W": "9875.A.A5432.K98"
+      },
+      "identifier": "15-57bf0a61904abff04a8d917c2d",
+      "number": 15,
+      "old_identifier": "9526343253439052963069537877717",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: JT.T873.K976.JT5 (hcp: 5 lp: 5 sp: 5) E: A432.964.8.A7642 (hcp: 8 lp: 9 sp: 11) S: KQ6.KQJ52.QJT.Q3 (hcp: 16 lp: 17 sp: 15) W: 9875.A.A5432.K98 (hcp: 11 lp: 12 sp: 14)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "1fa81ba4021139d64ffe9e25cd",
+      "dealer": "N",
+      "hands": {
+        "E": "J3.QT3.8653.AT94",
+        "N": "T92.KJ97654.9.Q7",
+        "S": "AQ876.82.72.8632",
+        "W": "K54.A.AKQJT4.KJ5"
+      },
+      "identifier": "5-1fa81ba4021139d64ffe9e25cd",
+      "number": 5,
+      "old_identifier": "9138694300932421772995578833652",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: T92.KJ97654.9.Q7 (hcp: 6 lp: 9 sp: 8) E: J3.QT3.8653.AT94 (hcp: 7 lp: 7 sp: 7) S: AQ876.82.72.8632 (hcp: 6 lp: 7 sp: 8) W: K54.A.AKQJT4.KJ5 (hcp: 21 lp: 23 sp: 24)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "0b61171aa84fcb73979f93c981",
+      "dealer": "W",
+      "hands": {
+        "E": "QJ96.92.KT94.AT4",
+        "N": "AT832.AT8.6.KQ85",
+        "S": "74.76543.Q82.J93",
+        "W": "K5.KQJ.AJ753.762"
+      },
+      "identifier": "12-0b61171aa84fcb73979f93c981",
+      "number": 12,
+      "old_identifier": "5259938274890637124023757326816",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: AT832.AT8.6.KQ85 (hcp: 13 lp: 14 sp: 16) E: QJ96.92.KT94.AT4 (hcp: 10 lp: 10 sp: 11) S: 74.76543.Q82.J93 (hcp: 3 lp: 4 sp: 4) W: K5.KQJ.AJ753.762 (hcp: 14 lp: 15 sp: 15)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "1b3ca83111e5a9610ea75ec7f3",
+      "dealer": "S",
+      "hands": {
+        "E": "3.QJ864.A743.943",
+        "N": "AK962.753.986.K8",
+        "S": "QJT4.AKT.KQJ52.6",
+        "W": "875.92.T.AQJT752"
+      },
+      "identifier": "15-1b3ca83111e5a9610ea75ec7f3",
+      "number": 15,
+      "old_identifier": "16465750825826182302861879819492",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: AK962.753.986.K8 (hcp: 10 lp: 11 sp: 11) E: 3.QJ864.A743.943 (hcp: 7 lp: 8 sp: 10) S: QJT4.AKT.KQJ52.6 (hcp: 16 lp: 17 sp: 19) W: 875.92.T.AQJT752 (hcp: 7 lp: 10 sp: 11)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "3e3320a195eb5e0c9ef1365da1",
+      "dealer": "E",
+      "hands": {
+        "E": ".AK8764.9.AT8752",
+        "N": "KQT862.3.A754.K3",
+        "S": "AJ5.JT52.J83.QJ6",
+        "W": "9743.Q9.KQT62.94"
+      },
+      "identifier": "14-3e3320a195eb5e0c9ef1365da1",
+      "number": 14,
+      "old_identifier": "5899282741060287775471863123132",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: KQT862.3.A754.K3 (hcp: 12 lp: 14 sp: 16) E: .AK8764.9.AT8752 (hcp: 11 lp: 15 sp: 19) S: AJ5.JT52.J83.QJ6 (hcp: 10 lp: 10 sp: 10) W: 9743.Q9.KQT62.94 (hcp: 7 lp: 8 sp: 7)",
+      "round_trip": true,
+      "vulnerability": "None"
+    },
+    {
+      "deal_identifier": "a9b5c99042f33c3b6885a5f31d",
+      "dealer": "S",
+      "hands": {
+        "E": "K985.52.A8.AQ652",
+        "N": "J.KJ7643.KJ43.J9",
+        "S": "AQ6432.8.QT96.43",
+        "W": "T7.AQT9.752.KT87"
+      },
+      "identifier": "15-a9b5c99042f33c3b6885a5f31d",
+      "number": 15,
+      "old_identifier": "9254639440018837717880469151338",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: J.KJ7643.KJ43.J9 (hcp: 10 lp: 12 sp: 12) E: K985.52.A8.AQ652 (hcp: 13 lp: 14 sp: 15) S: AQ6432.8.QT96.43 (hcp: 8 lp: 10 sp: 12) W: T7.AQT9.752.KT87 (hcp: 9 lp: 9 sp: 10)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "f1eef36bd64d1ca4648204b972",
+      "dealer": "E",
+      "hands": {
+        "E": "A5.AQ976.T86.JT5",
+        "N": "Q4.KT.AKJ73.K643",
+        "S": "97.832.Q954.A972",
+        "W": "KJT8632.J54.2.Q8"
+      },
+      "identifier": "14-f1eef36bd64d1ca4648204b972",
+      "number": 14,
+      "old_identifier": "11205234222775433026253886569295",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: Q4.KT.AKJ73.K643 (hcp: 16 lp: 17 sp: 16) E: A5.AQ976.T86.JT5 (hcp: 11 lp: 12 sp: 12) S: 97.832.Q954.A972 (hcp: 6 lp: 6 sp: 7) W: KJT8632.J54.2.Q8 (hcp: 7 lp: 10 sp: 9)",
+      "round_trip": true,
+      "vulnerability": "None"
+    },
+    {
+      "deal_identifier": "39eb49a7c9b85027ee018c747d",
+      "dealer": "E",
+      "hands": {
+        "E": "KT5.AK83.6.AJ972",
+        "N": "J2.Q6.AKQ432.T64",
+        "S": "AQ874.J972.J95.3",
+        "W": "963.T54.T87.KQ85"
+      },
+      "identifier": "2-39eb49a7c9b85027ee018c747d",
+      "number": 2,
+      "old_identifier": "9912556131555403881779204057964",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: J2.Q6.AKQ432.T64 (hcp: 12 lp: 14 sp: 11) E: KT5.AK83.6.AJ972 (hcp: 15 lp: 16 sp: 18) S: AQ874.J972.J95.3 (hcp: 8 lp: 9 sp: 11) W: 963.T54.T87.KQ85 (hcp: 5 lp: 5 sp: 5)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "bce7a14bc7184e3a59116cc36b",
+      "dealer": "S",
+      "hands": {
+        "E": "AK8.KT7.KJ98.J32",
+        "N": "Q5.AQ962.AQ4.986",
+        "S": "JT72.J3.T763.KQ4",
+        "W": "9643.854.52.AT75"
+      },
+      "identifier": "11-bce7a14bc7184e3a59116cc36b",
+      "number": 11,
+      "old_identifier": "18520580674506956735878408100670",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: Q5.AQ962.AQ4.986 (hcp: 14 lp: 15 sp: 13) E: AK8.KT7.KJ98.J32 (hcp: 15 lp: 15 sp: 15) S: JT72.J3.T763.KQ4 (hcp: 7 lp: 7 sp: 7) W: 9643.854.52.AT75 (hcp: 4 lp: 4 sp: 5)",
+      "round_trip": true,
+      "vulnerability": "None"
+    },
+    {
+      "deal_identifier": "13489e78af7ddd16a0c7610ab3",
+      "dealer": "E",
+      "hands": {
+        "E": "AJ63.AQ9.A653.63",
+        "N": "9742.4.KJT4.K875",
+        "S": "KT8.653.987.JT94",
+        "W": "Q5.KJT872.Q2.AQ2"
+      },
+      "identifier": "6-13489e78af7ddd16a0c7610ab3",
+      "number": 6,
+      "old_identifier": "16370608327709194107381312004548",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: 9742.4.KJT4.K875 (hcp: 7 lp: 7 sp: 10) E: AJ63.AQ9.A653.63 (hcp: 15 lp: 15 sp: 16) S: KT8.653.987.JT94 (hcp: 4 lp: 4 sp: 4) W: Q5.KJT872.Q2.AQ2 (hcp: 14 lp: 16 sp: 12)",
+      "round_trip": true,
+      "vulnerability": "E-W"
+    },
+    {
+      "deal_identifier": "f6c5efc6ac9772e721136a0061",
+      "dealer": "W",
+      "hands": {
+        "E": "984.KJT3.KJ6.AJ3",
+        "N": "7.82.AQT82.KT987",
+        "S": "J5.9654.953.Q654",
+        "W": "AKQT632.AQ7.74.2"
+      },
+      "identifier": "12-f6c5efc6ac9772e721136a0061",
+      "number": 12,
+      "old_identifier": "5783861098932628269029884908447",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: 7.82.AQT82.KT987 (hcp: 9 lp: 11 sp: 13) E: 984.KJT3.KJ6.AJ3 (hcp: 13 lp: 13 sp: 13) S: J5.9654.953.Q654 (hcp: 3 lp: 3 sp: 3) W: AKQT632.AQ7.74.2 (hcp: 15 lp: 18 sp: 19)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "b13f96ba292539c34e0f56d720",
+      "dealer": "E",
+      "hands": {
+        "E": "QJ5.QJ8.83.98543",
+        "N": "64.K95.KQ965.AKJ",
+        "S": "AKT2.T7643.J2.Q6",
+        "W": "9873.A2.AT74.T72"
+      },
+      "identifier": "14-b13f96ba292539c34e0f56d720",
+      "number": 14,
+      "old_identifier": "700545843819937787374162345038",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: 64.K95.KQ965.AKJ (hcp: 16 lp: 17 sp: 17) E: QJ5.QJ8.83.98543 (hcp: 6 lp: 7 sp: 7) S: AKT2.T7643.J2.Q6 (hcp: 10 lp: 11 sp: 9) W: 9873.A2.AT74.T72 (hcp: 8 lp: 8 sp: 9)",
+      "round_trip": true,
+      "vulnerability": "None"
+    },
+    {
+      "deal_identifier": "1c56f504e9a1202635b7fb3be2",
+      "dealer": "N",
+      "hands": {
+        "E": "KQ8763.Q83.AJT6.",
+        "N": "A52.KJ42.8432.K7",
+        "S": "9.AT976.Q75.AQ95",
+        "W": "JT4.5.K9.JT86432"
+      },
+      "identifier": "5-1c56f504e9a1202635b7fb3be2",
+      "number": 5,
+      "old_identifier": "11086043035144882997854203778356",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: A52.KJ42.8432.K7 (hcp: 11 lp: 11 sp: 12) E: KQ8763.Q83.AJT6. (hcp: 12 lp: 14 sp: 17) S: 9.AT976.Q75.AQ95 (hcp: 12 lp: 13 sp: 15) W: JT4.5.K9.JT86432 (hcp: 5 lp: 8 sp: 9)",
+      "round_trip": true,
+      "vulnerability": "N-S"
+    },
+    {
+      "deal_identifier": "6ecb7724f9eb85f8e385010256",
+      "dealer": "S",
+      "hands": {
+        "E": "QT2.83.A32.KQJ62",
+        "N": "A7.A4.KT7.987543",
+        "S": "853.KJT72.Q96.AT",
+        "W": "KJ964.Q965.J854."
+      },
+      "identifier": "3-6ecb7724f9eb85f8e385010256",
+      "number": 3,
+      "old_identifier": "11844688058117124495506212250553",
+      "old_identifier_round_trip": true,
+      "pretty_one_line": "N: A7.A4.KT7.987543 (hcp: 11 lp: 13 sp: 13) E: QT2.83.A32.KQJ62 (hcp: 12 lp: 13 sp: 13) S: 853.KJT72.Q96.AT (hcp: 10 lp: 11 sp: 11) W: KJ964.Q965.J854. (hcp: 7 lp: 8 sp: 12)",
+      "round_trip": true,
+      "vulnerability": "E-W"
+    }
+  ],
+  "boards_with_history": [
+    {
+      "calls": "1N P 2C",
+      "dealer": "W",
+      "identifier": "4-527472cbf5299c63283e8b9353:1N,P,2C",
+      "vulnerability": "Both"
+    }
+  ],
+  "call_histories": [
+    {
+      "ascending_partial_histories": [],
+      "calls": "",
+      "calls_by": {
+        "E": [],
+        "N": [],
+        "S": [],
+        "W": []
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": null,
+      "dealer": "N",
+      "declarer": null,
+      "dummy": null,
+      "identifier": "N:NO:",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": null,
+      "last_contract": null,
+      "last_non_pass": null,
+      "last_to_call": null,
+      "last_to_not_pass": null,
+      "legal_calls": [
+        "P",
+        "1C",
+        "1D",
+        "1H",
+        "1S",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": null,
+      "position_to_call": "N",
+      "possible_calls_over": [
+        "P",
+        "1C",
+        "1D",
+        "1H",
+        "1S",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "P"
+      ],
+      "calls": "P",
+      "calls_by": {
+        "E": [],
+        "N": [
+          "P"
+        ],
+        "S": [],
+        "W": []
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": null,
+      "dealer": "N",
+      "declarer": null,
+      "dummy": null,
+      "identifier": "N:NO:P",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": null,
+      "last_non_pass": null,
+      "last_to_call": "N",
+      "last_to_not_pass": null,
+      "legal_calls": [
+        "P",
+        "1C",
+        "1D",
+        "1H",
+        "1S",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": null,
+      "position_to_call": "E",
+      "possible_calls_over": [
+        "P",
+        "1C",
+        "1D",
+        "1H",
+        "1S",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "P P P"
+      ],
+      "calls": "P P P",
+      "calls_by": {
+        "E": [
+          "P"
+        ],
+        "N": [],
+        "S": [
+          "P"
+        ],
+        "W": [
+          "P"
+        ]
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": null,
+      "dealer": "E",
+      "declarer": null,
+      "dummy": null,
+      "identifier": "E:NS:P,P,P",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": null,
+      "last_non_pass": null,
+      "last_to_call": "W",
+      "last_to_not_pass": null,
+      "legal_calls": [
+        "P",
+        "1C",
+        "1D",
+        "1H",
+        "1S",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": null,
+      "position_to_call": "N",
+      "possible_calls_over": [
+        "P",
+        "1C",
+        "1D",
+        "1H",
+        "1S",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "N-S"
+    },
+    {
+      "ascending_partial_histories": [
+        "P P P P"
+      ],
+      "calls": "P P P P",
+      "calls_by": {
+        "E": [
+          "P"
+        ],
+        "N": [
+          "P"
+        ],
+        "S": [
+          "P"
+        ],
+        "W": [
+          "P"
+        ]
+      },
+      "competitive": false,
+      "contract": null,
+      "dealer": "S",
+      "declarer": null,
+      "dummy": null,
+      "identifier": "S:EW:P,P,P,P",
+      "identifier_round_trip": true,
+      "is_complete": true,
+      "is_passout": true,
+      "last_call": "P",
+      "last_contract": null,
+      "last_non_pass": null,
+      "last_to_call": "E",
+      "last_to_not_pass": null,
+      "opener": null,
+      "position_to_call": "S",
+      "possible_calls_over": [],
+      "vulnerability": "E-W"
+    },
+    {
+      "ascending_partial_histories": [
+        "1S"
+      ],
+      "calls": "1S",
+      "calls_by": {
+        "E": [],
+        "N": [
+          "1S"
+        ],
+        "S": [],
+        "W": []
+      },
+      "can_double": true,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": "1S",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:BO:1S",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "1S",
+      "last_contract": "1S",
+      "last_non_pass": "1S",
+      "last_to_call": "N",
+      "last_to_not_pass": "N",
+      "legal_calls": [
+        "P",
+        "X",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "N",
+      "position_to_call": "E",
+      "possible_calls_over": [
+        "P",
+        "X",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "Both"
+    },
+    {
+      "ascending_partial_histories": [
+        "1S P"
+      ],
+      "calls": "1S P",
+      "calls_by": {
+        "E": [
+          "P"
+        ],
+        "N": [
+          "1S"
+        ],
+        "S": [],
+        "W": []
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": "1S",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:NO:1S,P",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": "1S",
+      "last_non_pass": "1S",
+      "last_to_call": "E",
+      "last_to_not_pass": "N",
+      "legal_calls": [
+        "P",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "N",
+      "position_to_call": "S",
+      "possible_calls_over": [
+        "P",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "1S X"
+      ],
+      "calls": "1S X",
+      "calls_by": {
+        "E": [],
+        "N": [
+          "X"
+        ],
+        "S": [],
+        "W": [
+          "1S"
+        ]
+      },
+      "can_double": false,
+      "can_redouble": true,
+      "competitive": false,
+      "contract": "1SX",
+      "dealer": "W",
+      "declarer": "W",
+      "dummy": "E",
+      "identifier": "W:NS:1S,X",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "X",
+      "last_contract": "1S",
+      "last_non_pass": "X",
+      "last_to_call": "N",
+      "last_to_not_pass": "N",
+      "legal_calls": [
+        "P",
+        "XX",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "W",
+      "position_to_call": "E",
+      "possible_calls_over": [
+        "P",
+        "XX",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "N-S"
+    },
+    {
+      "ascending_partial_histories": [
+        "1S X XX"
+      ],
+      "calls": "1S X XX",
+      "calls_by": {
+        "E": [
+          "X"
+        ],
+        "N": [
+          "1S"
+        ],
+        "S": [
+          "XX"
+        ],
+        "W": []
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": "1SXX",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:NO:1S,X,XX",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "XX",
+      "last_contract": "1S",
+      "last_non_pass": "XX",
+      "last_to_call": "S",
+      "last_to_not_pass": "S",
+      "legal_calls": [
+        "P",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "N",
+      "position_to_call": "W",
+      "possible_calls_over": [
+        "P",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "1S X XX P"
+      ],
+      "calls": "1S X XX P",
+      "calls_by": {
+        "E": [
+          "X"
+        ],
+        "N": [
+          "1S"
+        ],
+        "S": [
+          "XX"
+        ],
+        "W": [
+          "P"
+        ]
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": "1SXX",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:NO:1S,X,XX,P",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": "1S",
+      "last_non_pass": "XX",
+      "last_to_call": "W",
+      "last_to_not_pass": "S",
+      "legal_calls": [
+        "P",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "N",
+      "position_to_call": "N",
+      "possible_calls_over": [
+        "P",
+        "1N",
+        "2C",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "1N P",
+        "1N P 2C P 2D P",
+        "1N P 2C P 2D P 3N P P P"
+      ],
+      "calls": "1N P 2C P 2D P 3N P P P",
+      "calls_by": {
+        "E": [
+          "1N",
+          "2D",
+          "P"
+        ],
+        "N": [
+          "P",
+          "P"
+        ],
+        "S": [
+          "P",
+          "P",
+          "P"
+        ],
+        "W": [
+          "2C",
+          "3N"
+        ]
+      },
+      "competitive": false,
+      "contract": "3N",
+      "dealer": "E",
+      "declarer": "E",
+      "dummy": "W",
+      "identifier": "E:EW:1N,P,2C,P,2D,P,3N,P,P,P",
+      "identifier_round_trip": true,
+      "is_complete": true,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": "3N",
+      "last_non_pass": "3N",
+      "last_to_call": "S",
+      "last_to_not_pass": "W",
+      "opener": "E",
+      "position_to_call": "W",
+      "possible_calls_over": [],
+      "vulnerability": "E-W"
+    },
+    {
+      "ascending_partial_histories": [
+        "1H 1S",
+        "1H 1S 2H 2S P P"
+      ],
+      "calls": "1H 1S 2H 2S P P",
+      "calls_by": {
+        "E": [
+          "2S"
+        ],
+        "N": [
+          "2H"
+        ],
+        "S": [
+          "1H",
+          "P"
+        ],
+        "W": [
+          "1S",
+          "P"
+        ]
+      },
+      "can_double": true,
+      "can_redouble": false,
+      "competitive": true,
+      "contract": "2S",
+      "dealer": "S",
+      "declarer": "W",
+      "dummy": "E",
+      "identifier": "S:BO:1H,1S,2H,2S,P,P",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": "2S",
+      "last_non_pass": "2S",
+      "last_to_call": "W",
+      "last_to_not_pass": "E",
+      "legal_calls": [
+        "P",
+        "X",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "S",
+      "position_to_call": "N",
+      "possible_calls_over": [
+        "P",
+        "X",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "Both"
+    },
+    {
+      "ascending_partial_histories": [
+        "1C P 1H P",
+        "1C P 1H P 1S P 2D P"
+      ],
+      "calls": "1C P 1H P 1S P 2D P",
+      "calls_by": {
+        "E": [
+          "1H",
+          "2D"
+        ],
+        "N": [
+          "P",
+          "P"
+        ],
+        "S": [
+          "P",
+          "P"
+        ],
+        "W": [
+          "1C",
+          "1S"
+        ]
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": "2D",
+      "dealer": "W",
+      "declarer": "E",
+      "dummy": "W",
+      "identifier": "W:NO:1C,P,1H,P,1S,P,2D,P",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": "2D",
+      "last_non_pass": "2D",
+      "last_to_call": "S",
+      "last_to_not_pass": "E",
+      "legal_calls": [
+        "P",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "W",
+      "position_to_call": "W",
+      "possible_calls_over": [
+        "P",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "1S P",
+        "1S P 2S P P P"
+      ],
+      "calls": "1S P 2S P P P",
+      "calls_by": {
+        "E": [
+          "P",
+          "P"
+        ],
+        "N": [
+          "1S",
+          "P"
+        ],
+        "S": [
+          "2S"
+        ],
+        "W": [
+          "P"
+        ]
+      },
+      "competitive": false,
+      "contract": "2S",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:NS:1S,P,2S,P,P,P",
+      "identifier_round_trip": true,
+      "is_complete": true,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": "2S",
+      "last_non_pass": "2S",
+      "last_to_call": "E",
+      "last_to_not_pass": "S",
+      "opener": "N",
+      "position_to_call": "S",
+      "possible_calls_over": [],
+      "vulnerability": "N-S"
+    },
+    {
+      "ascending_partial_histories": [
+        "7N"
+      ],
+      "calls": "7N",
+      "calls_by": {
+        "E": [],
+        "N": [
+          "7N"
+        ],
+        "S": [],
+        "W": []
+      },
+      "can_double": true,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": "7N",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:NO:7N",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "7N",
+      "last_contract": "7N",
+      "last_non_pass": "7N",
+      "last_to_call": "N",
+      "last_to_not_pass": "N",
+      "legal_calls": [
+        "P",
+        "X"
+      ],
+      "opener": "N",
+      "position_to_call": "E",
+      "possible_calls_over": [
+        "P",
+        "X"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "7N X"
+      ],
+      "calls": "7N X",
+      "calls_by": {
+        "E": [
+          "X"
+        ],
+        "N": [
+          "7N"
+        ],
+        "S": [],
+        "W": []
+      },
+      "can_double": false,
+      "can_redouble": true,
+      "competitive": false,
+      "contract": "7NX",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:NO:7N,X",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "X",
+      "last_contract": "7N",
+      "last_non_pass": "X",
+      "last_to_call": "E",
+      "last_to_not_pass": "E",
+      "legal_calls": [
+        "P",
+        "XX"
+      ],
+      "opener": "N",
+      "position_to_call": "S",
+      "possible_calls_over": [
+        "P",
+        "XX"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "7N X XX"
+      ],
+      "calls": "7N X XX",
+      "calls_by": {
+        "E": [
+          "X"
+        ],
+        "N": [
+          "7N"
+        ],
+        "S": [
+          "XX"
+        ],
+        "W": []
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": "7NXX",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:NO:7N,X,XX",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "XX",
+      "last_contract": "7N",
+      "last_non_pass": "XX",
+      "last_to_call": "S",
+      "last_to_not_pass": "S",
+      "legal_calls": [
+        "P"
+      ],
+      "opener": "N",
+      "position_to_call": "W",
+      "possible_calls_over": [
+        "P"
+      ],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "1S P P",
+        "1S P P X P P P"
+      ],
+      "calls": "1S P P X P P P",
+      "calls_by": {
+        "E": [
+          "P",
+          "P"
+        ],
+        "N": [
+          "1S",
+          "P"
+        ],
+        "S": [
+          "P",
+          "P"
+        ],
+        "W": [
+          "X"
+        ]
+      },
+      "competitive": false,
+      "contract": "1SX",
+      "dealer": "N",
+      "declarer": "N",
+      "dummy": "S",
+      "identifier": "N:NO:1S,P,P,X,P,P,P",
+      "identifier_round_trip": true,
+      "is_complete": true,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": "1S",
+      "last_non_pass": "X",
+      "last_to_call": "S",
+      "last_to_not_pass": "W",
+      "opener": "N",
+      "position_to_call": "W",
+      "possible_calls_over": [],
+      "vulnerability": "None"
+    },
+    {
+      "ascending_partial_histories": [
+        "2C P",
+        "2C P 2D P 2N P",
+        "2C P 2D P 2N P 3C P 3H P"
+      ],
+      "calls": "2C P 2D P 2N P 3C P 3H P",
+      "calls_by": {
+        "E": [
+          "2C",
+          "2N",
+          "3H"
+        ],
+        "N": [
+          "P",
+          "P"
+        ],
+        "S": [
+          "P",
+          "P",
+          "P"
+        ],
+        "W": [
+          "2D",
+          "3C"
+        ]
+      },
+      "can_double": false,
+      "can_redouble": false,
+      "competitive": false,
+      "contract": "3H",
+      "dealer": "E",
+      "declarer": "E",
+      "dummy": "W",
+      "identifier": "E:BO:2C,P,2D,P,2N,P,3C,P,3H,P",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "P",
+      "last_contract": "3H",
+      "last_non_pass": "3H",
+      "last_to_call": "S",
+      "last_to_not_pass": "E",
+      "legal_calls": [
+        "P",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "E",
+      "position_to_call": "W",
+      "possible_calls_over": [
+        "P",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "Both"
+    },
+    {
+      "ascending_partial_histories": [
+        "P",
+        "P 1N P 2C X"
+      ],
+      "calls": "P 1N P 2C X",
+      "calls_by": {
+        "E": [
+          "2C"
+        ],
+        "N": [
+          "P"
+        ],
+        "S": [
+          "P",
+          "X"
+        ],
+        "W": [
+          "1N"
+        ]
+      },
+      "can_double": false,
+      "can_redouble": true,
+      "competitive": false,
+      "contract": "2CX",
+      "dealer": "S",
+      "declarer": "E",
+      "dummy": "W",
+      "identifier": "S:EW:P,1N,P,2C,X",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "X",
+      "last_contract": "2C",
+      "last_non_pass": "X",
+      "last_to_call": "S",
+      "last_to_not_pass": "S",
+      "legal_calls": [
+        "P",
+        "XX",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "W",
+      "position_to_call": "W",
+      "possible_calls_over": [
+        "P",
+        "XX",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "E-W"
+    },
+    {
+      "ascending_partial_histories": [
+        "1D 1H 1S 2C"
+      ],
+      "calls": "1D 1H 1S 2C",
+      "calls_by": {
+        "E": [
+          "1S"
+        ],
+        "N": [
+          "1H"
+        ],
+        "S": [
+          "2C"
+        ],
+        "W": [
+          "1D"
+        ]
+      },
+      "can_double": true,
+      "can_redouble": false,
+      "competitive": true,
+      "contract": "2C",
+      "dealer": "W",
+      "declarer": "S",
+      "dummy": "N",
+      "identifier": "W:NS:1D,1H,1S,2C",
+      "identifier_round_trip": true,
+      "is_complete": false,
+      "is_passout": false,
+      "last_call": "2C",
+      "last_contract": "2C",
+      "last_non_pass": "2C",
+      "last_to_call": "S",
+      "last_to_not_pass": "S",
+      "legal_calls": [
+        "P",
+        "X",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "opener": "W",
+      "position_to_call": "W",
+      "possible_calls_over": [
+        "P",
+        "X",
+        "2D",
+        "2H",
+        "2S",
+        "2N",
+        "3C",
+        "3D",
+        "3H",
+        "3S",
+        "3N",
+        "4C",
+        "4D",
+        "4H",
+        "4S",
+        "4N",
+        "5C",
+        "5D",
+        "5H",
+        "5S",
+        "5N",
+        "6C",
+        "6D",
+        "6H",
+        "6S",
+        "6N",
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "7N"
+      ],
+      "vulnerability": "N-S"
+    }
+  ],
+  "calls": {
+    "notrump_names": [
+      "1N",
+      "2N",
+      "3N",
+      "4N",
+      "5N",
+      "6N",
+      "7N"
+    ],
+    "sorted": [
+      "P",
+      "X",
+      "XX",
+      "1C",
+      "1D",
+      "1H",
+      "1S",
+      "1N",
+      "2C",
+      "2D",
+      "2H",
+      "2S",
+      "2N",
+      "3C",
+      "3D",
+      "3H",
+      "3S",
+      "3N",
+      "4C",
+      "4D",
+      "4H",
+      "4S",
+      "4N",
+      "5C",
+      "5D",
+      "5H",
+      "5S",
+      "5N",
+      "6C",
+      "6D",
+      "6H",
+      "6S",
+      "6N",
+      "7C",
+      "7D",
+      "7H",
+      "7S",
+      "7N"
+    ],
+    "suited_names": [
+      "1C",
+      "1D",
+      "1H",
+      "1S",
+      "2C",
+      "2D",
+      "2H",
+      "2S",
+      "3C",
+      "3D",
+      "3H",
+      "3S",
+      "4C",
+      "4D",
+      "4H",
+      "4S",
+      "5C",
+      "5D",
+      "5H",
+      "5S",
+      "6C",
+      "6D",
+      "6H",
+      "6S",
+      "7C",
+      "7D",
+      "7H",
+      "7S"
+    ],
+    "suited_names_between_2C_5S": [
+      "2C",
+      "2D",
+      "2H",
+      "2S",
+      "3C",
+      "3D",
+      "3H",
+      "3S",
+      "4C",
+      "4D",
+      "4H",
+      "4S",
+      "5C",
+      "5D",
+      "5H",
+      "5S"
+    ]
+  },
+  "hands": [
+    {
+      "ace_count": 1,
+      "cdhs": "KQ4.AQ8.K9873.K2",
+      "control_count": 5,
+      "generic_support_points": 18,
+      "hcp": 17,
+      "hcp_in_suit": {
+        "C": 5,
+        "D": 6,
+        "H": 3,
+        "S": 3
+      },
+      "high_card_in_suit": {
+        "C": "K",
+        "D": "A",
+        "H": "K",
+        "S": "K"
+      },
+      "is_balanced": true,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": true,
+        "S": false
+      },
+      "king_count": 3,
+      "length_points": 18,
+      "longest_suits": [
+        "H"
+      ],
+      "pretty_one_line": "KQ4.AQ8.K9873.K2 (hcp: 17 lp: 18 sp: 18)",
+      "shdc": "K2.K9873.AQ8.KQ4",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "D": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "H": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        },
+        "S": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        }
+      },
+      "suit_lengths": [
+        3,
+        3,
+        5,
+        2
+      ],
+      "support_points": {
+        "C": 18,
+        "D": 18,
+        "H": 18,
+        "S": 18
+      }
+    },
+    {
+      "ace_count": 3,
+      "cdhs": "AKT92.T98.AQ9.AT",
+      "control_count": 7,
+      "generic_support_points": 18,
+      "hcp": 17,
+      "hcp_in_suit": {
+        "C": 7,
+        "D": 0,
+        "H": 6,
+        "S": 4
+      },
+      "high_card_in_suit": {
+        "C": "A",
+        "D": "T",
+        "H": "A",
+        "S": "A"
+      },
+      "is_balanced": true,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": true,
+        "D": false,
+        "H": false,
+        "S": false
+      },
+      "king_count": 1,
+      "length_points": 18,
+      "longest_suits": [
+        "C"
+      ],
+      "pretty_one_line": "AKT92.T98.AQ9.AT (hcp: 17 lp: 18 sp: 18)",
+      "shdc": "AT.AQ9.T98.AKT92",
+      "stoppers": {
+        "C": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "D": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "H": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "S": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        }
+      },
+      "suit_lengths": [
+        5,
+        3,
+        3,
+        2
+      ],
+      "support_points": {
+        "C": 18,
+        "D": 18,
+        "H": 18,
+        "S": 18
+      }
+    },
+    {
+      "ace_count": 1,
+      "cdhs": "832.A.QJ652.JT73",
+      "control_count": 2,
+      "generic_support_points": 11,
+      "hcp": 8,
+      "hcp_in_suit": {
+        "C": 0,
+        "D": 4,
+        "H": 3,
+        "S": 1
+      },
+      "high_card_in_suit": {
+        "C": "8",
+        "D": "A",
+        "H": "Q",
+        "S": "J"
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": true,
+        "S": false
+      },
+      "king_count": 0,
+      "length_points": 9,
+      "longest_suits": [
+        "H"
+      ],
+      "pretty_one_line": "832.A.QJ652.JT73 (hcp: 8 lp: 9 sp: 11)",
+      "shdc": "JT73.QJ652.A.832",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "D": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "H": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        },
+        "S": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": false
+        }
+      },
+      "suit_lengths": [
+        3,
+        1,
+        5,
+        4
+      ],
+      "support_points": {
+        "C": 10,
+        "D": 9,
+        "H": 11,
+        "S": 11
+      }
+    },
+    {
+      "ace_count": 1,
+      "cdhs": "AKQJT98765432...",
+      "control_count": 3,
+      "generic_support_points": 25,
+      "hcp": 10,
+      "hcp_in_suit": {
+        "C": 10,
+        "D": 0,
+        "H": 0,
+        "S": 0
+      },
+      "high_card_in_suit": {
+        "C": "A",
+        "D": null,
+        "H": null,
+        "S": null
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": true,
+        "D": false,
+        "H": false,
+        "S": false
+      },
+      "king_count": 1,
+      "length_points": 19,
+      "longest_suits": [
+        "C"
+      ],
+      "pretty_one_line": "AKQJT98765432... (hcp: 10 lp: 19 sp: 25)",
+      "shdc": "...AKQJT98765432",
+      "stoppers": {
+        "C": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "D": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "H": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "S": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        }
+      },
+      "suit_lengths": [
+        13,
+        0,
+        0,
+        0
+      ],
+      "support_points": {
+        "C": 25,
+        "D": 19,
+        "H": 19,
+        "S": 19
+      }
+    },
+    {
+      "ace_count": 1,
+      "cdhs": "...AKQJT98765432",
+      "control_count": 3,
+      "generic_support_points": 25,
+      "hcp": 10,
+      "hcp_in_suit": {
+        "C": 0,
+        "D": 0,
+        "H": 0,
+        "S": 10
+      },
+      "high_card_in_suit": {
+        "C": null,
+        "D": null,
+        "H": null,
+        "S": "A"
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": false,
+        "S": true
+      },
+      "king_count": 1,
+      "length_points": 19,
+      "longest_suits": [
+        "S"
+      ],
+      "pretty_one_line": "...AKQJT98765432 (hcp: 10 lp: 19 sp: 25)",
+      "shdc": "AKQJT98765432...",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "D": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "H": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "S": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        }
+      },
+      "suit_lengths": [
+        0,
+        0,
+        0,
+        13
+      ],
+      "support_points": {
+        "C": 19,
+        "D": 19,
+        "H": 19,
+        "S": 25
+      }
+    },
+    {
+      "ace_count": 1,
+      "cdhs": "T9.AJ72.K65.Q732",
+      "control_count": 3,
+      "generic_support_points": 11,
+      "hcp": 10,
+      "hcp_in_suit": {
+        "C": 0,
+        "D": 5,
+        "H": 3,
+        "S": 2
+      },
+      "high_card_in_suit": {
+        "C": "T",
+        "D": "A",
+        "H": "K",
+        "S": "Q"
+      },
+      "is_balanced": true,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": true,
+        "H": false,
+        "S": true
+      },
+      "king_count": 1,
+      "length_points": 10,
+      "longest_suits": [
+        "D",
+        "S"
+      ],
+      "pretty_one_line": "T9.AJ72.K65.Q732 (hcp: 10 lp: 10 sp: 11)",
+      "shdc": "Q732.K65.AJ72.T9",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "D": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "H": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        },
+        "S": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        }
+      },
+      "suit_lengths": [
+        2,
+        4,
+        3,
+        4
+      ],
+      "support_points": {
+        "C": 10,
+        "D": 11,
+        "H": 11,
+        "S": 11
+      }
+    },
+    {
+      "ace_count": 0,
+      "cdhs": "K74.9.J98.KJT742",
+      "control_count": 2,
+      "generic_support_points": 11,
+      "hcp": 8,
+      "hcp_in_suit": {
+        "C": 3,
+        "D": 0,
+        "H": 1,
+        "S": 4
+      },
+      "high_card_in_suit": {
+        "C": "K",
+        "D": "9",
+        "H": "J",
+        "S": "K"
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": false,
+        "S": true
+      },
+      "king_count": 2,
+      "length_points": 10,
+      "longest_suits": [
+        "S"
+      ],
+      "pretty_one_line": "K74.9.J98.KJT742 (hcp: 8 lp: 10 sp: 11)",
+      "shdc": "KJT742.J98.9.K74",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        },
+        "D": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "H": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "S": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        }
+      },
+      "suit_lengths": [
+        3,
+        1,
+        3,
+        6
+      ],
+      "support_points": {
+        "C": 10,
+        "D": 10,
+        "H": 10,
+        "S": 11
+      }
+    },
+    {
+      "ace_count": 3,
+      "cdhs": "AKQ2.KQ4.AQJ.A32",
+      "control_count": 8,
+      "generic_support_points": 25,
+      "hcp": 25,
+      "hcp_in_suit": {
+        "C": 9,
+        "D": 5,
+        "H": 7,
+        "S": 4
+      },
+      "high_card_in_suit": {
+        "C": "A",
+        "D": "K",
+        "H": "A",
+        "S": "A"
+      },
+      "is_balanced": true,
+      "is_flat": true,
+      "is_longest_suit": {
+        "C": true,
+        "D": false,
+        "H": false,
+        "S": false
+      },
+      "king_count": 2,
+      "length_points": 25,
+      "longest_suits": [
+        "C"
+      ],
+      "pretty_one_line": "AKQ2.KQ4.AQJ.A32 (hcp: 25 lp: 25 sp: 25)",
+      "shdc": "A32.AQJ.KQ4.AKQ2",
+      "stoppers": {
+        "C": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "D": {
+          "first": false,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "H": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "S": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        }
+      },
+      "suit_lengths": [
+        4,
+        3,
+        3,
+        3
+      ],
+      "support_points": {
+        "C": 25,
+        "D": 25,
+        "H": 25,
+        "S": 25
+      }
+    },
+    {
+      "ace_count": 1,
+      "cdhs": "A.KQJ.T9876.5432",
+      "control_count": 3,
+      "generic_support_points": 13,
+      "hcp": 10,
+      "hcp_in_suit": {
+        "C": 4,
+        "D": 6,
+        "H": 0,
+        "S": 0
+      },
+      "high_card_in_suit": {
+        "C": "A",
+        "D": "K",
+        "H": "T",
+        "S": "5"
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": true,
+        "S": false
+      },
+      "king_count": 1,
+      "length_points": 11,
+      "longest_suits": [
+        "H"
+      ],
+      "pretty_one_line": "A.KQJ.T9876.5432 (hcp: 10 lp: 11 sp: 13)",
+      "shdc": "5432.T9876.KQJ.A",
+      "stoppers": {
+        "C": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "D": {
+          "first": false,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "H": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": false
+        },
+        "S": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        }
+      },
+      "suit_lengths": [
+        1,
+        3,
+        5,
+        4
+      ],
+      "support_points": {
+        "C": 11,
+        "D": 12,
+        "H": 13,
+        "S": 13
+      }
+    },
+    {
+      "ace_count": 1,
+      "cdhs": "QJ.KQ.T.A9876543",
+      "control_count": 3,
+      "generic_support_points": 12,
+      "hcp": 12,
+      "hcp_in_suit": {
+        "C": 3,
+        "D": 5,
+        "H": 0,
+        "S": 4
+      },
+      "high_card_in_suit": {
+        "C": "Q",
+        "D": "K",
+        "H": "T",
+        "S": "A"
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": false,
+        "S": true
+      },
+      "king_count": 1,
+      "length_points": 16,
+      "longest_suits": [
+        "S"
+      ],
+      "pretty_one_line": "QJ.KQ.T.A9876543 (hcp: 12 lp: 16 sp: 12)",
+      "shdc": "A9876543.T.KQ.QJ",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "D": {
+          "first": false,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "H": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "S": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        }
+      },
+      "suit_lengths": [
+        2,
+        2,
+        1,
+        8
+      ],
+      "support_points": {
+        "C": 16,
+        "D": 16,
+        "H": 16,
+        "S": 12
+      }
+    },
+    {
+      "ace_count": 3,
+      "cdhs": ".AKQJT9.AKQJT9.A",
+      "control_count": 8,
+      "generic_support_points": 32,
+      "hcp": 24,
+      "hcp_in_suit": {
+        "C": 0,
+        "D": 10,
+        "H": 10,
+        "S": 4
+      },
+      "high_card_in_suit": {
+        "C": null,
+        "D": "A",
+        "H": "A",
+        "S": "A"
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": true,
+        "H": true,
+        "S": false
+      },
+      "king_count": 2,
+      "length_points": 28,
+      "longest_suits": [
+        "D",
+        "H"
+      ],
+      "pretty_one_line": ".AKQJT9.AKQJT9.A (hcp: 24 lp: 28 sp: 32)",
+      "shdc": "A.AKQJT9.AKQJT9.",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "D": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "H": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "S": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        }
+      },
+      "suit_lengths": [
+        0,
+        6,
+        6,
+        1
+      ],
+      "support_points": {
+        "C": 28,
+        "D": 32,
+        "H": 32,
+        "S": 28
+      }
+    },
+    {
+      "ace_count": 0,
+      "cdhs": "J432.J432.J43.32",
+      "control_count": 0,
+      "generic_support_points": 4,
+      "hcp": 3,
+      "hcp_in_suit": {
+        "C": 1,
+        "D": 1,
+        "H": 1,
+        "S": 0
+      },
+      "high_card_in_suit": {
+        "C": "J",
+        "D": "J",
+        "H": "J",
+        "S": "3"
+      },
+      "is_balanced": true,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": true,
+        "D": true,
+        "H": false,
+        "S": false
+      },
+      "king_count": 0,
+      "length_points": 3,
+      "longest_suits": [
+        "C",
+        "D"
+      ],
+      "pretty_one_line": "J432.J432.J43.32 (hcp: 3 lp: 3 sp: 4)",
+      "shdc": "32.J43.J432.J432",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": false
+        },
+        "D": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": false
+        },
+        "H": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "S": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        }
+      },
+      "suit_lengths": [
+        4,
+        4,
+        3,
+        2
+      ],
+      "support_points": {
+        "C": 4,
+        "D": 4,
+        "H": 4,
+        "S": 3
+      }
+    },
+    {
+      "ace_count": 1,
+      "cdhs": "AK.QJ.T98.765432",
+      "control_count": 3,
+      "generic_support_points": 9,
+      "hcp": 10,
+      "hcp_in_suit": {
+        "C": 7,
+        "D": 3,
+        "H": 0,
+        "S": 0
+      },
+      "high_card_in_suit": {
+        "C": "A",
+        "D": "Q",
+        "H": "T",
+        "S": "7"
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": false,
+        "S": true
+      },
+      "king_count": 1,
+      "length_points": 12,
+      "longest_suits": [
+        "S"
+      ],
+      "pretty_one_line": "AK.QJ.T98.765432 (hcp: 10 lp: 12 sp: 9)",
+      "shdc": "765432.T98.QJ.AK",
+      "stoppers": {
+        "C": {
+          "first": true,
+          "fourth": true,
+          "second": true,
+          "third": true
+        },
+        "D": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "H": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "S": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": false
+        }
+      },
+      "suit_lengths": [
+        2,
+        2,
+        3,
+        6
+      ],
+      "support_points": {
+        "C": 12,
+        "D": 12,
+        "H": 9,
+        "S": 9
+      }
+    },
+    {
+      "ace_count": 0,
+      "cdhs": "KJ75.6.987.J6432",
+      "control_count": 1,
+      "generic_support_points": 8,
+      "hcp": 5,
+      "hcp_in_suit": {
+        "C": 4,
+        "D": 0,
+        "H": 0,
+        "S": 1
+      },
+      "high_card_in_suit": {
+        "C": "K",
+        "D": "6",
+        "H": "9",
+        "S": "J"
+      },
+      "is_balanced": false,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": false,
+        "S": true
+      },
+      "king_count": 1,
+      "length_points": 6,
+      "longest_suits": [
+        "S"
+      ],
+      "pretty_one_line": "KJ75.6.987.J6432 (hcp: 5 lp: 6 sp: 8)",
+      "shdc": "J6432.987.6.KJ75",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        },
+        "D": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "H": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "S": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": false
+        }
+      },
+      "suit_lengths": [
+        4,
+        1,
+        3,
+        5
+      ],
+      "support_points": {
+        "C": 8,
+        "D": 6,
+        "H": 7,
+        "S": 8
+      }
+    },
+    {
+      "ace_count": 0,
+      "cdhs": "Q53.J9.K84.T8632",
+      "control_count": 1,
+      "generic_support_points": 6,
+      "hcp": 6,
+      "hcp_in_suit": {
+        "C": 2,
+        "D": 1,
+        "H": 3,
+        "S": 0
+      },
+      "high_card_in_suit": {
+        "C": "Q",
+        "D": "J",
+        "H": "K",
+        "S": "T"
+      },
+      "is_balanced": true,
+      "is_flat": false,
+      "is_longest_suit": {
+        "C": false,
+        "D": false,
+        "H": false,
+        "S": true
+      },
+      "king_count": 1,
+      "length_points": 7,
+      "longest_suits": [
+        "S"
+      ],
+      "pretty_one_line": "Q53.J9.K84.T8632 (hcp: 6 lp: 7 sp: 6)",
+      "shdc": "T8632.K84.J9.Q53",
+      "stoppers": {
+        "C": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        },
+        "D": {
+          "first": false,
+          "fourth": false,
+          "second": false,
+          "third": false
+        },
+        "H": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": true
+        },
+        "S": {
+          "first": false,
+          "fourth": true,
+          "second": false,
+          "third": false
+        }
+      },
+      "suit_lengths": [
+        3,
+        2,
+        3,
+        5
+      ],
+      "support_points": {
+        "C": 6,
+        "D": 7,
+        "H": 6,
+        "S": 6
+      }
+    }
+  ],
+  "leads": [
+    {
+      "blind_card": "HT",
+      "blind_reason": "top of sequence",
+      "card": "HT",
+      "hand": "Q7.T9873.AT5.QJ7",
+      "partner_suits": [],
+      "reason": "top of sequence",
+      "strain": "S",
+      "their_suits": [
+        "C",
+        "D",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "HK",
+      "blind_reason": "top of sequence",
+      "card": "HK",
+      "hand": "AT5.KQT7.962.JT5",
+      "partner_suits": [],
+      "reason": "top of sequence",
+      "strain": "D",
+      "their_suits": [
+        "D"
+      ]
+    },
+    {
+      "blind_card": "C6",
+      "blind_reason": "longest/strongest suit, fourth best",
+      "card": "C6",
+      "hand": ".K642.A543.AQ863",
+      "partner_suits": [],
+      "reason": "unbid longest/strongest suit, fourth best",
+      "strain": "N",
+      "their_suits": [
+        "H"
+      ]
+    },
+    {
+      "blind_card": "H4",
+      "blind_reason": "longest/strongest suit, fourth best",
+      "card": "S5",
+      "hand": "53.T974.9542.J82",
+      "partner_suits": [
+        "S"
+      ],
+      "reason": "partner's suit, top of doubleton",
+      "strain": "N",
+      "their_suits": []
+    },
+    {
+      "blind_card": "S4",
+      "blind_reason": "longest/strongest suit, fourth best",
+      "card": "S4",
+      "hand": "9754.T7.A64.8743",
+      "partner_suits": [],
+      "reason": "unbid longest/strongest suit, fourth best",
+      "strain": "N",
+      "their_suits": [
+        "C",
+        "D"
+      ]
+    },
+    {
+      "blind_card": "HK",
+      "blind_reason": "top of sequence",
+      "card": "HK",
+      "hand": "A.KQ84.KT9763.K7",
+      "partner_suits": [],
+      "reason": "top of sequence",
+      "strain": "S",
+      "their_suits": [
+        "S"
+      ]
+    },
+    {
+      "blind_card": "HJ",
+      "blind_reason": "top of sequence",
+      "card": "HJ",
+      "hand": "A74.JT32.A875.K5",
+      "partner_suits": [],
+      "reason": "top of sequence",
+      "strain": "C",
+      "their_suits": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "C"
+      ]
+    },
+    {
+      "blind_card": "HQ",
+      "blind_reason": "top of sequence",
+      "card": "HQ",
+      "hand": "8.QJ9876.74.AJT3",
+      "partner_suits": [],
+      "reason": "top of sequence",
+      "strain": "S",
+      "their_suits": [
+        "D",
+        "S",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "DA",
+      "blind_reason": "longest/strongest suit, top of sequence",
+      "card": "DA",
+      "hand": "J43.Q987.AKQ54.4",
+      "partner_suits": [],
+      "reason": "unbid longest/strongest suit, top of sequence",
+      "strain": "N",
+      "their_suits": [
+        "C",
+        "D",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "ST",
+      "blind_reason": "longest/strongest suit, top of interior/broken sequence",
+      "card": "ST",
+      "hand": "AT96.A94.764.T94",
+      "partner_suits": [],
+      "reason": "longest/strongest suit, top of interior/broken sequence",
+      "strain": "N",
+      "their_suits": []
+    },
+    {
+      "blind_card": "H2",
+      "blind_reason": "side suit without an ace, low from three to an honor",
+      "card": "H2",
+      "hand": "J943.J92.T.A6432",
+      "partner_suits": [],
+      "reason": "side suit without an ace, low from three to an honor",
+      "strain": "S",
+      "their_suits": [
+        "D",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "CK",
+      "blind_reason": "K from AK",
+      "card": "CK",
+      "hand": "93.872.AJ54.AK97",
+      "partner_suits": [],
+      "reason": "K from AK",
+      "strain": "H",
+      "their_suits": [
+        "H",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "D3",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "D3",
+      "hand": "976.983.7643.KT5",
+      "partner_suits": [],
+      "reason": "side suit without an ace, fourth best",
+      "strain": "H",
+      "their_suits": [
+        "S",
+        "H",
+        "S",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "DQ",
+      "blind_reason": "top of sequence",
+      "card": "C6",
+      "hand": "8.J9862.QJ3.K976",
+      "partner_suits": [
+        "C"
+      ],
+      "reason": "partner's suit, fourth best",
+      "strain": "S",
+      "their_suits": [
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "DQ",
+      "blind_reason": "top of sequence",
+      "card": "DQ",
+      "hand": "KJ642.AT4.QJ7.98",
+      "partner_suits": [],
+      "reason": "top of sequence",
+      "strain": "H",
+      "their_suits": [
+        "H",
+        "H",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "CK",
+      "blind_reason": "K from AK",
+      "card": "CK",
+      "hand": "J87.82.QT5.AKT93",
+      "partner_suits": [],
+      "reason": "K from AK",
+      "strain": "H",
+      "their_suits": [
+        "C",
+        "H",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "C7",
+      "blind_reason": "side suit without an ace, singleton",
+      "card": "DA",
+      "hand": "KT73.AJT5.AT87.7",
+      "partner_suits": [],
+      "reason": "ace of the longest side suit (nothing safer)",
+      "strain": "S",
+      "their_suits": [
+        "C",
+        "S",
+        "H",
+        "S",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "SK",
+      "blind_reason": "K from AK",
+      "card": "SK",
+      "hand": "AKQT854.AJ642.8.",
+      "partner_suits": [],
+      "reason": "K from AK",
+      "strain": "D",
+      "their_suits": [
+        "D",
+        "D"
+      ]
+    },
+    {
+      "blind_card": "D6",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "D6",
+      "hand": "KT8.KT65.QT7643.",
+      "partner_suits": [],
+      "reason": "side suit without an ace, fourth best",
+      "strain": "H",
+      "their_suits": [
+        "H",
+        "H",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "ST",
+      "blind_reason": "top of sequence",
+      "card": "C4",
+      "hand": "T94.Q8632.A8.T74",
+      "partner_suits": [
+        "C"
+      ],
+      "reason": "partner's suit, low from three to an honor",
+      "strain": "D",
+      "their_suits": [
+        "D",
+        "D"
+      ]
+    },
+    {
+      "blind_card": "CJ",
+      "blind_reason": "top of sequence",
+      "card": "CJ",
+      "hand": "KJ6.Q84.K875.JT5",
+      "partner_suits": [],
+      "reason": "top of sequence",
+      "strain": "H",
+      "their_suits": [
+        "D",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "D5",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "D5",
+      "hand": "7.T863.J8652.AQ2",
+      "partner_suits": [],
+      "reason": "side suit without an ace, fourth best",
+      "strain": "S",
+      "their_suits": [
+        "S",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "C3",
+      "blind_reason": "longest/strongest suit, fourth best",
+      "card": "C3",
+      "hand": "874.KJ3.532.J983",
+      "partner_suits": [],
+      "reason": "unbid longest/strongest suit, fourth best",
+      "strain": "N",
+      "their_suits": [
+        "H",
+        "D",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "C3",
+      "blind_reason": "longest/strongest suit, fourth best",
+      "card": "C3",
+      "hand": "9.K74.Q863.T7532",
+      "partner_suits": [],
+      "reason": "unbid longest/strongest suit, fourth best",
+      "strain": "N",
+      "their_suits": [
+        "S"
+      ]
+    },
+    {
+      "blind_card": "CQ",
+      "blind_reason": "top of sequence",
+      "card": "CQ",
+      "hand": "532.T93.KQ2.QJ65",
+      "partner_suits": [],
+      "reason": "top of sequence",
+      "strain": "H",
+      "their_suits": [
+        "H",
+        "D",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "DT",
+      "blind_reason": "top of doubleton",
+      "card": "DT",
+      "hand": "AJ65.AQ9764.T9.9",
+      "partner_suits": [],
+      "reason": "top of doubleton",
+      "strain": "S",
+      "their_suits": [
+        "S"
+      ]
+    },
+    {
+      "blind_card": "HK",
+      "blind_reason": "K from AK",
+      "card": "HK",
+      "hand": "5.AKT7.AT972.875",
+      "partner_suits": [],
+      "reason": "K from AK",
+      "strain": "S",
+      "their_suits": [
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "C8",
+      "blind_reason": "side suit without an ace, top of nothing",
+      "card": "C8",
+      "hand": ".T64.AT98764.874",
+      "partner_suits": [],
+      "reason": "side suit without an ace, top of nothing",
+      "strain": "H",
+      "their_suits": [
+        "S",
+        "H",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "H6",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "C2",
+      "hand": "AT5.KJT6.65.T632",
+      "partner_suits": [
+        "C"
+      ],
+      "reason": "partner's suit, fourth best",
+      "strain": "D",
+      "their_suits": [
+        "D",
+        "D"
+      ]
+    },
+    {
+      "blind_card": "D2",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "H2",
+      "hand": "K73.9842.T542.85",
+      "partner_suits": [],
+      "reason": "side suit without an ace, fourth best",
+      "strain": "S",
+      "their_suits": [
+        "D",
+        "S",
+        "C",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "C4",
+      "blind_reason": "longest/strongest suit, fourth best",
+      "card": "C4",
+      "hand": "Q4.J972.J84.KJ84",
+      "partner_suits": [],
+      "reason": "unbid longest/strongest suit, fourth best",
+      "strain": "N",
+      "their_suits": [
+        "S"
+      ]
+    },
+    {
+      "blind_card": "D7",
+      "blind_reason": "longest/strongest suit, fourth best",
+      "card": "D7",
+      "hand": "J82.J53.KT872.Q6",
+      "partner_suits": [],
+      "reason": "unbid longest/strongest suit, fourth best",
+      "strain": "N",
+      "their_suits": [
+        "C",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "D4",
+      "blind_reason": "side suit without an ace, low from three to an honor",
+      "card": "CA",
+      "hand": "765.K.K54.A97542",
+      "partner_suits": [],
+      "reason": "ace of the longest side suit (nothing safer)",
+      "strain": "H",
+      "their_suits": [
+        "H",
+        "S",
+        "D",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "S3",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "D5",
+      "hand": "J873.AQ87.54.KT5",
+      "partner_suits": [
+        "D"
+      ],
+      "reason": "partner's suit, top of doubleton",
+      "strain": "H",
+      "their_suits": [
+        "C",
+        "H"
+      ]
+    },
+    {
+      "blind_card": "H3",
+      "blind_reason": "longest/strongest suit, fourth best",
+      "card": "H3",
+      "hand": "A8.KT73.A43.K932",
+      "partner_suits": [],
+      "reason": "unbid longest/strongest suit, fourth best",
+      "strain": "N",
+      "their_suits": [
+        "C",
+        "D"
+      ]
+    },
+    {
+      "blind_card": "S7",
+      "blind_reason": "singleton, hoping to ruff",
+      "card": "S7",
+      "hand": "7.AK75.QT972.J32",
+      "partner_suits": [
+        "S"
+      ],
+      "reason": "partner's suit, singleton",
+      "strain": "C",
+      "their_suits": [
+        "C",
+        "H",
+        "C"
+      ]
+    },
+    {
+      "blind_card": "D4",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "H5",
+      "hand": "94.5.98642.JT876",
+      "partner_suits": [
+        "H"
+      ],
+      "reason": "partner's suit, singleton",
+      "strain": "C",
+      "their_suits": [
+        "C"
+      ]
+    },
+    {
+      "blind_card": "DK",
+      "blind_reason": "K from AK",
+      "card": "DK",
+      "hand": "964.Q43.AKT4.642",
+      "partner_suits": [],
+      "reason": "K from AK",
+      "strain": "C",
+      "their_suits": [
+        "C"
+      ]
+    },
+    {
+      "blind_card": "H5",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "H5",
+      "hand": "Q8.9765.K97.9875",
+      "partner_suits": [],
+      "reason": "side suit without an ace, fourth best",
+      "strain": "S",
+      "their_suits": [
+        "S",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "blind_card": "H8",
+      "blind_reason": "side suit without an ace, fourth best",
+      "card": "S9",
+      "hand": "94.KJT853.953.64",
+      "partner_suits": [
+        "S"
+      ],
+      "reason": "partner's suit, top of doubleton",
+      "strain": "C",
+      "their_suits": [
+        "C"
+      ]
+    }
+  ],
+  "positions": [
+    {
+      "char": "N",
+      "index": 0,
+      "lho": "E",
+      "name": "North",
+      "partner": "S",
+      "rho": "W"
+    },
+    {
+      "char": "E",
+      "index": 1,
+      "lho": "S",
+      "name": "East",
+      "partner": "W",
+      "rho": "N"
+    },
+    {
+      "char": "S",
+      "index": 2,
+      "lho": "W",
+      "name": "South",
+      "partner": "N",
+      "rho": "E"
+    },
+    {
+      "char": "W",
+      "index": 3,
+      "lho": "N",
+      "name": "West",
+      "partner": "E",
+      "rho": "S"
+    }
+  ],
+  "vulnerability": {
+    "1": {
+      "dealer": "N",
+      "identifier": "NO",
+      "name": "None",
+      "vulnerable": {
+        "E": false,
+        "N": false,
+        "S": false,
+        "W": false
+      }
+    },
+    "10": {
+      "dealer": "E",
+      "identifier": "BO",
+      "name": "Both",
+      "vulnerable": {
+        "E": true,
+        "N": true,
+        "S": true,
+        "W": true
+      }
+    },
+    "11": {
+      "dealer": "S",
+      "identifier": "NO",
+      "name": "None",
+      "vulnerable": {
+        "E": false,
+        "N": false,
+        "S": false,
+        "W": false
+      }
+    },
+    "12": {
+      "dealer": "W",
+      "identifier": "NS",
+      "name": "N-S",
+      "vulnerable": {
+        "E": false,
+        "N": true,
+        "S": true,
+        "W": false
+      }
+    },
+    "13": {
+      "dealer": "N",
+      "identifier": "BO",
+      "name": "Both",
+      "vulnerable": {
+        "E": true,
+        "N": true,
+        "S": true,
+        "W": true
+      }
+    },
+    "14": {
+      "dealer": "E",
+      "identifier": "NO",
+      "name": "None",
+      "vulnerable": {
+        "E": false,
+        "N": false,
+        "S": false,
+        "W": false
+      }
+    },
+    "15": {
+      "dealer": "S",
+      "identifier": "NS",
+      "name": "N-S",
+      "vulnerable": {
+        "E": false,
+        "N": true,
+        "S": true,
+        "W": false
+      }
+    },
+    "16": {
+      "dealer": "W",
+      "identifier": "EW",
+      "name": "E-W",
+      "vulnerable": {
+        "E": true,
+        "N": false,
+        "S": false,
+        "W": true
+      }
+    },
+    "2": {
+      "dealer": "E",
+      "identifier": "NS",
+      "name": "N-S",
+      "vulnerable": {
+        "E": false,
+        "N": true,
+        "S": true,
+        "W": false
+      }
+    },
+    "3": {
+      "dealer": "S",
+      "identifier": "EW",
+      "name": "E-W",
+      "vulnerable": {
+        "E": true,
+        "N": false,
+        "S": false,
+        "W": true
+      }
+    },
+    "4": {
+      "dealer": "W",
+      "identifier": "BO",
+      "name": "Both",
+      "vulnerable": {
+        "E": true,
+        "N": true,
+        "S": true,
+        "W": true
+      }
+    },
+    "5": {
+      "dealer": "N",
+      "identifier": "NS",
+      "name": "N-S",
+      "vulnerable": {
+        "E": false,
+        "N": true,
+        "S": true,
+        "W": false
+      }
+    },
+    "6": {
+      "dealer": "E",
+      "identifier": "EW",
+      "name": "E-W",
+      "vulnerable": {
+        "E": true,
+        "N": false,
+        "S": false,
+        "W": true
+      }
+    },
+    "7": {
+      "dealer": "S",
+      "identifier": "BO",
+      "name": "Both",
+      "vulnerable": {
+        "E": true,
+        "N": true,
+        "S": true,
+        "W": true
+      }
+    },
+    "8": {
+      "dealer": "W",
+      "identifier": "NO",
+      "name": "None",
+      "vulnerable": {
+        "E": false,
+        "N": false,
+        "S": false,
+        "W": false
+      }
+    },
+    "9": {
+      "dealer": "N",
+      "identifier": "EW",
+      "name": "E-W",
+      "vulnerable": {
+        "E": true,
+        "N": false,
+        "S": false,
+        "W": true
+      }
+    }
+  }
+}
