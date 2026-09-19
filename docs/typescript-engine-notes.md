@@ -22,10 +22,10 @@ decisions, and the next action.
 
 | Phase | State   | Notes                                                  |
 | ----- | ------- | ------------------------------------------------------ |
-| 0a    | pending | canonical iteration order in the Python bidder         |
-| 0b    | pending | fixture exporter, fixtures checked in                  |
-| 1     | pending | single-threaded Z3 wasm and `src/z3/` binding          |
-| 2     | pending | pure core, leads, categories                           |
+| 0a    | running | canonical iteration order in the Python bidder         |
+| 0b    | running | fixture exporter, fixtures checked in                  |
+| 1     | running | single-threaded Z3 wasm and `src/z3/` binding          |
+| 2     | running | pure core, leads, categories                           |
 | 3     | pending | hand model                                             |
 | 4     | pending | DSL primitives against snapshots                       |
 | 5     | pending | rules, rule compiler, priority ordering                |
@@ -66,3 +66,7 @@ decisions, and the next action.
 ## Log
 
 - 2026-09-19: plan and notes written; branch created.
+- 2026-09-19: dispatched agents: 0a (worktree, commits), 0b (main tree, no
+  commits), 1 (worktree, commits), 2 core types and 2 leads/categories
+  (worktrees, commit). The orchestrator merges worktree branches into this
+  branch and commits the main-tree work.
