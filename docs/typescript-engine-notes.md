@@ -96,3 +96,9 @@ decisions, and the next action.
 - 2026-09-19: phases 0b, 1 and 2 landed (c5647c1, 28d7170, a7b7efb, 4117de5).
   All gates green: 438 TypeScript tests, 112 Python tests. Dispatched the DSL
   foundation (phases 3 and 4) and the early harness port (part of phase 7).
+- 2026-09-19: harness port landed. `pnpm baseline:check` / `pnpm baseline:accept`
+  exist and report that the kernel is missing until phase 6 provides
+  `createHarnessBidder`. Two facts recorded by that port: the harness's
+  `WARNING: Failed to interpret partner's last bid` branch is unreachable in
+  Python (it stringifies before testing for None), and decisions.jsonl has 1,540
+  records for 1,536 baseline hands because four identifiers repeat across groups.
