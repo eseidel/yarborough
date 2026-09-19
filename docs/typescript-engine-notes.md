@@ -74,6 +74,18 @@ decisions, and the next action.
 - Fixture export: 1,510 auctions, 13,988 (call, rule) meanings, 1,540
   decisions, 300 random deals; 11 to 14 minutes wall; `--check` as long again.
 - Python gates after phase 0: 112 tests, 53 s.
+- Z3 wasm in a Chromium module worker (src/z3/z3.worker.ts probe): module load
+  about 0.2 s, first check 13 to 18 ms, 0.55 ms per check; the module lands in
+  its own worker chunk (13.2 MB raw, 3.6 MiB gzip) and never in the app chunk.
+  The existing Pyodide worker needs about 20 s before its first bid.
+
+## Environment notes
+
+- In this container Playwright 1.62.1 expects Chromium build 1234 under
+  /opt/pw-browsers but build 1194 is installed. `pnpm test:browser` needs
+  symlinks `chromium-1234/chrome-linux64` and
+  `chromium_headless_shell-1234/chrome-headless-shell-linux64` pointing at the
+  1194 directories, and `CI=1` for headless. Never run `playwright install`.
 
 ## Open questions
 
@@ -102,3 +114,5 @@ decisions, and the next action.
   `WARNING: Failed to interpret partner's last bid` branch is unreachable in
   Python (it stringifies before testing for None), and decisions.jsonl has 1,540
   records for 1,536 baseline hands because four identifiers repeat across groups.
+- 2026-09-19: Z3 worker probe landed (Chromium browser test). Phase 8 needs no
+  Vite config change for the 11 MB module.
