@@ -19,20 +19,20 @@ decisions, and the next action.
 
 ## Status
 
-| Phase | State   | Notes                                                                                                                  |
-| ----- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
-| 0a    | done    | canonical order in the bidder; baseline unchanged (27f1a4a)                                                            |
-| 0b    | done    | `python -m tests.export_fixtures`; 17 MB under `tests/engine-fixtures/` (c5647c1)                                      |
-| 1     | done    | Z3 5.1.0, Emscripten 6.0.9, `src/z3/wasm/z3.mjs` 11.2 MB (28d7170); Chromium worker probe (12f705e)                    |
-| 2     | done    | `src/engine/core/`, `leads.ts`, `categories.ts` (a7b7efb, 4117de5)                                                     |
-| 3     | done    | `src/engine/z3b/model.ts` matches `model-expressions.json` (364c91f)                                                   |
-| 4     | done    | DSL foundation, recorded history, gate `dsl-fixtures.test.ts` (364c91f)                                                |
-| 5     | done    | all 217 rules in `src/engine/z3b/rules/`, `natural.ts`, `cappelletti.ts`; every meaning and negation matches (bab1a8b) |
-| 6     | done    | kernel `src/engine/z3b/bidder.ts`, `harness-bidder.ts` (3df1d99); every snapshot, decision and the baseline reproduced |
-| 7     | running | harness and baseline done (2000558); adapter port and the interpretations, random-deal and golden gates in progress    |
-| 8     | running | worker calls the adapter; Pyodide, micropip and the wheel removed                                                      |
-| 9     | partial | `pnpm explain` and `pnpm random-deals` ported (c299573); deleting `python/` and moving the baselines remains           |
-| 10    | later   | optional bounded solver replacing the 11 MB Z3 module; a separate decision with its own fuzzing gate                   |
+| Phase | State | Notes                                                                                                                                                 |
+| ----- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0a    | done  | canonical order in the bidder; baseline unchanged (27f1a4a)                                                                                           |
+| 0b    | done  | Python exporter; 17 MB under `tests/engine-fixtures/` (c5647c1)                                                                                       |
+| 1     | done  | Z3 5.1.0, Emscripten 6.0.9, `src/z3/wasm/z3.mjs` 11.2 MB (28d7170); Chromium worker probe (12f705e)                                                   |
+| 2     | done  | `src/engine/core/`, `leads.ts`, `categories.ts` (a7b7efb, 4117de5)                                                                                    |
+| 3     | done  | `src/engine/z3b/model.ts` matches `model-expressions.json` (364c91f)                                                                                  |
+| 4     | done  | DSL foundation, recorded history, gate `dsl-fixtures.test.ts` (364c91f)                                                                               |
+| 5     | done  | all 217 rules in `src/engine/z3b/rules/`, `natural.ts`, `cappelletti.ts`; every meaning and negation matches (bab1a8b)                                |
+| 6     | done  | kernel `src/engine/z3b/bidder.ts`, `harness-bidder.ts` (3df1d99); every snapshot, decision and the baseline reproduced                                |
+| 7     | done  | harness and baseline (2000558); adapter `src/engine/adapter.ts` with every fixture gate exact (408f89d)                                               |
+| 8     | done  | worker calls the adapter (652419d); Pyodide, micropip and the wheel removed (fa83100)                                                                 |
+| 9     | done  | `python/` deleted (6381d99); baselines under `tests/baselines/`; `pnpm fixtures:check` regenerates the fixtures byte for byte (046d945); CI runs both |
+| 10    | later | optional bounded solver replacing the 11 MB Z3 module; a separate decision with its own fuzzing gate                                                  |
 
 ## Decisions
 

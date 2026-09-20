@@ -122,9 +122,11 @@ silently.
 
 ## Fixtures: the oracle, generated from Python
 
-Everything under `tests/engine-fixtures/` is **generated** by
-`python -m tests.export_fixtures` and never edited by hand. They are checked
-in so that the TypeScript tests run without Python.
+Everything under `tests/engine-fixtures/` is **generated** and never edited by
+hand: first by `python -m tests.export_fixtures` from the Python engine, and
+since phase 9 by `pnpm fixtures:accept` from the TypeScript engine, whose
+first run reproduced the Python files byte for byte. They are checked in so
+that the tests run without Python.
 
 | File                      | Contents                                                                                                                                                                                                                                                                                                                                                                                  |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
