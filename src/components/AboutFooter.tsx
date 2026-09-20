@@ -77,7 +77,7 @@ export function AboutFooter() {
         </a>
         . You can find the{" "}
         <a
-          href="https://github.com/eseidel/yarborough"
+          href="https://github.com/saycbridge/yarborough"
           className={LINK}
           target="_blank"
           rel="noopener noreferrer"
