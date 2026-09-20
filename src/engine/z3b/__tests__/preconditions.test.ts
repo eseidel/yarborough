@@ -3,13 +3,13 @@
 // found in the LICENSE file.
 
 // A translation of python/tests/test_preconditions.py, plus the Python
-// `repr` of every precondition form the rules manifest records (the manifest
-// compares those strings), on histories answered from the recorded
-// snapshots or, where only the calls matter, from the calls alone.
+// `repr` of every precondition form a rule can declare (the explanations the
+// engine reports print those strings), on interpreted auctions.
 
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { Call } from "../../core/call";
 import { CallHistory } from "../../core/callhistory";
+import { History, Interpreter } from "../bidder";
 import { CLUBS, DIAMONDS, HEARTS, NOTRUMP, SPADES } from "../../core/suit";
 import { positions } from "../model";
 import {
@@ -46,18 +46,24 @@ import {
   UnbidSuitCountRange,
 } from "../preconditions";
 import { pyRepr, tuple } from "../py";
-import { type AuctionSnapshot, readJsonlFixture } from "./fixtures";
-import { RecordedHistories, UnrecordedError } from "./recorded-history";
 
-const store = new RecordedHistories(
-  readJsonlFixture<AuctionSnapshot>("auction-snapshots.jsonl"),
-  (name) => ({ name, forcing: null, requiresPlanning: false }),
-);
+const interpreter = new Interpreter();
+const interpreted: History[] = [];
 
-/** The history of an auction; recorded when the fixtures hold it, else the calls alone. */
+/** The interpreted history of an auction; its solvers go back at the end. */
 function history(calls: string, dealer = "N") {
-  return store.history(CallHistory.fromString(calls, dealer, "None"));
+  const one = interpreter.createHistory(
+    CallHistory.fromString(calls, dealer, "None"),
+  );
+  interpreted.push(one);
+  return one;
 }
+
+afterAll(() => {
+  for (const one of interpreted) {
+    one.release();
+  }
+});
 
 const call = (name: string) => Call.fromString(name);
 
@@ -114,9 +120,8 @@ describe("preconditions", () => {
     );
   });
 
-  it("reads the recorded auction: annotations, suits and lengths", () => {
+  it("reads the interpreted auction: annotations, suits and lengths", () => {
     const h = history("1S", "N");
-    expect(h.recorded).toBe(true);
     expect(new NoOpening().fits(h, call("P"))).toBe(false);
     expect(new NoOpening().fits(history("", "N"), call("P"))).toBe(true);
     expect(new TheyOpened().fits(h, call("P"))).toBe(true);
@@ -158,13 +163,6 @@ describe("preconditions", () => {
     expect(
       new AndPrecondition(new NoOpening(), new TheyOpened()).fits(h, call("P")),
     ).toBe(false);
-  });
-
-  it("throws on what an unrecorded prefix cannot answer", () => {
-    const h = history("7N X XX", "N");
-    expect(h.recorded).toBe(false);
-    expect(new Level(7).fits(h, call("X"))).toBe(true);
-    expect(() => new NoOpening().fits(h, call("P"))).toThrow(UnrecordedError);
   });
 
   it("prints its Python repr", () => {
@@ -239,6 +237,48 @@ describe("preconditions", () => {
     expect(pyRepr(call("1H"))).toBe("Call('1H')");
     expect(pyRepr(annotations.Opening)).toBe("Opening");
     expect(() => pyRepr(Symbol("x"))).toThrow(/no Python repr/);
+  });
+
+  it("lists the Python annotations, in the Python order", () => {
+    expect([...annotations].map((annotation) => annotation.key)).toEqual([
+      "Opening",
+      "OneLevelSuitOpening",
+      "StrongTwoClubOpening",
+      "NotrumpSystemsOn",
+      "StandardOvercall",
+      "Preemptive",
+      "BidClubs",
+      "BidDiamonds",
+      "BidHearts",
+      "BidSpades",
+      "LimitRaise",
+      "JumpShiftResponse",
+      "OpenerReverse",
+      "Cappelletti",
+      "QuantitativeFourNotrumpJump",
+      "BalancingOvercall",
+      "CuebidAdvance",
+      "Signoff",
+      "SupportsPartnersSuit",
+      "Artificial",
+      "Blackwood",
+      "FeatureRequest",
+      "FourthSuitForcing",
+      "Gerber",
+      "Jacoby2N",
+      "MichaelsCuebid",
+      "MichaelsMinorRequest",
+      "CappellettiMinorRequest",
+      "NegativeDouble",
+      "Stayman",
+      "TakeoutDouble",
+      "Transfer",
+      "Unusual2N",
+      "GrandSlamForce",
+      "Jordan",
+      "Lebensohl",
+      "LeadDirectingDouble",
+    ]);
   });
 
   it("knows which annotations imply Artificial and which suit each Bid annotation is", () => {

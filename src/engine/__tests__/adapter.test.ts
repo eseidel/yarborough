@@ -47,7 +47,19 @@ import { Hand } from "../core/hand";
 import { _solverPool, setBidderLog } from "../z3b/bidder";
 import { Rule, type RuleClass } from "../z3b/rule_compiler";
 import * as rules from "../z3b/rules";
-import { goldenCases } from "./adapter-fixtures";
+import goldenCasesText from "../../../tests/z3b_golden_cases.json?raw";
+
+/** One case of tests/z3b_golden_cases.json. */
+interface GoldenCase {
+  identifier: string;
+  call_name: string;
+  rule_name: string | null;
+  description: string | null;
+  knowledge_string: string | null;
+  category: string[];
+}
+
+const goldenCases = JSON.parse(goldenCasesText) as GoldenCase[];
 
 // --- the fakes python/tests/test_yarborough_z3b.py builds by hand ----------
 

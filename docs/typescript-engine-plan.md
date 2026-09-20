@@ -122,6 +122,14 @@ silently.
 
 ## Fixtures: the oracle, generated from Python
 
+**Removed after the port was complete** (after phase 9): the fixtures under
+`tests/engine-fixtures/`, their regenerator and every gate that read them were
+deleted, because they re-verified the engine against itself once the port was
+proven — the SAYC corpus baseline (`pnpm baseline:check`) and the golden cases
+in `tests/z3b_golden_cases.json` are the regression test of the engine now —
+and they remain in git history. The rest of this section describes them as
+they were.
+
 Everything under `tests/engine-fixtures/` is **generated** and never edited by
 hand: first by `python -m tests.export_fixtures` from the Python engine, and
 since phase 9 by `pnpm fixtures:accept` from the TypeScript engine, whose

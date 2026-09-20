@@ -44,17 +44,14 @@ T8753 hearts, and JT432 spades.
   `src/engine/harness/sayc_data.ts` (hand, expected call, auction); every hand
   in it is bid by the harness (`pnpm baseline:check`) and compared with the
   accepted output in `tests/baselines/`. Any behavior change of the bidder
-  fails that check with a diff (`pnpm test` runs a sample of it;
-  `YARBOROUGH_FULL_BASELINE=1 pnpm test` runs all of it). When the change is
-  intended, commit it and run `pnpm baseline:accept` (it refuses a dirty tree)
-  so the reviewed artifact is the baseline diff. Fix a known miss by making its
-  FAIL line disappear; never edit the baselines by hand. When you fix a bidding
-  bug, add the hand and auction that exposed it to the corpus first.
-- `tests/engine-fixtures/` is the recorded oracle of the port: rule manifest,
-  meanings, auction snapshots, decisions, interpretations and random deals. It
-  is regenerated with `pnpm fixtures:accept` and checked with
-  `pnpm fixtures:check`, never edited by hand; the fixture gates under
-  `src/engine/**/__tests__/` compare the engine with it.
+  fails that check with a diff. `pnpm baseline:check` runs the whole corpus,
+  and `YARBOROUGH_FULL_BASELINE=1 pnpm test` runs it inside Vitest. When the
+  change is intended, commit it and run `pnpm baseline:accept` (it refuses a
+  dirty tree) so the reviewed artifact is the baseline diff. Fix a known miss
+  by making its FAIL line disappear; never edit the baselines by hand. When you
+  fix a bidding bug, add the hand and auction that exposed it to the corpus
+  first. This baseline, with the golden cases in `tests/z3b_golden_cases.json`,
+  is the regression test of the engine.
 
 ## Double dummy
 

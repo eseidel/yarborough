@@ -3,15 +3,15 @@
 // found in the LICENSE file.
 
 // A translation of python/z3b/test_natural.py, plus the module-level helpers
-// of natural.ts that no rule of the fixtures exercises yet.  The Python test
-// bids two hands through the Bidder with one rule class swapped out; the
-// Bidder arrives in phase 6 and QuantitativeFourNotrumpJump with the slam
-// section of rules.py, so those two cases wait (it.todo below).  What the
-// test is about -- the natural point tables are the one source of the game
-// and slam numbers -- is pinned here on the tables themselves.
+// of natural.ts.  The Python test bids two hands through the Bidder with one
+// rule class swapped out, which this port does not do (it.todo below); what
+// the test is about -- the natural point tables are the one source of the
+// game and slam numbers -- is pinned here on the tables themselves.
 
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { Call } from "../../core/call";
+import { CallHistory } from "../../core/callhistory";
+import { Interpreter } from "../bidder";
 import {
   copyDict,
   _naturalSuitedPossible,
@@ -25,34 +25,40 @@ import {
   RULE_CLASSES,
 } from "../natural";
 import { StandardAmericanYellowCard } from "../sayc";
-import {
-  type AuctionSnapshot,
-  type ManifestRule,
-  readJsonFixture,
-  readJsonlFixture,
-  type VocabularyFixture,
-} from "./fixtures";
-import { RecordedHistories } from "./recorded-history";
-
-const vocabulary = readJsonFixture<VocabularyFixture>("vocabulary.json");
-const manifest = readJsonFixture<ManifestRule[]>("rules-manifest.json");
-const store = new RecordedHistories(
-  readJsonlFixture<AuctionSnapshot>("auction-snapshots.jsonl"),
-  (name) => ({ name, forcing: null, requiresPlanning: false }),
-);
 
 // North opened 1H and East passed: partner has bid hearts naturally, and no
 // other suit has been bid.
-const history = store.historyFor(store.snapshot("N", "Both", "1H P")!);
+const history = new Interpreter().createHistory(
+  CallHistory.fromString("1H P", "N", "Both"),
+);
+
+afterAll(() => {
+  history.release();
+});
 
 describe("the natural point tables", () => {
-  it("are the tables the exporter read from the Python module", () => {
-    expect(pointsForSoundSuitedBidAtLevel).toEqual(
-      vocabulary.points_tables.suited,
-    );
-    expect(pointsForSoundNotrumpBidAtLevel).toEqual(
-      vocabulary.points_tables.notrump,
-    );
+  it("are the tables of the Python module", () => {
+    // python/z3b/natural.py, indexed by level: there is no level 0.
+    expect(pointsForSoundSuitedBidAtLevel).toEqual([
+      null,
+      16,
+      19,
+      22,
+      25,
+      28,
+      33,
+      37,
+    ]);
+    expect(pointsForSoundNotrumpBidAtLevel).toEqual([
+      null,
+      19,
+      22,
+      25,
+      28,
+      30,
+      33,
+      38,
+    ]);
   });
 
   it("holds the slam number the quantitative invitation reads", () => {
@@ -68,10 +74,10 @@ describe("the natural point tables", () => {
   });
 
   it.todo(
-    "bids 6N, not the quantitative 4N, on eighteen opposite a 1N opening (needs the Bidder, phase 6)",
+    "bids 6N, not the quantitative 4N, on eighteen opposite a 1N opening (needs a system with one rule class swapped out)",
   );
   it.todo(
-    "invites instead when the system's slam number moves to 34 (needs the Bidder, phase 6)",
+    "invites instead when the system's slam number moves to 34 (needs a system with one rule class swapped out)",
   );
 });
 
@@ -146,10 +152,6 @@ describe("the rules of natural.ts", () => {
       "SuitSlamIsRemote",
       "NotrumpSlamIsRemote",
     ]);
-    const known = new Set(manifest.map((entry) => entry.name));
-    for (const name of names) {
-      expect(known.has(name), `${name} is not a Python rule`).toBe(true);
-    }
     const registered = new Set(
       StandardAmericanYellowCard.rules.map((rule) => rule.name),
     );

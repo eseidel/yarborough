@@ -226,7 +226,7 @@ export class Priority {
     );
   }
 
-  /** Python's `__repr__`, which the fixtures record: `Game/strain1/Rule[0, 1]/fallback1`. */
+  /** Python's `__repr__`: `Game/strain1/Rule[0, 1]/fallback1`. */
   repr(): string {
     const parts = [this.purpose];
     if (this.strain !== null) {

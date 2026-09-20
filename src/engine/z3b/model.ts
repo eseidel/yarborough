@@ -6,9 +6,9 @@
 // (suit lengths, honor bits, points), the axioms that tie them together, and
 // the named expressions the rules use.  Every expression is built with the
 // same operators, in the same order and with the same nesting as the Python,
-// because tests/engine-fixtures/model-expressions.json compares the printed
-// forms; in particular Python's `sum` starts from 0 (`pySum`) and `2 * x`
-// is `z3.mul(2, x)`, not `x.mul(2)`.
+// so that the constraints the rules build print the same text; in particular
+// Python's `sum` starts from 0 (`pySum`) and `2 * x` is `z3.mul(2, x)`, not
+// `x.mul(2)`.
 
 import { makeEnum } from "./enum";
 import type { Hand } from "../core/hand";

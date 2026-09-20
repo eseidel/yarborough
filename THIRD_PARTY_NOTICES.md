@@ -8,8 +8,8 @@ data in `src/engine/harness/sayc_data.ts` — is a TypeScript port of
 continued in Andrew Bortz's SAYCBridge fork through revision `fba188e`. It is
 Copyright (c) 2013 The SAYCBridge Authors and is distributed under the BSD
 3-Clause License. The ported files retain the original license header. The
-recorded fixtures under `tests/engine-fixtures/` and the accepted baselines
-under `tests/baselines/` are derived from the same sources.
+accepted baselines under `tests/baselines/` are derived from the same
+sources.
 
 ```text
 Copyright (c) 2013 The SAYCBridge Authors. All rights reserved.

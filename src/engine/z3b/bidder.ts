@@ -1238,7 +1238,7 @@ export class RuleSelector {
 
   /**
    * The calls `_call_to_rule` left without a rule because several rules tied
-   * at the best category (export_fixtures' `dropped_calls`).
+   * at the best category.
    */
   get droppedCalls(): readonly DroppedCall[] {
     void this._callToRule;

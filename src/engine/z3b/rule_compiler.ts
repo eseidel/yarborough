@@ -51,7 +51,7 @@
 //   `a + b` is `a.add(b)`, `2 * x` is `z3.mul(2, x)`, `z3.Not(balanced)`
 //   stays `z3.Not(balanced)`, `sum(list)` is `pySum(list)`, `z3.And(a, b)`
 //   and `z3.And([a, b])` stay as they are.  Keep the nesting and the argument
-//   order: the fixtures hash the printed forms.
+//   order: the printed form of a meaning is compared with the Python's.
 // - A Python tuple of constraints, calls or preconditions is a plain array.
 //   A tuple that `repr` prints (LastBidHasStrain's strains) is `tuple(...)`
 //   from py.ts.
@@ -86,8 +86,8 @@
 //
 //   Python's C3 linearization of `class X(Mixin, Base)` is X, Mixin, Base, ...
 //   and the prototype chain of `X extends Mixin(Base)` is the same list, so
-//   `_collectFromAncestors` joins the fields in the Python order and the
-//   fixtures' `mro` reads straight off the chain.  Every mixin in the Python
+//   `_collectFromAncestors` joins the fields in the Python order and `mro`
+//   reads straight off the chain.  Every mixin in the Python
 //   is listed first among the bases and derives from object, which is what
 //   makes this exact.
 // - Fields are joined ancestor first from the classes that DEFINE them
