@@ -53,10 +53,21 @@ const RANK_CELL = "inline-block w-[0.8em] text-center";
  */
 const SUIT_CELL = "inline-block w-[1em] text-center font-bold";
 
-/** One suit's holding, "♠AK32", or a dash where the hand is void. */
+/**
+ * One suit's holding, "♠AK32", or a dash where the hand is void.
+ *
+ * A holding is one line, whatever its length: wrapped, a seven-card suit
+ * took two lines and pushed the three suits under it a line down, out of
+ * step with the hand across the diagram from it. Kept whole, the holding
+ * instead asks its column for the room it needs, and the grid's columns
+ * take their minimum from it.
+ */
 function SuitLine({ suit, cards }: { suit: SuitName; cards: Card[] }) {
   return (
-    <div className="leading-tight" data-testid={`suit-line-${suit}`}>
+    <div
+      className="whitespace-nowrap leading-tight"
+      data-testid={`suit-line-${suit}`}
+    >
       <span className={`${SUITS[suit].color} ${SUIT_CELL} mr-1`}>
         {SUITS[suit].symbol}
       </span>
@@ -99,8 +110,12 @@ function TextHand({
         className="inline-block text-left text-sm"
         data-testid={`hand-${position}`}
       >
+        {/* The seat's line may wrap where the column is tight, since the
+            holdings under it may not: a seat whose name held its own line
+            open — "SOUTH (you) 17" is wider than eight cards — took the
+            room from the long suit beside it. */}
         <div
-          className="whitespace-nowrap text-xs font-semibold uppercase tracking-wider text-gray-500"
+          className="text-xs font-semibold uppercase tracking-wider text-gray-500"
           data-testid={`position-label-${position}`}
         >
           {POSITION_NAMES[position]}
