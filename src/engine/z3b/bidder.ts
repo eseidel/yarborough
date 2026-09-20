@@ -404,6 +404,25 @@ export class History implements HistoryInterface {
     }
   }
 
+  /**
+   * Returns the solver this history alone holds, if it borrowed one, without
+   * touching the ancestors that `release` walks.
+   *
+   * A branch history -- one an adapter extends off an interpreted auction to
+   * read what a call would mean, and then drops -- cannot be `release`d: the
+   * three other positions' latest histories are the ancestors the auction it
+   * branched from still owns, and would be restored twice.  The Python drops
+   * the branch on the floor and its garbage collector frees the solver; here
+   * the pool has to be told, or a request that interprets thirty calls leaks
+   * thirty solvers into the wasm heap.
+   */
+  releaseBranch(): void {
+    if (this._solverCache === undefined) {
+      return;
+    }
+    _solverPool.restore(this._takeSolver());
+  }
+
   /** `@memoized _solver`: the solver holding this position's constraints so far. */
   _solver(): Solver {
     if (this._solverCache === undefined) {

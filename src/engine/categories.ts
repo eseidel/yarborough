@@ -49,7 +49,9 @@ export interface CategoryCall {
  */
 export interface CategoryPosition {
   readonly index: number;
-  inPartnershipWith(position: CategoryPosition): boolean;
+  // `core`'s `Position` accepts a missing seat here as well, which a plain
+  // `CategoryPosition` parameter would not reconcile with, so admit it.
+  inPartnershipWith(position: CategoryPosition | null | undefined): boolean;
 }
 
 /**
