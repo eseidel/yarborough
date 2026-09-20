@@ -29,8 +29,8 @@ decisions, and the next action.
 | 3     | done    | `src/engine/z3b/model.ts` matches `model-expressions.json` (364c91f)                                                   |
 | 4     | done    | DSL foundation, recorded history, gate `dsl-fixtures.test.ts` (364c91f)                                                |
 | 5     | done    | all 217 rules in `src/engine/z3b/rules/`, `natural.ts`, `cappelletti.ts`; every meaning and negation matches (bab1a8b) |
-| 6     | running | kernel `src/engine/z3b/bidder.ts` and `harness-bidder.ts`; gates: history, decisions, real-bidder baseline             |
-| 7     | partial | harness, corpus, baseline comparison ported (2000558); adapter and corpora tests wait for the kernel                   |
+| 6     | done    | kernel `src/engine/z3b/bidder.ts`, `harness-bidder.ts` (3df1d99); every snapshot, decision and the baseline reproduced |
+| 7     | running | harness and baseline done (2000558); adapter port and the interpretations, random-deal and golden gates in progress    |
 | 8     | pending | worker swap, Pyodide removal                                                                                           |
 | 9     | pending | retire Python                                                                                                          |
 | 10    | later   | optional bounded solver; separate decision                                                                             |
@@ -84,6 +84,11 @@ decisions, and the next action.
 - Fixture export: 1,510 auctions, 13,988 (call, rule) meanings, 1,540
   decisions, 300 random deals; 11 to 14 minutes wall; `--check` as long again.
 - Python gates after phase 0: 112 tests, 53 s.
+- TypeScript kernel, all rules: `pnpm baseline:check` 77 s wall (Python: 22 s on
+  4 processes); the full auction-snapshot gate 242 s, the decisions gate 84 s,
+  so `pnpm test` checks every fifth record and `YARBOROUGH_FULL_BASELINE=1
+pnpm test` checks all and the byte-for-byte baseline. Corpus average about
+  43 ms per decision, slowest 550 ms.
 - Z3 wasm in a Chromium module worker (src/z3/z3.worker.ts probe): module load
   about 0.2 s, first check 13 to 18 ms, 0.55 ms per check; the module lands in
   its own worker chunk (13.2 MB raw, 3.6 MiB gzip) and never in the app chunk.
@@ -135,3 +140,10 @@ decisions, and the next action.
   replaced private cross-section copies with imports). The DSL gate now
   registers 217 of 217 rules and matches every meaning record; it takes about
   45 s, so `vite.config.ts` sets `testTimeout: 60000`.
+- 2026-09-20: phase 6 landed (3df1d99). The TypeScript bidder reproduces all
+  1,510 auction snapshots, all 1,540 decisions and both baseline files byte for
+  byte. API: `new Interpreter().createHistory(callHistory)` must be paired with
+  `history.release()` (or use `withHistory`); `new Bidder().callSelectionFor`;
+  `setBidderLog` captures the Python-style WARNING and COLLISION lines.
+  Dispatched the adapter port (rest of phase 7) and the analysis tools
+  (part of phase 9).
