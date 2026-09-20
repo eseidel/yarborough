@@ -51,11 +51,11 @@ Run `pnpm exec playwright install chromium` once to install the browser used
 by the real-worker test. `pnpm baseline:check` bids the whole SAYC corpus,
 `src/engine/harness/sayc_data.ts` (hand, expected call, auction), through the
 engine and compares the run with the accepted output in `tests/baselines/`;
-`pnpm baseline:accept` records a reviewed change. `tests/bidding/*.yaml` are
-reference documents from the SAYC book that no code loads, and their expected
-bids must not be rewritten. The recorded fixtures under
-`tests/engine-fixtures/` are regenerated with `pnpm fixtures:accept` and
-checked with `pnpm fixtures:check`; they are never edited by hand.
+`pnpm baseline:accept` records a reviewed change; `YARBOROUGH_FULL_BASELINE=1
+pnpm test` runs the same corpus inside Vitest. That baseline, with the golden
+cases in `tests/z3b_golden_cases.json`, is the regression test of the engine.
+`tests/bidding/*.yaml` are reference documents from the SAYC book that no code
+loads, and their expected bids must not be rewritten.
 
 ## Third-party software
 

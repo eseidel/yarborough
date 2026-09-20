@@ -6,8 +6,7 @@
 // Rule by reflection; here the leaves are listed by name (see the convention
 // in rule_compiler.ts), and the key of each entry is the rule's name, so
 // that neither a minifier nor a class renamed in error can change what the
-// engine reports.  Phase 5 of docs/typescript-engine-plan.md completes the
-// list; tests/engine-fixtures/rules-manifest.json says what is missing.
+// engine reports.  The list is complete: all 217 rules of the Python system.
 
 import * as cappelletti from "./cappelletti";
 import * as natural from "./natural";

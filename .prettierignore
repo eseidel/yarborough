@@ -1,5 +1,4 @@
 pnpm-lock.yaml
 docs/sayc-bidding-system-reference.md
 src/dds/wasm/
-tests/engine-fixtures/
 src/z3/wasm/

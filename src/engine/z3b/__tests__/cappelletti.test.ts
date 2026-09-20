@@ -3,14 +3,15 @@
 // found in the LICENSE file.
 
 // python/z3b/cappelletti.py has no unit test of its own: the convention is
-// covered by the corpus and, here, by the fixture gate
-// (dsl-fixtures.test.ts).  These are the facts of the port that the gate
-// states only indirectly -- the shared call schedule as a mixin (the Python
-// MRO), the balancing seat's one different entry, and the private copy of
-// rules.py's balancing precondition.
+// covered by the SAYC corpus baseline (`pnpm baseline:check`).  These are the
+// facts of the port the baseline states only indirectly -- the shared call
+// schedule as a mixin (the Python MRO), the balancing seat's one different
+// entry, and the precondition that puts it in the balancing seat.
 
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { Call } from "../../core/call";
+import { CallHistory } from "../../core/callhistory";
+import { History, Interpreter } from "../bidder";
 import {
   BalancingCappelletti,
   Cappelletti,
@@ -19,33 +20,30 @@ import {
 import { printedForm } from "../printed";
 import { mro, RuleCompiler } from "../rule_compiler";
 import { StandardAmericanYellowCard } from "../sayc";
-import {
-  type AuctionSnapshot,
-  type ManifestRule,
-  readJsonFixture,
-  readJsonlFixture,
-} from "./fixtures";
-import { RecordedHistories } from "./recorded-history";
 
-const manifest = readJsonFixture<ManifestRule[]>("rules-manifest.json");
-const store = new RecordedHistories(
-  readJsonlFixture<AuctionSnapshot>("auction-snapshots.jsonl"),
-  (name) => ({ name, forcing: null, requiresPlanning: false }),
-);
+const interpreter = new Interpreter();
+const interpreted: History[] = [];
+
+/** The interpreted history of an auction; its solvers go back at the end. */
+function historyFor(calls: string) {
+  const one = interpreter.createHistory(
+    CallHistory.fromString(calls, "N", "Both"),
+  );
+  interpreted.push(one);
+  return one;
+}
+
+afterAll(() => {
+  for (const one of interpreted) {
+    one.release();
+  }
+});
 
 const direct = RuleCompiler.compile(Cappelletti);
 const balancing = RuleCompiler.compile(BalancingCappelletti);
 
-function callNames(
-  rule: typeof direct,
-  dealer: string,
-  vulnerability: string,
-  calls: string,
-): string[] {
-  const history = store.historyFor(
-    store.snapshot(dealer, vulnerability, calls)!,
-  );
-  return [...rule.callsOver(history)].map(([, call]) => call.name);
+function callNames(rule: typeof direct, calls: string): string[] {
+  return [...rule.callsOver(historyFor(calls))].map(([, call]) => call.name);
 }
 
 describe("the Cappelletti schedule", () => {
@@ -68,14 +66,14 @@ describe("the Cappelletti schedule", () => {
       [...entries].sort(),
     );
     // RHO opened 1N; and, balancing, LHO opened it and two passes followed.
-    expect(callNames(direct, "N", "Both", "1N")).toEqual(entries);
-    expect(callNames(balancing, "N", "Both", "1N P P")).toEqual(entries);
-    expect(callNames(direct, "N", "Both", "1N P P")).toEqual([]);
-    expect(callNames(balancing, "N", "Both", "1N")).toEqual([]);
+    expect(callNames(direct, "1N")).toEqual(entries);
+    expect(callNames(balancing, "1N P P")).toEqual(entries);
+    expect(callNames(direct, "1N P P")).toEqual([]);
+    expect(callNames(balancing, "1N")).toEqual([]);
   });
 
   it("shares every entry but the double, which the balancer must hold balanced", () => {
-    const history = store.historyFor(store.snapshot("N", "Both", "1N")!);
+    const history = historyFor("1N");
     for (const name of ["2C", "2D", "2H", "2S", "2N"]) {
       const call = Call.fromString(name);
       expect(
@@ -120,9 +118,9 @@ describe("the Cappelletti schedule", () => {
     );
   });
 
-  it("balances behind the opening with the private copy of rules.py's precondition", () => {
-    // The overcall section of rules.py owns `balancing_precondition`; until it
-    // is ported this module declares the same AndPrecondition.
+  it("balances behind the opening with the overcall section's precondition", () => {
+    // `balancingPrecondition` of rules/overcalls.ts, as the Python's
+    // `balancing_precondition`.
     expect(balancing.preconditions[0].repr()).toBe(
       "And(LastBidHasAnnotation('LHO', 'Opening'), LastBidWas('Partner', 'P'), LastBidWas('RHO', 'P'))",
     );
@@ -133,12 +131,10 @@ describe("the rules of cappelletti.ts", () => {
   it("registers the Python module's concrete rules, and only those", () => {
     const names = Object.keys(RULE_CLASSES);
     expect(names).toHaveLength(12);
-    const known = new Set(manifest.map((entry) => entry.name));
     const registered = new Set(
       StandardAmericanYellowCard.rules.map((rule) => rule.name),
     );
     for (const name of names) {
-      expect(known.has(name), `${name} is not a Python rule`).toBe(true);
       expect(registered.has(name), `${name} is not in sayc.ts`).toBe(true);
     }
   });

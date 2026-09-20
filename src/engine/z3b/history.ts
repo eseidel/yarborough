@@ -5,11 +5,10 @@
 // The interface of the interpreted auction that the DSL reads: what
 // python/z3b/bidder.py's History, PositionView and GroupView expose to the
 // constraints, the preconditions, the forcing oracle, the rule compiler and
-// the adapter.  Types only.  Phase 6 (docs/typescript-engine-plan.md) ports
-// the real History; until then tests answer it from recorded snapshots
-// (__tests__/recorded-history.ts).  Names are the Python names in camelCase,
-// including the "private" `_walkHistoryFor`, `_hasShownSuit` and
-// `_historyAfterLastCallFor` that constraints.py and forcing.py reach into.
+// the adapter.  Types only; bidder.ts holds the History that implements
+// them.  Names are the Python names in camelCase, including the "private"
+// `_walkHistoryFor`, `_hasShownSuit` and `_historyAfterLastCallFor` that
+// constraints.py and forcing.py reach into.
 
 import type { Call } from "../core/call";
 import type { CallHistory } from "../core/callhistory";

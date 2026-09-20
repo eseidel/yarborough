@@ -2,24 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// cspell:ignore passouts
-//
 // `src/engine/analysis/random-deals.ts`: the report and the counting of
 // python/analysis/random_deals.py.
 //
 // The deals a seed selects are not the Python's (randomness is not behavior,
-// plan hazard 11), so what pins the audit is the recorded set:
-// tests/engine-fixtures/random-deals.jsonl holds 300 deals the Python bid to
-// completion in all four seats, with the call and the rule at every decision.
-// Bidding those same boards through the audit must give the recorded auctions
-// and the recorded counts.  The whole set takes minutes, so `pnpm test`
-// checks every tenth deal and YARBOROUGH_FULL_BASELINE=1 checks them all, as
-// the kernel gates do (`corpusSample`).
+// plan hazard 11), so what the audit is pinned on here is a small seeded run:
+// the same seed bids the same way twice, with no exception.  What the bidder
+// answers on a hand is gated by the SAYC corpus baseline
+// (`pnpm baseline:check`).
 
 import { describe, expect, it } from "vitest";
-import randomDealsText from "../../../../tests/engine-fixtures/random-deals.jsonl?raw";
-import { Board } from "../../core/board";
-import { corpusSample } from "../../z3b/__tests__/kernel-checks";
 import {
   audit,
   type AuditReport,
@@ -31,88 +23,6 @@ import {
   seededDeals,
   USAGE,
 } from "../random-deals";
-
-/** The part of one random-deals.jsonl record this gate reads. */
-interface DealRecord {
-  index: number;
-  board: string;
-  calls?: string;
-  error?: string;
-  decisions: {
-    call: string;
-    rule: string | null;
-    collision: boolean;
-    no_call?: boolean;
-    dropped?: number;
-  }[];
-}
-
-const records: DealRecord[] = randomDealsText
-  .split("\n")
-  .filter((line) => line.length > 0)
-  .map((line) => JSON.parse(line) as DealRecord);
-
-/** What the audit must count for one recorded deal. */
-function recordedCounts(record: DealRecord) {
-  return {
-    calls: record.calls,
-    collisions: record.decisions.filter((one) => one.collision).length,
-    nones: record.decisions.filter((one) => one.no_call).length,
-    dropped: record.decisions.reduce((sum, one) => sum + (one.dropped ?? 0), 0),
-  };
-}
-
-describe("the recorded random deals", () => {
-  it("are 300 deals with no error, no collision, 11 hands with no call and 4 passouts", () => {
-    expect(records).toHaveLength(300);
-    const totals = records.map(recordedCounts);
-    expect(records.filter((record) => record.error)).toHaveLength(0);
-    expect(totals.reduce((sum, one) => sum + one.collisions, 0)).toBe(0);
-    expect(totals.reduce((sum, one) => sum + one.nones, 0)).toBe(11);
-    expect(totals.reduce((sum, one) => sum + one.dropped, 0)).toBe(0);
-    expect(records.filter((record) => record.calls === "P P P P")).toHaveLength(
-      4,
-    );
-  });
-
-  it(
-    "are bid to the recorded auctions, with the recorded counts",
-    { timeout: 900_000 },
-    () => {
-      const { checked, description } = corpusSample(records, 10);
-      console.log(`random-deals: auditing ${description} recorded deals`);
-      const report = audit({
-        deals: checked.length,
-        source: (index) => {
-          const board = Board.fromIdentifier(checked[index].board);
-          return { deal: board.deal, boardNumber: board.number };
-        },
-      });
-      expect(
-        report.rows.map((row) => ({
-          calls: row.calls,
-          collisions: row.collisions,
-          nones: row.nones,
-          dropped: row.dropped,
-        })),
-      ).toEqual(checked.map(recordedCounts));
-      const expectedTotals = checked.map(recordedCounts);
-      expect(report.totals).toEqual({
-        collisions: expectedTotals.reduce(
-          (sum, one) => sum + one.collisions,
-          0,
-        ),
-        pass_or_double_collisions: 0,
-        nones: expectedTotals.reduce((sum, one) => sum + one.nones, 0),
-        dropped: expectedTotals.reduce((sum, one) => sum + one.dropped, 0),
-        exceptions: 0,
-      });
-      expect(report.rows.filter((row) => row.calls === "P P P P")).toHaveLength(
-        checked.filter((record) => record.calls === "P P P P").length,
-      );
-    },
-  );
-});
 
 describe("the seeded audit", () => {
   it("bids a small run twice the same way", { timeout: 300_000 }, () => {

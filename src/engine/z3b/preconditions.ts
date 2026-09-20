@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 //
 // Ported from python/z3b/preconditions.py.  Every Precondition keeps its
-// Python `__repr__` (`repr()`), which tests/engine-fixtures/rules-manifest.json
-// records for every rule.
+// Python `__repr__` (`repr()`), which is how a rule's preconditions are
+// printed.
 
 import { assert } from "../core/assert";
 import type { Call } from "../core/call";

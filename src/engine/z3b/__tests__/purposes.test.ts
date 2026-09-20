@@ -2,31 +2,60 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// A translation of python/z3b/test_purposes.py.  The tests that need a
-// rule not yet ported (Stayman, NaturalSuited) are adapted to the exemplar
-// rules or wait for phase 5; the histories come from the recorded snapshots.
+// A translation of python/z3b/test_purposes.py, adapted to the exemplar
+// rules where the Python reaches for another one.
 
 import { describe, expect, it } from "vitest";
 import { Call } from "../../core/call";
+import { CallHistory } from "../../core/callhistory";
+import { Interpreter } from "../bidder";
 import * as purposes from "../purposes";
 import { Priority } from "../purposes";
 import { lookup } from "../rule_compiler";
 import { PreemptiveOpen } from "../rules";
 import { RuleCompiler } from "../rule_compiler";
 import { StandardAmericanYellowCard } from "../sayc";
-import { type AuctionSnapshot, readJsonlFixture } from "./fixtures";
-import { RecordedHistories } from "./recorded-history";
 
-const store = new RecordedHistories(
-  readJsonlFixture<AuctionSnapshot>("auction-snapshots.jsonl"),
-  (name) => ({ name, forcing: null, requiresPlanning: false }),
-);
+/** The purposes in the Python module's order, worst last. */
+const ORDER = [
+  "Planned",
+  "Answer",
+  "EnterNotrumpSystem",
+  "GameForce",
+  "Penalize",
+  "Enough",
+  "SupportMajors",
+  "TwoSuiter",
+  "RebidLongMajor",
+  "BalancedLimit",
+  "LongSuitInvitation",
+  "PreemptWeak",
+  "Ask",
+  "MajorDiscovery",
+  "MinorDiscovery",
+  "SupportMinorWithFive",
+  "RebidLongMajorMinimum",
+  "MinorDiscoveryWithFour",
+  "Slam",
+  "RebidLongMinor",
+  "SupportMinorWithFour",
+  "Game",
+  "AskLater",
+  "CharacterizeStrength",
+  "SupportMinors",
+  "RebidSuit",
+  "Preempt",
+  "Compete",
+  "Miscellaneous",
+  "Forced",
+];
 
 describe("purpose order", () => {
   it("documents every purpose in the order", () => {
     // The Python checks its docstring; here the order is the documented list.
-    expect(purposes.ORDER[0]).toBe("Planned");
-    expect(purposes.ORDER[purposes.ORDER.length - 1]).toBe("Forced");
+    expect([...purposes.ORDER]).toEqual(ORDER);
+    expect(purposes.RANK.get("Planned")).toBe(0);
+    expect(purposes.RANK.get("Forced")).toBe(ORDER.length - 1);
     expect(new Set(purposes.ORDER).size).toBe(purposes.ORDER.length);
     for (const [shorthand, [major, minor]] of Object.entries(
       purposes.BY_SUIT,
@@ -106,11 +135,14 @@ describe("rule purposes", () => {
     // (the Python checks Stayman, which phase 5 ports): the promoted variants
     // carry the condition in their meaning.
     const rule = RuleCompiler.compile(PreemptiveOpen);
-    const history = store.historyFor(store.snapshot("N", "None", "")!);
-    const seen = new Set(
-      [...rule.meaningOf(history, Call.fromString("3C"))].map(
-        ([priority]) => priority.purpose,
-      ),
+    const seen = new Interpreter().withHistory(
+      CallHistory.fromString("", "N", "None"),
+      (history) =>
+        new Set(
+          [...rule.meaningOf(history, Call.fromString("3C"))].map(
+            ([priority]) => priority.purpose,
+          ),
+        ),
     );
     expect(seen).toEqual(new Set(["Preempt", "PreemptWeak"]));
   });

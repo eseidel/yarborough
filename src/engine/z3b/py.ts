@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Python's `repr` for the values the DSL prints: the fixtures record the
-// `repr` of every precondition (`LastBidHasStrain('Partner', (Strain(Clubs),
-// Strain(Diamonds)))`), so the port must tell a tuple from a list and quote a
-// string as Python does.  `tuple(...)` marks a Python tuple where a rule
+// Python's `repr` for the values the DSL prints: a precondition prints as
+// `LastBidHasStrain('Partner', (Strain(Clubs), Strain(Diamonds)))`, so the
+// port must tell a tuple from a list and quote a string as Python does.  `tuple(...)` marks a Python tuple where a rule
 // declares one; a plain array is a Python list.
 
 import { Call } from "../core/call";

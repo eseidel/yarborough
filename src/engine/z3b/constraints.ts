@@ -4,8 +4,8 @@
 //
 // Ported from python/z3b/constraints.py.  A Constraint turns the auction and
 // the call into a z3 expression over the hand model; the construction mirrors
-// the Python operator by operator because tests/engine-fixtures/meanings.jsonl
-// hashes the printed forms.
+// the Python operator by operator, so that the printed form of a meaning is
+// the text the Python printed.
 
 import { assert } from "../core/assert";
 import type { Call } from "../core/call";

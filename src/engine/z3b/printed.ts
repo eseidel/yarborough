@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// The printed form of a z3 expression as the fixture exporter
-// (python/tests/export_fixtures.py) prints it: `sexpr()` with the aliasing of
-// shared subterms turned off (`pp.min_alias_size` and `pp.max_depth` raised,
-// so no `let`) and runs of whitespace collapsed to one space.
+// The printed form of a z3 expression as z3py prints it: `sexpr()` with the
+// aliasing of shared subterms turned off (`pp.min_alias_size` and
+// `pp.max_depth` raised, so no `let`) and runs of whitespace collapsed to one
+// space.
 //
 // The WebAssembly module exports no `Z3_global_param_set`, so the binding
 // cannot raise those parameters and Z3 prints with its defaults: a subterm is

@@ -7,8 +7,10 @@
 // collection over a class chain with a mixin, the registry names, and the
 // validation of a rule class.
 
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { Call } from "../../core/call";
+import { CallHistory } from "../../core/callhistory";
+import { History, Interpreter } from "../bidder";
 import { NO_CONSTRAINTS, positions } from "../model";
 import { annotations, UnbidSuit } from "../preconditions";
 import {
@@ -31,13 +33,24 @@ import {
 } from "../rules";
 import { DefaultPass } from "../natural";
 import { RULE_CLASSES, StandardAmericanYellowCard } from "../sayc";
-import { type AuctionSnapshot, readJsonlFixture } from "./fixtures";
-import { RecordedHistories } from "./recorded-history";
 
-const store = new RecordedHistories(
-  readJsonlFixture<AuctionSnapshot>("auction-snapshots.jsonl"),
-  (name) => ({ name, forcing: null, requiresPlanning: false }),
-);
+const interpreter = new Interpreter();
+const interpreted: History[] = [];
+
+/** The interpreted history of an auction; its solvers go back at the end. */
+function historyFor(calls: string, vulnerability = "None") {
+  const one = interpreter.createHistory(
+    CallHistory.fromString(calls, "N", vulnerability),
+  );
+  interpreted.push(one);
+  return one;
+}
+
+afterAll(() => {
+  for (const one of interpreted) {
+    one.release();
+  }
+});
 
 describe("RuleCompiler", () => {
   it("is_not_empty_or_none", () => {
@@ -52,7 +65,7 @@ describe("RuleCompiler", () => {
     // Each call carries its prefer key, a conditional entry adds a variant, and the keys
     // order the calls as the list reads.
     const compiled = RuleCompiler.compile(OneLevelSuitOpening);
-    const history = store.historyFor(store.snapshot("N", "None", "")!);
+    const history = historyFor("");
     const keys: Record<string, [number, number][]> = {};
     for (const name of ["1C", "1D", "1H", "1S"]) {
       const priorities = [
@@ -85,6 +98,21 @@ describe("RuleCompiler", () => {
     expect(StandardAmericanYellowCard.rules.map((r) => r.name)).toEqual(
       Object.keys(RULE_CLASSES).sort(),
     );
+    // The registry holds every rule of the Python system: 217 of them, first
+    // and last by name, and a few in between.
+    const names = StandardAmericanYellowCard.rules.map((r) => r.name);
+    expect(names).toHaveLength(217);
+    expect(names[0]).toBe("AcceptTransferToClubs");
+    expect(names[names.length - 1]).toBe("WeakNewSuitAfterOneNotrumpResponse");
+    for (const name of [
+      "BlackwoodForAces",
+      "Cappelletti",
+      "DefaultPass",
+      "OneLevelSuitOpening",
+      "TwoLevelStayman",
+    ]) {
+      expect(names, name).toContain(name);
+    }
     expect(String(RuleCompiler.compile(DefaultPass))).toBe("DefaultPass");
     expect(RuleCompiler.compile(DefaultPass).repr()).toBe("DefaultPass");
   });
@@ -196,7 +224,7 @@ describe("RuleCompiler", () => {
   });
 
   it("asks a callable purpose and rejects a rule without one", () => {
-    const history = store.historyFor(store.snapshot("N", "None", "")!);
+    const history = historyFor("");
     class Callable extends Rule {
       static override dsl = rule({
         callNames: ["1H", "2C"],
@@ -227,7 +255,7 @@ describe("RuleCompiler", () => {
   });
 
   it("yields the calls a rule can make in Call order", () => {
-    const history = store.historyFor(store.snapshot("N", "None", "")!);
+    const history = historyFor("");
     const compiled: CompiledRule = RuleCompiler.compile(OneLevelSuitOpening);
     expect(
       [...compiled.callsOver(history)].map(([category, call]) => [
@@ -240,7 +268,7 @@ describe("RuleCompiler", () => {
       ["Default", "1H"],
       ["Default", "1S"],
     ]);
-    const after = store.historyFor(store.snapshot("N", "Both", "1S")!);
+    const after = historyFor("1S", "Both");
     expect([...compiled.callsOver(after)]).toEqual([]);
     expect(compiled.forcing).toBeNull();
     expect(compiled.requiresPlanning).toBe(false);

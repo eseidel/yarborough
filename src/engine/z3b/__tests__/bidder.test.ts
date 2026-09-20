@@ -3,10 +3,7 @@
 // found in the LICENSE file.
 //
 // Ported from python/tests/test_bidder.py, plus tests of what the port made
-// explicit: the solver release protocol and the log sink.  A few of the
-// Python tests need rules phase 5 may not have registered yet (responses,
-// for one); those assert the same thing on the opening auction until the
-// registry is complete, then exactly what the Python asserts.
+// explicit: the solver release protocol and the log sink.
 
 import { afterEach, describe, expect, it } from "vitest";
 import { Call, sortCalls } from "../../core/call";
@@ -30,11 +27,6 @@ import { Priority } from "../purposes";
 import { PriorityOrdering, RuleCompiler } from "../rule_compiler";
 import { OneLevelSuitOpening } from "../rules";
 import { StandardAmericanYellowCard } from "../sayc";
-import { type ManifestRule, readJsonFixture } from "./fixtures";
-
-const manifest = readJsonFixture<ManifestRule[]>("rules-manifest.json");
-const registryComplete =
-  StandardAmericanYellowCard.rules.length === manifest.length;
 
 function names(calls: readonly Call[]): string[] {
   return calls.map((call) => call.name);
@@ -113,12 +105,9 @@ describe("canonical order", () => {
   // the same choices.
 
   it("visits the possible calls in Call order", () => {
-    // The Python asks after "1C P" with a responding hand; that needs the
-    // responses registered, so until then an opening hand asks at the start.
-    const hand = Hand.fromCdhsString(
-      registryComplete ? "KJ32.A54.Q876.92" : "AQ.AQ2.AK52.Q973",
-    );
-    const calls = registryComplete ? "1C P" : "";
+    // As the Python asks: a responding hand after "1C P".
+    const hand = Hand.fromCdhsString("KJ32.A54.Q876.92");
+    const calls = "1C P";
     const possible = new Interpreter().withHistory(
       CallHistory.fromString(calls),
       (history) => {
@@ -141,7 +130,7 @@ describe("canonical order", () => {
   });
 
   it("keeps the rule for each call in Call order", () => {
-    const calls = registryComplete ? "1C P" : "";
+    const calls = "1C P";
     const keys = new Interpreter().withHistory(
       CallHistory.fromString(calls),
       (history) => [
@@ -160,38 +149,34 @@ describe("canonical order", () => {
     expect(ruleNames).toEqual([...ruleNames].sort());
   });
 
-  it.skipIf(!registryComplete)(
-    "lists the suits of a view in suit order",
-    () => {
-      // North to call: North opened 1S, partner South bid 2H.
-      new Interpreter().withHistory(
-        CallHistory.fromString("1S P 2H P"),
-        (history) => {
-          expect(history.me.bidSuits.map((s) => s.char)).toEqual(["S"]);
-          expect(history.partner.bidSuits.map((s) => s.char)).toEqual(["H"]);
-          expect(history.partner.unbidSuits.map((s) => s.char)).toEqual([
-            "C",
-            "D",
-            "S",
-          ]);
-          expect(history.us.bidSuits.map((s) => s.char)).toEqual(["H", "S"]);
-          expect(history.them.unbidSuits.map((s) => s.char)).toEqual([
-            "C",
-            "D",
-            "H",
-            "S",
-          ]);
-        },
-      );
-    },
-  );
+  it("lists the suits of a view in suit order", () => {
+    // North to call: North opened 1S, partner South bid 2H.
+    new Interpreter().withHistory(
+      CallHistory.fromString("1S P 2H P"),
+      (history) => {
+        expect(history.me.bidSuits.map((s) => s.char)).toEqual(["S"]);
+        expect(history.partner.bidSuits.map((s) => s.char)).toEqual(["H"]);
+        expect(history.partner.unbidSuits.map((s) => s.char)).toEqual([
+          "C",
+          "D",
+          "S",
+        ]);
+        expect(history.us.bidSuits.map((s) => s.char)).toEqual(["H", "S"]);
+        expect(history.them.unbidSuits.map((s) => s.char)).toEqual([
+          "C",
+          "D",
+          "H",
+          "S",
+        ]);
+      },
+    );
+  });
 
   it("lists the suits of a view in suit order after an opening", () => {
     // West to call: North opened 1S (dealer North).
     new Interpreter().withHistory(
       CallHistory.fromString("1S P 2C"),
       (history) => {
-        // A history the exemplars can interpret: 1S by OneLevelSuitOpening.
         expect(history.lho.lastCall?.name).toBe("1S");
         expect(history.lho.bidSuits.map((s) => s.char)).toEqual(["S"]);
         expect(history.lho.unbidSuits.map((s) => s.char)).toEqual([
