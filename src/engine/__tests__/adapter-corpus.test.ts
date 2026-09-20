@@ -111,7 +111,7 @@ describe("interpretations.jsonl through the adapter", () => {
     { timeout: 1_800_000 },
     () => {
       const started = performance.now();
-      const { checked, description } = corpusSample(interpretationRecords, 5);
+      const { checked, description } = corpusSample(interpretationRecords, 15);
       let calls = 0;
       for (const record of checked) {
         const key = `${record.dealer} ${record.vulnerability} "${record.calls}"`;
@@ -145,7 +145,7 @@ describe("random-deals.jsonl through the adapter", () => {
 
   it("bids and leads every deal as Python did", { timeout: 1_800_000 }, () => {
     const started = performance.now();
-    const { checked, description } = corpusSample(randomDealRecords, 5);
+    const { checked, description } = corpusSample(randomDealRecords, 10);
     let leads = 0;
     for (const record of checked) {
       const key = `deal ${record.index} (${record.board})`;
