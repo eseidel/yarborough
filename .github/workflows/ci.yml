@@ -52,9 +52,26 @@ jobs:
       # and compares the run with tests/baselines/.
       - run: pnpm baseline:check
 
-      # TODO: enable once the fixture regenerator lands (phase 9). It checks
-      # that tests/engine-fixtures/ still reproduces byte for byte.
-      # - run: pnpm fixtures:check
+  fixtures:
+    name: Fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Regenerates tests/engine-fixtures/ from the engine (about 18 minutes,
+      # single-threaded) and fails on any byte that differs: a bidding change
+      # is accepted with `pnpm fixtures:accept` alongside `pnpm baseline:accept`.
+      - run: pnpm fixtures:check
 
   browser:
     name: Browser worker
