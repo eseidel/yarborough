@@ -24,39 +24,32 @@
 // manifest rules are registered is a todo until phase 5 completes.
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Call, sortCalls } from "../../core/call";
-import { Strain } from "../../core/suit";
-import { RuleSelector, setBidderLog } from "../bidder";
-import { Constraint } from "../constraints";
-import { EnumValue, sortedEnumValues } from "../enum";
-import { SAYCForcingOracle } from "../forcing";
-import { printedForm } from "../printed";
-import * as prefer from "../prefer";
-import { Precondition, annotations, impliesArtificial } from "../preconditions";
-import * as purposes from "../purposes";
-import { positions } from "../model";
+import { Call } from "../../core/call";
 import {
-  type CompiledRule,
-  Rule,
-  RuleCompiler,
-  categories,
-  lookup,
-  mro,
-} from "../rule_compiler";
-import { StandardAmericanYellowCard } from "../sayc";
-import { Expr, z3 } from "../z3";
+  describeValue,
+  enumKeys,
+  manifestEntry,
+  snakeCase,
+} from "../../fixtures/describe";
+import { fixtureHash } from "../../fixtures/hash";
+import { meaningsOf } from "../../fixtures/records";
 import {
   type AuctionSnapshot,
-  type DescribedValue,
-  fixtureHash,
   type ManifestRule,
   type MeaningRecord,
   type MeaningsSnapshot,
-  readJsonFixture,
-  readJsonlFixture,
   type VocabularyFixture,
   auctionKey,
-} from "./fixtures";
+} from "../../fixtures/types";
+import { RuleSelector, setBidderLog } from "../bidder";
+import { SAYCForcingOracle } from "../forcing";
+import { printedForm } from "../printed";
+import * as purposes from "../purposes";
+import { annotations, impliesArtificial } from "../preconditions";
+import { positions } from "../model";
+import { type CompiledRule, Rule, categories } from "../rule_compiler";
+import { StandardAmericanYellowCard } from "../sayc";
+import { readJsonFixture, readJsonlFixture } from "./fixtures";
 import { RecordedHistories, UnrecordedError } from "./recorded-history";
 
 const manifest = readJsonFixture<ManifestRule[]>("rules-manifest.json");
@@ -83,163 +76,6 @@ const store = new RecordedHistories(snapshots, (name) => {
     requiresPlanning: entry.requires_planning,
   };
 });
-
-/** `voidInSpades` is `void_in_spades`: the Python spelling of a TypeScript name. */
-function snakeCase(name: string): string {
-  return name.replace(/[A-Z]/g, (letter) => "_" + letter.toLowerCase());
-}
-
-/** The port of export_fixtures.describe. */
-function describeValue(value: unknown): DescribedValue {
-  if (
-    value === null ||
-    value === undefined ||
-    typeof value === "boolean" ||
-    typeof value === "number" ||
-    typeof value === "string"
-  ) {
-    return value ?? null;
-  }
-  if (value instanceof Expr) {
-    return { z3: printedForm(value) };
-  }
-  if (value instanceof EnumValue) {
-    return { enum: value.key };
-  }
-  if (value instanceof Strain) {
-    return { strain: value.char };
-  }
-  if (value instanceof Call) {
-    return { call: value.name };
-  }
-  if (value instanceof Precondition) {
-    return { precondition: value.repr() };
-  }
-  if (value instanceof prefer.Entry) {
-    return describePreferEntry(value);
-  }
-  if (value instanceof Constraint) {
-    const described: Record<string, DescribedValue> = {
-      constraint: value.constructor.name,
-    };
-    for (const [name, attribute] of Object.entries(value)) {
-      described[snakeCase(name)] = describeValue(attribute);
-    }
-    return described;
-  }
-  if (typeof value === "function") {
-    return { callable: snakeCase(value.name) };
-  }
-  if (Array.isArray(value)) {
-    return value.map(describeValue);
-  }
-  if (typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, describeValue(item)]),
-    );
-  }
-  throw new Error(`cannot describe ${String(value)}`);
-}
-
-function describePreferEntry(entry: prefer.Entry): DescribedValue {
-  const described: Record<string, DescribedValue> = {
-    type: entry.constructor.name,
-    names: [...entry.names],
-    conditional: entry.conditional,
-  };
-  if (entry instanceof prefer.Conditional) {
-    described.order = entry._order.constructor.name;
-    described.condition = describeValue(entry._condition);
-  }
-  return described;
-}
-
-function describePurpose(purpose: unknown): string | null {
-  if (purpose === null || purpose === undefined) {
-    return null;
-  }
-  if (typeof purpose === "function") {
-    return `callable:${snakeCase(purpose.name)}`;
-  }
-  return purpose as string;
-}
-
-function describeConditionalPurpose(entry: readonly unknown[]) {
-  return {
-    condition: describeValue(entry[0]),
-    purpose: describePurpose(entry[1]),
-    base: entry.length > 2 ? describePurpose(entry[2]) : null,
-  };
-}
-
-/** `_per_call`: a flattened per-call map, keyed by call name in Call order. */
-function perCall<T, U>(
-  flattened: Record<string, T>,
-  describe: (value: T) => U,
-): Record<string, U> {
-  const calls = sortCalls(
-    Object.keys(flattened).map((name) => Call.fromString(name)),
-  );
-  return Object.fromEntries(
-    calls.map((call) => [call.name, describe(flattened[call.name])]),
-  );
-}
-
-function enumKeys(values: Iterable<EnumValue>): string[] {
-  return sortedEnumValues(values).map((value) => value.key);
-}
-
-/** The manifest entry the Python exporter would write for a compiled rule. */
-function manifestEntry(rule: CompiledRule): ManifestRule {
-  const dsl = rule.dslRule;
-  return {
-    name: rule.name,
-    mro: mro(dsl).map((cls) => cls.name),
-    category: rule.category.key,
-    purpose: describePurpose(lookup(dsl, "purpose")),
-    purposes_per_call: perCall(rule.purposesPerCall, describePurpose),
-    conditional_purposes: lookup(dsl, "conditionalPurposes").map(
-      describeConditionalPurpose,
-    ),
-    conditional_purposes_per_call: perCall(
-      rule.conditionalPurposesPerCall,
-      (entries) => entries.map(describeConditionalPurpose),
-    ),
-    known_calls: sortCalls([...rule.knownCalls]).map((call) => call.name),
-    annotations: enumKeys(rule._annotations),
-    annotations_per_call: perCall(
-      RuleCompiler._flattenTupleKeyedDict(lookup(dsl, "annotationsPerCall")),
-      (value) => enumKeys(RuleCompiler._ensureList(value)),
-    ),
-    annotations_for_call: Object.fromEntries(
-      sortCalls([...rule.knownCalls]).map((call) => [
-        call.name,
-        enumKeys(rule.annotationsForCall(call)),
-      ]),
-    ),
-    fallback: Math.trunc(lookup(dsl, "fallback")),
-    requires_planning: rule.requiresPlanning,
-    forcing: rule.forcing,
-    explanation: lookup(dsl, "explanation"),
-    explanations_per_call: perCall(
-      RuleCompiler._flattenTupleKeyedDict(lookup(dsl, "explanationsPerCall")),
-      (value) => value,
-    ),
-    preconditions: rule.preconditions.map((precondition) =>
-      precondition.repr(),
-    ),
-    preconditions_per_call: perCall(rule.preconditionsPerCall, (value) =>
-      RuleCompiler._ensureList(value).map((precondition) =>
-        precondition.repr(),
-      ),
-    ),
-    prefer: prefer
-      ._normalize(lookup(dsl, "prefer") ?? [])
-      .map(describePreferEntry) as unknown as ManifestRule["prefer"],
-    shared_constraints: describeValue(rule.sharedConstraints),
-    constraints: perCall(rule.constraints, describeValue),
-  };
-}
 
 /**
  * RuleSelector._call_to_rule over the registered rules: the rule of the best
@@ -541,51 +377,22 @@ describe("meanings.jsonl", () => {
         continue;
       }
       const history = store.historyFor(snapshot);
-      const ordering = StandardAmericanYellowCard.priorityOrdering;
-      const variants = new Map(
-        sortCalls(callNames.map((name) => Call.fromString(name))).map(
-          (call) => [
-            call,
-            [
-              ...registered
-                .get(snapshot.call_to_rule[call.name])!
-                .meaningOf(history, call),
-            ],
-          ],
+      // The exporter's `_meanings` over the recorded call_to_rule.
+      const { records: rebuilt } = meaningsOf(
+        StandardAmericanYellowCard.priorityOrdering,
+        history,
+        new Map(
+          callNames.map((name) => [
+            Call.fromString(name),
+            registered.get(snapshot.call_to_rule[name])!,
+          ]),
         ),
       );
       for (const record of mine) {
-        const call = Call.fromString(record.call);
-        const rule = registered.get(record.rule)!;
-        const situations: Expr[] = [];
-        const negations: Record<string, number[]>[] = [];
-        for (const [priority, meaning] of variants.get(call)!) {
-          const exprs = [meaning];
-          const negated: Record<string, number[]> = {};
-          for (const [unmadeCall, unmadeVariants] of variants) {
-            if (
-              registered.get(snapshot.call_to_rule[unmadeCall.name])!
-                .requiresPlanning
-            ) {
-              continue;
-            }
-            unmadeVariants.forEach(([unmadePriority, unmadeMeaning], index) => {
-              if (ordering.lt(priority, unmadePriority)) {
-                exprs.push(z3.Not(unmadeMeaning));
-                (negated[unmadeCall.name] ??= []).push(index);
-              }
-            });
-          }
-          situations.push(z3.And(exprs));
-          negations.push(negated);
-        }
-        expect(negations, `${key}: ${record.call} by ${rule.name}`).toEqual(
-          record.negations,
+        const actual = rebuilt.find((one) => one.call === record.call)!;
+        expect(actual, `${key}: ${record.call} by ${record.rule}`).toEqual(
+          record,
         );
-        expect(
-          fixtureHash(printedForm(z3.Or(situations))),
-          `${key}: ${record.call} by ${rule.name}`,
-        ).toBe(record.constraints);
         checked++;
       }
     }

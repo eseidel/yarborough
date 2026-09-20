@@ -18,7 +18,9 @@
     "explain": "node scripts/explain.mjs",
     "random-deals": "node scripts/random-deals.mjs",
     "baseline:check": "node scripts/check-baseline.mjs",
-    "baseline:accept": "node scripts/check-baseline.mjs --accept"
+    "baseline:accept": "node scripts/check-baseline.mjs --accept",
+    "fixtures:check": "node scripts/export-fixtures.mjs",
+    "fixtures:accept": "node scripts/export-fixtures.mjs --accept"
   },
   "dependencies": {
     "react": "^19.2.0",

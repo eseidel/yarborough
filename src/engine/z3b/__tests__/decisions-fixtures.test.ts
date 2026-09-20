@@ -21,18 +21,14 @@ import { CallHistory } from "../../core/callhistory";
 import { Hand } from "../../core/hand";
 import { setBidderLog } from "../bidder";
 import { StandardAmericanYellowCard } from "../sayc";
-import {
-  type AuctionSnapshot,
-  type ManifestRule,
-  readJsonFixture,
-  readJsonlFixture,
-} from "./fixtures";
-import {
-  Coverage,
-  corpusSample,
-  type DecisionRecord,
-  decisionOf,
-} from "./kernel-checks";
+import { decisionOf } from "../../fixtures/records";
+import type {
+  AuctionSnapshot,
+  DecisionRecord,
+  ManifestRule,
+} from "../../fixtures/types";
+import { readJsonFixture, readJsonlFixture } from "./fixtures";
+import { Coverage, corpusSample } from "./kernel-checks";
 
 const manifest = readJsonFixture<ManifestRule[]>("rules-manifest.json");
 const snapshots = readJsonlFixture<AuctionSnapshot>("auction-snapshots.jsonl");
