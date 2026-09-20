@@ -31,8 +31,8 @@ decisions, and the next action.
 | 5     | done    | all 217 rules in `src/engine/z3b/rules/`, `natural.ts`, `cappelletti.ts`; every meaning and negation matches (bab1a8b) |
 | 6     | done    | kernel `src/engine/z3b/bidder.ts`, `harness-bidder.ts` (3df1d99); every snapshot, decision and the baseline reproduced |
 | 7     | running | harness and baseline done (2000558); adapter port and the interpretations, random-deal and golden gates in progress    |
-| 8     | pending | worker swap, Pyodide removal                                                                                           |
-| 9     | pending | retire Python                                                                                                          |
+| 8     | running | worker calls the adapter; Pyodide, micropip and the wheel removed                                                      |
+| 9     | partial | `pnpm explain` and `pnpm random-deals` ported (c299573); deleting `python/` and moving the baselines remains           |
 | 10    | later   | optional bounded solver; separate decision                                                                             |
 
 ## Decisions
@@ -147,3 +147,10 @@ pnpm test` checks all and the byte-for-byte baseline. Corpus average about
   `setBidderLog` captures the Python-style WARNING and COLLISION lines.
   Dispatched the adapter port (rest of phase 7) and the analysis tools
   (part of phase 9).
+- 2026-09-20: phase 7 complete (408f89d) and the analysis tools landed
+  (c299573). The adapter found a solver leak: interpretation branches that are
+  dropped (every legal call in get_call_interpretations, the partner-future in
+  the knowledge string) must call `History.releaseBranch()`; Python relied on
+  its garbage collector. The adapter corpus gate samples every 15th auction and
+  every 10th deal in `pnpm test`; `YARBOROUGH_FULL_BASELINE=1` checks all
+  (about 12 minutes). Dispatched phase 8.
