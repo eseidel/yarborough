@@ -66,10 +66,28 @@ const registry = new FinalizationRegistry<Released>((held) => {
 export class Expr {
   readonly ctx: Z3Context;
   readonly pointer: Pointer;
+  /** The arguments this term was built from, when they were recorded. */
+  private _children: readonly Expr[] | undefined;
 
   constructor(ctx: Z3Context, pointer: Pointer) {
     this.ctx = ctx;
     this.pointer = pointer;
+  }
+
+  /**
+   * z3py's `children()`: the arguments of this application, or none for a
+   * leaf.  The WebAssembly build exports no `Z3_get_app_arg`, so the answer
+   * is what the term was built from, recorded while `Z3Context.trackChildren`
+   * was on (`withChildTracking`); a term built with tracking off has no
+   * recorded arguments and answers none.
+   */
+  children(): readonly Expr[] {
+    return this._children ?? [];
+  }
+
+  /** @internal Records the arguments; only `Z3Context` calls this. */
+  _setChildren(children: readonly Expr[]): void {
+    this._children = children;
   }
 
   /** The s-expression Z3 prints for this term, as z3py's `sexpr()`. */
@@ -190,6 +208,14 @@ export class Z3Context {
   /** Scratch space for argument arrays and out-parameters. */
   private scratch: Pointer;
   private scratchSlots: number;
+  /**
+   * While true, every compound term records the arguments it was built from,
+   * so `Expr.children()` can answer them (the WebAssembly build exports no
+   * `Z3_get_app_arg`).  Off by default: the engine builds millions of terms
+   * and only the analysis tools ask for children.  Prefer
+   * `withChildTracking`.
+   */
+  trackChildren = false;
 
   /**
    * A fresh Z3 context, configured as z3py's `Context()`: reference counted,
@@ -287,30 +313,35 @@ export class Z3Context {
   }
 
   Not(expr: BoolLike): Expr {
-    return this.wrap(
-      this.module._Z3_mk_not(this.context, this.bool(expr).pointer),
-    );
+    const argument = this.bool(expr);
+    return this.wrap(this.module._Z3_mk_not(this.context, argument.pointer), [
+      argument,
+    ]);
   }
 
   Implies(left: BoolLike, right: BoolLike): Expr {
+    const args = [this.bool(left), this.bool(right)];
     return this.wrap(
       this.module._Z3_mk_implies(
         this.context,
-        this.bool(left).pointer,
-        this.bool(right).pointer,
+        args[0].pointer,
+        args[1].pointer,
       ),
+      args,
     );
   }
 
   /** z3py `If(c, a, b)`. */
   If(condition: BoolLike, then: IntLike, otherwise: IntLike): Expr {
+    const args = [this.bool(condition), this.int(then), this.int(otherwise)];
     return this.wrap(
       this.module._Z3_mk_ite(
         this.context,
-        this.bool(condition).pointer,
-        this.int(then).pointer,
-        this.int(otherwise).pointer,
+        args[0].pointer,
+        args[1].pointer,
+        args[2].pointer,
       ),
+      args,
     );
   }
 
@@ -339,12 +370,10 @@ export class Z3Context {
   }
 
   eq(left: IntLike, right: IntLike): Expr {
+    const args = [this.int(left), this.int(right)];
     return this.wrap(
-      this.module._Z3_mk_eq(
-        this.context,
-        this.int(left).pointer,
-        this.int(right).pointer,
-      ),
+      this.module._Z3_mk_eq(this.context, args[0].pointer, args[1].pointer),
+      args,
     );
   }
 
@@ -367,6 +396,20 @@ export class Z3Context {
 
   ge(left: IntLike, right: IntLike): Expr {
     return this.compare(this.module._Z3_mk_ge, left, right);
+  }
+
+  /**
+   * Runs `build` with `trackChildren` on, so the terms it builds answer
+   * `children()`, and restores the previous setting afterwards.
+   */
+  withChildTracking<T>(build: () => T): T {
+    const previous = this.trackChildren;
+    this.trackChildren = true;
+    try {
+      return build();
+    } finally {
+      this.trackChildren = previous;
+    }
   }
 
   /** z3py `expr.sexpr()`: `Z3_ast_to_string` on this context. */
@@ -497,10 +540,13 @@ export class Z3Context {
 
   // --- marshalling -----------------------------------------------------
 
-  private wrap(pointer: Pointer): Expr {
+  private wrap(pointer: Pointer, children?: readonly Expr[]): Expr {
     this.checked(pointer);
     this.module._Z3_inc_ref(this.context, pointer);
     const expr = new Expr(this, pointer);
+    if (children && this.trackChildren) {
+      expr._setChildren(children);
+    }
     registry.register(expr, {
       kind: "ast",
       module: this.module,
@@ -533,8 +579,10 @@ export class Z3Context {
     left: IntLike,
     right: IntLike,
   ): Expr {
+    const args = [this.int(left), this.int(right)];
     return this.wrap(
-      make(this.context, this.int(left).pointer, this.int(right).pointer),
+      make(this.context, args[0].pointer, args[1].pointer),
+      args,
     );
   }
 
@@ -548,7 +596,7 @@ export class Z3Context {
     for (let i = 0; i < args.length; i++) {
       heap[base + i] = args[i].pointer;
     }
-    return this.wrap(make(this.context, args.length, array));
+    return this.wrap(make(this.context, args.length, array), args);
   }
 
   /** Scratch space for `slots` 32-bit values, valid until the next call. */

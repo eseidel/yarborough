@@ -90,6 +90,46 @@ function handModel(z: Z3Context) {
 describe("z3 wasm", () => {
   const contextPromise = loadZ3();
 
+  // `Expr.children()`, which the analysis tools use to test a meaning
+  // conjunct by conjunct.  The build exports no `Z3_get_app_arg`, so a term
+  // answers the arguments it was built from, and only when it was built with
+  // tracking on.  Every expectation below is what z3py answers for the same
+  // construction: `z3.And([x >= 6]).children()` is `[x >= 6]` (Z3 keeps the
+  // unary `and`), the children of a nested `And` are its arguments, not the
+  // flattened ones its printer shows, and a comparison's children are its two
+  // sides.
+  it("answers the arguments a term was built from", async () => {
+    const z = await contextPromise;
+    const x = z.Int("x");
+    const printed = (expr: Expr) => expr.children().map((one) => one.sexpr());
+    z.withChildTracking(() => {
+      const unary = z.And([x.ge(6)]);
+      expect(unary.sexpr()).toBe("(and (>= x 6))");
+      expect(printed(unary)).toEqual(["(>= x 6)"]);
+      const nested = z.And([unary, x.le(10)]);
+      expect(nested.sexpr()).toBe("(and (>= x 6) (<= x 10))");
+      expect(printed(nested)).toEqual(["(and (>= x 6))", "(<= x 10)"]);
+      expect(printed(z.And([]))).toEqual([]);
+      expect(printed(z.Or(x.eq(1), x.eq(2)))).toEqual(["(= x 1)", "(= x 2)"]);
+      expect(printed(z.Not(x.eq(1)))).toEqual(["(= x 1)"]);
+      expect(printed(x.ge(6))).toEqual(["x", "6"]);
+      expect(printed(z.Sum([x, x]))).toEqual(["x", "x"]);
+      expect(printed(z.If(x.gt(4), x, 0))).toEqual(["(> x 4)", "x", "0"]);
+      expect(printed(z.Int("y"))).toEqual([]);
+    });
+  });
+
+  it("records nothing while tracking is off, which is the default", async () => {
+    const z = await contextPromise;
+    const x = z.Int("x");
+    expect(z.trackChildren).toBe(false);
+    expect(z.And([x.ge(6)]).children()).toEqual([]);
+    z.withChildTracking(() => {
+      expect(z.trackChildren).toBe(true);
+    });
+    expect(z.trackChildren).toBe(false);
+  });
+
   it("reports the Z3 version it was built from", async () => {
     const z = await contextPromise;
     expect(z.version()).toBe("5.1.0.0");
