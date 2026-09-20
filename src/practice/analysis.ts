@@ -57,6 +57,28 @@ export function makeableContracts(
   );
 }
 
+/** True when a bid of `level` `strain` would be legal over `contract`. */
+export function outranks(
+  level: number,
+  strain: StrainName,
+  contract: ContractInfo,
+): boolean {
+  if (level !== contract.level) return level > contract.level;
+  return STRAIN_RANK.indexOf(strain) < STRAIN_RANK.indexOf(contract.strain);
+}
+
+/**
+ * Those of `contracts` a side could still have bid over `contract`. A
+ * makeable contract the opponents have already bid past is no answer to
+ * them: with 3♠ on the table, making 3♥ would have taken a bid of 4♥.
+ */
+export function biddableOver(
+  contracts: MakeableContract[],
+  contract: ContractInfo,
+): MakeableContract[] {
+  return contracts.filter((c) => outranks(c.level, c.strain, contract));
+}
+
 export type ContractClass = "partscore" | "game" | "small slam" | "grand slam";
 const CLASS_RANK: ContractClass[] = [
   "partscore",
@@ -187,11 +209,25 @@ export function biddingVerdict(
       : { text: `${us} missed a ${ourBest}.`, tone: "mixed" };
   }
 
-  if (ourBest && ourBest !== "partscore") {
-    return { text: `A missed ${ourBest} for ${us}.`, tone: "bad" };
+  // Only a contract that outranks theirs was ever ours to bid, so judge the
+  // auction by those alone: a side sitting under the opponents' contract
+  // missed nothing it could have had.
+  const available = bestClass(
+    biddableOver(makeableContracts(table, userSide), contract),
+  );
+
+  if (available && available !== "partscore") {
+    return { text: `A missed ${available} for ${us}.`, tone: "bad" };
   }
-  if (ourBest === "partscore" && makes) {
+  if (available === "partscore" && makes) {
     return { text: `${us} could have competed in a partscore.`, tone: "mixed" };
+  }
+  if (!available && ourBest && makes) {
+    const them = SIDE_LABEL[otherSide(userSide)];
+    return {
+      text: `${them} bid too high for ${us} to compete.`,
+      tone: "good",
+    };
   }
   return { text: "Defending was right.", tone: "good" };
 }
