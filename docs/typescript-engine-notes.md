@@ -1,4 +1,4 @@
-<!-- cspell:ignore unsat -->
+<!-- cspell:ignore unsat pycache -->
 
 # Notes: the TypeScript engine port
 
@@ -32,7 +32,7 @@ decisions, and the next action.
 | 7     | running | harness and baseline done (2000558); adapter port and the interpretations, random-deal and golden gates in progress    |
 | 8     | running | worker calls the adapter; Pyodide, micropip and the wheel removed                                                      |
 | 9     | partial | `pnpm explain` and `pnpm random-deals` ported (c299573); deleting `python/` and moving the baselines remains           |
-| 10    | later   | optional bounded solver; separate decision                                                                             |
+| 10    | later   | optional bounded solver replacing the 11 MB Z3 module; a separate decision with its own fuzzing gate                   |
 
 ## Decisions
 
@@ -92,7 +92,9 @@ decisions, and the next action.
 - Z3 wasm in Node: one push/add/check/pop cycle on the hand model about
   0.5 to 1.0 ms; module parse 0.24 s, instantiate 0.52 s.
 - Fixture export: 1,510 auctions, 13,988 (call, rule) meanings, 1,540
-  decisions, 300 random deals; 11 to 14 minutes wall; `--check` as long again.
+  decisions, 300 random deals. Python: 11 to 14 minutes on 4 processes.
+  TypeScript (`pnpm fixtures:check`): about 18 minutes single-threaded, byte
+  for byte identical to the Python output.
 - Python gates after phase 0: 112 tests, 53 s.
 - After phase 8: payload to first bid 3.92 MB gzip (was 9.66 MB); the engine
   and Z3 land in one worker-only chunk of 13.4 MB (3.8 MB gzip); first bid in
@@ -179,3 +181,23 @@ pnpm test` checks all and the byte-for-byte baseline. Corpus average about
   leftovers to delete after pulling this: `.venv/`, `python/__pycache__/`,
   `vendor/` (no longer ignored). Remaining: the fixture regenerator
   (`pnpm fixtures:check`), then enable its CI step.
+- 2026-09-20: phase 9 complete (046d945): the TypeScript regenerator
+  reproduces every Python-generated fixture byte for byte, which is the final
+  parity proof of the port. CI has a separate `fixtures` job (18 minutes)
+  beside `baseline`. Final gates on the branch: 901 Vitest tests, 16 browser
+  tests, lint, format, build, `pnpm baseline:check`, `pnpm test:production`.
+  The conversion is complete; phase 10 (a bounded solver replacing Z3) stays
+  an optional, separate decision.
+
+## Follow-ups worth considering
+
+- Port the four remaining analysis tools (`collisions`, `harness_diff`,
+  `triage`, `why_inconsistent`; one line each in the phase 9 log above) if
+  they are missed; each is small on top of the kernel.
+- Exclude `src/z3/wasm/z3.mjs` from Vite's browser-mode transform (as
+  `vite.config.ts` does for Node) to cut about 15 s from `pnpm test:browser`.
+- `docs/progress-plan.md` and `docs/practice-ux.md` still cite the old
+  Python paths as history; the provenance comments in `src/engine/` ("ported
+  from python/...") are kept on purpose for the SAYCBridge attribution.
+- The 51 pre-existing cspell hits in `docs/seo-baseline/*.csv` predate this
+  work.
