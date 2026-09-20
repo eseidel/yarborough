@@ -10,7 +10,7 @@
     "python/z3b",
     "python/tests/test_sayc_data.py",
     "src/engine/harness/sayc_data.ts",
-    "python/tests/baselines",
+    "tests/baselines",
     "src/dds/wasm",
     "src/z3/wasm",
     "tests/dd_golden_cases.json",

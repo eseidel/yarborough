@@ -28,7 +28,7 @@ import tempfile
 
 TESTS = os.path.dirname(os.path.abspath(__file__))
 PYTHON = os.path.dirname(TESTS)
-BASELINES = os.path.join(TESTS, 'baselines')
+BASELINES = os.path.join(os.path.dirname(PYTHON), 'tests', 'baselines')
 BASELINE = os.path.join(BASELINES, 'z3b_baseline.txt')
 RULES_BASELINE = os.path.join(BASELINES, 'z3b_rules_baseline.txt')
 TIMEOUT_SECONDS = 900  # a normal run takes under a minute

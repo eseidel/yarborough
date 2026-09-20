@@ -46,7 +46,7 @@ T8753 hearts, and JT432 spades.
   `src/engine/harness/sayc_data.ts` (hand, expected call, auction), ported from
   `python/tests/test_sayc_data.py`; every hand in it is bid by the harness
   (`pnpm baseline:check`) and compared with the accepted output in
-  `python/tests/baselines/`. Any behavior change of the bidder fails that check
+  `tests/baselines/`. Any behavior change of the bidder fails that check
   with a diff (`pnpm test` runs a sample of it; `YARBOROUGH_FULL_BASELINE=1
 pnpm test` runs all of it). When the change is intended, commit it and run
   `pnpm baseline:accept` (it refuses a dirty tree) so the reviewed artifact is

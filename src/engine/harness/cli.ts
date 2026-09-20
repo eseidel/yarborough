@@ -24,9 +24,9 @@ import {
   report,
 } from "./check_baseline";
 
-/** Where the accepted output lives.  Phase 9 moves it under `tests/`. */
-export const BASELINE = "python/tests/baselines/z3b_baseline.txt";
-export const RULES_BASELINE = "python/tests/baselines/z3b_rules_baseline.txt";
+/** Where the accepted output lives. */
+export const BASELINE = "tests/baselines/z3b_baseline.txt";
+export const RULES_BASELINE = "tests/baselines/z3b_rules_baseline.txt";
 
 /**
  * The kernel's `HarnessBidder`.  Named as a specifier rather than imported so

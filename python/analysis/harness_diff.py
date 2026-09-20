@@ -19,8 +19,9 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PYTHON = os.path.dirname(HERE)
-BASELINE_RULES = os.path.join(PYTHON, "tests", "baselines", "z3b_rules_baseline.txt")
-BASELINE_OUT = os.path.join(PYTHON, "tests", "baselines", "z3b_baseline.txt")
+ROOT = os.path.dirname(PYTHON)
+BASELINE_RULES = os.path.join(ROOT, "tests", "baselines", "z3b_rules_baseline.txt")
+BASELINE_OUT = os.path.join(ROOT, "tests", "baselines", "z3b_baseline.txt")
 
 
 def main(argv):

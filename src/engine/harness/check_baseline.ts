@@ -6,7 +6,7 @@
 // functions over strings.  `cli.ts` is the `pnpm baseline:check` /
 // `pnpm baseline:accept` entry point around them.
 //
-// Two files under `python/tests/baselines/` are the baseline:
+// Two files under `tests/baselines/` are the baseline:
 // `z3b_baseline.txt` is the harness output itself (one FAIL line per known
 // miss, group pass counts, coverage lists, WARNING lines for ties),
 // `z3b_rules_baseline.txt` is one line per test: the call made, the rule that
