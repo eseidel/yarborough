@@ -10,12 +10,11 @@ decisions, and the next action.
 
 1. `git checkout claude/bidding-engine-python-typescript-tj1h1x` and read the
    "Status" table below; the first row that is not `done` is the next work.
-2. Environment: `pnpm install`; `python3 -m venv .venv && .venv/bin/python -m pip install -e ./python`
-   (Python stays the reference until phase 9). Emscripten for the Z3 build is
-   installed by `native/z3/build.sh` instructions once phase 1 lands.
-3. The Python checks that must stay green while Python is the reference:
-   `pnpm test:python` (includes the baseline gate). The TypeScript checks:
-   `pnpm test`, `pnpm lint`, `pnpm format:check`, `npx cspell --no-progress --dot "**"`, `pnpm build`.
+2. Environment: `pnpm install`. Nothing else; the Python reference was deleted
+   in phase 9 (6381d99) and is available from git history before that commit.
+   Emscripten for a Z3 rebuild: see `native/z3/README.md`.
+3. The checks: `pnpm test`, `pnpm baseline:check`, `pnpm lint`, `pnpm format:check`,
+   `npx cspell --no-progress --dot "**"`, `pnpm build`, `pnpm test:browser`.
 4. Commit per phase on this branch. Update this file in the same commit.
 
 ## Status
@@ -174,3 +173,9 @@ pnpm test` checks all and the byte-for-byte baseline. Corpus average about
   product or the toolchain; 853 TypeScript tests green; `pnpm test:production`
   bids in 1.9 s. Dispatched phase 9 in two parts: the fixture regenerator and
   the deletion of `python/` with the CI and docs changes.
+- 2026-09-20: phase 9 retirement landed (045dfd8, 6381d99): `python/` is gone,
+  `tests/baselines/` holds the accepted output, CI's Python job is replaced by
+  `pnpm baseline:check`, and the docs describe the TypeScript workflow. Local
+  leftovers to delete after pulling this: `.venv/`, `python/__pycache__/`,
+  `vendor/` (no longer ignored). Remaining: the fixture regenerator
+  (`pnpm fixtures:check`), then enable its CI step.
