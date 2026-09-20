@@ -1,4 +1,4 @@
-// cspell:ignore DAKJ HAKQJ SAKQ DAKQJT CAKQJT
+// cspell:ignore DAKJ HAKQJ SAKQ DAKQJT CAKQJT DAKQJ CAKQ SAKQJT
 import type {
   Deal,
   Hand,
@@ -66,6 +66,17 @@ export const MOCK_VOID_DEAL: Deal = {
   east: { cards: parseHand("SJT9 HAKQJ D987 C987") },
   south: { cards: parseHand("S432 H765432 D32 C32") },
   west: { cards: parseHand("SAKQ DAKQJT CAKQJT") },
+};
+
+/**
+ * A deal with an eight-card suit, the longest holding the diagram has room
+ * for on a phone, opposite a seat that is void.
+ */
+export const MOCK_LONG_SUIT_DEAL: Deal = {
+  north: { cards: parseHand("S32 HAKQJ DAKQJ CAKQ") },
+  east: { cards: parseHand("SAKQJT987 H32 DT98") },
+  south: { cards: parseHand("HT9874 D7654 C5432") },
+  west: { cards: parseHand("S654 H65 D32 CJT9876") },
 };
 
 export const MOCK_CALL_HISTORY: CallHistory = {

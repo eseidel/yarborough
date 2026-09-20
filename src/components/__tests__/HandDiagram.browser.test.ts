@@ -3,8 +3,13 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { HandDiagram } from "../HandDiagram";
-import { MOCK_DEAL, MOCK_VOID_DEAL } from "../../bridge/mock";
+import {
+  MOCK_DEAL,
+  MOCK_LONG_SUIT_DEAL,
+  MOCK_VOID_DEAL,
+} from "../../bridge/mock";
 import type { Deal, Position } from "../../bridge/types";
+import type { DoubleDummyTable } from "../../dds/dds-core";
 import "../../index.css";
 
 let root: Root | undefined;
@@ -20,7 +25,21 @@ afterEach(() => {
 /** The narrowest column the diagram is laid out in: an iPhone SE, less padding. */
 const NARROW = 375 - 32;
 
-function renderDiagram(deal: Deal, width = NARROW) {
+/** A solved table, so the diagram carries everything the review shows. */
+const TABLE = Object.fromEntries(
+  (["C", "D", "H", "S", "N"] as const).map((strain) => [
+    strain,
+    { N: 10, E: 3, S: 10, W: 3 },
+  ]),
+) as DoubleDummyTable;
+
+function renderDiagram(
+  deal: Deal,
+  {
+    width = NARROW,
+    ...props
+  }: { width?: number; userPosition?: Position } = {},
+) {
   container = document.createElement("div");
   container.style.width = `${width}px`;
   document.body.append(container);
@@ -29,9 +48,11 @@ function renderDiagram(deal: Deal, width = NARROW) {
     root!.render(
       createElement(HandDiagram, {
         deal,
+        table: TABLE,
         boardNumber: 3,
         dealer: "N",
         vulnerability: "NS",
+        ...props,
       }),
     ),
   );
@@ -66,6 +87,48 @@ describe("HandDiagram layout", () => {
 
     renderDiagram(MOCK_DEAL);
     expect(lineTops("E")).toEqual(lineTops("W"));
+
+    // A long suit wrapped in the width a phone leaves a seat, and the three
+    // suits under it dropped a line, leaving East reading a suit lower than
+    // West all the way down.
+    renderDiagram(MOCK_LONG_SUIT_DEAL, { userPosition: "S" });
+    expect(lineTops("E")).toEqual(lineTops("W"));
+  });
+
+  it("gives a holding one line, however long the suit", () => {
+    renderDiagram(MOCK_LONG_SUIT_DEAL, { userPosition: "S" });
+    // Every holding of the deal, from a void to eight spades, stands the
+    // same height: a wrapped one would be twice the others.
+    const heights = new Set(
+      [...container!.querySelectorAll('[data-testid^="suit-line-"]')].map(
+        (line) => line.getBoundingClientRect().height.toFixed(2),
+      ),
+    );
+    expect(heights.size).toBe(1);
+    expect([...heights][0]).not.toBe("0.00");
+  });
+
+  it("keeps the longest holdings inside the card", () => {
+    // Unwrapped, a long holding asks its column for the room it needs, and
+    // the seats to either side have to give it: the diagram is the width of
+    // a phone and cannot grow.
+    // The seat that names the user carries the widest label of the four,
+    // and North's says "(you)" over twenty-nine points: it is the line most
+    // able to crowd the long holdings to either side of it.
+    renderDiagram(MOCK_LONG_SUIT_DEAL, { userPosition: "N" });
+    const diagram = container!.querySelector('[data-testid="hand-diagram"]')!;
+    expect(diagram.scrollWidth).toBeLessThanOrEqual(diagram.clientWidth);
+    // The card's own padding, which the hands stay inside of.
+    const box = diagram.getBoundingClientRect();
+    const inset = Number.parseFloat(getComputedStyle(diagram).paddingRight);
+    expect(inset).toBeGreaterThan(0);
+    for (const position of ["N", "E", "S", "W"] as Position[]) {
+      const hand = container!
+        .querySelector(`[data-testid="hand-${position}"]`)!
+        .getBoundingClientRect();
+      expect(hand.left).toBeGreaterThanOrEqual(box.left + inset - 0.5);
+      expect(hand.right).toBeLessThanOrEqual(box.right - inset + 0.5);
+    }
   });
 
   it("lines a hand's ranks up in columns down its four suits", () => {
@@ -143,9 +206,9 @@ describe("HandDiagram layout", () => {
 
   it("holds no holding outside its column", () => {
     // Thirteen ranks have to fit a third of a phone's width. The void deal
-    // has the longest suits of the mocks, six cards with two tens.
-    for (const deal of [MOCK_DEAL, MOCK_VOID_DEAL]) {
-      renderDiagram(deal);
+    // has six cards with two tens; the long-suit deal has eight.
+    for (const deal of [MOCK_DEAL, MOCK_VOID_DEAL, MOCK_LONG_SUIT_DEAL]) {
+      renderDiagram(deal, { userPosition: "S" });
       for (const line of container!.querySelectorAll(
         '[data-testid^="suit-line-"]',
       )) {
