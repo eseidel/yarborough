@@ -17,6 +17,8 @@
     "deploy": "pnpm build && wrangler deploy --env=\"\"",
     "deploy:preview": "pnpm build && wrangler deploy --env preview",
     "test:python": ".venv/bin/python -m unittest discover -s python -p 'test_*.py'",
+    "explain": "node scripts/explain.mjs",
+    "random-deals": "node scripts/random-deals.mjs",
     "baseline:check": "node scripts/check-baseline.mjs",
     "baseline:accept": "node scripts/check-baseline.mjs --accept"
   },
