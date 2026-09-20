@@ -25,7 +25,7 @@ jobs:
 
       - run: pnpm lint
 
-      - run: pnpm assets:prepare && pnpm exec vitest run --coverage
+      - run: pnpm exec vitest run --coverage
 
       - uses: codecov/codecov-action@v5
         with:

@@ -1,11 +1,52 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:net";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const HOST = "127.0.0.1";
 const PASSING_BOARD = "8-0622931ecfe9993de30355dae4";
+const DIST = fileURLToPath(new URL("../dist", import.meta.url));
+// An exported C API entry point of libz3, present in the Z3 module's glue.
+const Z3_MARKER = "Z3_mk_solver";
+
+/**
+ * The layout of the built assets: the engine and its Z3 module in one chunk
+ * that only the bidding worker imports, nothing of the Python runtime the
+ * site used to ship, and an app chunk that is free of both.
+ */
+function checkAssets() {
+  const files = readdirSync(DIST, { recursive: true }).map(String);
+  const pythonRuntime = files.filter(
+    (file) => /pyodide|micropip/i.test(file) || file.endsWith(".whl"),
+  );
+  assert.deepEqual(pythonRuntime, [], "the build ships a Python runtime");
+
+  const chunks = files.filter(
+    (file) => file.startsWith("assets/") && file.endsWith(".js"),
+  );
+  const withZ3 = chunks.filter((file) =>
+    readFileSync(join(DIST, file), "latin1").includes(Z3_MARKER),
+  );
+  assert.equal(withZ3.length, 1, `Z3 is in ${withZ3.length} chunks: ${withZ3}`);
+  const [engineChunk] = withZ3;
+  assert.doesNotMatch(engineChunk, /^assets\/index-/, "Z3 is in the app chunk");
+
+  const engineChunkName = engineChunk.slice("assets/".length);
+  const importers = chunks.filter(
+    (file) =>
+      file !== engineChunk &&
+      readFileSync(join(DIST, file), "latin1").includes(engineChunkName),
+  );
+  assert.deepEqual(
+    importers.map((file) => file.replace(/-[\w-]+\.js$/, "")),
+    ["assets/z3b.worker"],
+    "only the bidding worker may import the engine chunk",
+  );
+  return engineChunk;
+}
 
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -51,6 +92,8 @@ async function waitForServer(url) {
 }
 
 async function main() {
+  const engineChunk = checkAssets();
+  console.log(`engine chunk: ${engineChunk}`);
   const port = await availablePort();
   const origin = `http://${HOST}:${port}`;
   const viteCli = fileURLToPath(
@@ -102,6 +145,7 @@ async function main() {
         }
       });
 
+      const navigationStarted = performance.now();
       const response = await page.goto(`${origin}/bid/${PASSING_BOARD}`);
       assert.equal(response?.status(), 200);
       try {
@@ -118,6 +162,9 @@ async function main() {
         .getByText("Pass")
         .first()
         .waitFor({ timeout: 120_000 });
+      console.log(
+        `first bid ${((performance.now() - navigationStarted) / 1000).toFixed(1)} s after navigation`,
+      );
       assert.match(
         (await page.locator('[data-testid="call-table"]').textContent()) ?? "",
         /Pass/,

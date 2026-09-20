@@ -5,14 +5,13 @@
   "type": "module",
   "packageManager": "pnpm@10.29.2",
   "scripts": {
-    "assets:prepare": "node scripts/prepare-pyodide-assets.mjs",
-    "dev": "pnpm assets:prepare && vite",
-    "build": "pnpm assets:prepare && tsc -b && vite build",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "pnpm assets:prepare && vitest run",
-    "test:browser": "pnpm assets:prepare && vitest run --config vitest.browser.config.ts",
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:production": "pnpm build && node scripts/test-production-build.mjs",
     "deploy": "pnpm build && wrangler deploy --env=\"\"",
     "deploy:preview": "pnpm build && wrangler deploy --env preview",
@@ -23,7 +22,6 @@
     "baseline:accept": "node scripts/check-baseline.mjs --accept"
   },
   "dependencies": {
-    "pyodide": "314.0.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0"
@@ -54,7 +52,6 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
-    "vite-plugin-static-copy": "4.1.1",
     "vitest": "^4.0.18",
     "wrangler": "^4.127.1"
   }
