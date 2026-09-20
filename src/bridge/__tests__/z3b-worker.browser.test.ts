@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   generateFilteredBoard,
   getCallInterpretations,
+  getFullAutobid,
   getNextCall,
   getOpeningLead,
   getSuggestedCall,
@@ -11,8 +12,14 @@ import { callToString } from "../types";
 import goldenCases from "../../../tests/z3b_golden_cases.json";
 
 describe("z3b browser worker", () => {
-  it("loads Pyodide and local Z3 assets for every public engine operation", async () => {
+  it("loads the TypeScript engine and Z3 for every public engine operation", async () => {
+    // The first request pays for the engine chunk and the Z3 module: the
+    // time to the first bid of a fresh worker.
+    const started = performance.now();
     const interpretations = await getCallInterpretations("", "N", "None");
+    console.log(
+      `z3b worker: first response in ${(performance.now() - started).toFixed(0)} ms`,
+    );
     expect(interpretations).toContainEqual({
       call: { type: "pass" },
       ruleName: "Default Pass",
@@ -69,5 +76,61 @@ describe("z3b browser worker", () => {
         ruleName: expectedRule,
       });
     }
+  });
+
+  // The worker lives as long as the page, so a solver or history that is not
+  // released shows up as a heap that grows with every request. This drives the
+  // one worker through the operations a practice session issues, many times
+  // over, and fails on the first request that does not come back.
+  it("serves a long run of sequential requests over generated boards", async () => {
+    const BOARDS = 10;
+    let requests = 0;
+    const started = performance.now();
+
+    for (let board = 0; board < BOARDS; board++) {
+      const identifier = await generateFilteredBoard("Random");
+      requests += 1;
+      const parsed = parseBoardId(identifier);
+      if (!parsed) throw new Error(`invalid board identifier ${identifier}`);
+
+      const suggestion = await getSuggestedCall(identifier);
+      requests += 1;
+      expect(suggestion.call.type).toMatch(/^(pass|bid|double|redouble)$/);
+
+      const auction = await getFullAutobid(identifier);
+      requests += 1;
+      const calls = auction.map(callToString);
+      expect(calls.length).toBeGreaterThanOrEqual(4);
+      expect(calls.slice(-3)).toEqual(["P", "P", "P"]);
+
+      // The explorer asks about the position after the first two calls.
+      const interpretations = await getCallInterpretations(
+        calls.slice(0, 2).join(","),
+        parsed.dealer,
+        parsed.vulnerability,
+      );
+      requests += 1;
+      expect(interpretations.length).toBeGreaterThan(0);
+
+      const completed = `${identifier}:${calls.join(",")}`;
+      const passedOut = calls.every((call) => call === "P");
+      if (passedOut) {
+        await expect(getOpeningLead(completed)).rejects.toThrow(
+          "the board was passed out",
+        );
+      } else {
+        const lead = await getOpeningLead(completed);
+        expect(["N", "E", "S", "W"]).toContain(lead.leader);
+        expect(lead.card.suit).toMatch(/^[CDHS]$/);
+      }
+      requests += 1;
+    }
+
+    const elapsed = performance.now() - started;
+    expect(requests).toBeGreaterThanOrEqual(40);
+    console.log(
+      `z3b worker soak: ${requests} requests over ${BOARDS} boards in ` +
+        `${elapsed.toFixed(0)} ms (${(elapsed / requests).toFixed(0)} ms per request)`,
+    );
   });
 });
