@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 
-// A phase 8 de-risking probe, not the engine worker: it proves that the
-// committed Z3 WebAssembly module loads and solves inside a real module worker
-// built by Vite, and reports what that costs.  The engine worker that replaces
-// `src/bridge/z3b.worker.ts` will load Z3 the same way, through `./load`.
+// A probe, not the engine worker: it proves that the committed Z3 WebAssembly
+// module loads and solves inside a real module worker built by Vite, and
+// reports what that costs.  The engine worker, `src/bridge/z3b.worker.ts`,
+// loads Z3 the same way, through `./load`, underneath `src/engine/`.
 
 import { type CheckResult, type Expr, Z3Context } from "./z3";
 import { loadZ3 } from "./load";

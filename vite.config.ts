@@ -2,11 +2,9 @@ import { defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { pyodideAssets } from "./vite.pyodide-assets";
 
 export default defineConfig({
-  optimizeDeps: { exclude: ["pyodide"] },
-  plugins: [pyodideAssets(), react(), tailwindcss()],
+  plugins: [react(), tailwindcss()],
   worker: { format: "es" },
   test: {
     environment: "happy-dom",

@@ -1,8 +1,8 @@
 # Deployment
 
 saycbridge.com is a static site served from Cloudflare Workers static assets.
-There is no server-side component: the bidding engine runs in the browser via
-Pyodide and Z3.
+There is no server-side component: the bidding engine runs in the browser, in
+a Web Worker, with Z3 compiled to WebAssembly.
 
 | Environment | Hostname             | Worker               | Trigger                          |
 | ----------- | -------------------- | -------------------- | -------------------------------- |
@@ -147,7 +147,7 @@ property.
   `/scoring` is a 301: the scoring flashcards are retired and the URL should
   leave the index. `/play` is a 302, because card play has not been ruled on.
 - `index.html` ships the site description inside `#root`, which React replaces
-  on boot. A crawler that does not execute 12 MB of WebAssembly still gets the
+  on boot. A crawler that does not run the 13 MB engine chunk still gets the
   page's copy.
 
 ## Notes
@@ -155,5 +155,5 @@ property.
 - `not_found_handling: "single-page-application"` is what makes deep links work
   on a cold load.
 - Cloudflare's static asset limits are 25 MiB per file and 20,000 files. The
-  build is ~22 MB across 14 files, the largest being `pyodide.asm.wasm` at
-  ~9 MB.
+  build is ~15 MB across 17 files, the largest being the engine chunk with the
+  Z3 module, `assets/adapter-*.js`, at ~13 MB (3.6 MB served with brotli).

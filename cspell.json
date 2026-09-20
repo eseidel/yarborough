@@ -5,7 +5,6 @@
     "node_modules",
     "dist",
     "coverage",
-    "vendor",
     ".venv",
     "python/core",
     "python/z3b",

@@ -1,8 +1,9 @@
 // The Z3 WebAssembly module inside a real module worker in Chromium, built by
-// Vite exactly as the site builds `dds.worker.ts` and `z3b.worker.ts`.  This is
-// the phase 8 de-risking step: if Z3 solves here, the engine can live in a
-// worker without Pyodide.  The types are imported for their shapes only, so
-// the eleven-megabyte module never enters the test bundle.
+// Vite exactly as the site builds `dds.worker.ts` and `z3b.worker.ts`: the
+// solver alone, with its load and check timings, apart from the engine that
+// `z3b-worker.browser.test.ts` drives through it.  The types are imported for
+// their shapes only, so the eleven-megabyte module never enters the test
+// bundle.
 import { describe, expect, it } from "vitest";
 import type { Z3ProbeRequest, Z3ProbeResponse } from "../z3.worker";
 

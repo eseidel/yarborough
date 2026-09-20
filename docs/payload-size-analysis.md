@@ -6,7 +6,11 @@ The site shipped **12.7 MB** to the browser before it could bid the first hand.
 Slimming the Z3 wheel (the one fix here that needed no change to how the engine
 works and no cooperation from the CDN) has taken that to **9.7 MB**. This
 document records where the bytes go, what the bidding engine actually uses of
-them, what was changed, and what is left.
+them, what was changed, and what is left. It was written while the engine ran
+in Python under Pyodide; the port to TypeScript (`typescript-engine-plan.md`)
+has since removed Python from the payload altogether, and "After the port"
+below records the numbers as they now stand. The rest is kept as the record of
+how the decision was reached.
 
 All "served" figures were measured against `https://saycbridge.com` with
 `Accept-Encoding: br, gzip`, so they are real transfer sizes, not disk sizes.
@@ -46,6 +50,61 @@ remaining archive assets — 2.66 MB, 27% of the payload — are still served wi
 the assumption that an archive is already compressed. They are compressed, but
 only per-file with `deflate`, which is much weaker than brotli over the whole
 stream.
+
+## After the port
+
+The engine now runs as TypeScript (`src/engine/`) over `libz3` compiled to
+WebAssembly (`src/z3/wasm/z3.mjs`, single-threaded, single-file); Pyodide,
+the stdlib zip, micropip and the wheel are gone. The build emits three
+application chunks: the app shell, a one-kilobyte `z3b.worker` that imports
+the engine dynamically, and an `adapter` chunk holding the engine and the Z3
+module, which only the worker fetches. Disk sizes are from `pnpm build`;
+"gzip" is `gzip -9 -c file | wc -c`, a stand-in for what Cloudflare serves
+(brotli does somewhat better on the same bytes).
+
+| Asset                                     |     Before |      gzip |      After |      gzip |
+| ----------------------------------------- | ---------: | --------: | ---------: | --------: |
+| `assets/adapter-*.js` (engine and Z3)     |          — |         — | 13,382,761 | 3,817,343 |
+| `assets/pyodide/pyodide.asm.wasm`         |  9,598,218 | 3,542,408 |          — |         — |
+| `assets/z3/z3_solver-…whl`                |  3,021,362 | 3,014,332 |          — |         — |
+| `assets/pyodide/python_stdlib.zip`        |  2,545,564 | 2,501,781 |          — |         — |
+| `assets/pyodide/pyodide.asm.mjs`          |  1,250,344 |   260,720 |          — |         — |
+| `assets/pyodide/micropip-…whl`            |    115,486 |   111,336 |          — |         — |
+| `assets/pyodide/pyodide-lock.json`        |    114,440 |    26,383 |          — |         — |
+| `assets/z3b.worker-*.js`                  |    415,756 |    99,138 |        950 |       554 |
+| `assets/index-*.js`                       |    310,390 |    98,751 |    310,390 |    98,752 |
+| `assets/index-*.css`                      |     28,271 |     6,074 |     28,271 |     6,074 |
+| `index.html`                              |      2,791 |     1,187 |      2,791 |     1,187 |
+| **Total to first bid**                    | 17,402,622 | 9,662,110 | 13,725,163 | 3,923,910 |
+| `assets/dds.worker-*.js` (first analysis) |    404,856 |   126,396 |    404,856 |   126,396 |
+| **Total**                                 | 17,807,478 | 9,788,506 | 14,130,019 | 4,050,306 |
+
+Both columns are disk sizes of the same build tool on the same machine, so
+they compare like with like; the "served" figures at the top of this document
+were measured over the wire against Cloudflare and are smaller for the
+brotli-compressed assets. Three things changed:
+
+- **Compressed payload to the first bid: 9.66 MB to 3.92 MB**, a 59% cut.
+  The three archive assets that Cloudflare would not compress (the wheel,
+  the stdlib zip, micropip) are gone; what remains is one JavaScript chunk
+  that compresses 3.5 to 1, so the served size is close to the Z3 code itself.
+- **The engine chunk is larger on disk than the solver it holds.** The
+  single-file Emscripten build embeds the 8.2 MB wasm as a string inside
+  JavaScript (`z3.mjs` is 11.2 MB), which costs about 20% before compression,
+  the same effect as `dds.mjs` measured above. Shipping the wasm as a
+  separate `.wasm` file would cut the disk size, not the transfer. Even so,
+  the disk total to the first bid fell from 17.4 MB to 13.7 MB.
+- **Start-up is no longer the cost.** The production build test measures the
+  first bid on a cold page at about 2.5 s from navigation on a local server,
+  most of it fetching and instantiating the 13 MB chunk; the Pyodide worker
+  needed about 20 s to start the interpreter, install the wheel and import
+  the engine before its first bid. In the Chromium worker probe the module
+  loads in about 0.2 s and a solver check costs about 0.6 ms.
+
+The whole `dist/` is 15,068,979 bytes across 17 files (4,988,062 gzipped),
+against 18,746,472 across 23 (10,726,349 gzipped). The one remaining lever
+of any size is the Z3 module itself: a purpose-built bounded solver (phase 10
+of the plan) would remove nearly all of the 3.8 MB.
 
 ## Inside each blob
 
@@ -373,8 +432,12 @@ of the packaging wins. Whatever happens, keep it working.
 
 ## Reproducing the measurements
 
+The wheel and Pyodide commands below describe the pre-port build and are kept
+for the record; `pnpm build` now has no asset preparation step, and the table
+in "After the port" comes from `find dist -type f` with `gzip -9 -c`.
+
 ```bash
-pnpm install && pnpm assets:prepare && pnpm build
+pnpm install && pnpm build
 
 # transfer sizes actually served
 curl -sSI -H 'Accept-Encoding: br, gzip' https://saycbridge.com/assets/…

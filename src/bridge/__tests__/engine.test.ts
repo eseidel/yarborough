@@ -87,12 +87,12 @@ describe("createBiddingEngine", () => {
     const rpc: EngineRequester = {
       request: vi
         .fn()
-        .mockRejectedValue(new Error("Pyodide initialization failed")),
+        .mockRejectedValue(new Error("The engine failed to load")),
     };
     const engine = createBiddingEngine(rpc);
 
     await expect(engine.getNextCall("board")).rejects.toThrow(
-      "Pyodide initialization failed",
+      "The engine failed to load",
     );
   });
 

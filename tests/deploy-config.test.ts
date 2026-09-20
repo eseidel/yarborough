@@ -211,4 +211,26 @@ describe("vite configuration", () => {
     expect(read("vite.config.ts")).not.toMatch(/^\s*base:/m);
     expect(read("vitest.browser.config.ts")).not.toMatch(/^\s*base:/m);
   });
+
+  // The engine is TypeScript over a committed Z3 WebAssembly module; the
+  // build has no download step and ships no Python runtime.
+  it("has no Python runtime to prepare or bundle", () => {
+    const pkg = JSON.parse(read("package.json")) as {
+      scripts: Record<string, string>;
+      dependencies: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+    expect(Object.keys(pkg.dependencies)).not.toContain("pyodide");
+    expect(pkg.scripts["assets:prepare"]).toBeUndefined();
+    for (const script of Object.values(pkg.scripts)) {
+      expect(script).not.toContain("assets:prepare");
+    }
+    for (const file of [
+      "vite.config.ts",
+      "vitest.browser.config.ts",
+      ".github/workflows/ci.yml",
+    ]) {
+      expect(read(file), file).not.toMatch(/pyodide|micropip|\.whl/i);
+    }
+  });
 });
