@@ -1,11 +1,15 @@
+Run every check before submitting. `scripts/presubmit.sh` runs exactly
+these, in this order, and `tests/presubmit.test.ts` keeps the two lists
+identical.
+
 ```bash
-pnpm test
-pnpm test:browser
-pnpm baseline:check
 pnpm format:check
 pnpm lint
+pnpm test
+pnpm test:browser
 npx cspell --no-progress --dot "**"
-pnpm build
+pnpm baseline:check
+pnpm test:production
 ```
 
 Write tests for all code changes. Do not use manual testing.

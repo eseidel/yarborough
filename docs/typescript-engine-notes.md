@@ -2,20 +2,20 @@
 
 # Notes: the TypeScript engine port
 
-Running notes for `typescript-engine-plan.md`. Whoever continues the work
-(person or agent) reads this first, then the plan. Keep it current: status,
-decisions, and the next action.
+Running notes for `typescript-engine-plan.md`. The port is finished and on
+`main`: phases 0 through 9 are done and only the optional phase 10 remains.
+This file is kept as the record of how it was done, what was decided and what
+each phase was checked against; read it before changing the engine.
 
-## How to resume
+## Where the port left things
 
-1. `git checkout claude/bidding-engine-python-typescript-tj1h1x` and read the
-   "Status" table below; the first row that is not `done` is the next work.
-2. Environment: `pnpm install`. Nothing else; the Python reference was deleted
-   in phase 9 (6381d99) and is available from git history before that commit.
-   Emscripten for a Z3 rebuild: see `native/z3/README.md`.
-3. The checks: `pnpm test`, `pnpm baseline:check`, `pnpm lint`, `pnpm format:check`,
-   `npx cspell --no-progress --dot "**"`, `pnpm build`, `pnpm test:browser`.
-4. Commit per phase on this branch. Update this file in the same commit.
+- The engine is `src/engine/`; nothing in the repository is Python. The
+  Python reference was deleted in phase 9 (6381d99) and is available from git
+  history before that commit.
+- Environment: `pnpm install`, and nothing else. Emscripten for a Z3 rebuild:
+  see `native/z3/README.md`.
+- The checks are the list at the top of `AGENTS.md`, which
+  `scripts/presubmit.sh` runs.
 
 ## Status
 
@@ -196,11 +196,15 @@ pnpm test` checks all and the byte-for-byte baseline. Corpus average about
   they are missed; each is small on top of the kernel.
 - Exclude `src/z3/wasm/z3.mjs` from Vite's browser-mode transform (as
   `vite.config.ts` does for Node) to cut about 15 s from `pnpm test:browser`.
-- `docs/progress-plan.md` and `docs/practice-ux.md` still cite the old
-  Python paths as history; the provenance comments in `src/engine/` ("ported
-  from python/...") are kept on purpose for the SAYCBridge attribution.
-- The 51 pre-existing cspell hits in `docs/seo-baseline/*.csv` predate this
-  work.
+- `docs/progress-plan.md` and `docs/practice-ux.md` were rewritten to cite
+  the TypeScript paths the port produced. The provenance comments in
+  `src/engine/` ("ported from python/...", "Python's `__repr__`") are kept on
+  purpose: they are the SAYCBridge attribution and they explain why the
+  TypeScript is shaped the way it is.
+- The 51 cspell hits in `docs/seo-baseline/*.csv` predated this work and
+  were never this port's to fix; the CSVs are now in `cspell.json`'s
+  `ignorePaths`, because a verbatim Search Console export is data rather
+  than prose, and `npx cspell` passes.
 - 2026-09-20: the recorded fixtures, the regenerator, the fixture CI job and
   every fixture-driven test were removed (1750c15): once the port was proven
   they only re-verified the engine against itself. They remain in git history

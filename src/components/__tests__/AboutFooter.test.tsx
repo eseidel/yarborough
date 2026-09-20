@@ -59,7 +59,7 @@ describe("AboutFooter", () => {
     });
     expect(link).toHaveAttribute(
       "href",
-      "https://github.com/eseidel/yarborough",
+      "https://github.com/saycbridge/yarborough",
     );
   });
 

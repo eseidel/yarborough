@@ -1,5 +1,12 @@
 # Plan: a bidding record, strengths and weaknesses, and adaptive practice
 
+**Shipped.** All four steps in "Delivery, in order" have landed, and this
+file is kept as the design record behind them. It was written while the
+engine was Python, so the paths below have been rewritten to the TypeScript
+they became: `src/engine/categories.ts`, `src/engine/z3b/`,
+`src/practice/record/`, `src/practice/stats.ts` and
+`src/pages/ProgressPage.tsx`.
+
 The practice page checks every call South makes against the engine's call
 in that position. Today the only thing kept is a handful of counters in
 `localStorage`. This plan replaces that with a full record of every hand the
@@ -16,14 +23,14 @@ Nothing is migrated from `localStorage`; there are no production users of it.
 A verdict compares the user's call with the engine's call in the same
 position. The category of a verdict is the category of the **engine's** call,
 since that is the call the user was supposed to find. Every engine call comes
-from a rule class in `python/z3b/rules.py` (279 of them), or from no rule at
-all when the engine simply passes.
+from a rule class in the engine's registry (`StandardAmericanYellowCard`, 217
+of them), or from no rule at all when the engine simply passes.
 
 The rule classes do not form a usable tree on their own: many derive
 straight from `Rule`, and the intermediate classes mix conventions with
-implementation detail. So the hierarchy is a curated table in a new
-`python/categories.py`, mapping each rule class name to a path of three
-levels, with a unit test that fails when a rule class in `rules.py` has no
+implementation detail. So the hierarchy is a curated table in
+`src/engine/categories.ts`, mapping each rule class name to a path of three
+levels, with a unit test that fails when a registered rule class has no
 entry, so new rules cannot slip through unlabelled.
 
 **Level 1: what you are doing.** Seven groups, from South's point of view.
@@ -47,7 +54,7 @@ and South has not acted (Responding); South opened (Opener's rebid); partner
 opened and South has bid (Responder's rebid); the opponents opened and our
 side is silent (Competing); the opponents opened and partner has acted
 (After partner competes). Level 2 is "Passing". This is the same role logic
-the table uses for the rows above, so it lives in `categories.py` beside the
+the table uses for the rows above, so it lives in `categories.ts` beside the
 table.
 
 The engine adapter gains one field: `get_suggested_call` returns `category`
@@ -227,10 +234,10 @@ strip links to the tab.
 
 ## 6. Delivery, in order
 
-Each step is a separate pull request with its own tests; each leaves the app
-working.
+Each step was a separate pull request with its own tests; each left the app
+working. All four have landed.
 
-1. **Categories in the engine adapter.** `python/categories.py` with the
+1. **Categories in the engine adapter.** `src/engine/categories.ts` with the
    table and the pass-context logic; coverage test; `category` on the
    adapter's results; parsers and `CallInterpretation` on the TypeScript side.
    No visible change.

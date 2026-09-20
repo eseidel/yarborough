@@ -19,7 +19,8 @@
     ".agent",
     ".claude",
     ".devcontainer",
-    ".gitignore"
+    ".gitignore",
+    "docs/seo-baseline/*.csv"
   ],
   "words": [
     "Armitage",
@@ -124,7 +125,6 @@
     "prettier",
     "pyemscripten",
     "pyodide",
-    "PYTHONPATH",
     "Qxxx",
     "rdbl",
     "rebid",
@@ -162,7 +162,6 @@
     "unbalancedness",
     "undoubled",
     "unpassed",
-    "unported",
     "unstub",
     "urlset",
     "venv",
@@ -183,8 +182,6 @@
     "NOTSET",
     "extensionless",
     "jsonl",
-    "hashlib",
-    "hexdigest",
     "unranked",
     "subterm",
     "subterms",
@@ -195,6 +192,7 @@
     "linearization",
     "getattr",
     "jumpshift",
-    "jumpshifts"
+    "jumpshifts",
+    "presubmit"
   ]
 }

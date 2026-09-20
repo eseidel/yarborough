@@ -220,7 +220,7 @@ export interface CallInterpretation {
   constraints?: string;
   /**
    * What kind of call this is, in three levels from the engine's category
-   * table (python/categories.py): what you are doing, the family of call,
+   * table (`src/engine/categories.ts`): what you are doing, the family of call,
    * and the rule. Present on the engine's suggested call.
    */
   category?: string[];

@@ -17,13 +17,18 @@ All "served" figures were measured against `https://saycbridge.com` with
 
 ## Status
 
-| Fix                                                   |  Saving | State                       |
-| ----------------------------------------------------- | ------: | --------------------------- |
-| Drop the duplicate `libz3.so` and the C headers       | 3.03 MB | **done**                    |
-| Serve the wheel and stdlib zip compressed             | 1.80 MB | blocked on a CDN check      |
-| Pre-compress `pyodide.asm.wasm` at brotli 11          | 0.76 MB | blocked on the same check   |
-| Trim `python_stdlib.zip` to the modules that are used | 0.82 MB | wants its own change        |
-| Ship DDS as a separate `.wasm`                        | 0.04 MB | wants an Emscripten rebuild |
+The first four rows are Pyodide-era fixes. The port removed Pyodide, the
+stdlib zip, micropip and the Z3 wheel outright, so the three that never
+landed are moot rather than outstanding; only the last row is still open
+work. "After the port" below has the sizes as they now stand.
+
+| Fix                                                   |  Saving | State                             |
+| ----------------------------------------------------- | ------: | --------------------------------- |
+| Drop the duplicate `libz3.so` and the C headers       | 3.03 MB | **done**, before the port         |
+| Serve the wheel and stdlib zip compressed             | 1.80 MB | moot: the wheel and zip are gone  |
+| Pre-compress `pyodide.asm.wasm` at brotli 11          | 0.76 MB | moot: Pyodide is gone             |
+| Trim `python_stdlib.zip` to the modules that are used | 0.82 MB | moot: the stdlib zip is gone      |
+| Ship DDS as a separate `.wasm`                        | 0.04 MB | open: wants an Emscripten rebuild |
 
 ## What the browser downloads
 
