@@ -4,7 +4,7 @@
 //
 // `pnpm baseline:check` / `pnpm baseline:accept`: bid every hand in
 // src/engine/harness/sayc_data.ts and compare the run with the accepted
-// baselines under python/tests/baselines/, the TypeScript replacement for
+// baselines under tests/baselines/, the TypeScript replacement for
 // `python -m tests.check_baseline`.
 //
 // The logic is TypeScript (src/engine/harness/cli.ts); this launcher loads it

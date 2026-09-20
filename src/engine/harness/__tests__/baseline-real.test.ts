@@ -15,8 +15,8 @@
 // gate once the registry is complete.
 
 import { describe, expect, it } from "vitest";
-import baselineText from "../../../../python/tests/baselines/z3b_baseline.txt?raw";
-import rulesBaselineText from "../../../../python/tests/baselines/z3b_rules_baseline.txt?raw";
+import baselineText from "../../../../tests/baselines/z3b_baseline.txt?raw";
+import rulesBaselineText from "../../../../tests/baselines/z3b_rules_baseline.txt?raw";
 import manifestText from "../../../../tests/engine-fixtures/rules-manifest.json?raw";
 import { createHarnessBidder } from "../../z3b/harness-bidder";
 import { StandardAmericanYellowCard } from "../../z3b/sayc";

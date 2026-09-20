@@ -8,8 +8,8 @@
 // Python bidder made, so any difference here is the harness's own text.
 
 import { describe, expect, it } from "vitest";
-import baselineText from "../../../../python/tests/baselines/z3b_baseline.txt?raw";
-import rulesBaselineText from "../../../../python/tests/baselines/z3b_rules_baseline.txt?raw";
+import baselineText from "../../../../tests/baselines/z3b_baseline.txt?raw";
+import rulesBaselineText from "../../../../tests/baselines/z3b_rules_baseline.txt?raw";
 import { runHarness } from "../harness";
 import { FixtureBidder } from "./fixture-bidder";
 
