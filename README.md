@@ -9,8 +9,8 @@ auction state are never sent to a server.
 
 ## Getting started
 
-The application needs Node.js 22+ and pnpm. Nothing else is needed to run or
-build it.
+The application needs Node.js 22+ and pnpm. Nothing else is needed to run,
+build or test it: the engine, its tests and its baseline gate are TypeScript.
 
 ```bash
 pnpm install
@@ -20,17 +20,6 @@ pnpm dev
 Use `pnpm build` for a production build, which is served from the domain root
 by Cloudflare. The build has no download step: the Z3 solver is a committed
 WebAssembly module.
-
-The original Python engine is kept under `python/` as the reference the
-TypeScript port is checked against, until phase 9 of
-[docs/typescript-engine-plan.md](docs/typescript-engine-plan.md) retires it.
-Its tests need Python 3.9+:
-
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -e ./python
-pnpm test:python
-```
 
 ## Architecture
 
@@ -51,7 +40,7 @@ downloads nothing at runtime beyond its own content-hashed assets.
 ```bash
 pnpm test
 pnpm test:browser
-pnpm test:python
+pnpm baseline:check
 pnpm format:check
 pnpm lint
 npx cspell --no-progress --dot "**"
@@ -59,13 +48,16 @@ pnpm build
 ```
 
 Run `pnpm exec playwright install chromium` once to install the browser used
-by the real-worker test. `tests/bidding/sayc_standard.yaml` is retained as a
-SAYC reference corpus; its expected bids must not be rewritten. The corpus is
-bid by the TypeScript harness (`pnpm baseline:check`) and compared with the
-accepted baselines; `python/tests/test_z3b_expectations.py` keeps one pinned
-hand per corpus group.
+by the real-worker test. `pnpm baseline:check` bids the whole SAYC corpus,
+`src/engine/harness/sayc_data.ts` (hand, expected call, auction), through the
+engine and compares the run with the accepted output in `tests/baselines/`;
+`pnpm baseline:accept` records a reviewed change. `tests/bidding/*.yaml` are
+reference documents from the SAYC book that no code loads, and their expected
+bids must not be rewritten. The recorded fixtures under
+`tests/engine-fixtures/` are regenerated with `pnpm fixtures:accept` and
+checked with `pnpm fixtures:check`; they are never edited by hand.
 
 ## Third-party software
 
-See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the vendored
-SAYCBridge sources and browser runtime dependencies.
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the SAYCBridge
+sources the engine is derived from and the browser runtime dependencies.

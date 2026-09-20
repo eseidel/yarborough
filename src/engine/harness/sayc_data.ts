@@ -2,16 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// Ported from python/tests/test_sayc_data.py, line for line: the same group
-// names in the same order, the same expectations in the same order, and the
-// same comments.  `tests/bidding/sayc_standard.yaml` is the source reference
-// from the SAYC book; this file is the executable corpus, and the harness in
-// `harness.ts` bids every line of it.  Hands are C.D.H.S.
+// The executable SAYC corpus: group names, expectations and comments in the
+// order the SAYCBridge corpus had them.  `tests/bidding/sayc_standard.yaml` is
+// the source reference from the SAYC book; this file is what runs, and the
+// harness in `harness.ts` bids every line of it.  Hands are C.D.H.S.
 //
 // This is the only corpus the harness reads.  `tests/bidding/*.yaml` (both
 // `sayc_standard` and `sayc_regression`) are reference documents no code
-// loads, and `python/tests/test_z3b_expectations.py` only classifies the
-// groups below; neither adds expectations to bid.
+// loads; they add no expectations to bid.
 
 /**
  * One expectation: the hand, the call it should produce, the auction so far

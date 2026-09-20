@@ -2,15 +2,14 @@
 
 ## SAYCBridge / z3b
 
-`python/core/`, `python/z3b/`, the expectation data in
-`python/tests/test_sayc_data.py`, and the test harness under `python/tests/`
-are derived from [SAYCBridge](https://github.com/eseidel/saycbridge) revision
-`f058f1f`, as continued in Andrew Bortz's SAYCBridge fork through revision
-`fba188e`. They are Copyright (c) 2013 The SAYCBridge Authors and are
-distributed under the BSD 3-Clause License. The copied files retain their
-original license headers. `python/tests/outputcapture.py` comes from WebKit's
-webkitpy (Copyright (c) 2009 Google Inc., BSD 3-Clause License; the file
-carries its license text).
+`src/engine/` — the bidding engine, its rules, its harness and the expectation
+data in `src/engine/harness/sayc_data.ts` — is a TypeScript port of
+[SAYCBridge](https://github.com/eseidel/saycbridge) revision `f058f1f`, as
+continued in Andrew Bortz's SAYCBridge fork through revision `fba188e`. It is
+Copyright (c) 2013 The SAYCBridge Authors and is distributed under the BSD
+3-Clause License. The ported files retain the original license header. The
+recorded fixtures under `tests/engine-fixtures/` and the accepted baselines
+under `tests/baselines/` are derived from the same sources.
 
 ```text
 Copyright (c) 2013 The SAYCBridge Authors. All rights reserved.

@@ -33,23 +33,28 @@ jobs:
           flags: typescript
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  python:
-    name: Python
+  baseline:
+    name: Baseline
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.9"
+          node-version: 22
+          cache: pnpm
 
-      - run: python -m venv .venv
+      - run: pnpm install --frozen-lockfile
 
-      - run: .venv/bin/python -m pip install --upgrade pip
+      # Bids the whole SAYC corpus through the TypeScript engine (about 80 s)
+      # and compares the run with tests/baselines/.
+      - run: pnpm baseline:check
 
-      - run: .venv/bin/python -m pip install -e ./python
-
-      - run: .venv/bin/python -m unittest discover -s python -p 'test_*.py'
+      # TODO: enable once the fixture regenerator lands (phase 9). It checks
+      # that tests/engine-fixtures/ still reproduces byte for byte.
+      # - run: pnpm fixtures:check
 
   browser:
     name: Browser worker
