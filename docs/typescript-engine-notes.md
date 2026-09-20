@@ -20,20 +20,20 @@ decisions, and the next action.
 
 ## Status
 
-| Phase | State   | Notes                                                       |
-| ----- | ------- | ----------------------------------------------------------- |
-| 0a    | done    | canonical order in the bidder; baseline unchanged (27f1a4a) |
-| 0b    | running | fixture exporter, fixtures checked in                       |
-| 1     | running | single-threaded Z3 wasm and `src/z3/` binding               |
-| 2     | running | pure core, leads, categories                                |
-| 3     | pending | hand model                                                  |
-| 4     | pending | DSL primitives against snapshots                            |
-| 5     | pending | rules, rule compiler, priority ordering                     |
-| 6     | pending | kernel                                                      |
-| 7     | pending | harness, baselines, adapter, golden and random corpora      |
-| 8     | pending | worker swap, Pyodide removal                                |
-| 9     | pending | retire Python                                               |
-| 10    | later   | optional bounded solver; separate decision                  |
+| Phase | State   | Notes                                                                                                                  |
+| ----- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 0a    | done    | canonical order in the bidder; baseline unchanged (27f1a4a)                                                            |
+| 0b    | done    | `python -m tests.export_fixtures`; 17 MB under `tests/engine-fixtures/` (c5647c1)                                      |
+| 1     | done    | Z3 5.1.0, Emscripten 6.0.9, `src/z3/wasm/z3.mjs` 11.2 MB (28d7170); Chromium worker probe (12f705e)                    |
+| 2     | done    | `src/engine/core/`, `leads.ts`, `categories.ts` (a7b7efb, 4117de5)                                                     |
+| 3     | done    | `src/engine/z3b/model.ts` matches `model-expressions.json` (364c91f)                                                   |
+| 4     | done    | DSL foundation, recorded history, gate `dsl-fixtures.test.ts` (364c91f)                                                |
+| 5     | done    | all 217 rules in `src/engine/z3b/rules/`, `natural.ts`, `cappelletti.ts`; every meaning and negation matches (bab1a8b) |
+| 6     | running | kernel `src/engine/z3b/bidder.ts` and `harness-bidder.ts`; gates: history, decisions, real-bidder baseline             |
+| 7     | partial | harness, corpus, baseline comparison ported (2000558); adapter and corpora tests wait for the kernel                   |
+| 8     | pending | worker swap, Pyodide removal                                                                                           |
+| 9     | pending | retire Python                                                                                                          |
+| 10    | later   | optional bounded solver; separate decision                                                                             |
 
 ## Decisions
 
