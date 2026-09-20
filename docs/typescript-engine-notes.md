@@ -72,6 +72,17 @@ decisions, and the next action.
   unknown words in `docs/seo-baseline/*.csv` on main as well; not part of this
   work.
 
+## Decisions (phase 9)
+
+- 2026-09-20: The fixtures under `tests/engine-fixtures/` stay the oracle
+  after Python is deleted, so they need a TypeScript regenerator
+  (`pnpm fixtures:check` / `pnpm fixtures:accept`, refusing a dirty tree like
+  the baselines). Its first run must reproduce the Python-generated files byte
+  for byte; after that, an intended bidding change is accepted through both
+  the baselines and the fixtures, and the diff is the reviewed artifact.
+- 2026-09-20: Deleting `python/` is one commit and reversible with git; the
+  parity evidence is in the log above and in the fixture gates.
+
 ## Measurements
 
 - Python harness: 956 corpus expectations plus sub-auctions, about 22 s wall on
@@ -84,6 +95,11 @@ decisions, and the next action.
 - Fixture export: 1,510 auctions, 13,988 (call, rule) meanings, 1,540
   decisions, 300 random deals; 11 to 14 minutes wall; `--check` as long again.
 - Python gates after phase 0: 112 tests, 53 s.
+- After phase 8: payload to first bid 3.92 MB gzip (was 9.66 MB); the engine
+  and Z3 land in one worker-only chunk of 13.4 MB (3.8 MB gzip); first bid in
+  the production build 1.9 to 2.5 s after navigation (was about 20 s); 50
+  sequential worker requests in about 10 s. In the Vitest browser run the dev
+  server's transform of the 11 MB module costs about 15 s once.
 - TypeScript kernel, all rules: `pnpm baseline:check` 77 s wall (Python: 22 s on
   4 processes); the full auction-snapshot gate 242 s, the decisions gate 84 s,
   so `pnpm test` checks every fifth record and `YARBOROUGH_FULL_BASELINE=1
@@ -154,3 +170,7 @@ pnpm test` checks all and the byte-for-byte baseline. Corpus average about
   its garbage collector. The adapter corpus gate samples every 15th auction and
   every 10th deal in `pnpm test`; `YARBOROUGH_FULL_BASELINE=1` checks all
   (about 12 minutes). Dispatched phase 8.
+- 2026-09-20: phase 8 landed (652419d, fa83100): no Python runtime in the
+  product or the toolchain; 853 TypeScript tests green; `pnpm test:production`
+  bids in 1.9 s. Dispatched phase 9 in two parts: the fixture regenerator and
+  the deletion of `python/` with the CI and docs changes.
