@@ -15,7 +15,8 @@ import { SUITS } from "../../core/suit";
 import * as model from "../model";
 import { printedForm } from "../printed";
 import { type Expr, z3 } from "../z3";
-import { type ModelExpressionsFixture, readJsonFixture } from "./fixtures";
+import type { ModelExpressionsFixture } from "../../fixtures/types";
+import { readJsonFixture } from "./fixtures";
 
 const fixture = readJsonFixture<ModelExpressionsFixture>(
   "model-expressions.json",

@@ -477,6 +477,13 @@ const CONTEXTUAL: Record<string, string> = {
   LawOfTotalTricks: "Competitive raises",
 };
 
+/**
+ * The tables themselves, for the fixture regenerator (`_TABLE` and
+ * `_CONTEXTUAL` in the Python exporter); not part of the module's API.
+ */
+export const _TABLE: ReadonlyMap<string, readonly [string, string]> = TABLE;
+export const _CONTEXTUAL: Readonly<Record<string, string>> = CONTEXTUAL;
+
 /** Every rule class name this module can categorize. */
 export function knownRuleNames(): Set<string> {
   return new Set([...TABLE.keys(), ...Object.keys(CONTEXTUAL)]);

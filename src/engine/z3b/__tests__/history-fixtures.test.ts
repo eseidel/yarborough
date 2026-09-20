@@ -22,13 +22,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CallHistory } from "../../core/callhistory";
 import { Interpreter, setBidderLog } from "../bidder";
 import { StandardAmericanYellowCard } from "../sayc";
-import {
-  type AuctionSnapshot,
-  type ManifestRule,
-  readJsonFixture,
-  readJsonlFixture,
-} from "./fixtures";
-import { Coverage, corpusSample, snapshotOf } from "./kernel-checks";
+import { snapshotOf } from "../../fixtures/records";
+import type { AuctionSnapshot, ManifestRule } from "../../fixtures/types";
+import { readJsonFixture, readJsonlFixture } from "./fixtures";
+import { Coverage, corpusSample } from "./kernel-checks";
 
 const manifest = readJsonFixture<ManifestRule[]>("rules-manifest.json");
 const snapshots = readJsonlFixture<AuctionSnapshot>("auction-snapshots.jsonl");
@@ -95,7 +92,7 @@ describe("auction-snapshots.jsonl from scratch", () => {
               callHistory,
               history,
               thresholds,
-            ),
+            ).snapshot,
             expected,
           ),
         );

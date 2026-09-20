@@ -25,7 +25,7 @@ import {
   auctionKey,
   type GroupSnapshot,
   type ViewSnapshot,
-} from "./fixtures";
+} from "../../fixtures/types";
 
 export class UnrecordedError extends Error {
   constructor(what: string, history: RecordedHistory) {
