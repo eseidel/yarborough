@@ -2,6 +2,12 @@
 
 # Plan: the bidding engine in TypeScript, without Python
 
+**Done.** This plan was carried out; phases 0 through 9 landed and the engine
+is now `src/engine/`. It is kept as the record of what was planned and why,
+so it describes the repository as it was _before_ the port, in the present
+tense of the time. What was actually built, and what each phase was checked
+against, is in `typescript-engine-notes.md`.
+
 The bidding engine is vendored Python (`python/core/`, `python/z3b/`) run in the
 browser by Pyodide, with Z3 installed from a wheel. This plan removes Python
 from the product and the toolchain by porting the engine, its adapter, its

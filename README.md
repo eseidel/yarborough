@@ -4,8 +4,8 @@ A client-only bridge bidding tutor using the SAYCBridge z3b engine, ported to
 TypeScript. Bidding and Z3 solving run in a browser Web Worker; board data and
 auction state are never sent to a server.
 
-**Try it:** <https://eseidel.github.io/yarborough/> (moving to
-<https://saycbridge.com> — see [docs/deployment.md](docs/deployment.md))
+**Try it:** <https://saycbridge.com>. How a change reaches it is in
+[docs/deployment.md](docs/deployment.md).
 
 ## Getting started
 
@@ -38,14 +38,16 @@ downloads nothing at runtime beyond its own content-hashed assets.
 ## Testing
 
 ```bash
-pnpm test
-pnpm test:browser
-pnpm baseline:check
 pnpm format:check
 pnpm lint
+pnpm test
+pnpm test:browser
 npx cspell --no-progress --dot "**"
-pnpm build
+pnpm baseline:check
+pnpm test:production
 ```
+
+`scripts/presubmit.sh` runs all of them in that order.
 
 Run `pnpm exec playwright install chromium` once to install the browser used
 by the real-worker test. `pnpm baseline:check` bids the whole SAYC corpus,

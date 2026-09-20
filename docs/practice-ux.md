@@ -189,7 +189,7 @@ side by side.
   first call instead (for instance, any 1NT response rule for "Notrump")
   would make "Notrump" practice mostly responding to and opening 1NT, rather
   than passing over an opponent's 1NT a quarter of the time. That is an engine
-  adapter change with its own Python tests.
+  adapter change with its own tests.
 - More focuses are cheap once the filter looks at South's call: takeout
   doubles, overcalls, responses to a major, slam tries.
 - The explorer page could take a hand string so it can highlight which calls

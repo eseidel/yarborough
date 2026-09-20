@@ -18,8 +18,8 @@ export interface RecordedVerdict {
   saycCall: string;
   ruleName?: string;
   /**
-   * The engine's three-level category for its call (python/categories.py).
-   * Empty when the engine did not provide one.
+   * The engine's three-level category for its call
+   * (`src/engine/categories.ts`). Empty when the engine did not provide one.
    */
   category: string[];
   matched: boolean;
