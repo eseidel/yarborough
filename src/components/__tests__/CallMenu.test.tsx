@@ -13,7 +13,15 @@ const INTERPRETATIONS: CallInterpretation[] = [
 const ANALYSIS: HandAnalysis = {
   call: { type: "bid", level: 1, strain: "S" },
   calls: [
-    { call: { type: "pass" }, fit: "possible" },
+    {
+      call: { type: "pass" },
+      fit: "possible",
+      preferenceReason: {
+        kind: "purpose",
+        purpose: "Forced",
+        chosenPurpose: "MajorDiscovery",
+      },
+    },
     {
       call: { type: "bid", level: 1, strain: "H" },
       fit: "unfit",
@@ -54,9 +62,29 @@ describe("CallMenu", () => {
     );
   });
 
-  it("marks a call that fits but says less", () => {
+  it("marks a call that fits but says less, and says why it lost", () => {
     render(<CallMenu interpretations={INTERPRETATIONS} analysis={ANALYSIS} />);
     expect(screen.getAllByText("Also fits")).toHaveLength(1);
+    expect(screen.getByTestId("passed-over-P")).toHaveTextContent(
+      "SAYC prefers 1♠: bidding a major you may fit comes before doing the " +
+        "minimum the auction asks for.",
+    );
+  });
+
+  it("leaves a call it cannot explain unexplained", () => {
+    // The engine returns no reason when the two calls are incomparable, and
+    // inventing one would be worse than the badge on its own.
+    render(
+      <CallMenu
+        interpretations={INTERPRETATIONS}
+        analysis={{
+          ...ANALYSIS,
+          calls: [{ call: { type: "pass" }, fit: "possible" }],
+        }}
+      />,
+    );
+    expect(screen.getByText("Also fits")).toBeInTheDocument();
+    expect(screen.queryByTestId("passed-over-P")).toBeNull();
   });
 
   it("leaves every call selectable, fit or not", () => {

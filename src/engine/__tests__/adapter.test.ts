@@ -600,6 +600,46 @@ describe("the hand-aware analysis", () => {
     expect(byCall.get("1D")!.unfit_reason).toBeNull();
   });
 
+  it("says why z3b preferred its call to one that also fit", () => {
+    const { byCall } = analysisFor(OPENER);
+    // One rule offers both one-level openings and prefers the longer suit,
+    // so the two calls are separated inside that rule, not by purpose.
+    expect(byCall.get("1D")!.preference_reason).toEqual({
+      kind: "rule",
+      purpose: "MajorDiscovery",
+      chosen_purpose: "MajorDiscovery",
+    });
+    // Passing and opening are different things to be doing, and opening the
+    // hand is the better of the two.
+    expect(byCall.get("P")!.preference_reason).toEqual({
+      kind: "purpose",
+      purpose: "Forced",
+      chosen_purpose: "MajorDiscovery",
+    });
+    // Nothing is claimed about the call z3b made, or about a call no hand
+    // could make here.
+    expect(byCall.get("1S")!.preference_reason).toBeNull();
+    expect(byCall.get("1H")!.preference_reason).toBeNull();
+  });
+
+  it("gives no reason where the two calls are incomparable", () => {
+    // 25 balanced: SAYC opens 3NT, and 2C is the game force it beat.
+    const { analysis, byCall } = analysisFor("A32.AK4.AK3.AKQ2");
+    expect(analysis.call_name).toBe("3N");
+    expect(byCall.get("2C")!.preference_reason).toEqual({
+      kind: "purpose",
+      purpose: "GameForce",
+      chosen_purpose: "EnterNotrumpSystem",
+    });
+    // Every reason given is a real domination, so a call the ordering does
+    // not compare gets none rather than an invented one.
+    for (const call of analysis.calls) {
+      if (call.fit !== "possible") {
+        expect(call.preference_reason, call.call_name).toBeNull();
+      }
+    }
+  });
+
   it("names the suit an unfitting call wanted", () => {
     const { byCall } = analysisFor(OPENER);
     const oneHeart = byCall.get("1H")!;

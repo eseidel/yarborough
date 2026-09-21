@@ -159,6 +159,23 @@ describe("parseHandAnalysis", () => {
       ],
     },
     unfit_reason: { kind: "suit_short", suit: "H", shown: 5, actual: 2 },
+    preference_reason: null,
+  };
+
+  /** A call the hand could make, that the engine passed over. */
+  const PASSED_OVER = {
+    call_name: "1D",
+    rule_name: "One Level Suit Opening",
+    description: "Opening bid",
+    knowledge_string: "12-21 hcp, 4+D",
+    fit: "possible",
+    requirements: null,
+    unfit_reason: null,
+    preference_reason: {
+      kind: "rule",
+      purpose: "MajorDiscovery",
+      chosen_purpose: "MajorDiscovery",
+    },
   };
 
   const CHOSEN = {
@@ -169,6 +186,7 @@ describe("parseHandAnalysis", () => {
     fit: "chosen",
     requirements: null,
     unfit_reason: null,
+    preference_reason: null,
   };
 
   it("reads the call the engine makes and how each other one stands", () => {
@@ -212,6 +230,34 @@ describe("parseHandAnalysis", () => {
     });
     expect(unfit.requirements!.hcp).toEqual([8, 35]);
     expect(unfit.requirements!.suitLengths).toHaveLength(4);
+  });
+
+  it("reads why a call that fit was passed over", () => {
+    const [passedOver] = parseHandAnalysis({
+      call_name: "1S",
+      category: null,
+      calls: [PASSED_OVER],
+    }).calls;
+    expect(passedOver.preferenceReason).toEqual({
+      kind: "rule",
+      purpose: "MajorDiscovery",
+      chosenPurpose: "MajorDiscovery",
+    });
+    expect(passedOver.unfitReason).toBeUndefined();
+  });
+
+  it("refuses a preference reason it cannot read", () => {
+    expect(() =>
+      parseHandAnalysis({
+        call_name: "1S",
+        calls: [
+          {
+            ...PASSED_OVER,
+            preference_reason: { ...PASSED_OVER.preference_reason, kind: "?" },
+          },
+        ],
+      }),
+    ).toThrow(/preference reason/);
   });
 
   it("has no call to report when no rule fits the hand", () => {

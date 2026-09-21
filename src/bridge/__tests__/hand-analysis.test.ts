@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { callsByName, unfitSummary } from "../hand-analysis";
+import {
+  callsByName,
+  preferenceSummary,
+  purposePhrase,
+  unfitSummary,
+} from "../hand-analysis";
 
 describe("unfitSummary", () => {
   it("names the suit a call wants more of", () => {
@@ -41,5 +46,67 @@ describe("callsByName", () => {
   it("is empty with no analysis, so a call menu is simply unweighed", () => {
     expect(callsByName(null).size).toBe(0);
     expect(callsByName(undefined).size).toBe(0);
+  });
+});
+
+describe("preferenceSummary", () => {
+  const SPADES = { type: "bid", level: 1, strain: "S" } as const;
+
+  it("puts one purpose against the other", () => {
+    expect(
+      preferenceSummary(
+        {
+          kind: "purpose",
+          purpose: "MinorDiscovery",
+          chosenPurpose: "MajorDiscovery",
+        },
+        SPADES,
+      ),
+    ).toBe(
+      "SAYC prefers 1\u2660: bidding a major you may fit comes before " +
+        "bidding a minor you may fit.",
+    );
+  });
+
+  it("names the rule when one rule offers both calls", () => {
+    expect(
+      preferenceSummary(
+        {
+          kind: "rule",
+          purpose: "MajorDiscovery",
+          chosenPurpose: "MajorDiscovery",
+        },
+        SPADES,
+        "One Level Suit Opening",
+      ),
+    ).toBe(
+      "SAYC prefers 1\u2660: One Level Suit Opening offers both, and picks " +
+        "that one with this hand.",
+    );
+  });
+
+  it("says a fallback is a last resort", () => {
+    expect(
+      preferenceSummary(
+        { kind: "fallback", purpose: "Game", chosenPurpose: "Game" },
+        SPADES,
+      ),
+    ).toContain("only bid when nothing better fits");
+  });
+
+  it("says which strain a purpose prefers", () => {
+    expect(
+      preferenceSummary(
+        { kind: "strain", purpose: "Game", chosenPurpose: "Game" },
+        SPADES,
+      ),
+    ).toBe(
+      "SAYC prefers 1\u2660: for bidding a game, that strain comes first.",
+    );
+  });
+
+  it("falls back to a purpose's own name if the engine gains one", () => {
+    expect(purposePhrase("SomethingNew")).toBe("SomethingNew");
+    expect(purposePhrase("Game")).toBe("bidding a game");
   });
 });

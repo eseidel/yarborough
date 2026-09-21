@@ -18,7 +18,7 @@ import {
   toggleCard,
 } from "../bridge/hand-entry";
 import { MiniCard } from "./CardFan";
-import { CARD, EYEBROW, PRIMARY_BUTTON, SECONDARY_BUTTON } from "./ui";
+import { CARD, EYEBROW, TEXT_BUTTON } from "./ui";
 
 /**
  * The deck's four colors, in the three places a row needs them. Tailwind
@@ -129,10 +129,7 @@ function EntryFan({
   onRemove: (key: CardKey) => void;
 }) {
   return (
-    <div
-      className="flex min-h-19 items-center rounded-lg bg-gray-50 p-2.5"
-      data-testid="entry-fan"
-    >
+    <div className="flex min-h-19 items-center" data-testid="entry-fan">
       {hand.cards.length === 0 ? (
         <span className="px-1 text-sm text-gray-500">
           Your hand builds here as you take the cards.
@@ -274,9 +271,12 @@ export function HandEntry({
 
   return (
     <div className={`${CARD} flex flex-col gap-2 p-2`} data-testid="hand-entry">
+      {/* The seat's name and the way out, in the row the open hand uses. */}
       <div className="flex items-baseline justify-between gap-2 px-0.5">
-        <span className="font-semibold">Your cards</span>
         <span className={EYEBROW}>{POSITION_NAMES[position]}</span>
+        <button type="button" onClick={onCancel} className={TEXT_BUTTON}>
+          Cancel
+        </button>
       </div>
 
       <EntryFan hand={handFromKeys(held)} onRemove={remove} />
@@ -292,29 +292,6 @@ export function HandEntry({
         {FAN_SUIT_ORDER.map((suit) => (
           <SuitRow key={suit} suit={suit} held={held} full={full} />
         ))}
-      </div>
-
-      <p
-        className="min-h-4 text-center text-xs text-amber-700"
-        data-testid="hand-entry-hint"
-      >
-        {full
-          ? "Thirteen cards. Still holding one? Check the fan against your hand."
-          : ""}
-      </p>
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          disabled={!full}
-          onClick={() => onDone(handFromKeys(held))}
-          className={`${PRIMARY_BUTTON} flex-1`}
-        >
-          Done
-        </button>
-        <button type="button" onClick={onCancel} className={SECONDARY_BUTTON}>
-          Cancel
-        </button>
       </div>
     </div>
   );

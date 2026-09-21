@@ -52,8 +52,13 @@ import {
 import { SAYCForcingOracle } from "./z3b/forcing";
 import { exprForSuit, isPossible, points } from "./z3b/model";
 import { annotations } from "./z3b/preconditions";
+import type { Priority } from "./z3b/purposes";
 import type { EnumValue } from "./z3b/enum";
-import { mro, type RuleClass } from "./z3b/rule_compiler";
+import {
+  mro,
+  type PriorityOrdering,
+  type RuleClass,
+} from "./z3b/rule_compiler";
 import * as rules from "./z3b/rules";
 import type { Expr, Solver } from "./z3b/z3";
 
@@ -724,6 +729,26 @@ export interface UnfitReason {
   actual: number;
 }
 
+/**
+ * Why z3b passed over a call the hand could have made.
+ *
+ * The four kinds are the four clauses of `PriorityOrdering.lt`, in its own
+ * order, so the reason given is the one that actually decided it.
+ */
+export interface PreferenceReason {
+  /**
+   * `purpose`: the chosen call has a better reason for being made.
+   * `strain`: the same purpose, and the purpose prefers the chosen strain.
+   * `fallback`: this call is what its rule bids only when nothing better
+   * fits.  `rule`: one rule offers both calls and prefers the chosen one.
+   */
+  kind: "purpose" | "strain" | "fallback" | "rule";
+  /** This call's purpose, one of `purposes.ORDER`. */
+  purpose: string;
+  /** The chosen call's purpose; the same name on every kind but `purpose`. */
+  chosen_purpose: string;
+}
+
 /** One legal call, weighed against a particular hand. */
 export interface HandCallAnalysis {
   call_name: string;
@@ -734,6 +759,8 @@ export interface HandCallAnalysis {
   /** The rule's own bounds, on the calls the hand fails; null otherwise. */
   requirements: CallRequirements | null;
   unfit_reason: UnfitReason | null;
+  /** Why the chosen call beat this one, on the calls that merely fit. */
+  preference_reason: PreferenceReason | null;
 }
 
 /** What `get_hand_analysis` returns. */
@@ -942,6 +969,60 @@ export function _hand(hand: unknown): Hand {
 }
 
 /**
+ * The priority of the first variant of `call`'s rule that the hand can have.
+ *
+ * `meaningOf` yields a rule's variants in the rule's own order of preference,
+ * and `PossibleCalls` keeps the first one it added for a call, so the first
+ * that fits is the priority the bidder weighed this call at.
+ */
+function _fittingPriority(
+  selector: RuleSelector,
+  history: History,
+  call: Call,
+  handSolver: Solver,
+): Priority | null {
+  const rule = selector.ruleForCall(call);
+  if (!rule || rule.requiresPlanning) return null;
+  for (const [priority, meaning] of rule.meaningOf(history, call)) {
+    if (isPossible(handSolver, meaning)) return priority;
+  }
+  return null;
+}
+
+/**
+ * Which clause of `PriorityOrdering.lt` put the chosen call ahead of this one.
+ *
+ * Null when the chosen call does not actually dominate this one: the two are
+ * then incomparable, and the call was dropped for something else (a planning
+ * rule, a collision), which this cannot honestly explain.
+ */
+function _preferenceReason(
+  ordering: PriorityOrdering,
+  priority: Priority,
+  chosen: Priority,
+): PreferenceReason | null {
+  if (!ordering.lt(priority, chosen)) return null;
+  const purposes = {
+    purpose: priority.purpose,
+    chosen_purpose: chosen.purpose,
+  };
+  if (priority.rank !== chosen.rank) {
+    return { kind: "purpose", ...purposes };
+  }
+  if (
+    priority.strain !== chosen.strain &&
+    priority.strain !== null &&
+    chosen.strain !== null
+  ) {
+    return { kind: "strain", ...purposes };
+  }
+  if (priority.fallback !== chosen.fallback) {
+    return { kind: "fallback", ...purposes };
+  }
+  return { kind: "rule", ...purposes };
+}
+
+/**
  * Every legal next call, weighed against `hand`.
  *
  * `hand` is a C.D.H.S dot string, the notation the rest of the repository
@@ -950,7 +1031,8 @@ export function _hand(hand: unknown): Hand {
  * the call z3b picks, a call the hand could make that z3b passed over, a
  * call whose rule the hand fails, or a call no SAYC rule makes here.  The
  * calls the hand fails also carry what their rule asks for and the one
- * requirement the hand misses, so the frontend can say which.
+ * requirement the hand misses, and the calls that merely fit carry why the
+ * chosen call was preferred, so the frontend can say which and why.
  */
 export function getHandAnalysis(
   hand: unknown,
@@ -978,6 +1060,11 @@ export function getHandAnalysis(
     // each time it is called.
     const handSolver = _solverPool.borrowSolverForHand(playerHand);
     try {
+      // The chosen call's own priority, for saying what it beat and why.
+      const chosenPriority = chosen
+        ? _fittingPriority(selector, history, chosen, handSolver)
+        : null;
+
       for (const call of new CallExplorer().possibleCallsOver(callHistory)) {
         let interpretedRule = null;
         let knowledgeString: string | null = null;
@@ -996,12 +1083,14 @@ export function getHandAnalysis(
         }
 
         const rule = selector.ruleForCall(call);
-        const meanings = rule
-          ? [...rule.meaningOf(history, call)].map(([, meaning]) => meaning)
-          : [];
-        const fits = meanings.some((meaning) =>
+        const variants = rule ? [...rule.meaningOf(history, call)] : [];
+        const meanings = variants.map(([, meaning]) => meaning);
+        // The variant the hand can have, in the rule's own order: see
+        // `_fittingPriority`.  Undefined means the rule does not fit at all.
+        const fitting = variants.find(([, meaning]) =>
           isPossible(handSolver, meaning),
         );
+        const fits = fitting !== undefined;
 
         let fit: CallFit;
         if (chosen && call.equals(chosen)) {
@@ -1020,6 +1109,15 @@ export function getHandAnalysis(
         const requirements =
           fit === "unfit" ? _requirementsFor(meanings) : null;
 
+        const preferenceReason =
+          fit === "possible" && fitting && chosenPriority
+            ? _preferenceReason(
+                bidder.system.priorityOrdering,
+                fitting[0],
+                chosenPriority,
+              )
+            : null;
+
         analyses.push({
           call_name: call.name,
           rule_name: interpretedRule
@@ -1032,6 +1130,7 @@ export function getHandAnalysis(
           fit,
           requirements,
           unfit_reason: _unfitReason(requirements, playerHand, call),
+          preference_reason: preferenceReason,
         });
       }
     } finally {

@@ -9,6 +9,7 @@ import type {
   HandCallAnalysis,
   OpeningLead,
   Position,
+  PreferenceReason,
   StrainName,
   SuitName,
   UnfitReason,
@@ -190,6 +191,27 @@ function parseUnfitReason(value: unknown): UnfitReason | undefined {
   };
 }
 
+const PREFERENCE_KINDS = ["purpose", "strain", "fallback", "rule"] as const;
+
+function parsePreferenceReason(value: unknown): PreferenceReason | undefined {
+  if (value === null || value === undefined) return undefined;
+  const reason = record(value, "preference reason");
+  const kind = reason.kind;
+  if (
+    typeof kind !== "string" ||
+    !(PREFERENCE_KINDS as readonly string[]).includes(kind) ||
+    typeof reason.purpose !== "string" ||
+    typeof reason.chosen_purpose !== "string"
+  ) {
+    throw new Error("The bidding engine returned an invalid preference reason");
+  }
+  return {
+    kind: kind as PreferenceReason["kind"],
+    purpose: reason.purpose,
+    chosenPurpose: reason.chosen_purpose,
+  };
+}
+
 function parseHandCallAnalysis(value: unknown): HandCallAnalysis {
   const analysis = record(value, "hand call analysis");
   const fit = analysis.fit;
@@ -198,11 +220,13 @@ function parseHandCallAnalysis(value: unknown): HandCallAnalysis {
   }
   const requirements = parseRequirements(analysis.requirements);
   const unfitReason = parseUnfitReason(analysis.unfit_reason);
+  const preferenceReason = parsePreferenceReason(analysis.preference_reason);
   return {
     ...parseCallInterpretation(analysis),
     fit: fit as CallFit,
     ...(requirements ? { requirements } : {}),
     ...(unfitReason ? { unfitReason } : {}),
+    ...(preferenceReason ? { preferenceReason } : {}),
   };
 }
 

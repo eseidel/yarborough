@@ -225,9 +225,8 @@ export function ExplorePage() {
       <NavBar />
       {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full p-4 gap-4">
-        {/* One line unless someone wants a different board: it is the dealer
-            and the vulnerability that matter, and it used to take a whole
-            strip to say them. */}
+        {/* One line: it is the dealer and the vulnerability that matter, and
+            they used to take a whole strip to say. */}
         <BoardPicker boardNumber={boardNumber} onSelect={handleBoardSelect} />
 
         <CallTable callHistory={history} />
@@ -352,13 +351,13 @@ function HandSlot({
         </div>
       </div>
 
-      {hand && <CardFan hand={hand} />}
+      {hand && <CardFan hand={hand} framed={false} />}
 
-      <p className="min-h-4 text-center text-xs text-gray-500">
-        {working
-          ? "Weighing the calls against these cards..."
-          : "Every call below is weighed against this hand."}
-      </p>
+      {working && (
+        <p className="text-center text-xs text-gray-500">
+          Weighing the calls against these cards...
+        </p>
+      )}
     </div>
   );
 }

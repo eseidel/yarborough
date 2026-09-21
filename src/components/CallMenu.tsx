@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import type { CallInterpretation, HandAnalysis } from "../bridge";
 import { callToString } from "../bridge";
-import { callsByName, unfitSummary } from "../bridge/hand-analysis";
+import {
+  callsByName,
+  preferenceSummary,
+  unfitSummary,
+} from "../bridge/hand-analysis";
 import { CallDisplay } from "./CallDisplay";
 import { ConstraintsDisplay } from "./ConstraintsDisplay";
 import { SuitText } from "./SuitText";
@@ -32,6 +36,10 @@ export function CallMenu({
   onSelect?: (interp: CallInterpretation) => void;
 }) {
   const weighed = useMemo(() => callsByName(analysis), [analysis]);
+  // The chosen call's rule, for a row that lost to it under that same rule.
+  const chosenRuleName = analysis?.call
+    ? weighed.get(callToString(analysis.call))?.ruleName
+    : undefined;
 
   return (
     <div className="divide-y divide-gray-200">
@@ -41,11 +49,7 @@ export function CallMenu({
         const unfit = fitted?.fit === "unfit";
         const content = (
           <>
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
-                chosen ? "bg-emerald-700 text-white" : "bg-gray-200"
-              }`}
-            >
+            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold shrink-0">
               <CallDisplay call={interp.call} />
             </div>
             <div className="min-w-0 flex-1">
@@ -67,6 +71,22 @@ export function CallMenu({
                 !interp.description && (
                   <div className="text-sm text-gray-400">
                     Not a SAYC call here
+                  </div>
+                )}
+              {fitted?.fit === "possible" &&
+                fitted.preferenceReason &&
+                analysis?.call && (
+                  <div
+                    className="text-sm text-gray-600 italic"
+                    data-testid={`passed-over-${callToString(interp.call)}`}
+                  >
+                    <SuitText
+                      text={preferenceSummary(
+                        fitted.preferenceReason,
+                        analysis.call,
+                        chosenRuleName,
+                      )}
+                    />
                   </div>
                 )}
               {unfit && fitted.unfitReason && (

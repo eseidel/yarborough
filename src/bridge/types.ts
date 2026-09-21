@@ -353,12 +353,28 @@ export interface UnfitReason {
   actual: number;
 }
 
+/** Why SAYC passed over a call the hand could have made. */
+export interface PreferenceReason {
+  /**
+   * `purpose`: the chosen call has a better reason for being made.
+   * `strain`: the same purpose, which prefers the chosen call's strain.
+   * `fallback`: this call is what its rule bids only when nothing better
+   * fits. `rule`: one rule offers both calls and prefers the chosen one.
+   */
+  kind: "purpose" | "strain" | "fallback" | "rule";
+  /** This call's purpose, and the chosen call's; see the engine's purposes. */
+  purpose: string;
+  chosenPurpose: string;
+}
+
 /** One legal call, weighed against a hand the user entered. */
 export interface HandCallAnalysis extends CallInterpretation {
   fit: CallFit;
   /** Present only on a call the hand fails. */
   requirements?: CallRequirements;
   unfitReason?: UnfitReason;
+  /** Present only on a call that fits but was passed over. */
+  preferenceReason?: PreferenceReason;
 }
 
 /** Every legal call weighed against one hand. */

@@ -68,15 +68,18 @@ function SuitRow({ cards }: { cards: Card[] }) {
 export function CardFan({
   hand,
   position,
+  framed = true,
 }: {
   hand: Hand;
   position?: Position;
+  /** False inside another panel, where a second border is a box in a box. */
+  framed?: boolean;
 }) {
   const bySuit = cardsBySuit(hand);
 
   return (
     <div
-      className={`${CARD} min-w-0 p-3`}
+      className={framed ? `${CARD} min-w-0 p-3` : "min-w-0"}
       data-testid={position ? `hand-${position}` : undefined}
     >
       {position && (

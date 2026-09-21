@@ -89,9 +89,6 @@ describe("HandEntry", () => {
     // player still holding one that they have miscounted.
     expect(rank("C", "A")).toBeDisabled();
     expect(rank("S", "A")).not.toBeDisabled();
-    expect(screen.getByTestId("hand-entry-hint")).toHaveTextContent(
-      /Thirteen cards/,
-    );
     tap(rank("C", "A"));
     expect(screen.queryByTestId("fan-card-CA")).toBeNull();
   });
@@ -148,8 +145,17 @@ describe("HandEntry", () => {
     expect(screen.getAllByTestId(/^fan-card-/)).toHaveLength(13);
   });
 
-  it("names the seat it is asking about", () => {
+  it("names the seat it is asking about, and nothing else", () => {
     renderEntry({ position: "N" });
     expect(screen.getByText("North")).toBeInTheDocument();
+    // The thirteenth card finishes the hand, so there is nothing to confirm.
+    expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
+    expect(screen.queryByText(/Your cards/i)).toBeNull();
+  });
+
+  it("gets out of the way from the corner, like the open hand", () => {
+    const { onCancel } = renderEntry();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });
