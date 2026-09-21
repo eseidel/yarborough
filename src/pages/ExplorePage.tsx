@@ -2,20 +2,43 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { ErrorBar } from "../components/ErrorBar";
+import { BoardPicker } from "../components/BoardPicker";
 import { CallTable } from "../components/CallTable";
 import { CallMenu } from "../components/CallMenu";
-import type { CallHistory, CallInterpretation } from "../bridge";
+import { CardFan } from "../components/CardFan";
+import { HandEntry } from "../components/HandEntry";
+import { SuitText } from "../components/SuitText";
+import type {
+  CallHistory,
+  CallInterpretation,
+  EnteredHands,
+  Hand,
+  HandAnalysis,
+  Position,
+} from "../bridge";
 import {
-  vulnerabilityLabel,
   vulnerabilityFromBoardNumber,
+  callLabel,
   callToString,
   stringToCall,
+  POSITION_NAMES,
 } from "../bridge";
-import { getCallInterpretations } from "../bridge/engine";
+import { currentPlayer, isAuctionComplete } from "../bridge/auction";
+import { loadHands, saveHands } from "../bridge/entered-hands";
+import { getCallInterpretations, getHandAnalysis } from "../bridge/engine";
 import { dealerFromBoardNumber, explorePath } from "../bridge/identifier";
 import { initAnalytics, trackPageView } from "../analytics";
 import { setCanonical, setTitle } from "../seo";
-import { CARD } from "../components/ui";
+import { CARD, EYEBROW, PRIMARY_BUTTON, TEXT_BUTTON } from "../components/ui";
+
+/**
+ * What the seat to call is being shown.
+ *
+ * Explore is meant to work at a live table, where the phone goes round and
+ * whoever is to call picks it up. So the screen starts at `closed` on every
+ * turn: the auction is public and everything else has to be asked for.
+ */
+type Reveal = "closed" | "hand" | "advice";
 
 export function ExplorePage() {
   const { exploreId } = useParams<{ exploreId: string }>();
@@ -41,6 +64,8 @@ export function ExplorePage() {
 
   const boardNumber = parseInt(exploreId?.split(":")[0] || "1", 10) || 1;
   const vulnerability = vulnerabilityFromBoardNumber(boardNumber);
+  const seat = currentPlayer(history);
+  const complete = isAuctionComplete(history);
 
   const [interpretations, setInterpretations] = useState<CallInterpretation[]>(
     [],
@@ -57,6 +82,33 @@ export function ExplorePage() {
     setLoading(true);
     setError(null);
   }
+
+  // A hand per seat, kept in the tab and never in the URL: see entered-hands.
+  const [hands, setHands] = useState<EnteredHands>(() =>
+    loadHands(boardNumber),
+  );
+  const [reveal, setReveal] = useState<Reveal>("closed");
+  const [entering, setEntering] = useState(false);
+  const [advice, setAdvice] = useState<HandAnalysis | null>(null);
+  const [adviceLoading, setAdviceLoading] = useState(false);
+
+  // Every call hands the phone on, so the screen closes itself over again. A
+  // new board is a new deal, and its hands are a different storage key.
+  const [prevBoard, setPrevBoard] = useState(boardNumber);
+  const [prevRevealed, setPrevRevealed] = useState(history);
+  if (boardNumber !== prevBoard) {
+    setPrevBoard(boardNumber);
+    setHands(loadHands(boardNumber));
+  }
+  if (history !== prevRevealed) {
+    setPrevRevealed(history);
+    setReveal("closed");
+    setEntering(false);
+    setAdvice(null);
+    setAdviceLoading(false);
+  }
+
+  const hand = hands[seat];
 
   useEffect(() => {
     let cancelled = false;
@@ -91,18 +143,99 @@ export function ExplorePage() {
   );
 
   const handleClear = useCallback(() => {
+    // The calls only: coming back to try a different auction with the same
+    // cards is what Explore is for.
     navigate(explorePath(boardNumber, []));
   }, [navigate, boardNumber]);
+
+  const handleBoardSelect = useCallback(
+    (nextBoard: number) => {
+      navigate(explorePath(nextBoard, []));
+    },
+    [navigate],
+  );
+
+  const handleHandEntered = useCallback(
+    (entered: Hand) => {
+      const next = { ...hands, [seat]: entered };
+      setHands(next);
+      saveHands(boardNumber, next);
+      setEntering(false);
+      setReveal("hand");
+    },
+    [boardNumber, hands, seat],
+  );
+
+  const handleAskAdvice = useCallback(() => {
+    if (!hand) return;
+    setReveal("advice");
+    setAdviceLoading(true);
+    const callsString = history.calls.map(callToString).join(",");
+    getHandAnalysis(hand, callsString, history.dealer, vulnerability)
+      .then((result) => {
+        setAdvice(result);
+        setAdviceLoading(false);
+      })
+      .catch((err) => {
+        setError(String(err));
+        setAdviceLoading(false);
+      });
+  }, [hand, history, vulnerability]);
+
+  const handleForget = useCallback(() => {
+    const next = { ...hands };
+    delete next[seat];
+    setHands(next);
+    saveHands(boardNumber, next);
+    setReveal("closed");
+    setAdvice(null);
+  }, [boardNumber, hands, seat]);
+
+  const suggested = advice?.call
+    ? advice.calls.find(
+        (weighed) => callToString(weighed.call) === callToString(advice.call!),
+      )
+    : undefined;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavBar />
       {error && <ErrorBar message={error} onDismiss={() => setError(null)} />}
       <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full p-4 gap-4">
-        <div className="text-sm text-gray-500 font-medium text-center">
-          {vulnerabilityLabel(vulnerability)}
-        </div>
+        {/* One line unless someone wants a different board: it is the dealer
+            and the vulnerability that matter, and it used to take a whole
+            strip to say them. */}
+        <BoardPicker boardNumber={boardNumber} onSelect={handleBoardSelect} />
+
         <CallTable callHistory={history} />
+
+        {!complete &&
+          (entering ? (
+            <HandEntry
+              position={seat}
+              initialHand={hand}
+              onDone={handleHandEntered}
+              onCancel={() => setEntering(false)}
+            />
+          ) : (
+            <HandSlot
+              seat={seat}
+              hand={hand}
+              reveal={reveal}
+              advice={advice}
+              adviceLoading={adviceLoading}
+              suggested={suggested}
+              onEnter={() => setEntering(true)}
+              onShow={() => setReveal("hand")}
+              onAsk={handleAskAdvice}
+              onClose={() => {
+                setReveal("closed");
+                setAdvice(null);
+              }}
+              onForget={handleForget}
+            />
+          ))}
+
         <div className={`${CARD} flex-1 overflow-y-auto`}>
           {loading ? (
             <div className="p-4 text-center text-gray-400">Loading...</div>
@@ -122,6 +255,122 @@ export function ExplorePage() {
             &times;
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Where the hand of the seat to call would be.
+ *
+ * Closed, it is a strip the height of a couple of cards that offers to open:
+ * that is all four people at the table see between turns, and all anyone
+ * sees who picks the phone up out of turn. The cards, and then the advice,
+ * each take a deliberate tap, and the whole thing folds shut again the
+ * moment a call is made.
+ */
+function HandSlot({
+  seat,
+  hand,
+  reveal,
+  advice,
+  adviceLoading,
+  suggested,
+  onEnter,
+  onShow,
+  onAsk,
+  onClose,
+  onForget,
+}: {
+  seat: Position;
+  hand?: Hand;
+  reveal: Reveal;
+  advice: HandAnalysis | null;
+  adviceLoading: boolean;
+  suggested?: HandAnalysis["calls"][number];
+  onEnter: () => void;
+  onShow: () => void;
+  onAsk: () => void;
+  onClose: () => void;
+  onForget: () => void;
+}) {
+  const name = POSITION_NAMES[seat];
+
+  if (reveal === "closed") {
+    return (
+      <button
+        type="button"
+        onClick={hand ? onShow : onEnter}
+        className={`${CARD} flex min-h-20 w-full flex-col items-center justify-center gap-0.5 p-3 text-center transition-colors hover:bg-gray-50`}
+        data-testid="hand-slot"
+      >
+        <span className="font-semibold text-emerald-800">
+          {hand ? `Show ${name}'s hand` : `Enter ${name}'s hand`}
+        </span>
+        <span className="text-xs text-gray-500">
+          {hand
+            ? `${name} is to call. The cards stay hidden until ${name} asks.`
+            : `${name} is to call. Explore can say what to bid with them.`}
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <div className={`${CARD} flex flex-col gap-3 p-3`} data-testid="hand-slot">
+      <div className="flex items-baseline justify-between gap-2 px-0.5">
+        <span className={EYEBROW}>{name}</span>
+        <button type="button" onClick={onClose} className={TEXT_BUTTON}>
+          Hide
+        </button>
+      </div>
+
+      {hand && <CardFan hand={hand} />}
+
+      {reveal === "hand" && (
+        <button type="button" onClick={onAsk} className={PRIMARY_BUTTON}>
+          What should I bid?
+        </button>
+      )}
+
+      {reveal === "advice" &&
+        (adviceLoading ? (
+          <div className="p-3 text-center text-sm text-gray-400">
+            Working it out...
+          </div>
+        ) : advice?.call ? (
+          <div
+            className="rounded-lg bg-emerald-50 p-3 text-center"
+            data-testid="suggested-call"
+          >
+            <div className={EYEBROW}>SAYC bids</div>
+            <div className="text-2xl font-bold text-emerald-800">
+              {callLabel(advice.call)}
+            </div>
+            {suggested?.ruleName && (
+              <div className="mt-1 text-sm font-semibold text-emerald-900">
+                {suggested.ruleName}
+              </div>
+            )}
+            {suggested?.description && (
+              <div className="text-sm text-emerald-900">
+                <SuitText text={suggested.description} />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="p-3 text-center text-sm text-gray-500">
+            SAYC has no call for this hand here.
+          </div>
+        ))}
+
+      <div className="flex justify-center gap-4">
+        <button type="button" onClick={onEnter} className={TEXT_BUTTON}>
+          Change these cards
+        </button>
+        <button type="button" onClick={onForget} className={TEXT_BUTTON}>
+          Forget this hand
+        </button>
       </div>
     </div>
   );

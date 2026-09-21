@@ -295,6 +295,83 @@ export function callLabel(call: Call): string {
   return `${call.level}${strainSymbol(call.strain!)}`;
 }
 
+/** The order a hand string names the suits: clubs, diamonds, hearts, spades. */
+export const CDHS_SUIT_ORDER: SuitName[] = ["C", "D", "H", "S"];
+
+/**
+ * A hand as the engine writes it: "42.A973.K5.AQ982" is 42 of clubs, A973 of
+ * diamonds, K5 of hearts and AQ982 of spades.  The repository writes hands
+ * C.D.H.S throughout (see CLAUDE.md), matching `Suit::ALL`, while the app
+ * shows them spades first; the two orders meet here.
+ */
+export function handToCdhsString(hand: Hand): string {
+  const bySuit = cardsBySuit(hand);
+  return CDHS_SUIT_ORDER.map((suit) =>
+    bySuit[suit].map((card) => card.rank).join(""),
+  ).join(".");
+}
+
+/** Read a C.D.H.S hand string. Returns null when it is not thirteen cards. */
+export function handFromCdhsString(text: string): Hand | null {
+  const holdings = text.toUpperCase().split(".");
+  if (holdings.length !== CDHS_SUIT_ORDER.length) return null;
+  const cards: Card[] = [];
+  const seen = new Set<string>();
+  for (const [index, holding] of holdings.entries()) {
+    const suit = CDHS_SUIT_ORDER[index];
+    for (const rank of holding) {
+      if (!RANK_ORDER.includes(rank as RankName)) return null;
+      if (seen.has(suit + rank)) return null;
+      seen.add(suit + rank);
+      cards.push({ suit, rank: rank as RankName });
+    }
+  }
+  return cards.length === 13 ? { cards } : null;
+}
+
+/** How a hand stands with one legal call. */
+export type CallFit = "chosen" | "possible" | "unfit" | "no_rule";
+
+/** The least and the most of one quantity a call's rule allows. */
+export type Bounds = [min: number, max: number];
+
+/** What a call asks of the hand that makes it. */
+export interface CallRequirements {
+  hcp: Bounds;
+  /** Length bounds per suit, in C.D.H.S order. */
+  suitLengths: Bounds[];
+}
+
+/** The one requirement a hand misses, of a call it cannot make. */
+export interface UnfitReason {
+  kind: "hcp_low" | "hcp_high" | "suit_short" | "suit_long";
+  /** The suit of a length miss; absent for a point-count miss. */
+  suit?: SuitName;
+  /** What the call asks for. */
+  shown: number;
+  /** What the hand holds. */
+  actual: number;
+}
+
+/** One legal call, weighed against a hand the user entered. */
+export interface HandCallAnalysis extends CallInterpretation {
+  fit: CallFit;
+  /** Present only on a call the hand fails. */
+  requirements?: CallRequirements;
+  unfitReason?: UnfitReason;
+}
+
+/** Every legal call weighed against one hand. */
+export interface HandAnalysis {
+  /** The call the engine makes with this hand. */
+  call?: Call;
+  category?: string[];
+  calls: HandCallAnalysis[];
+}
+
+/** The hands the user has entered, by seat. A seat with no hand is absent. */
+export type EnteredHands = Partial<Record<Position, Hand>>;
+
 /** A board adaptive practice found, and the category of the call it asks for. */
 export interface AdaptiveBoard {
   /** The bare board identifier, without calls. */

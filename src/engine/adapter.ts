@@ -36,6 +36,7 @@ import { Board } from "./core/board";
 import { type Call, Pass } from "./core/call";
 import { CallExplorer } from "./core/callexplorer";
 import { CallHistory } from "./core/callhistory";
+import { Hand } from "./core/hand";
 import { Position } from "./core/position";
 import { type Strain, SUITS } from "./core/suit";
 import * as leads from "./leads";
@@ -45,12 +46,16 @@ import {
   InconsistentHistoryException,
   Interpreter,
   type PositionView,
+  RuleSelector,
+  _solverPool,
 } from "./z3b/bidder";
 import { SAYCForcingOracle } from "./z3b/forcing";
+import { exprForSuit, isPossible, points } from "./z3b/model";
 import { annotations } from "./z3b/preconditions";
 import type { EnumValue } from "./z3b/enum";
 import { mro, type RuleClass } from "./z3b/rule_compiler";
 import * as rules from "./z3b/rules";
+import type { Expr, Solver } from "./z3b/z3";
 
 /** Raised when a frontend request cannot be represented by z3b. */
 export class BiddingInputError extends Error {
@@ -687,6 +692,356 @@ export function getOpeningLead(identifier: unknown): OpeningLead {
   return _openingLeadForBoard(_board(identifier));
 }
 
+// --- the hand-aware analysis ----------------------------------------------
+//
+// `get_call_interpretations` above answers "what would SAYC mean by each of
+// these calls", which is all Explore could ask without a hand.  With one it
+// can ask the question a player actually has -- "which of these is my bid,
+// and what is wrong with the others" -- and z3b already separates the four
+// answers internally; nothing exposed them.
+
+/** How a hand stands with one legal call. */
+export type CallFit = "chosen" | "possible" | "unfit" | "no_rule";
+
+/** The least and the most of one quantity a rule leaves possible. */
+export type Bounds = [min: number, max: number];
+
+/** What a call asks of the hand that makes it. */
+export interface CallRequirements {
+  hcp: Bounds;
+  /** Length bounds per suit, in `Suit::ALL` order (clubs through spades). */
+  suit_lengths: Bounds[];
+}
+
+/** The one requirement a hand misses, of the call it cannot make. */
+export interface UnfitReason {
+  kind: "hcp_low" | "hcp_high" | "suit_short" | "suit_long";
+  /** The suit's char for a length miss; null for a point-count miss. */
+  suit: string | null;
+  /** What the call asks for. */
+  shown: number;
+  /** What the hand holds. */
+  actual: number;
+}
+
+/** One legal call, weighed against a particular hand. */
+export interface HandCallAnalysis {
+  call_name: string;
+  rule_name: string | null;
+  description: string | null;
+  knowledge_string: string | null;
+  fit: CallFit;
+  /** The rule's own bounds, on the calls the hand fails; null otherwise. */
+  requirements: CallRequirements | null;
+  unfit_reason: UnfitReason | null;
+}
+
+/** What `get_hand_analysis` returns. */
+export interface HandAnalysis {
+  /** The call z3b makes with this hand, or null when no rule fits it. */
+  call_name: string | null;
+  category: CategoryPath | null;
+  calls: HandCallAnalysis[];
+}
+
+const _MAX_HCP = ConstraintsSerializer.MAX_HCP_PER_HAND;
+
+/**
+ * The smallest value in [lo, hi] that a model of `solver` gives `expr`.
+ *
+ * `expr <= n` is satisfiable for every n at or above that value and for none
+ * below it, so the predicate is monotone and bisection finds the edge.
+ */
+export function _lowerBoundOf(
+  solver: Solver,
+  expr: Expr,
+  lo: number,
+  hi: number,
+): number {
+  let low = lo;
+  let high = hi;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (isPossible(solver, expr.le(middle))) {
+      high = middle;
+    } else {
+      low = middle + 1;
+    }
+  }
+  return low;
+}
+
+/** The largest value in [lo, hi] a model of `solver` gives `expr`. */
+export function _upperBoundOf(
+  solver: Solver,
+  expr: Expr,
+  lo: number,
+  hi: number,
+): number {
+  let low = lo;
+  let high = hi;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (isPossible(solver, expr.ge(middle))) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+  return low;
+}
+
+function _boundsOf(solver: Solver, expr: Expr, lo: number, hi: number): Bounds {
+  return [
+    _lowerBoundOf(solver, expr, lo, hi),
+    _upperBoundOf(solver, expr, lo, hi),
+  ];
+}
+
+function _widen(into: Bounds | null, next: Bounds): Bounds {
+  return into === null
+    ? next
+    : [Math.min(into[0], next[0]), Math.max(into[1], next[1])];
+}
+
+/**
+ * What a rule's meanings ask of the hand that makes the call: the points and
+ * the suit lengths they leave possible, widened over the rule's variants,
+ * since a hand need satisfy only one of them.
+ *
+ * These are the raw meanings the bidder tests a hand against, not the
+ * constraints the interpreted auction carries, which also negate the meaning
+ * of every call the rules would have preferred.  Only the raw bounds can say
+ * a hand misses a requirement without attributing to the rule something it
+ * never asked for.
+ */
+export function _requirementsFor(
+  meanings: readonly Expr[],
+): CallRequirements | null {
+  let hcp: Bounds | null = null;
+  const suitLengths: (Bounds | null)[] = SUITS.map(() => null);
+  const solver = _solverPool.borrow();
+  try {
+    for (const meaning of meanings) {
+      solver.push();
+      try {
+        solver.add(meaning);
+        if (solver.check() !== "sat") {
+          continue; // a variant no hand satisfies asks nothing of this one
+        }
+        hcp = _widen(hcp, _boundsOf(solver, points, 0, _MAX_HCP));
+        for (const suit of SUITS) {
+          suitLengths[suit.index] = _widen(
+            suitLengths[suit.index],
+            _boundsOf(solver, exprForSuit(suit), 0, 13),
+          );
+        }
+      } finally {
+        solver.pop();
+      }
+    }
+  } finally {
+    _solverPool.restore(solver);
+  }
+  if (hcp === null) {
+    return null;
+  }
+  return { hcp, suit_lengths: suitLengths.map((bounds) => bounds ?? [0, 13]) };
+}
+
+/**
+ * The requirement `hand` misses, named the way a player would name it: the
+ * point count first, since it rules out most calls at a glance, then the
+ * suit the call itself names, then the largest shortfall.
+ *
+ * Null when the hand is inside every bound -- the rule then turned the hand
+ * down on something finer than points and shape (a stopper, a holding, the
+ * cards in one suit), which these bounds cannot see and must not guess at.
+ */
+export function _unfitReason(
+  requirements: CallRequirements | null,
+  hand: Hand,
+  call: Call,
+): UnfitReason | null {
+  if (!requirements) {
+    return null;
+  }
+  const hcp = hand.highCardPoints();
+  if (hcp < requirements.hcp[0]) {
+    return {
+      kind: "hcp_low",
+      suit: null,
+      shown: requirements.hcp[0],
+      actual: hcp,
+    };
+  }
+  if (hcp > requirements.hcp[1]) {
+    return {
+      kind: "hcp_high",
+      suit: null,
+      shown: requirements.hcp[1],
+      actual: hcp,
+    };
+  }
+
+  const misses: UnfitReason[] = [];
+  for (const suit of SUITS) {
+    const [minimum, maximum] = requirements.suit_lengths[suit.index];
+    const length = hand.lengthOfSuit(suit);
+    if (length < minimum) {
+      misses.push({
+        kind: "suit_short",
+        suit: suit.char,
+        shown: minimum,
+        actual: length,
+      });
+    } else if (length > maximum) {
+      misses.push({
+        kind: "suit_long",
+        suit: suit.char,
+        shown: maximum,
+        actual: length,
+      });
+    }
+  }
+  if (!misses.length) {
+    return null;
+  }
+  const named = call.strain
+    ? misses.find((miss) => miss.suit === call.strain!.char)
+    : undefined;
+  if (named) {
+    return named;
+  }
+  return misses.reduce((worst, miss) =>
+    Math.abs(miss.shown - miss.actual) > Math.abs(worst.shown - worst.actual)
+      ? miss
+      : worst,
+  );
+}
+
+export function _hand(hand: unknown): Hand {
+  const handString = _requireString(hand, "hand");
+  let parsed: Hand;
+  try {
+    parsed = Hand.fromCdhsString(handString.toUpperCase());
+  } catch {
+    // `Hand` rejects a card value it does not know and a hand that is not
+    // thirteen cards, but not the same card named twice.
+    throw new BiddingInputError(`invalid hand: ${handString}`);
+  }
+  const named = new Set(
+    parsed.cardsBySuitIndex.flatMap((cards, index) =>
+      [...cards].map((card) => `${index}${card}`),
+    ),
+  );
+  if (named.size !== 13) {
+    throw new BiddingInputError(`invalid hand: ${handString}`);
+  }
+  return parsed;
+}
+
+/**
+ * Every legal next call, weighed against `hand`.
+ *
+ * `hand` is a C.D.H.S dot string, the notation the rest of the repository
+ * uses.  Each call comes back with the interpretation
+ * `get_call_interpretations` gives it and with how the hand stands with it:
+ * the call z3b picks, a call the hand could make that z3b passed over, a
+ * call whose rule the hand fails, or a call no SAYC rule makes here.  The
+ * calls the hand fails also carry what their rule asks for and the one
+ * requirement the hand misses, so the frontend can say which.
+ */
+export function getHandAnalysis(
+  hand: unknown,
+  calls: unknown,
+  dealer: unknown,
+  vulnerability: unknown,
+): HandAnalysis {
+  const callHistory = _callHistory(calls, dealer, vulnerability);
+  const playerHand = _hand(hand);
+  if (callHistory.isComplete()) {
+    return { call_name: null, category: null, calls: [] };
+  }
+
+  const bidder = new Bidder();
+  const selection = bidder.callSelectionFor(playerHand, callHistory);
+  const chosen = selection ? selection.call : null;
+  const category = _categoryForSelection(selection, callHistory);
+
+  const analyses: HandCallAnalysis[] = [];
+  const interpreter = new Interpreter();
+  interpreter.withHistory(callHistory, (history) => {
+    const selector = new RuleSelector(bidder.system, history, null);
+    // One solver holds the hand for the whole list: every call asks it the
+    // same question, and `borrowSolverForHand` adds the hand's 52 equalities
+    // each time it is called.
+    const handSolver = _solverPool.borrowSolverForHand(playerHand);
+    try {
+      for (const call of new CallExplorer().possibleCallsOver(callHistory)) {
+        let interpretedRule = null;
+        let knowledgeString: string | null = null;
+        let extendedHistory: History | null = null;
+        try {
+          extendedHistory = interpreter.extendHistory(history, call);
+          interpretedRule = extendedHistory.rho.ruleForLastCall;
+          knowledgeString = _knowledgeString(extendedHistory.rho, interpreter);
+        } catch (error) {
+          if (!(error instanceof InconsistentHistoryException)) {
+            throw error;
+          }
+        } finally {
+          // A branch the interpreted auction does not own: see `releaseBranch`.
+          extendedHistory?.releaseBranch();
+        }
+
+        const rule = selector.ruleForCall(call);
+        const meanings = rule
+          ? [...rule.meaningOf(history, call)].map(([, meaning]) => meaning)
+          : [];
+        const fits = meanings.some((meaning) =>
+          isPossible(handSolver, meaning),
+        );
+
+        let fit: CallFit;
+        if (chosen && call.equals(chosen)) {
+          fit = "chosen";
+        } else if (!rule) {
+          fit = "no_rule";
+        } else if (fits) {
+          fit = "possible";
+        } else {
+          fit = "unfit";
+        }
+
+        // Only a call the hand fails needs its rule's own bounds, and each
+        // set costs ten bisections; the rest are described well enough by
+        // the knowledge string Explore already shows.
+        const requirements =
+          fit === "unfit" ? _requirementsFor(meanings) : null;
+
+        analyses.push({
+          call_name: call.name,
+          rule_name: interpretedRule
+            ? _formatRuleName(interpretedRule.name)
+            : null,
+          description: interpretedRule
+            ? interpretedRule.explanationForBid(call)
+            : null,
+          knowledge_string: knowledgeString,
+          fit,
+          requirements,
+          unfit_reason: _unfitReason(requirements, playerHand, call),
+        });
+      }
+    } finally {
+      _solverPool.restore(handSolver);
+    }
+  });
+
+  return { call_name: chosen ? chosen.name : null, category, calls: analyses };
+}
+
 /** Dispatch an RPC request after validating its primitive JSON shape. */
 export function dispatch(method: unknown, args: unknown): unknown {
   const methodName = _requireString(method, "method");
@@ -726,6 +1081,14 @@ export function dispatch(method: unknown, args: unknown): unknown {
   }
   if (methodName === "get_opening_lead") {
     return getOpeningLead(argument("identifier"));
+  }
+  if (methodName === "get_hand_analysis") {
+    return getHandAnalysis(
+      argument("hand"),
+      argument("calls"),
+      argument("dealer"),
+      argument("vulnerability"),
+    );
   }
   throw new BiddingInputError(`unknown engine method: ${methodName}`);
 }

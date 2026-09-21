@@ -2,11 +2,15 @@ import type {
   AdaptiveBoard,
   Call,
   CallInterpretation,
+  Hand,
+  HandAnalysis,
   OpeningLead,
 } from "./types";
+import { handToCdhsString } from "./types";
 import type { EngineMethod } from "./engine-protocol";
 import {
   parseAdaptiveBoard,
+  parseHandAnalysis,
   parseCallInterpretation,
   parseCallInterpretations,
   parseCallName,
@@ -35,6 +39,12 @@ export interface BiddingEngine {
   generateFilteredBoard(type: string): Promise<string>;
   getFullAutobid(identifier: string): Promise<Call[]>;
   getOpeningLead(identifier: string): Promise<OpeningLead>;
+  getHandAnalysis(
+    hand: Hand,
+    callsString: string,
+    dealer: string,
+    vulnerability?: string,
+  ): Promise<HandAnalysis>;
   generateAdaptiveBoard(
     targets: string[][],
     maxAttempts: number,
@@ -79,6 +89,26 @@ export function createBiddingEngine(requester: EngineRequester): BiddingEngine {
         identifier,
       });
       return parseCallInterpretation(result);
+    },
+
+    /**
+     * Every legal next call weighed against `hand`: which one z3b makes, which
+     * ones the hand could make but that lose on priority, and which
+     * requirement the hand misses on the rest.
+     */
+    async getHandAnalysis(
+      hand: Hand,
+      callsString: string,
+      dealer: string,
+      vulnerability: string = "None",
+    ): Promise<HandAnalysis> {
+      const result = await requester.request("get_hand_analysis", {
+        hand: handToCdhsString(hand),
+        calls: callsString,
+        dealer,
+        vulnerability,
+      });
+      return parseHandAnalysis(result);
     },
 
     /** Generate a board selected by z3b for the requested practice focus. */
@@ -139,3 +169,4 @@ export const generateFilteredBoard = biddingEngine.generateFilteredBoard;
 export const getFullAutobid = biddingEngine.getFullAutobid;
 export const getOpeningLead = biddingEngine.getOpeningLead;
 export const generateAdaptiveBoard = biddingEngine.generateAdaptiveBoard;
+export const getHandAnalysis = biddingEngine.getHandAnalysis;

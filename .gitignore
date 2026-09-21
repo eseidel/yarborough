@@ -90,3 +90,6 @@ coverage/
 
 # Wrangler local state (miniflare caches, dev sessions)
 .wrangler/
+
+# Vitest browser-mode failure screenshots
+**/__tests__/__screenshots__/

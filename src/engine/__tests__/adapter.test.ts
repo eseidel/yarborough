@@ -34,9 +34,12 @@ import {
   getFullAutobid,
   getNextCall,
   getOpeningLead,
+  getHandAnalysis,
   getSuggestedCall,
+  type HandAnalysis,
   MAX_FOCUS_ATTEMPTS,
   setSelectionForBoard,
+  _unfitReason,
 } from "../adapter";
 import { LEVEL_ONE } from "../categories";
 import { Board } from "../core/board";
@@ -553,5 +556,219 @@ describe("the opening lead adapter", () => {
     expect(() => getOpeningLead(board.identifier)).toThrow(
       "the auction is not complete",
     );
+  });
+});
+
+describe("the hand-aware analysis", () => {
+  // AQ982 in spades, K5 in hearts, A973 in diamonds, 42 in clubs: thirteen
+  // high-card points and five spades, so SAYC opens it one spade.  Written
+  // C.D.H.S, the way the rest of the repository writes a hand.
+  const OPENER = "42.A973.K5.AQ982";
+
+  function analysisFor(hand: string, calls = "", dealer = "N") {
+    const analysis = getHandAnalysis(hand, calls, dealer, "None");
+    const byCall = new Map(
+      analysis.calls.map((call) => [call.call_name, call]),
+    );
+    return { analysis, byCall };
+  }
+
+  it("marks the call z3b makes with the hand", () => {
+    const { analysis, byCall } = analysisFor(OPENER);
+    expect(analysis.call_name).toBe("1S");
+    expect(analysis.category).toEqual([
+      "Opening",
+      "One of a suit",
+      "One Level Suit Opening",
+    ]);
+    expect(byCall.get("1S")!.fit).toBe("chosen");
+    // Exactly one call is the chosen one.
+    expect(analysis.calls.filter((call) => call.fit === "chosen")).toHaveLength(
+      1,
+    );
+  });
+
+  it("separates a call the hand could make from the one z3b prefers", () => {
+    const { byCall } = analysisFor(OPENER);
+    // Four diamonds and an opening hand: 1D is a call this hand can make, and
+    // SAYC opens the longer suit first, so it loses on priority rather than
+    // on the hand.
+    expect(byCall.get("1D")!.fit).toBe("possible");
+    expect(byCall.get("P")!.fit).toBe("possible");
+    // A call that only lost on priority is not accused of missing anything.
+    expect(byCall.get("1D")!.requirements).toBeNull();
+    expect(byCall.get("1D")!.unfit_reason).toBeNull();
+  });
+
+  it("names the suit an unfitting call wanted", () => {
+    const { byCall } = analysisFor(OPENER);
+    const oneHeart = byCall.get("1H")!;
+    expect(oneHeart.fit).toBe("unfit");
+    expect(oneHeart.unfit_reason).toEqual({
+      kind: "suit_short",
+      suit: "H",
+      shown: 5,
+      actual: 2,
+    });
+    // A weak two asks for a sixth card of the suit the call names, not for
+    // the spades the hand is otherwise long enough in.
+    expect(byCall.get("2S")!.unfit_reason).toEqual({
+      kind: "suit_short",
+      suit: "S",
+      shown: 6,
+      actual: 5,
+    });
+  });
+
+  it("names the points an unfitting call wanted", () => {
+    const { byCall } = analysisFor(OPENER);
+    expect(byCall.get("1N")!.unfit_reason).toEqual({
+      kind: "hcp_low",
+      suit: null,
+      shown: 15,
+      actual: 13,
+    });
+    expect(byCall.get("2C")!.unfit_reason).toEqual({
+      kind: "hcp_low",
+      suit: null,
+      shown: 22,
+      actual: 13,
+    });
+  });
+
+  it("reports the requirements only of the calls the hand fails", () => {
+    const { analysis } = analysisFor(OPENER);
+    for (const call of analysis.calls) {
+      if (call.fit === "unfit") {
+        expect(call.requirements, call.call_name).not.toBeNull();
+        expect(call.requirements!.suit_lengths).toHaveLength(4);
+      } else {
+        expect(call.requirements, call.call_name).toBeNull();
+        expect(call.unfit_reason, call.call_name).toBeNull();
+      }
+    }
+  });
+
+  it("says when no SAYC rule makes a call", () => {
+    // Over an opening bid, a jump to the seven level is nobody's rule.
+    const { byCall } = analysisFor(OPENER, "1S");
+    const seven = byCall.get("7C")!;
+    expect(seven.fit).toBe("no_rule");
+    expect(seven.rule_name).toBeNull();
+    expect(seven.requirements).toBeNull();
+  });
+
+  it("keeps the interpretations get_call_interpretations gives", () => {
+    const { analysis } = analysisFor(OPENER);
+    const interpretations = getCallInterpretations("", "N", "None");
+    expect(analysis.calls.map((call) => call.call_name)).toEqual(
+      interpretations.map((interpretation) => interpretation.call_name),
+    );
+    for (const [index, call] of analysis.calls.entries()) {
+      expect(call.rule_name, call.call_name).toBe(
+        interpretations[index].rule_name,
+      );
+      expect(call.knowledge_string, call.call_name).toBe(
+        interpretations[index].knowledge_string,
+      );
+    }
+  });
+
+  it("has nothing to say about a finished auction", () => {
+    expect(getHandAnalysis(OPENER, "P P P P", "N", "None")).toEqual({
+      call_name: null,
+      category: null,
+      calls: [],
+    });
+  });
+
+  it("rejects a hand it cannot read", () => {
+    expect(() => getHandAnalysis(null, "", "N", "None")).toThrow(
+      BiddingInputError,
+    );
+    // Twelve cards.
+    expect(() => getHandAnalysis("42.A973.K5.AQ98", "", "N", "None")).toThrow(
+      "invalid hand",
+    );
+    // Thirteen cards, but the four of clubs twice.
+    expect(() => getHandAnalysis("442.A973.K5.AQ82", "", "N", "None")).toThrow(
+      "invalid hand",
+    );
+    // A rank no deck has.
+    expect(() => getHandAnalysis("4X.A973.K5.AQ982", "", "N", "None")).toThrow(
+      "invalid hand",
+    );
+  });
+
+  it("answers through dispatch", () => {
+    const result = dispatch("get_hand_analysis", {
+      hand: OPENER,
+      calls: "",
+      dealer: "N",
+      vulnerability: "None",
+    }) as HandAnalysis;
+    expect(result.call_name).toBe("1S");
+  });
+
+  it("returns every solver it borrows", () => {
+    getHandAnalysis(OPENER, "1S P", "N", "None");
+    const idle = _solverPool.idle;
+    for (let repeat = 0; repeat < 3; repeat += 1) {
+      getHandAnalysis(OPENER, "1S P", "N", "None");
+      expect(_solverPool.idle, `repeat ${repeat}`).toBe(idle);
+    }
+  });
+
+  it("names the point count before the shape, and the call's own suit first", () => {
+    const hand = Hand.fromCdhsString(OPENER);
+    const requirements = {
+      hcp: [15, 17] as [number, number],
+      // Clubs through spades: this asks for six clubs and six hearts too.
+      suit_lengths: [
+        [6, 13],
+        [0, 13],
+        [6, 13],
+        [0, 13],
+      ] as [number, number][],
+    };
+    // Points first: they rule the call out whatever the shape does.
+    expect(_unfitReason(requirements, hand, Call.fromString("1H"))).toEqual({
+      kind: "hcp_low",
+      suit: null,
+      shown: 15,
+      actual: 13,
+    });
+
+    const shapeOnly = { ...requirements, hcp: [0, 37] as [number, number] };
+    // Clubs is the larger shortfall (2 against 6, versus hearts' 2 against 6
+    // -- equal here), but the call names hearts, so hearts is what it says.
+    expect(_unfitReason(shapeOnly, hand, Call.fromString("1H"))).toEqual({
+      kind: "suit_short",
+      suit: "H",
+      shown: 6,
+      actual: 2,
+    });
+    // A call that names no suit falls back to the largest shortfall.
+    expect(_unfitReason(shapeOnly, hand, Call.fromString("P"))!.suit).toBe("C");
+  });
+
+  it("says nothing when the bounds do not explain the miss", () => {
+    const hand = Hand.fromCdhsString(OPENER);
+    expect(_unfitReason(null, hand, Call.fromString("1H"))).toBeNull();
+    expect(
+      _unfitReason(
+        {
+          hcp: [0, 37],
+          suit_lengths: [
+            [0, 13],
+            [0, 13],
+            [0, 13],
+            [0, 13],
+          ],
+        },
+        hand,
+        Call.fromString("1H"),
+      ),
+    ).toBeNull();
   });
 });

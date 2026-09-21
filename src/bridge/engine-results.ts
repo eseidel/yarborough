@@ -1,11 +1,17 @@
 import type {
   AdaptiveBoard,
+  Bounds,
   Call,
+  CallFit,
   CallInterpretation,
+  CallRequirements,
+  HandAnalysis,
+  HandCallAnalysis,
   OpeningLead,
   Position,
   StrainName,
   SuitName,
+  UnfitReason,
 } from "./types";
 import { parseCardName } from "../dds/dds-core";
 
@@ -124,4 +130,93 @@ export function parseAdaptiveBoard(value: unknown): AdaptiveBoard | null {
     throw new Error("The bidding engine returned an invalid adaptive board");
   }
   return { identifier: board.identifier, category };
+}
+
+const CALL_FITS: CallFit[] = ["chosen", "possible", "unfit", "no_rule"];
+const UNFIT_KINDS: UnfitReason["kind"][] = [
+  "hcp_low",
+  "hcp_high",
+  "suit_short",
+  "suit_long",
+];
+
+function parseBounds(value: unknown, description: string): Bounds {
+  if (
+    !Array.isArray(value) ||
+    value.length !== 2 ||
+    !value.every((bound) => typeof bound === "number" && Number.isFinite(bound))
+  ) {
+    throw new Error(`The bidding engine returned invalid ${description}`);
+  }
+  return [value[0], value[1]] as Bounds;
+}
+
+function parseRequirements(value: unknown): CallRequirements | undefined {
+  if (value === null || value === undefined) return undefined;
+  const requirements = record(value, "call requirements");
+  const suitLengths = requirements.suit_lengths;
+  if (!Array.isArray(suitLengths) || suitLengths.length !== 4) {
+    throw new Error("The bidding engine returned invalid suit requirements");
+  }
+  return {
+    hcp: parseBounds(requirements.hcp, "point requirements"),
+    suitLengths: suitLengths.map((bounds) =>
+      parseBounds(bounds, "suit requirements"),
+    ),
+  };
+}
+
+function parseUnfitReason(value: unknown): UnfitReason | undefined {
+  if (value === null || value === undefined) return undefined;
+  const reason = record(value, "unfit reason");
+  const kind = reason.kind;
+  if (
+    typeof kind !== "string" ||
+    !(UNFIT_KINDS as string[]).includes(kind) ||
+    typeof reason.shown !== "number" ||
+    typeof reason.actual !== "number"
+  ) {
+    throw new Error("The bidding engine returned an invalid unfit reason");
+  }
+  const suit = reason.suit;
+  if (suit !== null && suit !== undefined && !/^[CDHS]$/.test(String(suit))) {
+    throw new Error("The bidding engine returned an invalid unfit suit");
+  }
+  return {
+    kind: kind as UnfitReason["kind"],
+    ...(suit ? { suit: suit as SuitName } : {}),
+    shown: reason.shown,
+    actual: reason.actual,
+  };
+}
+
+function parseHandCallAnalysis(value: unknown): HandCallAnalysis {
+  const analysis = record(value, "hand call analysis");
+  const fit = analysis.fit;
+  if (typeof fit !== "string" || !(CALL_FITS as string[]).includes(fit)) {
+    throw new Error("The bidding engine returned an invalid call fit");
+  }
+  const requirements = parseRequirements(analysis.requirements);
+  const unfitReason = parseUnfitReason(analysis.unfit_reason);
+  return {
+    ...parseCallInterpretation(analysis),
+    fit: fit as CallFit,
+    ...(requirements ? { requirements } : {}),
+    ...(unfitReason ? { unfitReason } : {}),
+  };
+}
+
+/** Read the engine's answer for one hand at one point in an auction. */
+export function parseHandAnalysis(value: unknown): HandAnalysis {
+  const analysis = record(value, "hand analysis");
+  if (!Array.isArray(analysis.calls)) {
+    throw new Error("The bidding engine returned an invalid hand analysis");
+  }
+  const category = optionalCategory(analysis.category);
+  const callName = analysis.call_name;
+  return {
+    ...(callName ? { call: parseCallName(callName) } : {}),
+    ...(category ? { category } : {}),
+    calls: analysis.calls.map(parseHandCallAnalysis),
+  };
 }

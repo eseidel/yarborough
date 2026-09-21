@@ -10,7 +10,11 @@ import {
 } from "../bridge/types";
 import { CARD, EYEBROW } from "./ui";
 
-function MiniCard({ card }: { card: Card }) {
+/**
+ * One card of a fan. Exported because the hand entry draws its own fan, where
+ * a card can be flicked out of the hand; the face has to be the same face.
+ */
+export function MiniCard({ card }: { card: Card }) {
   const suit = SUITS[card.suit];
   return (
     <div

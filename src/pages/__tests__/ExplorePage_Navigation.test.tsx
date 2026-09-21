@@ -12,6 +12,7 @@ import * as engine from "../../bridge/engine";
 
 vi.mock("../../bridge/engine", () => ({
   getCallInterpretations: vi.fn(),
+  getHandAnalysis: vi.fn(),
 }));
 
 describe("ExplorePage Navigation", () => {

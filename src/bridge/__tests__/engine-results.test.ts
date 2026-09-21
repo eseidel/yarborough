@@ -3,6 +3,7 @@ import {
   parseCallInterpretation,
   parseCallInterpretations,
   parseCallName,
+  parseHandAnalysis,
   parseOpeningLead,
   parseStringResult,
 } from "../engine-results";
@@ -137,5 +138,118 @@ describe("parseOpeningLead", () => {
         their_suits: [],
       }),
     ).toThrow("partner suits");
+  });
+});
+
+describe("parseHandAnalysis", () => {
+  /** What the adapter returns for a call the hand cannot make. */
+  const UNFIT = {
+    call_name: "1H",
+    rule_name: "One Level Suit Opening",
+    description: "Opening bid",
+    knowledge_string: "12-21 hcp, 5+H",
+    fit: "unfit",
+    requirements: {
+      hcp: [8, 35],
+      suit_lengths: [
+        [0, 8],
+        [0, 8],
+        [5, 13],
+        [0, 8],
+      ],
+    },
+    unfit_reason: { kind: "suit_short", suit: "H", shown: 5, actual: 2 },
+  };
+
+  const CHOSEN = {
+    call_name: "1S",
+    rule_name: "One Level Suit Opening",
+    description: "Opening bid",
+    knowledge_string: "12-21 hcp, 5+S",
+    fit: "chosen",
+    requirements: null,
+    unfit_reason: null,
+  };
+
+  it("reads the call the engine makes and how each other one stands", () => {
+    const analysis = parseHandAnalysis({
+      call_name: "1S",
+      category: ["Opening", "One of a suit", "One Level Suit Opening"],
+      calls: [CHOSEN, UNFIT],
+    });
+    expect(analysis.call).toEqual({ type: "bid", level: 1, strain: "S" });
+    expect(analysis.category).toEqual([
+      "Opening",
+      "One of a suit",
+      "One Level Suit Opening",
+    ]);
+    expect(analysis.calls.map((call) => call.fit)).toEqual(["chosen", "unfit"]);
+  });
+
+  it("keeps the interpretation a call already carried", () => {
+    const [chosen] = parseHandAnalysis({
+      call_name: "1S",
+      category: null,
+      calls: [CHOSEN],
+    }).calls;
+    expect(chosen.ruleName).toBe("One Level Suit Opening");
+    expect(chosen.constraints).toBe("12-21 hcp, 5+S");
+    expect(chosen.requirements).toBeUndefined();
+    expect(chosen.unfitReason).toBeUndefined();
+  });
+
+  it("reads which requirement an unfitting hand missed", () => {
+    const [unfit] = parseHandAnalysis({
+      call_name: "1S",
+      category: null,
+      calls: [UNFIT],
+    }).calls;
+    expect(unfit.unfitReason).toEqual({
+      kind: "suit_short",
+      suit: "H",
+      shown: 5,
+      actual: 2,
+    });
+    expect(unfit.requirements!.hcp).toEqual([8, 35]);
+    expect(unfit.requirements!.suitLengths).toHaveLength(4);
+  });
+
+  it("has no call to report when no rule fits the hand", () => {
+    const analysis = parseHandAnalysis({
+      call_name: null,
+      category: null,
+      calls: [],
+    });
+    expect(analysis.call).toBeUndefined();
+    expect(analysis.calls).toEqual([]);
+  });
+
+  it("refuses an answer it cannot read", () => {
+    expect(() => parseHandAnalysis({ call_name: "1S" })).toThrow();
+    expect(() =>
+      parseHandAnalysis({ call_name: "1S", calls: [{ ...CHOSEN, fit: "?" }] }),
+    ).toThrow(/call fit/);
+    expect(() =>
+      parseHandAnalysis({
+        call_name: "1S",
+        calls: [
+          { ...UNFIT, unfit_reason: { ...UNFIT.unfit_reason, suit: "Z" } },
+        ],
+      }),
+    ).toThrow(/unfit suit/);
+    expect(() =>
+      parseHandAnalysis({
+        call_name: "1S",
+        calls: [
+          {
+            ...UNFIT,
+            requirements: {
+              hcp: [1],
+              suit_lengths: UNFIT.requirements.suit_lengths,
+            },
+          },
+        ],
+      }),
+    ).toThrow(/point requirements/);
   });
 });
