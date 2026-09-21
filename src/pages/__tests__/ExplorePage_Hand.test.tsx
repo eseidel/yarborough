@@ -56,11 +56,32 @@ beforeEach(() => {
       ruleName: "Default Pass",
       description: "Not enough for an opening bid",
     },
+    {
+      call: { type: "bid", level: 1, strain: "H" },
+      ruleName: "One Level Suit Opening",
+      description: "Opening bid with 5+ hearts",
+    },
+    {
+      call: { type: "bid", level: 1, strain: "S" },
+      ruleName: "One Level Suit Opening",
+      description: "Opening bid with 5+ spades",
+    },
   ]);
   vi.mocked(engine.getHandAnalysis).mockResolvedValue({
     call: { type: "bid", level: 1, strain: "S" },
     category: ["Opening", "One of a suit", "One Level Suit Opening"],
     calls: [
+      {
+        call: { type: "pass" },
+        ruleName: "Default Pass",
+        fit: "possible",
+      },
+      {
+        call: { type: "bid", level: 1, strain: "H" },
+        ruleName: "One Level Suit Opening",
+        fit: "unfit",
+        unfitReason: { kind: "suit_short", suit: "H", shown: 5, actual: 2 },
+      },
       {
         call: { type: "bid", level: 1, strain: "S" },
         ruleName: "One Level Suit Opening",
@@ -109,30 +130,42 @@ describe("the hand of the seat to call", () => {
     expect(screen.getAllByTestId("mini-card")).toHaveLength(13);
   });
 
-  it("keeps the recommendation behind a second, deliberate tap", async () => {
+  it("keeps the calls unweighed until the seat puts its cards up", async () => {
     saveHands(1, { N: handFromCdhsString(OPENER)! });
     renderExplore();
     await waitFor(() => screen.getByTestId("hand-slot"));
 
-    // Closed: the hand is known, and still not on screen.
+    // Closed: the hand is known, and nothing that depends on it is on
+    // screen -- not the cards, and not a word about any call.
     expect(screen.getByTestId("hand-slot")).toHaveTextContent(
       "Show North's hand",
     );
     expect(screen.queryAllByTestId("mini-card")).toHaveLength(0);
     expect(engine.getHandAnalysis).not.toHaveBeenCalled();
+    expect(screen.queryByText("SAYC bids this")).toBeNull();
 
     fireEvent.click(screen.getByTestId("hand-slot"));
     expect(screen.getAllByTestId("mini-card")).toHaveLength(13);
-    // Seeing the cards is not asking what to bid with them.
-    expect(engine.getHandAnalysis).not.toHaveBeenCalled();
-    expect(screen.queryByTestId("suggested-call")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "What should I bid?" }));
-    await waitFor(() => screen.getByTestId("suggested-call"));
-    expect(screen.getByTestId("suggested-call")).toHaveTextContent("1♠");
-    expect(screen.getByTestId("suggested-call")).toHaveTextContent(
-      "One Level Suit Opening",
+    // The verdict arrives on the calls themselves.
+    await waitFor(() => screen.getByText("SAYC bids this"));
+    expect(screen.getByTestId("unfit-1H")).toHaveTextContent(
+      "Shows 5+ ♥, you have 2",
     );
+    expect(screen.getByText("Also fits")).toBeInTheDocument();
+  });
+
+  it("puts the calls back as they were when the hand is hidden", async () => {
+    saveHands(1, { N: handFromCdhsString(OPENER)! });
+    renderExplore();
+    await waitFor(() => screen.getByTestId("hand-slot"));
+    fireEvent.click(screen.getByTestId("hand-slot"));
+    await waitFor(() => screen.getByText("SAYC bids this"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Hide" }));
+    expect(screen.queryAllByTestId("mini-card")).toHaveLength(0);
+    expect(screen.queryByText("SAYC bids this")).toBeNull();
+    expect(screen.queryByTestId("unfit-1H")).toBeNull();
   });
 
   it("asks the engine about that seat's hand and no other", async () => {
@@ -140,7 +173,6 @@ describe("the hand of the seat to call", () => {
     renderExplore();
     await waitFor(() => screen.getByTestId("hand-slot"));
     fireEvent.click(screen.getByTestId("hand-slot"));
-    fireEvent.click(screen.getByRole("button", { name: "What should I bid?" }));
     await waitFor(() => expect(engine.getHandAnalysis).toHaveBeenCalled());
     const [hand, calls, dealer] = vi.mocked(engine.getHandAnalysis).mock
       .calls[0];
@@ -167,6 +199,8 @@ describe("the hand of the seat to call", () => {
       ),
     );
     expect(screen.queryAllByTestId("mini-card")).toHaveLength(0);
+    // North's verdict does not follow the phone to East.
+    expect(screen.queryByText("SAYC bids this")).toBeNull();
   });
 
   it("brings a seat's own hand back when the auction returns to it", async () => {

@@ -21,6 +21,31 @@ describe("BoardPicker", () => {
     expect(screen.queryByRole("radiogroup")).toBeNull();
   });
 
+  it("picks the board that is tapped, with no swipe involved", () => {
+    // A mouse has no flick, and scrolling the strip is not animated
+    // everywhere, so the chip has to select on its own.
+    const onSelect = vi.fn();
+    render(<BoardPicker boardNumber={1} onSelect={onSelect} />);
+    fireEvent.click(screen.getByRole("button", { name: "Change" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Board 9" }));
+    expect(onSelect).toHaveBeenCalledWith(9);
+  });
+
+  it("does not re-select the board already being explored", () => {
+    const onSelect = vi.fn();
+    render(<BoardPicker boardNumber={4} onSelect={onSelect} />);
+    fireEvent.click(screen.getByRole("button", { name: "Change" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Board 4" }));
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("says how the strip is worked", () => {
+    render(<BoardPicker boardNumber={1} onSelect={vi.fn()} />);
+    expect(screen.queryByText(/Tap a number/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Change" }));
+    expect(screen.getByText("Tap a number, or swipe the strip.")).toBeVisible();
+  });
+
   it("marks the board being explored", () => {
     render(<BoardPicker boardNumber={7} onSelect={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Change" }));

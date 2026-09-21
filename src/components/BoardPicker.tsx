@@ -22,9 +22,10 @@ const SETTLE_MS = 120;
  *
  * A board number is only worth anything for what it decides -- who deals and
  * who is vulnerable -- so the line always says that, and the sixteen numbers
- * stay folded away until someone wants a different board. Open, the centred
- * chip is the selection, so a flick changes board and a tap centres the one
- * tapped.
+ * stay folded away until someone wants a different board. Open, a chip is a
+ * button that picks its board, and the strip also scrolls: flicking it
+ * settles on whichever chip ends up under the middle. Either way round, the
+ * chip in the middle is the board being explored.
  */
 export function BoardPicker({
   boardNumber,
@@ -63,6 +64,13 @@ export function BoardPicker({
     [],
   );
 
+  const cancelSettle = useCallback(() => {
+    if (settling.current !== null) {
+      window.clearTimeout(settling.current);
+      settling.current = null;
+    }
+  }, []);
+
   const handleScroll = useCallback(() => {
     const strip = stripRef.current;
     if (!strip) return;
@@ -78,13 +86,26 @@ export function BoardPicker({
         nearest = Number(chip.dataset.board);
       }
     }
+    // The strip reports every frame of a flick; the board changes once it
+    // has settled, so a flick past six boards is one navigation, not six.
+    cancelSettle();
     if (nearest !== boardNumber) {
-      // The strip reports every frame of a flick; the board changes once it
-      // has settled, so a flick past six boards is one navigation, not six.
-      if (settling.current !== null) window.clearTimeout(settling.current);
       settling.current = window.setTimeout(() => onSelect(nearest), SETTLE_MS);
     }
-  }, [boardNumber, onSelect]);
+  }, [boardNumber, cancelSettle, onSelect]);
+
+  const handlePick = useCallback(
+    (number: number) => {
+      // A chip is a button first: a mouse has no flick, and a tap that only
+      // scrolled the strip left the board unchanged on any browser that does
+      // not animate scrolling. Selecting outright makes the two gestures
+      // agree, and the smooth scroll afterwards shows which chip won.
+      cancelSettle();
+      if (number !== boardNumber) onSelect(number);
+      centre(number, true);
+    },
+    [boardNumber, cancelSettle, centre, onSelect],
+  );
 
   const dealer: Position = dealerFromBoardNumber(boardNumber);
   const vulnerability = vulnerabilityFromBoardNumber(boardNumber);
@@ -135,7 +156,7 @@ export function BoardPicker({
               data-board={number}
               aria-checked={number === boardNumber}
               aria-label={`Board ${number}`}
-              onClick={() => centre(number, true)}
+              onClick={() => handlePick(number)}
               className={`h-11 w-11 shrink-0 snap-center rounded-lg border text-base font-semibold tabular-nums transition-transform ${
                 number === boardNumber
                   ? "scale-110 border-emerald-700 bg-emerald-700 text-white"
@@ -146,6 +167,11 @@ export function BoardPicker({
             </button>
           ))}
         </div>
+      )}
+      {open && (
+        <p className="mt-1 text-center text-xs text-gray-500">
+          Tap a number, or swipe the strip.
+        </p>
       )}
     </div>
   );

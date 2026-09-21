@@ -7,7 +7,6 @@ import { CallTable } from "../components/CallTable";
 import { CallMenu } from "../components/CallMenu";
 import { CardFan } from "../components/CardFan";
 import { HandEntry } from "../components/HandEntry";
-import { SuitText } from "../components/SuitText";
 import type {
   CallHistory,
   CallInterpretation,
@@ -18,8 +17,8 @@ import type {
 } from "../bridge";
 import {
   vulnerabilityFromBoardNumber,
-  callLabel,
   callToString,
+  handToCdhsString,
   stringToCall,
   POSITION_NAMES,
 } from "../bridge";
@@ -29,16 +28,17 @@ import { getCallInterpretations, getHandAnalysis } from "../bridge/engine";
 import { dealerFromBoardNumber, explorePath } from "../bridge/identifier";
 import { initAnalytics, trackPageView } from "../analytics";
 import { setCanonical, setTitle } from "../seo";
-import { CARD, EYEBROW, PRIMARY_BUTTON, TEXT_BUTTON } from "../components/ui";
+import { CARD, EYEBROW, TEXT_BUTTON } from "../components/ui";
 
 /**
  * What the seat to call is being shown.
  *
  * Explore is meant to work at a live table, where the phone goes round and
  * whoever is to call picks it up. So the screen starts at `closed` on every
- * turn: the auction is public and everything else has to be asked for.
+ * turn: the auction is public, and the cards -- and with them everything the
+ * cards decide -- have to be asked for.
  */
-type Reveal = "closed" | "hand" | "advice";
+type Reveal = "closed" | "open";
 
 export function ExplorePage() {
   const { exploreId } = useParams<{ exploreId: string }>();
@@ -89,8 +89,10 @@ export function ExplorePage() {
   );
   const [reveal, setReveal] = useState<Reveal>("closed");
   const [entering, setEntering] = useState(false);
-  const [advice, setAdvice] = useState<HandAnalysis | null>(null);
-  const [adviceLoading, setAdviceLoading] = useState(false);
+  const [analysis, setAnalysis] = useState<HandAnalysis | null>(null);
+  /** What the analysis on screen was asked about, so a stale one shows as
+      work in progress rather than as an answer about these cards. */
+  const [analysisOf, setAnalysisOf] = useState<string | null>(null);
 
   // Every call hands the phone on, so the screen closes itself over again. A
   // new board is a new deal, and its hands are a different storage key.
@@ -104,16 +106,22 @@ export function ExplorePage() {
     setPrevRevealed(history);
     setReveal("closed");
     setEntering(false);
-    setAdvice(null);
-    setAdviceLoading(false);
+    // Cleared here rather than left to the effect below, so no call ever
+    // carries the last seat's verdict for even one frame.
+    setAnalysis(null);
+    setAnalysisOf(null);
   }
 
   const hand = hands[seat];
 
+  const callsString = useMemo(
+    () => history.calls.map(callToString).join(","),
+    [history],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
-    const callsString = history.calls.map(callToString).join(",");
     getCallInterpretations(callsString, history.dealer, vulnerability)
       .then((result) => {
         if (!cancelled) {
@@ -132,7 +140,7 @@ export function ExplorePage() {
     return () => {
       cancelled = true;
     };
-  }, [history, vulnerability]);
+  }, [callsString, history.dealer, vulnerability]);
 
   const handleSelect = useCallback(
     (interp: CallInterpretation) => {
@@ -161,41 +169,56 @@ export function ExplorePage() {
       setHands(next);
       saveHands(boardNumber, next);
       setEntering(false);
-      setReveal("hand");
+      setReveal("open");
     },
     [boardNumber, hands, seat],
   );
 
-  const handleAskAdvice = useCallback(() => {
-    if (!hand) return;
-    setReveal("advice");
-    setAdviceLoading(true);
-    const callsString = history.calls.map(callToString).join(",");
+  /** The question the call menu is showing an answer to, or none. */
+  const asking =
+    reveal === "open" && hand
+      ? `${handToCdhsString(hand)}@${callsString}`
+      : null;
+  const analysisWorking = asking !== null && asking !== analysisOf;
+
+  // Once the seat has its cards on screen, the calls are weighed against
+  // them. Nothing here runs while the slot is closed, so the engine is never
+  // asked about a hand its owner has not put up.
+  useEffect(() => {
+    if (!asking || !hand) return;
+    let cancelled = false;
     getHandAnalysis(hand, callsString, history.dealer, vulnerability)
       .then((result) => {
-        setAdvice(result);
-        setAdviceLoading(false);
+        if (cancelled) return;
+        setAnalysis(result);
+        setAnalysisOf(asking);
       })
       .catch((err) => {
+        if (cancelled) return;
         setError(String(err));
-        setAdviceLoading(false);
+        // The question is answered, badly: stop saying it is being weighed.
+        setAnalysisOf(asking);
       });
-  }, [hand, history, vulnerability]);
+    return () => {
+      cancelled = true;
+    };
+  }, [asking, hand, callsString, history.dealer, vulnerability]);
+
+  // Closing the slot takes the verdict down with the cards: they are the
+  // same secret, and the call menu is where the verdict shows.
+  const handleHide = useCallback(() => {
+    setReveal("closed");
+    setAnalysis(null);
+    setAnalysisOf(null);
+  }, []);
 
   const handleForget = useCallback(() => {
     const next = { ...hands };
     delete next[seat];
     setHands(next);
     saveHands(boardNumber, next);
-    setReveal("closed");
-    setAdvice(null);
-  }, [boardNumber, hands, seat]);
-
-  const suggested = advice?.call
-    ? advice.calls.find(
-        (weighed) => callToString(weighed.call) === callToString(advice.call!),
-      )
-    : undefined;
+    handleHide();
+  }, [boardNumber, hands, handleHide, seat]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -222,16 +245,14 @@ export function ExplorePage() {
               seat={seat}
               hand={hand}
               reveal={reveal}
-              advice={advice}
-              adviceLoading={adviceLoading}
-              suggested={suggested}
-              onEnter={() => setEntering(true)}
-              onShow={() => setReveal("hand")}
-              onAsk={handleAskAdvice}
-              onClose={() => {
-                setReveal("closed");
-                setAdvice(null);
+              working={analysisWorking}
+              onEnter={() => {
+                setEntering(true);
+                setAnalysis(null);
+                setAnalysisOf(null);
               }}
+              onShow={() => setReveal("open")}
+              onClose={handleHide}
               onForget={handleForget}
             />
           ))}
@@ -242,6 +263,8 @@ export function ExplorePage() {
           ) : (
             <CallMenu
               interpretations={interpretations}
+              // Never a verdict about cards other than the ones on screen.
+              analysis={analysisWorking ? null : analysis}
               onSelect={handleSelect}
             />
           )}
@@ -265,32 +288,27 @@ export function ExplorePage() {
  *
  * Closed, it is a strip the height of a couple of cards that offers to open:
  * that is all four people at the table see between turns, and all anyone
- * sees who picks the phone up out of turn. The cards, and then the advice,
- * each take a deliberate tap, and the whole thing folds shut again the
- * moment a call is made.
+ * sees who picks the phone up out of turn. Opening it is the one deliberate
+ * act, and it puts up the cards and, in the call menu below, what SAYC makes
+ * of them. The whole thing folds shut again the moment a call is made.
  */
 function HandSlot({
   seat,
   hand,
   reveal,
-  advice,
-  adviceLoading,
-  suggested,
+  working,
   onEnter,
   onShow,
-  onAsk,
   onClose,
   onForget,
 }: {
   seat: Position;
   hand?: Hand;
   reveal: Reveal;
-  advice: HandAnalysis | null;
-  adviceLoading: boolean;
-  suggested?: HandAnalysis["calls"][number];
+  /** The calls are being weighed against the hand. */
+  working: boolean;
   onEnter: () => void;
   onShow: () => void;
-  onAsk: () => void;
   onClose: () => void;
   onForget: () => void;
 }) {
@@ -317,61 +335,30 @@ function HandSlot({
   }
 
   return (
-    <div className={`${CARD} flex flex-col gap-3 p-3`} data-testid="hand-slot">
+    <div className={`${CARD} flex flex-col gap-2 p-3`} data-testid="hand-slot">
+      {/* Everything that acts on the hand sits in one row above it. */}
       <div className="flex items-baseline justify-between gap-2 px-0.5">
         <span className={EYEBROW}>{name}</span>
-        <button type="button" onClick={onClose} className={TEXT_BUTTON}>
-          Hide
-        </button>
+        <div className="flex items-baseline gap-4">
+          <button type="button" onClick={onEnter} className={TEXT_BUTTON}>
+            Edit
+          </button>
+          <button type="button" onClick={onForget} className={TEXT_BUTTON}>
+            Forget
+          </button>
+          <button type="button" onClick={onClose} className={TEXT_BUTTON}>
+            Hide
+          </button>
+        </div>
       </div>
 
       {hand && <CardFan hand={hand} />}
 
-      {reveal === "hand" && (
-        <button type="button" onClick={onAsk} className={PRIMARY_BUTTON}>
-          What should I bid?
-        </button>
-      )}
-
-      {reveal === "advice" &&
-        (adviceLoading ? (
-          <div className="p-3 text-center text-sm text-gray-400">
-            Working it out...
-          </div>
-        ) : advice?.call ? (
-          <div
-            className="rounded-lg bg-emerald-50 p-3 text-center"
-            data-testid="suggested-call"
-          >
-            <div className={EYEBROW}>SAYC bids</div>
-            <div className="text-2xl font-bold text-emerald-800">
-              {callLabel(advice.call)}
-            </div>
-            {suggested?.ruleName && (
-              <div className="mt-1 text-sm font-semibold text-emerald-900">
-                {suggested.ruleName}
-              </div>
-            )}
-            {suggested?.description && (
-              <div className="text-sm text-emerald-900">
-                <SuitText text={suggested.description} />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="p-3 text-center text-sm text-gray-500">
-            SAYC has no call for this hand here.
-          </div>
-        ))}
-
-      <div className="flex justify-center gap-4">
-        <button type="button" onClick={onEnter} className={TEXT_BUTTON}>
-          Change these cards
-        </button>
-        <button type="button" onClick={onForget} className={TEXT_BUTTON}>
-          Forget this hand
-        </button>
-      </div>
+      <p className="min-h-4 text-center text-xs text-gray-500">
+        {working
+          ? "Weighing the calls against these cards..."
+          : "Every call below is weighed against this hand."}
+      </p>
     </div>
   );
 }
