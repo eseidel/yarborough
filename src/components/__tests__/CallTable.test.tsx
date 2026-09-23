@@ -277,4 +277,15 @@ describe("CallTable", () => {
       }
     });
   });
+
+  it("carries a header above the seats, inside the same panel", () => {
+    render(
+      <CallTable
+        callHistory={makeHistory([])}
+        header={<div data-testid="board-bar">Board 7</div>}
+      />,
+    );
+    const table = screen.getByTestId("call-table");
+    expect(table.firstElementChild).toBe(screen.getByTestId("board-bar"));
+  });
 });

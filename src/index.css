@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+/* A card arriving in a hand being entered. */
+@keyframes deal {
+  from {
+    transform: translateY(8px) scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.animate-deal {
+  animation: deal 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-deal {
+    animation: none;
+  }
+}

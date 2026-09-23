@@ -2,14 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   callsByName,
   chosenText,
-  highCardPoints,
   isBalanced,
   missesText,
   missText,
   preferenceText,
   purposePhrase,
 } from "../hand-analysis";
-import { type Call, handFromCdhsString } from "../types";
+import { type Call, handFromCdhsString, highCardPoints } from "../types";
 
 const bid = (level: number, strain: "C" | "D" | "H" | "S" | "N"): Call => ({
   type: "bid",

@@ -10,20 +10,45 @@ import {
 } from "../bridge/types";
 import { CARD, EYEBROW } from "./ui";
 
-function MiniCard({ card }: { card: Card }) {
+/** Ranks below the ten: what a player enters only as a count. */
+const SMALL_RANKS = new Set(["2", "3", "4", "5", "6", "7", "8", "9"]);
+
+/**
+ * One card. With `small`, a card below the ten shows its suit in place of
+ * its rank, the way a diagram writes AQxxx: an entered hand says how many
+ * small cards a suit has, never which.
+ */
+export function MiniCard({
+  card,
+  small = false,
+  compact = false,
+  className = "",
+}: {
+  card: Card;
+  small?: boolean;
+  /** A size down, for a hand that has to fit one line of a phone. */
+  compact?: boolean;
+  className?: string;
+}) {
   const suit = SUITS[card.suit];
+  const blank = small && SMALL_RANKS.has(card.rank);
+  const rank = blank
+    ? compact
+      ? "top-1 left-1 text-[13px]"
+      : "top-1 left-1 text-sm"
+    : compact
+      ? `top-0 left-[3px] ${card.rank === "T" ? "text-[13px] tracking-[-0.06em]" : "text-[15px]"} font-bold`
+      : "top-0 left-1 text-lg font-bold";
   return (
     <div
-      className="relative w-10 h-14 bg-white rounded-md border border-gray-300 shadow-sm select-none shrink-0"
+      className={`relative ${compact ? "w-9 h-[50px]" : "w-10 h-14"} bg-white rounded-md border border-gray-300 shadow-sm select-none shrink-0 ${className}`}
       data-testid="mini-card"
     >
-      <span
-        className={`${suit.color} absolute top-0 left-1 text-lg font-bold leading-none`}
-      >
-        {displayRank(card.rank)}
+      <span className={`${suit.color} absolute leading-none ${rank}`}>
+        {blank ? suit.symbol : displayRank(card.rank)}
       </span>
       <span
-        className={`${suit.color} absolute bottom-0 right-0.5 text-3xl leading-none`}
+        className={`${suit.color} absolute bottom-0 right-0.5 ${compact ? "text-2xl" : "text-3xl"} leading-none`}
       >
         {suit.symbol}
       </span>
@@ -37,7 +62,15 @@ function MiniCard({ card }: { card: Card }) {
  * room, so a long suit in a narrow column overlaps more instead of spilling
  * out of its box.
  */
-function SuitRow({ cards }: { cards: Card[] }) {
+function SuitRow({
+  cards,
+  small,
+  compact,
+}: {
+  cards: Card[];
+  small?: boolean;
+  compact?: boolean;
+}) {
   return (
     <div className="flex min-w-0">
       {cards.map((card, i) => (
@@ -45,13 +78,31 @@ function SuitRow({ cards }: { cards: Card[] }) {
           key={`${card.suit}${card.rank}`}
           className={
             i < cards.length - 1
-              ? "flex-1 min-w-0 max-w-5 relative"
+              ? `flex-1 min-w-0 ${compact ? (card.rank === "T" ? "max-w-5" : "max-w-4") : "max-w-5"} relative`
               : "shrink-0"
           }
         >
-          <MiniCard card={card} />
+          <MiniCard card={card} small={small} compact={compact} />
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * The suits of a hand side by side on one line, spades first, with no box
+ * around them: what a seat sees of its own entered hand. The cards are a size
+ * down so that thirteen fit the width of a phone.
+ */
+export function Fan({ hand, small = false }: { hand: Hand; small?: boolean }) {
+  const bySuit = cardsBySuit(hand);
+  return (
+    <div data-testid="fan" className="flex items-end gap-1.5">
+      {FAN_SUIT_ORDER.map((suit) =>
+        bySuit[suit].length ? (
+          <SuitRow key={suit} cards={bySuit[suit]} small={small} compact />
+        ) : null,
+      )}
     </div>
   );
 }

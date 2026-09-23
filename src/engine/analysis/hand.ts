@@ -387,7 +387,7 @@ function _preferenceFor(
 }
 
 /** Every legal call over `callHistory`, weighed against `hand`. */
-export function analyseHand(
+export function analyzeHand(
   hand: Hand,
   callHistory: CallHistory,
 ): HandVerdicts {

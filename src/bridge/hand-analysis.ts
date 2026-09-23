@@ -11,14 +11,8 @@ import {
   callToString,
   type HandAnalysis,
   type HandCallAnalysis,
+  highCardPoints,
 } from "./types";
-
-const HCP: Record<string, number> = { A: 4, K: 3, Q: 2, J: 1 };
-
-/** The hand's high-card points: 4, 3, 2 and 1 for an ace, king, queen, jack. */
-export function highCardPoints(hand: Hand): number {
-  return hand.cards.reduce((total, card) => total + (HCP[card.rank] ?? 0), 0);
-}
 
 /** No void, no singleton, and at most one doubleton. */
 export function isBalanced(hand: Hand): boolean {

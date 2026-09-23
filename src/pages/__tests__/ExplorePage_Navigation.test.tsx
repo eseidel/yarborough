@@ -12,6 +12,7 @@ import * as engine from "../../bridge/engine";
 
 vi.mock("../../bridge/engine", () => ({
   getCallInterpretations: vi.fn(),
+  getHandAnalysis: vi.fn(),
 }));
 
 describe("ExplorePage Navigation", () => {
@@ -81,7 +82,7 @@ describe("ExplorePage Navigation", () => {
     expect(router.state.location.pathname).toBe("/explore/1");
   });
 
-  it("keeps the same board number when clearing history", async () => {
+  it("keeps the same board number when restarting the auction", async () => {
     const routes = [
       {
         path: "/explore/:exploreId",
@@ -100,10 +101,9 @@ describe("ExplorePage Navigation", () => {
 
     render(<RouterProvider router={router} />);
 
-    await waitFor(() => screen.getByLabelText(/clear history/i));
+    await waitFor(() => screen.getByLabelText(/restart this board/i));
 
-    // Clear history
-    fireEvent.click(screen.getByLabelText(/clear history/i));
+    fireEvent.click(screen.getByLabelText(/restart this board/i));
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/explore/5");

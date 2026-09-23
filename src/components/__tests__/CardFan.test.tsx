@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import { CardFan } from "../CardFan";
-import { type Hand } from "../../bridge";
+import { CardFan, Fan } from "../CardFan";
+import { type Hand, handFromCdhsString } from "../../bridge";
 import { MOCK_DEAL, MOCK_VOID_DEAL } from "../../bridge/mock";
 
 describe("CardFan", () => {
@@ -37,5 +37,24 @@ describe("CardFan", () => {
   it("drops void suits, which a wrapped fan has nothing to line up with", () => {
     render(<CardFan hand={MOCK_VOID_DEAL.west} position="N" />);
     expect(screen.getByTestId("suit-rows").children).toHaveLength(3);
+  });
+
+  it("draws an entered hand's small cards as blanks of their suit", () => {
+    render(<Fan hand={handFromCdhsString("42.A973.K5.AQT98")!} small />);
+    const cards = screen.getAllByTestId("mini-card");
+    expect(cards).toHaveLength(13);
+    // Spades first: A Q 10 are honors, 9 and 8 are blanks.
+    expect(cards.slice(0, 5).map((card) => card.textContent)).toEqual([
+      "A♠",
+      "Q♠",
+      "10♠",
+      "♠♠",
+      "♠♠",
+    ]);
+  });
+
+  it("keeps every rank when not drawing an entered hand", () => {
+    render(<Fan hand={handFromCdhsString("42.A973.K5.AQT98")!} />);
+    expect(screen.getAllByTestId("mini-card")[3].textContent).toBe("9♠");
   });
 });

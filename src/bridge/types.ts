@@ -404,9 +404,6 @@ export interface HandAnalysis {
   calls: HandCallAnalysis[];
 }
 
-/** The hands the user has entered, by seat. A seat with no hand is absent. */
-export type EnteredHands = Partial<Record<Position, Hand>>;
-
 /** A board adaptive practice found, and the category of the call it asks for. */
 export interface AdaptiveBoard {
   /** The bare board identifier, without calls. */
