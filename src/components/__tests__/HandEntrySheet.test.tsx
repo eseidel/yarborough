@@ -109,8 +109,11 @@ describe("HandEntrySheet", () => {
       false,
       false,
     ]);
-    // No digit anywhere on the row: it cannot be mistaken for a rank.
-    expect(row.textContent).not.toMatch(/\d/);
+    // Each spot card is an x, as in a bridge diagram, and there is no digit
+    // anywhere on the row: it cannot be mistaken for a rank.
+    expect(row.textContent).toBe("x♠".repeat(8));
+    // The tray behind the cards held runs from the first to the fourth.
+    expect(screen.getByTestId("small-tray").dataset.count).toBe("4");
   });
 
   it("gives back the last small card when it is tapped again", () => {
@@ -135,7 +138,7 @@ describe("HandEntrySheet", () => {
     expect(spades.querySelectorAll('[data-testid="mini-card"]')).toHaveLength(
       5,
     );
-    expect(spades.textContent).toBe("A♠" + "♠♠".repeat(4));
+    expect(spades.textContent).toBe("A♠" + "x♠".repeat(4));
   });
 
   it("goes back to a suit tapped in the fan", () => {
@@ -214,7 +217,7 @@ describe("HandEntrySheet", () => {
   it("hands back an unfinished entry when dismissed", () => {
     const { onCancel, onDone } = renderSheet();
     tap("K of spades");
-    tap("Cancel");
+    fireEvent.click(screen.getByTestId("sheet-scrim"));
     slide();
     expect(onDone).not.toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalledTimes(1);
@@ -266,6 +269,12 @@ describe("HandEntrySheet", () => {
       expect(onForget).toHaveBeenCalledTimes(1);
       expect(onDone).not.toHaveBeenCalled();
     });
+  });
+
+  it("has only a check to confirm, and no close button", () => {
+    renderSheet();
+    expect(doneButton().textContent).toBe("");
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
   });
 
   it("offers Forget only when editing", () => {

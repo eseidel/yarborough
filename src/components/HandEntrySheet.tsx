@@ -45,6 +45,50 @@ const DISMISS_DRAG_PX = 80;
 
 type Closing = "done" | "cancel" | "forget";
 
+/**
+ * The spot-card row: 12px a side and 8px between the cards. The tray holds
+ * the cards held with 4px all round, which leaves the same 4px between the
+ * tray and the next card.
+ */
+const SPOT_GAP_PX = 8;
+const TRAY_PAD_PX = 4;
+const TRAY_GRID_PX = 12 * 2 + 7 * SPOT_GAP_PX;
+
+/**
+ * The face of one spot card: x for its rank, its suit's pip. Lit, it is a
+ * card that rises into place after `delay`, fixed when it first appears so a
+ * later render cannot restart it.
+ */
+function SpotFace({
+  lit,
+  delay,
+  symbol,
+}: {
+  lit: boolean;
+  delay: number;
+  symbol: string;
+}) {
+  const [rise] = useState(delay);
+  return (
+    <span
+      aria-hidden
+      className={`absolute -inset-px rounded-md ${lit ? "animate-deal border border-gray-300 bg-white shadow-sm" : "opacity-30"}`}
+      style={
+        lit
+          ? { animationDelay: `${rise}ms`, animationFillMode: "backwards" }
+          : undefined
+      }
+    >
+      <span className="absolute top-0.5 left-1 text-[15px] leading-none font-semibold">
+        x
+      </span>
+      <span className="absolute right-0.5 bottom-0 text-3xl leading-none">
+        {symbol}
+      </span>
+    </span>
+  );
+}
+
 /** What is wrong with a hand whose suits are all counted, if anything. */
 function miscount(total: number): string {
   const off = Math.abs(total - 13);
@@ -56,11 +100,11 @@ function miscount(total: number): string {
 
 /**
  * Entering the hand of the seat to call, one suit at a time: tap the honors
- * held, then the small cards, drawn as a row of blank cards of the suit. A
- * tap on the third blank holds three of them, so the row reads as a number of
- * cards without a label or a digit that could pass for a rank. The first
- * small cards of a suit move the entry on to the next suit; Done lights up
- * once the hand has thirteen cards, and the player confirms it there.
+ * held, then the spot cards, drawn as a row of x cards of the suit. A tap on
+ * the third holds three of them, and a finger can slide along the row too.
+ * The first spot cards of a suit move the entry on to the next suit; the
+ * check lights up once the hand has thirteen cards, and the player confirms
+ * it there. Tapping above the sheet or pulling it down puts it away.
  *
  * A miscount does not stop the entry: a suit given a card too many takes it,
  * the player enters the rest, and the sheet says the hand has fourteen cards
@@ -148,23 +192,85 @@ export function HandEntrySheet({
   }
 
   /**
-   * Hold `count` small cards of the suit, or one fewer when the tap is on the
-   * last one held. The first count a suit is given moves on to the next.
+   * Hold `count` small cards of the suit. The first count a suit is given
+   * moves on to the next suit.
    */
-  function tapSmall(count: number) {
+  function holdSmall(count: number) {
     if (busy) return;
     const first = entry[suit].small === null;
-    const next = setSmall(
-      entry,
-      suit,
-      entry[suit].small === count ? count - 1 : count,
-    );
+    const next = setSmall(entry, suit, count);
     apply(next);
     if (first && !editing) {
       const following = nextSuit(next, suit);
       if (following) setSuit(following);
     }
   }
+
+  /** A tap on a spot card holds up to it; on the last one held, gives it back. */
+  function tapSmall(count: number) {
+    holdSmall(entry[suit].small === count ? count - 1 : count);
+  }
+
+  // A finger can also slide along the spot cards: the run it covers lights
+  // up as it goes, and lifting the finger holds that many.
+  const rowRef = useRef<HTMLDivElement>(null);
+  const scrub = useRef<{ start: number; moved: boolean } | null>(null);
+  const [preview, setPreview] = useState<number | null>(null);
+
+  function countAt(clientX: number): number {
+    const cards = rowRef.current?.querySelectorAll("button") ?? [];
+    let count = 0;
+    cards.forEach((card, i) => {
+      if (clientX >= card.getBoundingClientRect().left) count = i + 1;
+    });
+    return count;
+  }
+  function onRowDown(event: PointerEvent<HTMLDivElement>) {
+    if (busy) return;
+    const count = countAt(event.clientX);
+    if (!count) return;
+    scrub.current = { start: count, moved: false };
+    setPreview(count);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Without capture the slide still works while the finger stays on it.
+    }
+  }
+  function onRowMove(event: PointerEvent<HTMLDivElement>) {
+    if (!scrub.current) return;
+    const count = countAt(event.clientX);
+    if (count !== preview) {
+      scrub.current.moved = true;
+      setPreview(count);
+      buzz();
+    }
+  }
+  function onRowUp() {
+    if (!scrub.current) return;
+    const { start, moved } = scrub.current;
+    scrub.current = null;
+    setPreview(null);
+    if (moved) holdSmall(preview ?? 0);
+    else tapSmall(start);
+  }
+  function onRowCancel() {
+    scrub.current = null;
+    setPreview(null);
+  }
+
+  // The spot cards already standing when a change came, so that the ones it
+  // adds rise one after another, left to right.
+  const shownSmall = preview ?? entry[suit].small ?? 0;
+  const [rising, setRising] = useState({ suit, count: shownSmall, from: 0 });
+  if (rising.suit !== suit || rising.count !== shownSmall) {
+    setRising({
+      suit,
+      count: shownSmall,
+      from: rising.suit === suit ? rising.count : 0,
+    });
+  }
+  const risingFrom = rising.from;
 
   function done() {
     if (busy || !complete) return;
@@ -238,22 +344,7 @@ export function HandEntrySheet({
           onPointerCancel={onGrabUp}
         >
           <span className="mb-1.5 h-[5px] w-9 self-center rounded-full bg-gray-300" />
-          <div className="flex min-h-9 items-center gap-2.5">
-            <button
-              type="button"
-              aria-label="Cancel"
-              onClick={() => !busy && setClosing("cancel")}
-              className="-ml-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 active:bg-gray-200"
-            >
-              <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden>
-                <path
-                  d="M5 5l10 10M15 5 5 15"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
+          <div className="flex min-h-10 items-center">
             <h2 className="text-[17px] font-semibold text-gray-900">
               {seatName}
             </h2>
@@ -269,21 +360,21 @@ export function HandEntrySheet({
               )}
               <button
                 type="button"
+                aria-label="Done"
                 disabled={!complete}
                 onClick={done}
-                className={`inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[15px] font-semibold transition-colors ${complete ? "bg-emerald-700 text-white active:bg-emerald-800" : "bg-gray-100 text-gray-400"}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${complete ? "bg-emerald-700 text-white shadow-sm active:bg-emerald-800" : "bg-gray-100 text-gray-300"}`}
               >
-                <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden>
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
                   <path
                     d="m4 10.5 4 4 8-9"
                     stroke="currentColor"
-                    strokeWidth="2.2"
+                    strokeWidth="2.4"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     fill="none"
                   />
                 </svg>
-                Done
               </button>
             </span>
           </div>
@@ -365,38 +456,57 @@ export function HandEntrySheet({
             })}
           </div>
           {/*
-           * The small cards, as blanks of the suit: the ones held stand as
-           * cards, the rest wait as outlines. No digit and no label, so
-           * nothing here could be read as a rank.
+           * The spot cards, x for their rank as in a bridge diagram: the ones
+           * held stand as cards on a tray that runs from the first of them,
+           * the rest wait as outlines. Holding the fourth fills the tray to
+           * it, four cards rising in turn, so the row reads as a number of
+           * cards without a label or a digit that could pass for a rank.
            */}
           <div
-            className="grid grid-cols-8 gap-1 px-3 pt-3"
+            ref={rowRef}
+            className="relative grid touch-none grid-cols-8 gap-2 px-3 pt-3 pb-1"
             data-testid="small-cards"
+            onPointerDown={onRowDown}
+            onPointerMove={onRowMove}
+            onPointerUp={onRowUp}
+            onPointerCancel={onRowCancel}
           >
+            <span
+              aria-hidden
+              data-testid="small-tray"
+              data-count={shownSmall}
+              className="absolute top-2 left-2 h-16 rounded-[10px] bg-emerald-700/10 ring-1 ring-emerald-700/15 ring-inset transition-[width,opacity] duration-150 ease-out"
+              style={{
+                // The cards held, a column of the grid each, and the gaps
+                // between them, with the tray's own padding either side.
+                width: `calc((100% - ${TRAY_GRID_PX}px) / 8 * ${shownSmall} + ${Math.max(0, shownSmall - 1) * SPOT_GAP_PX + 2 * TRAY_PAD_PX}px)`,
+                opacity: shownSmall ? 1 : 0,
+              }}
+            />
             {Array.from({ length: MAX_SMALL }, (_, i) => {
               const count = i + 1;
               const held = count <= (current.small ?? 0);
+              const lit = count <= shownSmall;
               return (
                 <button
                   key={count}
                   type="button"
                   aria-pressed={held}
                   aria-label={`${count} small ${count === 1 ? "card" : "cards"}`}
-                  onClick={() => tapSmall(count)}
-                  className={`relative h-14 rounded-md transition active:scale-95 ${color} ${held ? "-translate-y-0.5 border border-gray-300 bg-white shadow-sm" : "border-[1.5px] border-dashed border-gray-300"}`}
+                  // A finger is handled by the row; this is for keys.
+                  onClick={(event) => event.detail === 0 && tapSmall(count)}
+                  className={`relative h-14 rounded-md border-[1.5px] border-dashed border-gray-300 ${color}`}
                 >
-                  <span
-                    className={`absolute top-1 left-1 text-sm leading-none ${held ? "" : "opacity-25"}`}
-                    aria-hidden
-                  >
-                    {SUITS[suit].symbol}
-                  </span>
-                  <span
-                    className={`absolute right-0.5 bottom-0 text-3xl leading-none ${held ? "" : "opacity-25"}`}
-                    aria-hidden
-                  >
-                    {SUITS[suit].symbol}
-                  </span>
+                  <SpotFace
+                    key={lit ? `lit-${suit}` : "ghost"}
+                    lit={lit}
+                    delay={
+                      lit && count > risingFrom
+                        ? (count - risingFrom - 1) * 45
+                        : 0
+                    }
+                    symbol={SUITS[suit].symbol}
+                  />
                 </button>
               );
             })}

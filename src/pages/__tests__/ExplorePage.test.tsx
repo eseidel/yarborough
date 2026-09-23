@@ -242,7 +242,7 @@ describe("ExplorePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Enter North's hand/ }));
     let sheet = await screen.findByTestId("hand-entry");
     fireEvent.click(within(sheet).getByRole("button", { name: "K of spades" }));
-    fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByTestId("sheet-scrim"));
     await waitFor(() => expect(screen.queryByTestId("hand-entry")).toBeNull());
     expect(sessionStorage.getItem(HANDS_KEY)).toBeNull();
 
