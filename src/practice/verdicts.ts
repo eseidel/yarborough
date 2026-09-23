@@ -27,6 +27,20 @@ export interface CallVerdict {
   matched: boolean;
   /** The SAYC call was shown before the user called. */
   assisted: boolean;
+  /**
+   * The user's first call at this turn, when they took it back and called
+   * again. The first try is the one that counts, so a call found on a retry
+   * is not a match.
+   */
+  firstCall?: Call;
+}
+
+/** The user found SAYC's call, but only after trying another first. */
+export function foundOnRetry(verdict: CallVerdict): boolean {
+  return (
+    verdict.firstCall !== undefined &&
+    callsEqual(verdict.call, verdict.sayc.call)
+  );
 }
 
 export function callsEqual(a: Call, b: Call): boolean {
@@ -55,12 +69,16 @@ export function callIndicesFor(
  * far, keyed by `prefixKey`. A call whose position the engine has not yet
  * answered for is left out, so `verdicts.length < callIndicesFor(...).length`
  * means the check is still running.
+ *
+ * `firstCalls` holds the first call the user made at each turn, by the same
+ * key: a turn re-opened by a take back is judged on that first try.
  */
 export function buildVerdicts(
   history: CallHistory,
   position: Position,
   saycCalls: Record<string, CallInterpretation>,
   assistedKeys: ReadonlySet<string>,
+  firstCalls: Readonly<Record<string, Call>> = {},
 ): CallVerdict[] {
   const verdicts: CallVerdict[] = [];
   for (const index of callIndicesFor(history, position)) {
@@ -68,12 +86,15 @@ export function buildVerdicts(
     const sayc = saycCalls[key];
     if (!sayc) continue;
     const call = history.calls[index];
+    const first = firstCalls[key];
+    const retried = first !== undefined && !callsEqual(first, call);
     verdicts.push({
       index,
       call,
       sayc,
-      matched: callsEqual(call, sayc.call),
+      matched: !retried && callsEqual(call, sayc.call),
       assisted: assistedKeys.has(key),
+      ...(retried ? { firstCall: first } : {}),
     });
   }
   return verdicts;

@@ -51,6 +51,7 @@ import {
   type CallVerdict,
   buildVerdicts,
   callIndicesFor,
+  callsEqual,
   prefixKey,
   summarizeVerdicts,
 } from "./verdicts";
@@ -67,6 +68,9 @@ function toRecordedVerdict(verdict: CallVerdict) {
     category: verdict.sayc.category ?? [],
     matched: verdict.matched,
     assisted: verdict.assisted,
+    ...(verdict.firstCall
+      ? { firstCall: callToString(verdict.firstCall) }
+      : {}),
   };
 }
 
@@ -114,12 +118,21 @@ export function usePracticeSession(
   const [assistedKeys, setAssistedKeys] = useState<Set<string>>(
     () => new Set(),
   );
+  // The first call the user made at each turn, by the auction before it: a
+  // turn re-opened by a take back is judged on its first try.
+  const [firstCalls, setFirstCalls] = useState<Record<string, Call>>({});
+  // A call of the user's that differs from SAYC's, held out of the auction
+  // while they look at why: nobody calls after it until they keep it or
+  // try again. Only with feedback after each call.
+  const [held, setHeld] = useState<Call | null>(null);
   const [hintKey, setHintKey] = useState<string | null>(null);
   // Mirrors hintKey for the fetch effect, which must not rerun on hint changes.
   const hintKeyRef = useRef<string | null>(null);
   hintKeyRef.current = hintKey;
   const inFlight = useRef(new Set<string>());
   const failed = useRef(new Set<string>());
+  // Bumped when a check fails, so a call held on it is let go.
+  const [failures, setFailures] = useState(0);
   /** Cancels the robots' reply in progress, if any. */
   const robotsInProgress = useRef<(() => void) | null>(null);
   const [retry, setRetry] = useState(0);
@@ -204,9 +217,27 @@ export function usePracticeSession(
   );
 
   const verdicts: CallVerdict[] = useMemo(
-    () => buildVerdicts(history, userPosition, saycCalls, assistedKeys),
-    [history, userPosition, saycCalls, assistedKeys],
+    () =>
+      buildVerdicts(history, userPosition, saycCalls, assistedKeys, firstCalls),
+    [history, userPosition, saycCalls, assistedKeys, firstCalls],
   );
+  // The auction with the held call in it, and that call's verdict once the
+  // engine's call for the turn is known.
+  const heldHistory: CallHistory | null = useMemo(
+    () => (held ? { ...history, calls: [...history.calls, held] } : null),
+    [history, held],
+  );
+  const heldVerdict: CallVerdict | null = useMemo(() => {
+    if (!heldHistory) return null;
+    const last = buildVerdicts(
+      heldHistory,
+      userPosition,
+      saycCalls,
+      assistedKeys,
+      firstCalls,
+    ).at(-1);
+    return last?.index === history.calls.length ? last : null;
+  }, [heldHistory, history, userPosition, saycCalls, assistedKeys, firstCalls]);
   const userCallCount = callIndicesFor(history, userPosition).length;
   const verdictsComplete = verdicts.length === userCallCount;
 
@@ -276,6 +307,7 @@ export function usePracticeSession(
         })
         .catch((err) => {
           failed.current.add(key);
+          setFailures((n) => n + 1);
           // A background check failing is not the user's problem until they
           // ask for the SAYC bid; then the failure is reported.
           if (hintKeyRef.current === key) setError(String(err));
@@ -422,10 +454,10 @@ export function usePracticeSession(
     if (Object.keys(patch).length > 0) void updateHand(written.id, patch);
   }, [auctionKey, saycAuction, doubleDummy, updateHand]);
 
-  const bid = useCallback(
+  /** Put the user's call in the auction and let the other seats reply. */
+  const commit = useCallback(
     (call: Call) => {
-      if (!userToCall) return;
-      firstCallAt.current ??= Date.now();
+      setHeld(null);
       setHintKey(null);
       setOptions(null);
       explanation.reset();
@@ -436,7 +468,75 @@ export function usePracticeSession(
       setHistory(afterUser);
       runRobots(afterUser);
     },
-    [userToCall, history, explanation, runRobots],
+    [history, explanation, runRobots],
+  );
+
+  const bid = useCallback(
+    (call: Call) => {
+      if (!userToCall || held || currentKey === null) return;
+      firstCallAt.current ??= Date.now();
+      setFirstCalls((prev) =>
+        currentKey in prev ? prev : { ...prev, [currentKey]: call },
+      );
+      if (feedbackTiming === "immediate") {
+        // Held until the engine's call says whether it differs; a call that
+        // matches goes straight on (below).
+        const sayc = saycCalls[currentKey];
+        if (!sayc || !callsEqual(call, sayc.call)) {
+          setHintKey(null);
+          setOptions(null);
+          explanation.reset();
+          setHeld(call);
+          return;
+        }
+      }
+      commit(call);
+    },
+    [
+      userToCall,
+      held,
+      currentKey,
+      feedbackTiming,
+      saycCalls,
+      explanation,
+      commit,
+    ],
+  );
+
+  // A call held before the engine had answered for its turn: let it go on
+  // if it turns out to match, or if the check failed.
+  useEffect(() => {
+    if (!held || currentKey === null) return;
+    const sayc = saycCalls[currentKey];
+    if (
+      (sayc && callsEqual(held, sayc.call)) ||
+      (!sayc && failed.current.has(currentKey))
+    ) {
+      commit(held);
+    }
+  }, [held, currentKey, saycCalls, failures, commit]);
+
+  /** Make the held call after all: the other seats reply to it. */
+  const keep = useCallback(() => {
+    if (!held) return;
+    trackEvent("Bidding", "Boards", "keep call");
+    commit(held);
+  }, [held, commit]);
+
+  /** Drop the held call and call again. */
+  const tryAgain = useCallback(() => {
+    if (!held) return;
+    trackEvent("Bidding", "Boards", "try again");
+    setHeld(null);
+  }, [held]);
+
+  /** Feedback at the end holds nothing back, so a held call goes on. */
+  const changeFeedbackTiming = useCallback(
+    (timing: FeedbackTiming) => {
+      void setFeedbackTiming(timing);
+      if (timing === "end" && held) commit(held);
+    },
+    [setFeedbackTiming, held, commit],
   );
 
   const showSaycBid = useCallback(() => {
@@ -487,6 +587,10 @@ export function usePracticeSession(
    * that bid was shown, its assisted mark.
    */
   const takeBack = useCallback(() => {
+    if (held) {
+      setHeld(null);
+      return;
+    }
     const indices = callIndicesFor(history, userPosition);
     if (auctionDone || indices.length === 0) return;
     trackEvent("Bidding", "Boards", "take back call");
@@ -504,13 +608,15 @@ export function usePracticeSession(
     setHistory(reopened);
     const calls = reopened.calls.map(callToString).join(",");
     navigate(`/bid/${baseId}${calls ? `:${calls}` : ""}`, { replace: true });
-  }, [history, userPosition, auctionDone, explanation, navigate, baseId]);
+  }, [history, userPosition, auctionDone, explanation, navigate, baseId, held]);
 
   const restart = useCallback(() => {
     trackEvent("Bidding", "Boards", "rebid board");
     setHintKey(null);
     setOptions(null);
     setAssistedKeys(new Set());
+    setFirstCalls({});
+    setHeld(null);
     setSaycAuction(undefined);
     setDoubleDummy(null);
     completedHere.current = false;
@@ -683,6 +789,14 @@ export function usePracticeSession(
     explanation,
     verdicts,
     verdictsComplete,
+    /** The user's call held out of the auction, and its verdict once known. */
+    held,
+    heldHistory,
+    heldVerdict,
+    /** The user may call: it is their turn and no call of theirs is held. */
+    canBid: userToCall && held === null,
+    keep,
+    tryAgain,
     /** The engine's call for the current turn, once known. */
     suggestion: currentKey !== null ? (saycCalls[currentKey] ?? null) : null,
     hintShown: hintKey !== null && hintKey === currentKey,
@@ -716,12 +830,12 @@ export function usePracticeSession(
     closeOptions,
     exploreFrom,
     /** True while there is a call of the user's to undo. */
-    canTakeBack: !auctionDone && userCallCount > 0,
+    canTakeBack: held !== null || (!auctionDone && userCallCount > 0),
     takeBack,
     restart,
     dealNext,
     changeFocus,
     resetProgress,
-    setFeedbackTiming,
+    setFeedbackTiming: changeFeedbackTiming,
   };
 }

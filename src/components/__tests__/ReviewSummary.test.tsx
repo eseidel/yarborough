@@ -140,6 +140,42 @@ describe("ReviewSummary", () => {
     expect(onShowOptions).toHaveBeenCalledWith(HISTORY, 2);
   });
 
+  it("counts SAYC's call found on a retry by the try that missed", () => {
+    render(
+      <ReviewSummary
+        history={{
+          ...HISTORY,
+          calls: [
+            ...HISTORY.calls.slice(0, 2),
+            RAISE_MISS.sayc.call,
+            ...HISTORY.calls.slice(3),
+          ],
+        }}
+        verdicts={[
+          {
+            ...RAISE_MISS,
+            call: RAISE_MISS.sayc.call,
+            firstCall: RAISE_MISS.call,
+          },
+          FINAL_PASS,
+        ]}
+        userPosition="S"
+        saycAuction={SAYC_AUCTION}
+        vulnerability="None"
+      />,
+    );
+    expect(screen.getByTestId("verdict-missed").textContent).toBe(
+      "1 of your 2 calls differed from SAYC",
+    );
+    const missed = screen.getByTestId("missed-call");
+    expect(
+      within(missed).getByLabelText("matched SAYC on a retry"),
+    ).toBeInTheDocument();
+    expect(missed.textContent).toContain(
+      "You bid 2♥, then SAYC's 4♥: Jump Raise.",
+    );
+  });
+
   it("shows where SAYC's own auction ends and explains its calls on tap", async () => {
     vi.mocked(engine.getCallInterpretations).mockResolvedValue([
       {

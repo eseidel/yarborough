@@ -34,22 +34,42 @@ describe("CallFeedback", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("explains a miss on request and opens the options", () => {
+  it("says what SAYC bids instead and opens the options", () => {
     const onShowOptions = vi.fn();
     render(<CallFeedback verdict={MISS} onShowOptions={onShowOptions} />);
     const feedback = screen.getByTestId("call-feedback-miss");
     expect(feedback.textContent).toContain(
       "✗ You bid 2♥; SAYC bids 4♥: Jump Raise.",
     );
-    expect(screen.queryByText("Game raise")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Why?" }));
-    expect(screen.getByText("Game raise")).toBeInTheDocument();
-    expect(feedback.textContent).toContain("13-16 hcp, 4+");
+    // The hand's own numbers say why; the rule's ranges add nothing.
+    expect(screen.queryByRole("button", { name: "Why?" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "All options here" }));
     expect(onShowOptions).toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: /hide until/i })).toBeNull();
+    // Only a held call asks what next.
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+  });
+
+  it("asks what next while the call is held", () => {
+    const onTryAgain = vi.fn();
+    const onKeep = vi.fn();
+    render(
+      <CallFeedback verdict={MISS} onTryAgain={onTryAgain} onKeep={onKeep} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(onTryAgain).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /^Keep 2/ }));
+    expect(onKeep).toHaveBeenCalled();
+  });
+
+  it("shows nothing for SAYC's call found on a retry", () => {
+    const { container } = render(
+      <CallFeedback
+        verdict={{ ...MISS, call: MISS.sayc.call, firstCall: MISS.call }}
+      />,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("explains a miss in the numbers of the user's hand", () => {

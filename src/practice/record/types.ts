@@ -25,6 +25,8 @@ export interface RecordedVerdict {
   matched: boolean;
   /** The engine's call was shown before the user called. */
   assisted: boolean;
+  /** The user's first call there, when they took it back and called again. */
+  firstCall?: string;
 }
 
 export interface HandRecord {
