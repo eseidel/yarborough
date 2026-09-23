@@ -55,13 +55,13 @@ describe("hand entry", () => {
     expect(isComplete(toggleHonor(over, "S", "A"))).toBe(true);
   });
 
-  it("is not a hand until every suit is counted, even at thirteen cards", () => {
+  it("is a hand at thirteen cards, a suit never counted being void", () => {
     let entry = setSmall(emptyEntry(), "S", 7);
-    entry = setSmall(entry, "H", 6);
-    expect(entryTotal(entry)).toBe(13);
+    entry = setSmall(entry, "H", 5);
     expect(isComplete(entry)).toBe(false);
-    entry = setSmall(setSmall(entry, "D", 0), "C", 0);
+    entry = toggleHonor(entry, "H", "A");
     expect(isComplete(entry)).toBe(true);
+    expect(handToCdhsString(handFromEntry(entry))).toBe("..A65432.8765432");
   });
 
   it("ignores a count out of range", () => {

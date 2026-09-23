@@ -215,10 +215,7 @@ describe("ExplorePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Enter North's hand/ }));
     const sheet = await screen.findByTestId("hand-entry");
     const tap = (name: string) =>
-      fireEvent.click(
-        within(sheet).queryByRole("radio", { name }) ??
-          within(sheet).getByRole("button", { name }),
-      );
+      fireEvent.click(within(sheet).getByRole("button", { name }));
     tap("A of spades");
     tap("Q of spades");
     tap("3 small cards");
@@ -227,6 +224,7 @@ describe("ExplorePage", () => {
     tap("A of diamonds");
     tap("3 small cards");
     tap("2 small cards");
+    tap("Done");
     await waitFor(() => expect(screen.queryByTestId("hand-entry")).toBeNull(), {
       timeout: 3000,
     });

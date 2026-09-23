@@ -170,7 +170,7 @@ describe("HandEntrySheet on a phone", () => {
     ].filter((b) =>
       /small cards?$| of spades$/.test(b.getAttribute("aria-label")!),
     );
-    expect(keys).toHaveLength(14);
+    expect(keys).toHaveLength(13);
     for (const key of keys) {
       const box = key.getBoundingClientRect();
       expect(box.width).toBeGreaterThanOrEqual(32);
