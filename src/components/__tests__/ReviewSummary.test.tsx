@@ -129,10 +129,9 @@ describe("ReviewSummary", () => {
     expect(missed.textContent).toContain(
       "You bid 2♥. SAYC bids 4♥: Jump Raise.",
     );
+    // The hand's own numbers say why; the rule's ranges add nothing.
+    expect(within(missed).queryByRole("button", { name: "Why?" })).toBeNull();
     expect(screen.queryByText("Game raise")).toBeNull();
-    fireEvent.click(within(missed).getByRole("button", { name: "Why?" }));
-    expect(screen.getByText("Game raise")).toBeInTheDocument();
-    expect(missed.textContent).toContain("13-16 hcp, 4+");
 
     fireEvent.click(
       within(missed).getByRole("button", { name: "All options here" }),

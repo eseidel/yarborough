@@ -17,10 +17,9 @@ import {
 } from "../practice/verdicts";
 import { type YourHand, useCallExplanation } from "../hooks/useCallExplanation";
 import { CallTable } from "./CallTable";
-import { ConstraintsDisplay } from "./ConstraintsDisplay";
 import { HandReasons } from "./HandReasons";
 import { SuitText } from "./SuitText";
-import { EYEBROW, LINK_SMALL, NOTE, PILL, TONE_PILL } from "./ui";
+import { EYEBROW, LINK_SMALL, PILL, TONE_PILL } from "./ui";
 
 function MissedCall({
   verdict,
@@ -35,12 +34,10 @@ function MissedCall({
   hand?: Hand;
   onShowOptions?: (index: number) => void;
 }) {
-  const [why, setWhy] = useState(false);
   const { sayc } = verdict;
   const analysis = useHandAnalysis(
     hand ? { hand, history, index: verdict.index, vulnerability } : null,
   );
-  const canExplain = Boolean(sayc.constraints || sayc.description);
   // A call found on a retry is explained by the try that missed.
   const retried = foundOnRetry(verdict);
   const yours = retried ? verdict.firstCall! : verdict.call;
@@ -82,38 +79,14 @@ function MissedCall({
           className="mt-0.5 text-gray-700"
         />
       )}
-      <div className="mt-1 flex gap-3">
-        {canExplain && (
-          <button
-            type="button"
-            onClick={() => setWhy((prev) => !prev)}
-            className={LINK_SMALL}
-            aria-expanded={why}
-          >
-            {why ? "Hide why" : "Why?"}
-          </button>
-        )}
-        {onShowOptions && (
-          <button
-            type="button"
-            onClick={() => onShowOptions(verdict.index)}
-            className={LINK_SMALL}
-          >
-            All options here
-          </button>
-        )}
-      </div>
-      {why && (
-        <div className={`${NOTE} mt-1 space-y-0.5`}>
-          {sayc.constraints && (
-            <div>
-              <ConstraintsDisplay constraints={sayc.constraints} />
-            </div>
-          )}
-          {sayc.description && (
-            <div className="text-gray-500">{sayc.description}</div>
-          )}
-        </div>
+      {onShowOptions && (
+        <button
+          type="button"
+          onClick={() => onShowOptions(verdict.index)}
+          className={`${LINK_SMALL} mt-1`}
+        >
+          All options here
+        </button>
       )}
     </li>
   );
