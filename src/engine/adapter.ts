@@ -33,7 +33,7 @@
 import * as categories from "./categories";
 import type { CategoryPath } from "./categories";
 import {
-  analyseHand,
+  analyzeHand,
   type CallFit,
   type Miss,
   type Preference,
@@ -752,7 +752,7 @@ export function getHandAnalysis(
   if (callHistory.isComplete()) {
     return { call_name: null, category: null, calls: [] };
   }
-  const { selection, calls: verdicts } = analyseHand(playerHand, callHistory);
+  const { selection, calls: verdicts } = analyzeHand(playerHand, callHistory);
   const interpretations = getCallInterpretations(calls, dealer, vulnerability);
   return {
     call_name: selection ? selection.call.name : null,

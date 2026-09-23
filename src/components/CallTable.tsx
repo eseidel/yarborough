@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import {
   type Call,
   type CallHistory,
@@ -31,6 +31,7 @@ export function CallTable({
   callExplanation,
   explanationLoading,
   onShowOptions,
+  header,
 }: {
   callHistory: CallHistory;
   vulnerability?: Vulnerability;
@@ -46,6 +47,8 @@ export function CallTable({
   explanationLoading?: boolean;
   /** Offered in the explanation: every call that was legal at that point. */
   onShowOptions?: (callIndex: number) => void;
+  /** Sits above the seats, inside the same panel: what board this is. */
+  header?: ReactNode;
 }) {
   const { dealer, calls } = callHistory;
   const dealerIndex = CALL_TABLE_ORDER.indexOf(dealer);
@@ -72,8 +75,9 @@ export function CallTable({
     selectedCallIndex != null && (explanationLoading || callExplanation);
 
   return (
-    <div className={`${CARD} p-3`} data-testid="call-table">
-      <div className="grid grid-cols-4 gap-1 text-center">
+    <div className={CARD} data-testid="call-table">
+      {header}
+      <div className="grid grid-cols-4 gap-1 p-3 text-center">
         {CALL_TABLE_ORDER.map((pos) => {
           // Red is the table's own mark for vulnerable, as on a board.
           const vul = vulnerability && isVulnerable(pos, vulnerability);

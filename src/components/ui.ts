@@ -48,3 +48,7 @@ export const TONE_PILL = {
 
 export const PILL =
   "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold ring-1 ring-inset";
+
+/** A small action that stays out of the way until it is wanted. */
+export const QUIET_BUTTON =
+  "inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 disabled:pointer-events-none disabled:text-gray-300";

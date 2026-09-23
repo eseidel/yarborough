@@ -234,7 +234,7 @@ describe("parseHandAnalysis", () => {
     expect(analysis.calls).toEqual([]);
   });
 
-  it("refuses what it does not recognise", () => {
+  it("refuses what it does not recognize", () => {
     const call = { call_name: "1H", ...meaning, fit: "unfit", misses: [] };
     expect(() => parseHandAnalysis(null)).toThrow("hand analysis");
     expect(() => parseHandAnalysis({ calls: "no" })).toThrow("hand analysis");
