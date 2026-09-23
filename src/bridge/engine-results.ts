@@ -1,9 +1,15 @@
 import type {
   AdaptiveBoard,
   Call,
+  CallFit,
   CallInterpretation,
+  HandAnalysis,
+  HandCallAnalysis,
+  Miss,
   OpeningLead,
   Position,
+  PreferEntry,
+  Preference,
   StrainName,
   SuitName,
 } from "./types";
@@ -124,4 +130,142 @@ export function parseAdaptiveBoard(value: unknown): AdaptiveBoard | null {
     throw new Error("The bidding engine returned an invalid adaptive board");
   }
   return { identifier: board.identifier, category };
+}
+
+const CALL_FITS: readonly CallFit[] = [
+  "chosen",
+  "possible",
+  "unfit",
+  "planned",
+  "no_rule",
+];
+const PREFERENCE_KINDS: readonly Preference["kind"][] = [
+  "purpose",
+  "strain",
+  "fallback",
+  "rule",
+  "tie",
+];
+const ENTRY_KINDS: readonly PreferEntry["kind"][] = [
+  "longest",
+  "highest",
+  "higher_suit",
+  "lowest_level",
+  "named",
+  "conditional",
+  "unnamed",
+];
+
+function oneOf<T extends string>(
+  value: unknown,
+  choices: readonly T[],
+  description: string,
+): T {
+  if (
+    typeof value !== "string" ||
+    !(choices as readonly string[]).includes(value)
+  ) {
+    throw new Error(`The bidding engine returned an invalid ${description}`);
+  }
+  return value as T;
+}
+
+function count(value: unknown, description: string): number {
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new Error(`The bidding engine returned an invalid ${description}`);
+  }
+  return value;
+}
+
+function suitName(value: unknown): SuitName {
+  return oneOf(value, ["C", "D", "H", "S"] as const, "suit");
+}
+
+function parseMiss(value: unknown): Miss {
+  const miss = record(value, "miss");
+  switch (miss.kind) {
+    case "points":
+      return {
+        kind: "points",
+        min: count(miss.min, "point bound"),
+        max: count(miss.max, "point bound"),
+        actual: count(miss.actual, "point count"),
+        withShape: miss.with_shape === true,
+      };
+    case "length":
+      return {
+        kind: "length",
+        suit: suitName(miss.suit),
+        min: count(miss.min, "length bound"),
+        max: count(miss.max, "length bound"),
+        actual: count(miss.actual, "length"),
+      };
+    case "balanced":
+    case "shape":
+      return { kind: miss.kind };
+    case "honors":
+      return miss.suit === null || miss.suit === undefined
+        ? { kind: "honors" }
+        : { kind: "honors", suit: suitName(miss.suit) };
+  }
+  throw new Error("The bidding engine returned an invalid miss");
+}
+
+function parsePreference(value: unknown): Preference | undefined {
+  if (value === null || value === undefined) return undefined;
+  const preference = record(value, "preference");
+  const purpose = optionalString(preference.purpose, "purpose");
+  const overPurpose = optionalString(preference.over_purpose, "purpose");
+  if (!purpose || !overPurpose) {
+    throw new Error("The bidding engine returned an invalid preference");
+  }
+  let entry: PreferEntry | undefined;
+  if (preference.entry !== null && preference.entry !== undefined) {
+    const raw = record(preference.entry, "preference entry");
+    if (!Array.isArray(raw.calls)) {
+      throw new Error(
+        "The bidding engine returned an invalid preference entry",
+      );
+    }
+    entry = {
+      kind: oneOf(raw.kind, ENTRY_KINDS, "preference entry"),
+      calls: raw.calls.map(parseCallName),
+    };
+  }
+  return {
+    kind: oneOf(preference.kind, PREFERENCE_KINDS, "preference"),
+    over: parseCallName(preference.over),
+    purpose,
+    overPurpose,
+    ...(entry ? { entry } : {}),
+  };
+}
+
+function parseHandCallAnalysis(value: unknown): HandCallAnalysis {
+  const analysis = record(value, "hand call analysis");
+  if (!Array.isArray(analysis.misses)) {
+    throw new Error("The bidding engine returned invalid misses");
+  }
+  const preference = parsePreference(analysis.preference);
+  return {
+    ...parseCallInterpretation(analysis),
+    fit: oneOf(analysis.fit, CALL_FITS, "call fit"),
+    misses: analysis.misses.map(parseMiss),
+    ...(preference ? { preference } : {}),
+  };
+}
+
+/** Read the engine's answer for one hand at one point in an auction. */
+export function parseHandAnalysis(value: unknown): HandAnalysis {
+  const analysis = record(value, "hand analysis");
+  if (!Array.isArray(analysis.calls)) {
+    throw new Error("The bidding engine returned an invalid hand analysis");
+  }
+  const category = optionalCategory(analysis.category);
+  const callName = analysis.call_name;
+  return {
+    ...(callName ? { call: parseCallName(callName) } : {}),
+    ...(category ? { category } : {}),
+    calls: analysis.calls.map(parseHandCallAnalysis),
+  };
 }

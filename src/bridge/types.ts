@@ -295,6 +295,118 @@ export function callLabel(call: Call): string {
   return `${call.level}${strainSymbol(call.strain!)}`;
 }
 
+/** The order a hand string names the suits: clubs, diamonds, hearts, spades. */
+export const CDHS_SUIT_ORDER: SuitName[] = ["C", "D", "H", "S"];
+
+/**
+ * A hand as the engine writes it: "42.A973.K5.AQ982" is 42 of clubs, A973 of
+ * diamonds, K5 of hearts and AQ982 of spades.  The repository writes hands
+ * C.D.H.S throughout (see CLAUDE.md), matching `Suit::ALL`, while the app
+ * shows them spades first; the two orders meet here.
+ */
+export function handToCdhsString(hand: Hand): string {
+  const bySuit = cardsBySuit(hand);
+  return CDHS_SUIT_ORDER.map((suit) =>
+    bySuit[suit].map((card) => card.rank).join(""),
+  ).join(".");
+}
+
+/** Read a C.D.H.S hand string. Returns null when it is not thirteen cards. */
+export function handFromCdhsString(text: string): Hand | null {
+  const holdings = text.toUpperCase().split(".");
+  if (holdings.length !== CDHS_SUIT_ORDER.length) return null;
+  const cards: Card[] = [];
+  const seen = new Set<string>();
+  for (const [index, holding] of holdings.entries()) {
+    const suit = CDHS_SUIT_ORDER[index];
+    for (const rank of holding) {
+      if (!RANK_ORDER.includes(rank as RankName)) return null;
+      if (seen.has(suit + rank)) return null;
+      seen.add(suit + rank);
+      cards.push({ suit, rank: rank as RankName });
+    }
+  }
+  return cards.length === 13 ? { cards } : null;
+}
+
+/**
+ * How a hand stands with one legal call: the call SAYC makes with it, a call
+ * it could make that SAYC ranks lower, a call it does not fit, a call SAYC
+ * only makes by plan (Blackwood), or a call no SAYC rule makes here.
+ */
+export type CallFit = "chosen" | "possible" | "unfit" | "planned" | "no_rule";
+
+/**
+ * One requirement of a call that the hand does not meet. A bound of 0, or of
+ * 13 cards or 37 points, is no bound at all.
+ */
+export type Miss =
+  | {
+      kind: "points";
+      min: number;
+      max: number;
+      actual: number;
+      /** The bounds are for this hand's shape, narrower than the rule's own. */
+      withShape: boolean;
+    }
+  | { kind: "length"; suit: SuitName; min: number; max: number; actual: number }
+  | { kind: "balanced" }
+  | { kind: "shape" }
+  /** The shape and the points fit, the honors do not (a stopper, a suit's quality). */
+  | { kind: "honors"; suit?: SuitName };
+
+/** The entry of a rule's own order among its calls that ranked the better call. */
+export interface PreferEntry {
+  kind:
+    | "longest"
+    | "highest"
+    | "higher_suit"
+    | "lowest_level"
+    | "named"
+    | "conditional"
+    | "unnamed";
+  calls: Call[];
+}
+
+/** Why SAYC made another call than one this hand could have made. */
+export interface Preference {
+  /**
+   * `purpose`: the other call is for something more important. `strain`:
+   * the same purpose, which prefers the other call's strain. `fallback`: this
+   * call is what its rule bids only when nothing better fits. `rule`: one
+   * rule makes both, and its own order ranks the other first. `tie`: nothing
+   * ranks them, and SAYC takes the other by its fixed tie-break.
+   */
+  kind: "purpose" | "strain" | "fallback" | "rule" | "tie";
+  /** The call that ranked above this one. */
+  over: Call;
+  /** This call's purpose and the other's, as the engine names them. */
+  purpose: string;
+  overPurpose: string;
+  /** For `rule`: the entry of the rule's order that decided it. */
+  entry?: PreferEntry;
+}
+
+/** One legal call, weighed against a hand the user entered. */
+export interface HandCallAnalysis extends CallInterpretation {
+  fit: CallFit;
+  /** On a call the hand does not fit: what it misses, the points first. */
+  misses: Miss[];
+  /** On a call the hand could make: why SAYC made another. */
+  preference?: Preference;
+}
+
+/** Every legal call weighed against one hand. */
+export interface HandAnalysis {
+  /** The call SAYC makes with this hand. */
+  call?: Call;
+  category?: string[];
+  calls: HandCallAnalysis[];
+}
+
+/** The hands the user has entered, by seat. A seat with no hand is absent. */
+export type EnteredHands = Partial<Record<Position, Hand>>;
+
 /** A board adaptive practice found, and the category of the call it asks for. */
 export interface AdaptiveBoard {
   /** The bare board identifier, without calls. */
