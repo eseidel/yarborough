@@ -15,6 +15,7 @@ import { OptionsSheet } from "../components/OptionsSheet";
 import { PracticeReview } from "../components/PracticeReview";
 import { ShareButton } from "../components/ShareButton";
 import { parseBoardId } from "../bridge/identifier";
+import { useHandAnalysis } from "../practice/useHandAnalysis";
 import {
   type ParsedBoard,
   usePracticeSession,
@@ -78,6 +79,7 @@ function PracticeBoard({
     feedbackTiming,
   } = session;
   const { deal, vulnerability } = parsed;
+  const hand = handForPosition(deal, USER_POSITION);
 
   useEffect(() => {
     setTitle(
@@ -99,6 +101,20 @@ function PracticeBoard({
     !auctionDone && feedbackTiming === "immediate" && session.verdictsComplete
       ? (verdicts[verdicts.length - 1] ?? null)
       : null;
+
+  // The user's hand weighed where it explains a miss, and where they asked
+  // for SAYC's call. Never on the options sheet: that lists what each call
+  // would say and leaves the choice to the learner.
+  const feedbackAnalysis = useHandAnalysis(
+    latestVerdict && !latestVerdict.matched
+      ? { hand, history, index: latestVerdict.index, vulnerability }
+      : null,
+  );
+  const hintAnalysis = useHandAnalysis(
+    session.hintShown && userToCall
+      ? { hand, history, index: history.calls.length, vulnerability }
+      : null,
+  );
 
   // The bare board, without the auction so far: the recipient bids it themselves.
   const shareUrl = `${CANONICAL_ORIGIN}/bid/${session.baseId}`;
@@ -153,6 +169,7 @@ function PracticeBoard({
           selectedCallIndex={explanation.selectedCallIndex}
           callExplanation={explanation.callExplanation}
           explanationLoading={explanation.explanationLoading}
+          handReasons={explanation.handReasons}
           onShowOptions={(index) => session.showOptions({ history, index })}
         />
 
@@ -161,6 +178,8 @@ function PracticeBoard({
             {latestVerdict && (
               <CallFeedback
                 verdict={latestVerdict}
+                hand={hand}
+                analysis={feedbackAnalysis}
                 onShowOptions={() =>
                   session.showOptions({ history, index: latestVerdict.index })
                 }
@@ -168,12 +187,14 @@ function PracticeBoard({
               />
             )}
             {session.hintShown && (
-              <SaycHint suggestion={session.suggestion} onBid={session.bid} />
+              <SaycHint
+                suggestion={session.suggestion}
+                hand={hand}
+                analysis={hintAnalysis}
+                onBid={session.bid}
+              />
             )}
-            <CardFan
-              hand={handForPosition(deal, USER_POSITION)}
-              position={USER_POSITION}
-            />
+            <CardFan hand={hand} position={USER_POSITION} />
             <BiddingBox
               onBid={session.bid}
               callHistory={history}
@@ -268,6 +289,7 @@ function PracticeBoard({
         <OptionsSheet
           point={session.options}
           vulnerability={vulnerability}
+          onExplore={() => session.exploreFrom(session.options!)}
           onSelect={
             optionsAreLive
               ? (interpretation) => session.bid(interpretation.call)

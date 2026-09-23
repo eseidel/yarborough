@@ -6,6 +6,7 @@ import type {
   Position,
   Vulnerability,
 } from "../bridge/types";
+import { handForPosition } from "../bridge/types";
 import { getContract, getDeclarer } from "../bridge/auction";
 import {
   contractHeadline,
@@ -180,6 +181,7 @@ export function PracticeReview({
             history={history}
             verdicts={verdicts}
             userPosition={userPosition}
+            hand={handForPosition(deal, userPosition)}
             saycAuction={saycAuction}
             vulnerability={vulnerability}
             onShowOptions={onShowOptions}

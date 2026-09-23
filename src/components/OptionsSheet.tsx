@@ -4,6 +4,7 @@ import { callLabel, callToString } from "../bridge/types";
 import { getCallInterpretations } from "../bridge/engine";
 import { CallMenu } from "./CallMenu";
 import { SuitText } from "./SuitText";
+import { LINK } from "./ui";
 
 /** A point in an auction: the calls made before the one being looked at. */
 export interface AuctionPoint {
@@ -16,15 +17,22 @@ export interface AuctionPoint {
  * The explorer, in place: every legal call at a point in the auction with
  * what SAYC would mean by it. For the pending call, tapping an option makes
  * that call; for an earlier point the list is read-only.
+ *
+ * The list is the same for any hand: it says what each call would mean, not
+ * which one the user's hand should make, so it leaves the choice to them.
+ * `onExplore` offers the same point in Explore, where the hand can be weighed.
  */
 export function OptionsSheet({
   point,
   vulnerability,
+  onExplore,
   onSelect,
   onClose,
 }: {
   point: AuctionPoint;
   vulnerability: string;
+  /** Open this point in Explore. */
+  onExplore?: () => void;
   /** Present only when the point is the pending call of the live auction. */
   onSelect?: (interpretation: CallInterpretation) => void;
   onClose: () => void;
@@ -127,6 +135,16 @@ export function OptionsSheet({
             />
           )}
         </div>
+        {onExplore && (
+          <div className="border-t border-gray-100 px-4 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-sm">
+            <button type="button" onClick={onExplore} className={LINK}>
+              Explore from here
+            </button>
+            <span className="ml-1.5 text-xs text-gray-500">
+              with your hand, face down
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

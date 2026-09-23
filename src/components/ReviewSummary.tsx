@@ -1,27 +1,44 @@
 import { useState } from "react";
-import type { CallHistory, Position, Vulnerability } from "../bridge/types";
+import type {
+  CallHistory,
+  Hand,
+  Position,
+  Vulnerability,
+} from "../bridge/types";
 import { callLabel } from "../bridge/types";
 import { contractHeadline } from "../practice/analysis";
+import { missReasons } from "../practice/hand-reasons";
+import { useHandAnalysis } from "../practice/useHandAnalysis";
 import {
   type CallVerdict,
   callIndicesFor,
   summarizeVerdicts,
 } from "../practice/verdicts";
-import { useCallExplanation } from "../hooks/useCallExplanation";
+import { type YourHand, useCallExplanation } from "../hooks/useCallExplanation";
 import { CallTable } from "./CallTable";
 import { ConstraintsDisplay } from "./ConstraintsDisplay";
+import { HandReasons } from "./HandReasons";
 import { SuitText } from "./SuitText";
 import { EYEBROW, LINK_SMALL, NOTE, PILL, TONE_PILL } from "./ui";
 
 function MissedCall({
   verdict,
+  history,
+  vulnerability,
+  hand,
   onShowOptions,
 }: {
   verdict: CallVerdict;
+  history: CallHistory;
+  vulnerability: Vulnerability;
+  hand?: Hand;
   onShowOptions?: (index: number) => void;
 }) {
   const [why, setWhy] = useState(false);
   const { sayc } = verdict;
+  const analysis = useHandAnalysis(
+    hand ? { hand, history, index: verdict.index, vulnerability } : null,
+  );
   const canExplain = Boolean(sayc.constraints || sayc.description);
   return (
     <li className="py-2 first:pt-0 last:pb-0" data-testid="missed-call">
@@ -46,6 +63,12 @@ function MissedCall({
           <span className="text-gray-500"> (SAYC bid shown first)</span>
         )}
       </div>
+      {hand && analysis !== undefined && (
+        <HandReasons
+          lines={missReasons(hand, verdict.call, sayc.call, analysis)}
+          className="mt-0.5 text-gray-700"
+        />
+      )}
       <div className="mt-1 flex gap-3">
         {canExplain && (
           <button
@@ -86,16 +109,23 @@ function MissedCall({
 function SaycAuction({
   auction,
   vulnerability,
+  yourHand,
   onShowOptions,
   onError,
 }: {
   auction: CallHistory;
   vulnerability: Vulnerability;
+  yourHand?: YourHand;
   onShowOptions?: (history: CallHistory, index: number) => void;
   onError?: (error: unknown) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const explanation = useCallExplanation(auction, vulnerability, onError);
+  const explanation = useCallExplanation(
+    auction,
+    vulnerability,
+    onError,
+    yourHand,
+  );
   return (
     <div data-testid="sayc-auction">
       <div className="text-gray-700">
@@ -123,6 +153,7 @@ function SaycAuction({
             selectedCallIndex={explanation.selectedCallIndex}
             callExplanation={explanation.callExplanation}
             explanationLoading={explanation.explanationLoading}
+            handReasons={explanation.handReasons}
             onShowOptions={
               onShowOptions
                 ? (index) => onShowOptions(auction, index)
@@ -147,6 +178,7 @@ export function ReviewSummary({
   history,
   verdicts,
   userPosition,
+  hand,
   saycAuction,
   vulnerability,
   onShowOptions,
@@ -155,6 +187,8 @@ export function ReviewSummary({
   history: CallHistory;
   verdicts: CallVerdict[];
   userPosition: Position;
+  /** The user's hand: each miss is explained against it. */
+  hand?: Hand;
   /** The engine's own auction for the board; null while it is being bid. */
   saycAuction: CallHistory | null;
   vulnerability: Vulnerability;
@@ -204,6 +238,9 @@ export function ReviewSummary({
               <MissedCall
                 key={verdict.index}
                 verdict={verdict}
+                history={history}
+                vulnerability={vulnerability}
+                hand={hand}
                 onShowOptions={
                   onShowOptions
                     ? (index) => onShowOptions(history, index)
@@ -218,6 +255,7 @@ export function ReviewSummary({
         <SaycAuction
           auction={saycAuction}
           vulnerability={vulnerability}
+          yourHand={hand ? { seat: userPosition, hand } : undefined}
           onShowOptions={onShowOptions}
           onError={onError}
         />

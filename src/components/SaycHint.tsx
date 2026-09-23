@@ -1,17 +1,34 @@
-import type { Call, CallInterpretation } from "../bridge/types";
+import type {
+  Call,
+  CallInterpretation,
+  Hand,
+  HandAnalysis,
+} from "../bridge/types";
 import { callLabel } from "../bridge/types";
+import { saycBidReasons } from "../practice/hand-reasons";
 import { ConstraintsDisplay } from "./ConstraintsDisplay";
+import { HandReasons } from "./HandReasons";
 import { SuitText } from "./SuitText";
 
 /**
  * The engine's call for the position, shown on request, with one tap to make
  * it. `null` while the engine is still working it out.
+ *
+ * The learner asked for the answer, so given their hand and the engine's
+ * analysis of it the hint explains all of it: the numbers SAYC's call is
+ * chosen on, and why SAYC ranks each other call the hand could make lower.
  */
 export function SaycHint({
   suggestion,
+  hand,
+  analysis,
   onBid,
 }: {
   suggestion: CallInterpretation | null;
+  /** The user's hand. */
+  hand?: Hand;
+  /** The hand weighed at this call: undefined while the engine works. */
+  analysis?: HandAnalysis | null;
   onBid: (call: Call) => void;
 }) {
   if (!suggestion) {
@@ -49,6 +66,12 @@ export function SaycHint({
             <div className="text-amber-700 text-xs mt-0.5">
               {suggestion.description}
             </div>
+          )}
+          {hand && analysis !== undefined && (
+            <HandReasons
+              lines={saycBidReasons(hand, suggestion.call, analysis)}
+              className="mt-1.5 text-xs text-amber-900"
+            />
           )}
         </div>
         <button

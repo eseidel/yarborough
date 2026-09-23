@@ -10,7 +10,10 @@ import {
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PracticePage } from "../PracticePage";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import type { Call, CallHistory } from "../../bridge/types";
+import type { Call, CallHistory, HandAnalysis } from "../../bridge/types";
+import { handFromCdhsString } from "../../bridge/types";
+import { HANDS_KEY } from "../../bridge/entered-hands";
+import { clearHandAnalysisCache } from "../../practice/useHandAnalysis";
 import * as auction from "../../bridge/auction";
 import * as identifier from "../../bridge/identifier";
 import * as engine from "../../bridge/engine";
@@ -48,6 +51,7 @@ vi.mock("../../bridge/engine", async (importOriginal) => {
     generateFilteredBoard: vi.fn(),
     getOpeningLead: vi.fn(),
     generateAdaptiveBoard: vi.fn(),
+    getHandAnalysis: vi.fn(),
   };
 });
 
@@ -64,6 +68,7 @@ const mockGetCallInterpretations = vi.mocked(engine.getCallInterpretations);
 const mockGenerateFilteredBoard = vi.mocked(engine.generateFilteredBoard);
 const mockGetOpeningLead = vi.mocked(engine.getOpeningLead);
 const mockGenerateAdaptiveBoard = vi.mocked(engine.generateAdaptiveBoard);
+const mockGetHandAnalysis = vi.mocked(engine.getHandAnalysis);
 const mockGetDoubleDummyTable = vi.mocked(dds.getDoubleDummyTable);
 const mockGetTricksAfterLead = vi.mocked(dds.getTricksAfterLead);
 
@@ -109,6 +114,42 @@ const SAYC_CALLS: Record<string, Call> = {
   "1S,P,3S,P,4S,P": pass,
 };
 
+// ♠KJ74 ♥Q83 ♦A52 ♣963: ten points and four spades, over partner's 1♠.
+const SOUTH = handFromCdhsString("963.A52.Q83.KJ74")!;
+const withSouth = {
+  ...dummyParsed,
+  deal: { ...dummyParsed.deal, south: SOUTH },
+};
+
+/** South's hand weighed over 1♠: SAYC jumps to 3♠, 2♠ is short of points. */
+const SOUTH_ANALYSIS: HandAnalysis = {
+  call: bid(3, "S"),
+  calls: [
+    { call: pass, fit: "unfit", misses: [] },
+    {
+      call: bid(1, "N"),
+      ruleName: "One Notrump Response",
+      fit: "possible",
+      misses: [],
+      preference: {
+        kind: "purpose",
+        over: bid(3, "S"),
+        purpose: "BalancedLimit",
+        overPurpose: "SupportMajors",
+      },
+    },
+    {
+      call: bid(2, "S"),
+      ruleName: "Simple Raise",
+      fit: "unfit",
+      misses: [
+        { kind: "points", min: 6, max: 9, actual: 10, withShape: false },
+      ],
+    },
+    { call: bid(3, "S"), ruleName: "Jump Raise", fit: "chosen", misses: [] },
+  ],
+};
+
 function LocationDisplay() {
   const location = useLocation();
   return <div data-testid="location-path">{location.pathname}</div>;
@@ -127,6 +168,7 @@ function renderPage(path = `/bid/${boardId}`, state?: unknown) {
             </>
           }
         />
+        <Route path="/explore/:exploreId" element={<LocationDisplay />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -173,6 +215,9 @@ describe("PracticePage", () => {
     });
     mockGetTricksAfterLead.mockResolvedValue(11);
     mockGenerateAdaptiveBoard.mockResolvedValue(null);
+    mockGetHandAnalysis.mockResolvedValue(SOUTH_ANALYSIS);
+    clearHandAnalysisCache();
+    window.sessionStorage.clear();
   });
 
   /** A record with one clear weak spot: responses to 1NT. */
@@ -398,6 +443,157 @@ describe("PracticePage", () => {
       expect(screen.queryByLabelText("differed from SAYC")).toBeNull();
       await waitFor(async () =>
         expect(await store.getSetting("feedbackTiming")).toBe("end"),
+      );
+    });
+
+    it("explains a miss against South's own hand", async () => {
+      mockParseBoardId.mockReturnValue(withSouth);
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      const feedback = await screen.findByTestId("call-feedback-miss");
+      await waitFor(() =>
+        expect(feedback).toHaveTextContent("You have 10 hcp and 4 ♠."),
+      );
+      expect(feedback).toHaveTextContent(
+        "2♠ doesn't fit your hand. Needs 6–9 hcp, you have 10.",
+      );
+      // Weighed at the point South called, not after.
+      expect(mockGetHandAnalysis).toHaveBeenCalledWith(
+        SOUTH,
+        "1S,P",
+        "N",
+        "None",
+      );
+    });
+
+    it("explains the SAYC bid in full against South's hand when asked", async () => {
+      mockParseBoardId.mockReturnValue(withSouth);
+      renderPage();
+      await waitForRobots();
+      expect(mockGetHandAnalysis).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: /show sayc bid/i }));
+      const hint = await screen.findByTestId("sayc-hint");
+      await waitFor(() =>
+        expect(hint).toHaveTextContent("You have 10 hcp and 4 ♠."),
+      );
+      expect(hint).toHaveTextContent(
+        "Why not 1NT? SAYC prefers 3♠: raising partner's major comes before limiting a balanced hand in notrump.",
+      );
+    });
+
+    it("never weighs a hand on the options sheet or for another seat's call", async () => {
+      mockParseBoardId.mockReturnValue(withSouth);
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(screen.getByRole("button", { name: "Options" }));
+      const sheet = await screen.findByRole("dialog");
+      await waitFor(() =>
+        expect(within(sheet).getByText("Simple Raise")).toBeInTheDocument(),
+      );
+      expect(sheet).not.toHaveTextContent("You have");
+      fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
+
+      // North's opening is explained by its rule alone.
+      fireEvent.click(
+        within(screen.getByTestId("call-table")).getByTestId("call-0"),
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("call-explanation")).toHaveTextContent(
+          "SAYC has no rule for this call here",
+        ),
+      );
+      expect(screen.queryByTestId("hand-reasons")).toBeNull();
+      expect(mockGetHandAnalysis).not.toHaveBeenCalled();
+    });
+
+    it("explains South's own call in the auction against the hand", async () => {
+      mockParseBoardId.mockReturnValue(withSouth);
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      await screen.findByTestId("call-feedback-miss");
+      fireEvent.click(
+        within(screen.getByTestId("call-table")).getByTestId("call-2"),
+      );
+      const explanation = await screen.findByTestId("call-explanation");
+      await waitFor(() =>
+        expect(
+          within(explanation).getByTestId("hand-reasons"),
+        ).toHaveTextContent(
+          "2♠ doesn't fit your hand. Needs 6–9 hcp, you have 10.",
+        ),
+      );
+    });
+
+    it("keeps the explanation of South's call from giving away a held-back verdict", async () => {
+      await store.setSetting("feedbackTiming", "end");
+      mockParseBoardId.mockReturnValue(withSouth);
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${boardId}:1S,P,2S,P`,
+        ),
+      );
+      fireEvent.click(
+        within(screen.getByTestId("call-table")).getByTestId("call-2"),
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("call-explanation")).toHaveTextContent(
+          "Simple Raise",
+        ),
+      );
+      expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
+      expect(screen.queryByTestId("hand-reasons")).toBeNull();
+      expect(mockGetHandAnalysis).not.toHaveBeenCalled();
+    });
+
+    it("opens a point in Explore with South's hand in session storage, not the link", async () => {
+      mockParseBoardId.mockReturnValue(withSouth);
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(screen.getByRole("button", { name: "Options" }));
+      const sheet = await screen.findByRole("dialog");
+      fireEvent.click(
+        within(sheet).getByRole("button", { name: "Explore from here" }),
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          "/explore/1:1S,P",
+        ),
+      );
+      expect(screen.getByTestId("location-path").textContent).not.toContain(
+        "963",
+      );
+      // South's hand alone: the other three are not the learner's to see.
+      expect(window.sessionStorage.getItem(HANDS_KEY)).toBe(
+        "S=963.A52.Q83.KJ74",
       );
     });
 
@@ -752,6 +948,20 @@ describe("PracticePage", () => {
       expect(await store.allHands()).toEqual([]);
       // Nothing recorded, so the result card has no record line to show.
       expect(screen.queryByTestId("record-line")).toBeNull();
+    });
+
+    it("explains each call that differed against South's hand", async () => {
+      mockParseBoardId.mockReturnValue({
+        ...withSouth,
+        initialCalls: [bid(1, "S"), pass, bid(2, "S"), pass, pass, pass],
+      });
+      renderPage(`/bid/${boardId}:1S,P,2S,P,P,P`);
+      const missed = await screen.findByTestId("missed-call");
+      await waitFor(() =>
+        expect(missed).toHaveTextContent(
+          "You have 10 hcp and 4 ♠.2♠ doesn't fit your hand. Needs 6–9 hcp, you have 10.",
+        ),
+      );
     });
 
     it("lists the calls that differed and where SAYC's own auction ends", async () => {
