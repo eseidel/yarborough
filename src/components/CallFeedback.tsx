@@ -1,20 +1,33 @@
 import { useState } from "react";
+import type { Hand, HandAnalysis } from "../bridge/types";
 import { callLabel } from "../bridge/types";
 import type { CallVerdict } from "../practice/verdicts";
+import { missReasons } from "../practice/hand-reasons";
 import { ConstraintsDisplay } from "./ConstraintsDisplay";
+import { HandReasons } from "./HandReasons";
 import { SuitText } from "./SuitText";
 
 /**
  * The verdict on the user's latest call, shown while the auction goes on.
  * A match needs no comment (the call table already ticks it); only a miss
  * gets a box, with what SAYC bids instead and why.
+ *
+ * Given the user's hand and the engine's analysis of it at this call, the
+ * box says why in the hand's own numbers: what SAYC's call is chosen on, and
+ * what the user's call misses or why SAYC ranked it lower.
  */
 export function CallFeedback({
   verdict,
+  hand,
+  analysis,
   onShowOptions,
   onDefer,
 }: {
   verdict: CallVerdict;
+  /** The user's hand. */
+  hand?: Hand;
+  /** The hand weighed at this call: undefined while the engine works. */
+  analysis?: HandAnalysis | null;
   /** Open every legal call at the point of this call. */
   onShowOptions?: () => void;
   /** Switch to feedback at the end of the hand instead. */
@@ -46,6 +59,11 @@ export function CallFeedback({
         )}
         .
       </div>
+      {hand && analysis !== undefined && (
+        <HandReasons
+          lines={missReasons(hand, verdict.call, sayc.call, analysis)}
+        />
+      )}
       {why && (
         <div className="text-xs bg-white/70 rounded p-2 text-gray-800 space-y-0.5">
           {sayc.constraints && (

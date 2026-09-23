@@ -11,12 +11,16 @@ import { PracticePage } from "../pages/PracticePage";
 import { ExplorePage } from "../pages/ExplorePage";
 import * as engine from "../bridge/engine";
 import * as auction from "../bridge/auction";
+import { encodeDeal } from "../bridge/identifier";
+import { MOCK_DEAL } from "../bridge/mock";
+import { HANDS_KEY } from "../bridge/entered-hands";
 
 vi.mock("../bridge/engine", () => ({
   getSuggestedCall: vi.fn(),
   getCallInterpretations: vi.fn(),
   getOpeningLead: vi.fn(),
   generateFilteredBoard: vi.fn(),
+  getHandAnalysis: vi.fn(),
 }));
 
 vi.mock("../bridge/auction", async (importOriginal) => {
@@ -38,6 +42,7 @@ vi.mock("../dds/dds", () => ({
 describe("Explorer data across pages", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
     vi.mocked(engine.getSuggestedCall).mockResolvedValue({
       call: { type: "pass" },
     });
@@ -111,5 +116,56 @@ describe("Explorer data across pages", () => {
     expect(screen.getAllByText(/1/).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("♥")).toBeInTheDocument();
     expect(screen.getByText("♠")).toBeInTheDocument();
+  });
+
+  it("carries South's hand from Practice to Explore, face down", async () => {
+    vi.mocked(auction.addRobotBids).mockResolvedValue({
+      dealer: "N",
+      calls: [{ type: "bid", level: 1, strain: "H" }, { type: "pass" }],
+    });
+    vi.mocked(engine.getCallInterpretations).mockResolvedValue([
+      { call: { type: "pass" }, ruleName: "Pass" },
+    ]);
+    vi.mocked(engine.getHandAnalysis).mockResolvedValue({
+      call: { type: "pass" },
+      calls: [{ call: { type: "pass" }, fit: "chosen", misses: [] }],
+    });
+
+    render(
+      <MemoryRouter initialEntries={[`/bid/1-${encodeDeal(MOCK_DEAL)}`]}>
+        <Routes>
+          <Route path="/bid/:boardId" element={<PracticePage />} />
+          <Route path="/explore/:exploreId" element={<ExplorePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Options" })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Options" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Explore from here",
+      }),
+    );
+
+    // South is to call over 1♥ and has a hand, face down until asked.
+    const show = await screen.findByRole("button", {
+      name: "Show South's hand",
+    });
+    expect(screen.queryByTestId("hand-S")).toBeNull();
+    fireEvent.click(show);
+    expect(screen.getByTestId("hand-S")).toBeInTheDocument();
+
+    // Explore weighs the hand it was given, at South's turn, and was given
+    // no other seat's.
+    expect(window.sessionStorage.getItem(HANDS_KEY)).toMatch(/^S=[^,]+$/);
+    expect(engine.getHandAnalysis).toHaveBeenCalledWith(
+      expect.anything(),
+      "1H,P",
+      "N",
+      "None",
+    );
   });
 });

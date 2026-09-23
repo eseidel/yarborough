@@ -10,7 +10,7 @@ import type {
   CallInterpretation,
   Position,
 } from "../bridge/types";
-import { callToString } from "../bridge/types";
+import { callToString, handForPosition } from "../bridge/types";
 import {
   addRobotBids,
   currentPlayer,
@@ -20,7 +20,12 @@ import {
   isAuctionComplete,
   isPassOut,
 } from "../bridge/auction";
-import { generateFilteredBoardId, parseBoardId } from "../bridge/identifier";
+import {
+  explorePath,
+  generateFilteredBoardId,
+  parseBoardId,
+} from "../bridge/identifier";
+import { saveHands } from "../bridge/entered-hands";
 import {
   generateAdaptiveBoard,
   getOpeningLead,
@@ -181,10 +186,21 @@ export function usePracticeSession(
   const handleError = useCallback((err: unknown) => {
     setError(String(err));
   }, []);
+  // The user's own calls are explained against their hand too, but only
+  // once their verdicts are on show: with feedback kept for the end, the
+  // explanation of a call must not give its verdict away.
+  const yourHand = useMemo(
+    () => ({
+      seat: userPosition,
+      hand: handForPosition(parsed.deal, userPosition),
+    }),
+    [parsed.deal, userPosition],
+  );
   const explanation = useCallExplanation(
     history,
     parsed.vulnerability,
     handleError,
+    auctionDone || feedbackTiming === "immediate" ? yourHand : undefined,
   );
 
   const verdicts: CallVerdict[] = useMemo(
@@ -443,6 +459,27 @@ export function usePracticeSession(
   const closeOptions = useCallback(() => setOptions(null), []);
 
   /**
+   * Open a point of the auction in Explore, with the user's hand. The hand
+   * goes where Explore keeps the hands it is given, the tab's session
+   * storage, never into the link, and Explore shows it face down until its
+   * seat taps Show. Only the user's own hand goes: the other three are not
+   * theirs to see.
+   */
+  const exploreFrom = useCallback(
+    (point: AuctionPoint) => {
+      trackEvent("Bidding", "Help", "Explore");
+      saveHands({ [yourHand.seat]: yourHand.hand });
+      navigate(
+        explorePath(
+          parsed.boardNumber,
+          point.history.calls.slice(0, point.index),
+        ),
+      );
+    },
+    [yourHand, parsed.boardNumber, navigate],
+  );
+
+  /**
    * Undo the user's latest call. The robots' replies to it are dropped (they
    * are deterministic, so nothing needs replaying), and if they are still
    * thinking their answer is discarded. The engine's calls are cached by the
@@ -677,6 +714,7 @@ export function usePracticeSession(
     hideSaycBid,
     showOptions,
     closeOptions,
+    exploreFrom,
     /** True while there is a call of the user's to undo. */
     canTakeBack: !auctionDone && userCallCount > 0,
     takeBack,

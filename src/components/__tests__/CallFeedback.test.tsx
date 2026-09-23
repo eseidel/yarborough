@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CallFeedback } from "../CallFeedback";
 import type { CallVerdict } from "../../practice/verdicts";
+import { handFromCdhsString } from "../../bridge/types";
 
 const MISS: CallVerdict = {
   index: 2,
@@ -49,5 +50,42 @@ describe("CallFeedback", () => {
     fireEvent.click(screen.getByRole("button", { name: "All options here" }));
     expect(onShowOptions).toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: /hide until/i })).toBeNull();
+  });
+
+  it("explains a miss in the numbers of the user's hand", () => {
+    // ♠963 ♥KQ74 ♦A52 ♣KJ3: thirteen points and four hearts.
+    const hand = handFromCdhsString("KJ3.A52.KQ74.963")!;
+    const { rerender } = render(
+      <CallFeedback verdict={MISS} hand={hand} analysis={undefined} />,
+    );
+    // Nothing while the engine weighs the hand.
+    expect(screen.queryByTestId("hand-reasons")).toBeNull();
+
+    rerender(
+      <CallFeedback
+        verdict={MISS}
+        hand={hand}
+        analysis={{
+          calls: [
+            {
+              call: MISS.call,
+              fit: "unfit",
+              misses: [
+                {
+                  kind: "points",
+                  min: 6,
+                  max: 10,
+                  actual: 13,
+                  withShape: false,
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByTestId("hand-reasons")).toHaveTextContent(
+      "You have 13 hcp and 4 ♥.2♥ doesn't fit your hand. Needs 6–10 hcp, you have 13.",
+    );
   });
 });

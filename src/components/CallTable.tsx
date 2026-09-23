@@ -11,6 +11,7 @@ import {
 import { isAuctionComplete } from "../bridge/auction";
 import { CallDisplay } from "./CallDisplay";
 import { ConstraintsDisplay } from "./ConstraintsDisplay";
+import { HandReasons } from "./HandReasons";
 import { CARD, EYEBROW, LINK_SMALL } from "./ui";
 
 function isVulnerable(pos: string, vulnerability: Vulnerability): boolean {
@@ -31,6 +32,7 @@ export function CallTable({
   callExplanation,
   explanationLoading,
   onShowOptions,
+  handReasons,
   header,
 }: {
   callHistory: CallHistory;
@@ -47,6 +49,8 @@ export function CallTable({
   explanationLoading?: boolean;
   /** Offered in the explanation: every call that was legal at that point. */
   onShowOptions?: (callIndex: number) => void;
+  /** What the user's own hand says about the selected call, when it is theirs. */
+  handReasons?: string[];
   /** Sits above the seats, inside the same panel: what board this is. */
   header?: ReactNode;
 }) {
@@ -162,6 +166,12 @@ export function CallTable({
                           <span className="text-gray-500">
                             SAYC has no rule for this call here
                           </span>
+                        )}
+                        {handReasons && (
+                          <HandReasons
+                            lines={handReasons}
+                            className="mt-1 text-xs text-gray-800"
+                          />
                         )}
                       </div>
                       {onShowOptions && selectedCallIndex != null && (
