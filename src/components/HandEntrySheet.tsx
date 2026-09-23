@@ -38,8 +38,6 @@ const HELD: Record<SuitName, string> = {
   S: "bg-black",
 };
 
-/** How long the whole hand stays in view before the sheet closes itself. */
-export const FINISH_DELAY_MS = 420;
 /** How long the sheet takes to slide away. */
 export const SLIDE_MS = 220;
 /** How far down the sheet has to be dragged to dismiss it. */
@@ -58,16 +56,17 @@ function miscount(total: number): string {
 
 /**
  * Entering the hand of the seat to call, one suit at a time: tap the honors
- * held, then how many small cards. The count moves on to the next suit, and
- * counting the last suit of a thirteen-card hand closes the sheet, so a hand
- * is about eight taps with nothing to confirm.
+ * held, then the small cards, drawn as a row of blank cards of the suit. A
+ * tap on the third blank holds three of them, so the row reads as a number of
+ * cards without a label or a digit that could pass for a rank. The first
+ * small cards of a suit move the entry on to the next suit; Done lights up
+ * once the hand has thirteen cards, and the player confirms it there.
  *
  * A miscount does not stop the entry: a suit given a card too many takes it,
- * the player enters the rest, and the sheet stays open saying the hand has
- * fourteen cards until a tap on the wrong suit in the fan puts it right.
+ * the player enters the rest, and the sheet says the hand has fourteen cards
+ * until a tap on the wrong suit in the fan puts it right.
  *
- * Opened on a finished hand (`editing`), the count stays on its suit, and
- * the sheet closes when a change makes the hand whole again.
+ * Opened on a finished hand (`editing`), the entry stays on its suit.
  */
 export function HandEntrySheet({
   seatName,
@@ -92,7 +91,6 @@ export function HandEntrySheet({
       : (FAN_SUIT_ORDER.find((s) => initial[s].small === null) ?? "S"),
   );
   const [entered, setEntered] = useState(false);
-  const [finishing, setFinishing] = useState(false);
   const [closing, setClosing] = useState<Closing | null>(null);
   const [drag, setDrag] = useState<number | null>(null);
   const dragFrom = useRef<number | null>(null);
@@ -108,12 +106,6 @@ export function HandEntrySheet({
     const frame = requestAnimationFrame(() => setEntered(true));
     return () => cancelAnimationFrame(frame);
   }, []);
-
-  useEffect(() => {
-    if (!finishing) return;
-    const timer = setTimeout(() => setClosing("done"), FINISH_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [finishing]);
 
   useEffect(() => {
     if (!closing) return;
@@ -134,27 +126,64 @@ export function HandEntrySheet({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const busy = finishing || closing !== null;
+  const busy = closing !== null;
   const shown = entered && closing === null;
   const total = entryTotal(entry);
+  const complete = isComplete(entry);
   const problem =
     total > 13 || (allCounted(entry) && total < 13) ? miscount(total) : null;
 
-  function apply(next: HandEntry, counted: boolean) {
-    if (busy || next === entry) return;
+  function buzz() {
     try {
       navigator.vibrate?.(6);
     } catch {
       // Haptics are a nicety; a browser that refuses them loses nothing.
     }
+  }
+
+  function apply(next: HandEntry) {
+    if (busy || next === entry) return;
+    buzz();
     setEntry(next);
-    if (!isComplete(entry) && isComplete(next)) {
-      setFinishing(true);
-    } else if (counted && !editing) {
+  }
+
+  /**
+   * Hold `count` small cards of the suit, or one fewer when the tap is on the
+   * last one held. The first count a suit is given moves on to the next.
+   */
+  function tapSmall(count: number) {
+    if (busy) return;
+    const first = entry[suit].small === null;
+    const next = setSmall(
+      entry,
+      suit,
+      entry[suit].small === count ? count - 1 : count,
+    );
+    apply(next);
+    if (first && !editing) {
       const following = nextSuit(next, suit);
       if (following) setSuit(following);
     }
   }
+
+  function done() {
+    if (busy || !complete) return;
+    buzz();
+    setClosing("done");
+  }
+
+  // Enter confirms a whole hand, for the odd player with a keyboard.
+  const doneRef = useRef(done);
+  useEffect(() => {
+    doneRef.current = done;
+  });
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Enter") doneRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   function onGrabDown(event: PointerEvent<HTMLDivElement>) {
     if ((event.target as HTMLElement).closest("button")) return;
@@ -209,7 +238,22 @@ export function HandEntrySheet({
           onPointerCancel={onGrabUp}
         >
           <span className="mb-1.5 h-[5px] w-9 self-center rounded-full bg-gray-300" />
-          <div className="flex min-h-9 items-center">
+          <div className="flex min-h-9 items-center gap-2.5">
+            <button
+              type="button"
+              aria-label="Cancel"
+              onClick={() => !busy && setClosing("cancel")}
+              className="-ml-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 active:bg-gray-200"
+            >
+              <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden>
+                <path
+                  d="M5 5l10 10M15 5 5 15"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
             <h2 className="text-[17px] font-semibold text-gray-900">
               {seatName}
             </h2>
@@ -225,18 +269,21 @@ export function HandEntrySheet({
               )}
               <button
                 type="button"
-                aria-label="Cancel"
-                onClick={() => !busy && setClosing("cancel")}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 active:bg-gray-200"
+                disabled={!complete}
+                onClick={done}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[15px] font-semibold transition-colors ${complete ? "bg-emerald-700 text-white active:bg-emerald-800" : "bg-gray-100 text-gray-400"}`}
               >
-                <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden>
+                <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden>
                   <path
-                    d="M5 5l10 10M15 5 5 15"
+                    d="m4 10.5 4 4 8-9"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.2"
                     strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
                   />
                 </svg>
+                Done
               </button>
             </span>
           </div>
@@ -309,7 +356,7 @@ export function HandEntrySheet({
                   type="button"
                   aria-pressed={held}
                   aria-label={`${displayRank(rank)} of ${SUIT_NAMES[suit].toLowerCase()}`}
-                  onClick={() => apply(toggleHonor(entry, suit, rank), false)}
+                  onClick={() => apply(toggleHonor(entry, suit, rank))}
                   className={`h-14 rounded-xl border text-[22px] font-semibold shadow-[0_1px_0_rgba(0,0,0,0.04)] transition active:scale-95 ${held ? `${HELD[suit]} border-transparent text-white` : `border-gray-200 bg-white ${color}`}`}
                 >
                   {displayRank(rank)}
@@ -317,32 +364,39 @@ export function HandEntrySheet({
               );
             })}
           </div>
+          {/*
+           * The small cards, as blanks of the suit: the ones held stand as
+           * cards, the rest wait as outlines. No digit and no label, so
+           * nothing here could be read as a rank.
+           */}
           <div
-            className="px-[18px] pt-3.5 pb-1.5 text-[13px] text-gray-600"
-            id="small-cards-label"
+            className="grid grid-cols-8 gap-1 px-3 pt-3"
+            data-testid="small-cards"
           >
-            How many small cards?{" "}
-            <span className="text-gray-400">9 down to 2</span>
-          </div>
-          {/* A count, not a card: a selector on a track, unlike the keys. */}
-          <div
-            role="radiogroup"
-            aria-labelledby="small-cards-label"
-            className="mx-3 grid grid-cols-9 rounded-xl bg-gray-100 p-1"
-          >
-            {Array.from({ length: MAX_SMALL + 1 }, (_, count) => {
-              const chosen = current.small === count;
+            {Array.from({ length: MAX_SMALL }, (_, i) => {
+              const count = i + 1;
+              const held = count <= (current.small ?? 0);
               return (
                 <button
                   key={count}
                   type="button"
-                  role="radio"
-                  aria-checked={chosen}
+                  aria-pressed={held}
                   aria-label={`${count} small ${count === 1 ? "card" : "cards"}`}
-                  onClick={() => apply(setSmall(entry, suit, count), true)}
-                  className={`h-11 rounded-lg text-[17px] font-semibold tabular-nums transition ${chosen ? "bg-white text-emerald-800 shadow-sm ring-1 ring-black/5" : "text-gray-500 active:bg-gray-200"}`}
+                  onClick={() => tapSmall(count)}
+                  className={`relative h-14 rounded-md transition active:scale-95 ${color} ${held ? "-translate-y-0.5 border border-gray-300 bg-white shadow-sm" : "border-[1.5px] border-dashed border-gray-300"}`}
                 >
-                  {count}
+                  <span
+                    className={`absolute top-1 left-1 text-sm leading-none ${held ? "" : "opacity-25"}`}
+                    aria-hidden
+                  >
+                    {SUITS[suit].symbol}
+                  </span>
+                  <span
+                    className={`absolute right-0.5 bottom-0 text-3xl leading-none ${held ? "" : "opacity-25"}`}
+                    aria-hidden
+                  >
+                    {SUITS[suit].symbol}
+                  </span>
                 </button>
               );
             })}

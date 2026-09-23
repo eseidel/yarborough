@@ -72,13 +72,13 @@ export function allCounted(entry: HandEntry): boolean {
 }
 
 /**
- * The entry is a hand: every suit counted, and thirteen cards. An entry can
- * pass thirteen on the way there, since a player who miscounts one suit
- * should be able to enter the rest and then see which suit is wrong; it just
- * cannot be finished like that.
+ * The entry is a hand: thirteen cards, a suit never given small cards being
+ * void of them. An entry can pass thirteen on the way there, since a player
+ * who miscounts one suit should be able to enter the rest and then see which
+ * suit is wrong; it just cannot be finished like that.
  */
 export function isComplete(entry: HandEntry): boolean {
-  return allCounted(entry) && entryTotal(entry) === 13;
+  return entryTotal(entry) === 13;
 }
 
 /** Take or give back one honor. */
