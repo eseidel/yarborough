@@ -32,10 +32,17 @@
 
 import * as categories from "./categories";
 import type { CategoryPath } from "./categories";
+import {
+  analyseHand,
+  type CallFit,
+  type Miss,
+  type Preference,
+} from "./analysis/hand";
 import { Board } from "./core/board";
 import { type Call, Pass } from "./core/call";
 import { CallExplorer } from "./core/callexplorer";
 import { CallHistory } from "./core/callhistory";
+import { Hand } from "./core/hand";
 import { Position } from "./core/position";
 import { type Strain, SUITS } from "./core/suit";
 import * as leads from "./leads";
@@ -687,6 +694,76 @@ export function getOpeningLead(identifier: unknown): OpeningLead {
   return _openingLeadForBoard(_board(identifier));
 }
 
+// --- the hand-aware analysis ----------------------------------------------
+
+/** One legal call, as `get_call_interpretations` describes it, weighed against a hand. */
+export interface HandCallAnalysis extends CallInterpretation {
+  fit: CallFit;
+  /** What the hand misses, on a call it cannot make (analysis/hand.ts). */
+  misses: Miss[];
+  /** Why another call was bid, on a call the hand could have made. */
+  preference: Preference | null;
+}
+
+/** What `get_hand_analysis` returns. */
+export interface HandAnalysis {
+  /** The call z3b makes with this hand, or null when no rule fits it. */
+  call_name: string | null;
+  category: CategoryPath | null;
+  calls: HandCallAnalysis[];
+}
+
+/** A C.D.H.S hand string ("42.A973.K5.AQ982"), each card once. */
+export function _hand(hand: unknown): Hand {
+  const handString = _requireString(hand, "hand").toUpperCase();
+  let parsed: Hand;
+  try {
+    parsed = Hand.fromCdhsString(handString);
+  } catch {
+    throw new BiddingInputError(`invalid hand: ${handString}`);
+  }
+  // `Hand` refuses a card it does not know and a count other than thirteen,
+  // but not the same card named twice.
+  const cards = new Set(
+    parsed.cardsBySuitIndex.flatMap((cards, index) =>
+      [...cards].map((card) => `${index}${card}`),
+    ),
+  );
+  if (cards.size !== 13) {
+    throw new BiddingInputError(`invalid hand: ${handString}`);
+  }
+  return parsed;
+}
+
+/**
+ * Every legal next call, as `get_call_interpretations` describes it, and how
+ * `hand` stands with each: the call z3b makes, a call the hand could make
+ * and why z3b made another, a call the hand does not fit and what it misses,
+ * a call only a plan makes, or a call no rule makes.
+ */
+export function getHandAnalysis(
+  hand: unknown,
+  calls: unknown,
+  dealer: unknown,
+  vulnerability: unknown,
+): HandAnalysis {
+  const callHistory = _callHistory(calls, dealer, vulnerability);
+  const playerHand = _hand(hand);
+  if (callHistory.isComplete()) {
+    return { call_name: null, category: null, calls: [] };
+  }
+  const { selection, calls: verdicts } = analyseHand(playerHand, callHistory);
+  const interpretations = getCallInterpretations(calls, dealer, vulnerability);
+  return {
+    call_name: selection ? selection.call.name : null,
+    category: _categoryForSelection(selection, callHistory),
+    calls: interpretations.map((interpretation) => ({
+      ...interpretation,
+      ...verdicts.get(interpretation.call_name)!,
+    })),
+  };
+}
+
 /** Dispatch an RPC request after validating its primitive JSON shape. */
 export function dispatch(method: unknown, args: unknown): unknown {
   const methodName = _requireString(method, "method");
@@ -726,6 +803,14 @@ export function dispatch(method: unknown, args: unknown): unknown {
   }
   if (methodName === "get_opening_lead") {
     return getOpeningLead(argument("identifier"));
+  }
+  if (methodName === "get_hand_analysis") {
+    return getHandAnalysis(
+      argument("hand"),
+      argument("calls"),
+      argument("dealer"),
+      argument("vulnerability"),
+    );
   }
   throw new BiddingInputError(`unknown engine method: ${methodName}`);
 }

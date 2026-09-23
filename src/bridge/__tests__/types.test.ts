@@ -1,8 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   cardsBySuit,
+  fanOrderCards,
   findCallInterpretation,
   formatRuleName,
+  handFromCdhsString,
+  handToCdhsString,
   vulnerabilityFromBoardNumber,
   vulnerabilityLabel,
 } from "../types";
@@ -140,5 +143,35 @@ describe("formatRuleName", () => {
     expect(formatRuleName("Opening1N")).toBe("Opening 1NT");
     expect(formatRuleName("RHOOpeningPreempt")).toBe("RHO Opening Preempt");
     expect(formatRuleName("LHOPreempt")).toBe("LHO Preempt");
+  });
+});
+
+describe("hand strings", () => {
+  const OPENER = "42.A973.K5.AQ982";
+
+  it("writes a hand clubs first, the way the engine reads it", () => {
+    const hand = handFromCdhsString(OPENER)!;
+    expect(handToCdhsString(hand)).toBe(OPENER);
+    // The fan draws it spades first; the string is the other order.
+    expect(fanOrderCards(hand)[0]).toEqual({ suit: "S", rank: "A" });
+  });
+
+  it("reads a void as an empty holding", () => {
+    const hand = handFromCdhsString("AKQJT98765432...")!;
+    expect(hand.cards).toHaveLength(13);
+    expect(hand.cards.every((card) => card.suit === "C")).toBe(true);
+  });
+
+  it("refuses anything that is not thirteen distinct cards", () => {
+    expect(handFromCdhsString("42.A973.K5.AQ98")).toBeNull(); // twelve
+    expect(handFromCdhsString("442.A973.K5.AQ82")).toBeNull(); // the four twice
+    expect(handFromCdhsString("4X.A973.K5.AQ982")).toBeNull(); // no such rank
+    expect(handFromCdhsString("42.A973.K5")).toBeNull(); // three suits
+  });
+
+  it("does not care about the case it is written in", () => {
+    expect(handToCdhsString(handFromCdhsString(OPENER.toLowerCase())!)).toBe(
+      OPENER,
+    );
   });
 });
