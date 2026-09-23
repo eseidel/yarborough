@@ -23,6 +23,7 @@ import {
 import { initAnalytics, trackPageView } from "../analytics";
 import { setCanonical, setTitle, CANONICAL_ORIGIN } from "../seo";
 import { SECONDARY_BUTTON, TEXT_BUTTON } from "../components/ui";
+import { foundOnRetry } from "../practice/verdicts";
 
 const USER_POSITION = "S";
 
@@ -93,14 +94,24 @@ function PracticeBoard({
   }, [auctionDone, canonicalPath]);
 
   const showVerdicts = auctionDone || feedbackTiming === "immediate";
+  const { heldVerdict } = session;
   const verdictMarks = showVerdicts
-    ? Object.fromEntries(verdicts.map((v) => [v.index, v.matched]))
+    ? Object.fromEntries(
+        [...verdicts, ...(heldVerdict ? [heldVerdict] : [])].map(
+          (v): [number, boolean | "retried"] => [
+            v.index,
+            foundOnRetry(v) ? "retried" : v.matched,
+          ],
+        ),
+      )
     : undefined;
-  // The verdict on the user's latest call, once the engine has it.
+  // The verdict on the user's latest call, once the engine has it: the call
+  // held for it, or the last one made.
   const latestVerdict =
-    !auctionDone && feedbackTiming === "immediate" && session.verdictsComplete
+    heldVerdict ??
+    (!auctionDone && feedbackTiming === "immediate" && session.verdictsComplete
       ? (verdicts[verdicts.length - 1] ?? null)
-      : null;
+      : null);
 
   // The user's hand weighed where it explains a miss, and where they asked
   // for SAYC's call. Never on the options sheet: that lists what each call
@@ -120,7 +131,7 @@ function PracticeBoard({
   const shareUrl = `${CANONICAL_ORIGIN}/bid/${session.baseId}`;
   const optionsAreLive =
     session.options !== null &&
-    userToCall &&
+    session.canBid &&
     session.options.history === history &&
     session.options.index === history.calls.length;
 
@@ -160,7 +171,8 @@ function PracticeBoard({
         )}
 
         <CallTable
-          callHistory={history}
+          callHistory={session.heldHistory ?? history}
+          held={session.held !== null}
           vulnerability={vulnerability}
           userPosition={USER_POSITION}
           verdicts={verdictMarks}
@@ -184,9 +196,11 @@ function PracticeBoard({
                   session.showOptions({ history, index: latestVerdict.index })
                 }
                 onDefer={() => session.setFeedbackTiming("end")}
+                onTryAgain={heldVerdict ? session.tryAgain : undefined}
+                onKeep={heldVerdict ? session.keep : undefined}
               />
             )}
-            {session.hintShown && (
+            {session.hintShown && !session.held && (
               <SaycHint
                 suggestion={session.suggestion}
                 hand={hand}
@@ -198,7 +212,7 @@ function PracticeBoard({
             <BiddingBox
               onBid={session.bid}
               callHistory={history}
-              disabled={!userToCall}
+              disabled={!session.canBid}
             />
             <div className="flex gap-2">
               <button
@@ -216,7 +230,7 @@ function PracticeBoard({
                 onClick={
                   session.hintShown ? session.hideSaycBid : session.showSaycBid
                 }
-                disabled={!userToCall}
+                disabled={!session.canBid}
                 className={`${SECONDARY_BUTTON} flex-1`}
               >
                 {session.hintShown ? "Hide SAYC bid" : "Show SAYC bid"}

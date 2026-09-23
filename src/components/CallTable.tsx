@@ -21,11 +21,27 @@ function isVulnerable(pos: string, vulnerability: Vulnerability): boolean {
   return pos === "E" || pos === "W";
 }
 
+/** How a verdict looks on the call it judges. */
+const VERDICT_MARKS: Record<
+  string,
+  { mark: string; label: string; className: string }
+> = {
+  true: { mark: "✓", label: "matched SAYC", className: "text-emerald-600" },
+  false: { mark: "✗", label: "differed from SAYC", className: "text-red-600" },
+  // Amber, the palette's color for help taken: SAYC's call, on a second try.
+  retried: {
+    mark: "↺",
+    label: "matched SAYC on a retry",
+    className: "text-amber-600",
+  },
+};
+
 export function CallTable({
   callHistory,
   vulnerability,
   userPosition,
   verdicts,
+  held = false,
   thinking = false,
   onCallClick,
   selectedCallIndex,
@@ -39,8 +55,16 @@ export function CallTable({
   vulnerability?: Vulnerability;
   /** The seat the user bids from; its column is labelled "you". */
   userPosition?: Position;
-  /** Call index to whether it matched SAYC; shown as a tick or a cross. */
-  verdicts?: Record<number, boolean>;
+  /**
+   * Call index to whether it matched SAYC, shown as a tick or a cross, or
+   * "retried" for SAYC's call found after taking back another.
+   */
+  verdicts?: Record<number, boolean | "retried">;
+  /**
+   * The last call is the user's, held while they look at why it differs
+   * from SAYC: outlined as not yet made, and nobody is to call after it.
+   */
+  held?: boolean;
   /** The engine is bidding: the pending cell pulses. */
   thinking?: boolean;
   onCallClick?: (callIndex: number) => void;
@@ -60,7 +84,7 @@ export function CallTable({
   // Create a combined list of actual calls and the "?" marker if the auction is not complete.
   const displayCalls: (Call | null)[] = [...calls];
   const auctionDone = isAuctionComplete(callHistory);
-  if (!auctionDone) {
+  if (!auctionDone && !held) {
     displayCalls.push(null);
   }
 
@@ -106,15 +130,17 @@ export function CallTable({
         ))}
         {displayCalls.map((call, i) => {
           const isSelected = selectedCallIndex === i;
-          const clickable = onCallClick != null && call !== null;
+          const isHeld = held && i === calls.length - 1;
+          const clickable = onCallClick != null && call !== null && !isHeld;
           const verdict = verdicts?.[i];
           return (
             <Fragment key={i}>
               <div
-                className={`relative rounded py-1.5 text-base ${clickable ? "cursor-pointer hover:bg-gray-100" : ""} ${isSelected ? "bg-emerald-50 ring-1 ring-inset ring-emerald-200" : ""}`}
+                className={`relative rounded py-1.5 text-base ${clickable ? "cursor-pointer hover:bg-gray-100" : ""} ${isSelected ? "bg-emerald-50 ring-1 ring-inset ring-emerald-200" : ""} ${isHeld ? "bg-red-50/60 text-gray-500 outline-dashed outline-1 -outline-offset-2 outline-red-300" : ""}`}
                 onClick={clickable ? () => onCallClick(i) : undefined}
                 role={clickable ? "button" : undefined}
                 data-testid={call ? `call-${i}` : "pending-call"}
+                data-held={isHeld || undefined}
               >
                 {call ? (
                   <CallDisplay call={call} />
@@ -127,10 +153,10 @@ export function CallTable({
                 )}
                 {verdict !== undefined && (
                   <span
-                    className={`absolute top-0.5 right-1 text-xs font-bold leading-none ${verdict ? "text-emerald-600" : "text-red-600"}`}
-                    aria-label={verdict ? "matched SAYC" : "differed from SAYC"}
+                    className={`absolute top-0.5 right-1 text-xs font-bold leading-none ${VERDICT_MARKS[String(verdict)].className}`}
+                    aria-label={VERDICT_MARKS[String(verdict)].label}
                   >
-                    {verdict ? "✓" : "✗"}
+                    {VERDICT_MARKS[String(verdict)].mark}
                   </span>
                 )}
               </div>

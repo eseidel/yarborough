@@ -10,7 +10,12 @@ import {
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PracticePage } from "../PracticePage";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import type { Call, CallHistory, HandAnalysis } from "../../bridge/types";
+import type {
+  Call,
+  CallHistory,
+  CallInterpretation,
+  HandAnalysis,
+} from "../../bridge/types";
 import { handFromCdhsString } from "../../bridge/types";
 import { HANDS_KEY } from "../../bridge/entered-hands";
 import { clearHandAnalysisCache } from "../../practice/useHandAnalysis";
@@ -174,6 +179,14 @@ function renderPage(path = `/bid/${boardId}`, state?: unknown) {
   );
 }
 
+/** Tap a call in the bidding box. */
+const callFromBox = (label: string) =>
+  fireEvent.click(
+    within(screen.getByTestId("bidding-box"))
+      .getAllByRole("button")
+      .find((b) => b.textContent === label)!,
+  );
+
 const waitForRobots = () =>
   waitFor(() =>
     expect(screen.getByTestId("bidding-box")).not.toHaveAttribute(
@@ -322,6 +335,11 @@ describe("PracticePage", () => {
         );
       });
       expect(screen.getByLabelText("differed from SAYC")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: /^Keep 2/ }));
+      await waitFor(() => expect(screen.getByTestId("call-3")).toBeVisible());
+      // The box stays up, now without the choice.
+      expect(screen.getByTestId("call-feedback-miss")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
       expect(mockAddRobotBids).toHaveBeenLastCalledWith(
         expect.objectContaining({
           calls: [bid(1, "S"), pass, bid(2, "S")],
@@ -441,6 +459,14 @@ describe("PracticePage", () => {
       fireEvent.click(defer);
       expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
       expect(screen.queryByLabelText("differed from SAYC")).toBeNull();
+      // Nothing is held back with feedback at the end: the table bids on.
+      await waitFor(() =>
+        expect(mockAddRobotBids).toHaveBeenLastCalledWith(
+          expect.objectContaining({ calls: [bid(1, "S"), pass, bid(2, "S")] }),
+          "S",
+          boardId,
+        ),
+      );
       await waitFor(async () =>
         expect(await store.getSetting("feedbackTiming")).toBe("end"),
       );
@@ -529,6 +555,8 @@ describe("PracticePage", () => {
           .find((b) => b.textContent === "2♠")!,
       );
       await screen.findByTestId("call-feedback-miss");
+      fireEvent.click(await screen.findByRole("button", { name: /^Keep 2/ }));
+      await waitFor(() => expect(screen.getByTestId("call-3")).toBeVisible());
       fireEvent.click(
         within(screen.getByTestId("call-table")).getByTestId("call-2"),
       );
@@ -634,13 +662,13 @@ describe("PracticePage", () => {
 
       mockAddRobotBids.mockResolvedValue({
         dealer: "N",
-        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+        calls: [bid(1, "S"), pass, bid(3, "S"), pass],
       });
-      fireEvent.click(within(sheet).getByText("Simple Raise"));
+      fireEvent.click(within(sheet).getByText("Jump Raise"));
       expect(screen.queryByRole("dialog")).toBeNull();
       await waitFor(() =>
         expect(mockAddRobotBids).toHaveBeenLastCalledWith(
-          expect.objectContaining({ calls: [bid(1, "S"), pass, bid(2, "S")] }),
+          expect.objectContaining({ calls: [bid(1, "S"), pass, bid(3, "S")] }),
           "S",
           boardId,
         ),
@@ -691,7 +719,7 @@ describe("PracticePage", () => {
           .getAllByRole("button")
           .find((b) => b.textContent === "2♠")!,
       );
-      await screen.findByTestId("call-feedback-miss");
+      fireEvent.click(await screen.findByRole("button", { name: /^Keep 2/ }));
       await waitFor(() =>
         expect(screen.getByTestId("location-path")).toHaveTextContent(
           `${boardId}:1S,P,2S,P,3S,P`,
@@ -716,13 +744,14 @@ describe("PracticePage", () => {
       );
       expect(suggestCalls).toHaveLength(1);
 
-      // South can call again from here.
+      // South can call again from here, but the first try is what counts.
       fireEvent.click(
         within(screen.getByTestId("bidding-box"))
           .getAllByRole("button")
           .find((b) => b.textContent === "3♠")!,
       );
-      await screen.findByLabelText("matched SAYC");
+      await screen.findByLabelText("matched SAYC on a retry");
+      expect(screen.queryByLabelText("matched SAYC")).toBeNull();
     });
 
     it("takes back a call while the robots are still thinking", async () => {
@@ -737,7 +766,7 @@ describe("PracticePage", () => {
       fireEvent.click(
         within(screen.getByTestId("bidding-box"))
           .getAllByRole("button")
-          .find((b) => b.textContent === "2♠")!,
+          .find((b) => b.textContent === "3♠")!,
       );
       expect(screen.getByTestId("bidding-box")).toHaveAttribute(
         "aria-disabled",
@@ -753,7 +782,7 @@ describe("PracticePage", () => {
       // A late reply from the robots is ignored.
       replyWithRobots({
         dealer: "N",
-        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+        calls: [bid(1, "S"), pass, bid(3, "S"), pass],
       });
       await waitFor(() =>
         expect(mockGetSuggestedCall).toHaveBeenCalledWith(`${boardId}:1S,P`),
@@ -762,6 +791,132 @@ describe("PracticePage", () => {
       expect(screen.getByTestId("location-path")).toHaveTextContent(
         `/bid/${boardId}:1S,P`,
       );
+    });
+
+    it("holds a miss until South tries again or keeps it", async () => {
+      mockGetSuggestedCall.mockImplementation(async (id) => {
+        const key = id.split(":")[1] ?? "";
+        return key === "1S,P"
+          ? { call: bid(3, "S"), ruleName: "Jump Raise", category: ["Raises"] }
+          : { call: pass, category: ["Passing"] };
+      });
+      renderPage();
+      await waitForRobots();
+      await waitFor(() =>
+        expect(mockGetSuggestedCall).toHaveBeenCalledWith(`${boardId}:1S,P`),
+      );
+      mockAddRobotBids.mockClear();
+
+      callFromBox("2♠");
+      const feedback = await screen.findByTestId("call-feedback-miss");
+      expect(feedback).toHaveTextContent("You bid 2♠; SAYC bids 3♠");
+      // Nobody calls after it, and the box waits for South's choice.
+      expect(screen.getByTestId("call-2")).toHaveAttribute("data-held", "true");
+      expect(screen.queryByTestId("pending-call")).toBeNull();
+      expect(screen.getByTestId("bidding-box")).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      expect(
+        screen.getByRole("button", { name: /show sayc bid/i }),
+      ).toBeDisabled();
+      expect(mockAddRobotBids).not.toHaveBeenCalled();
+      expect(screen.getByTestId("location-path")).toHaveTextContent(
+        `/bid/${boardId}:1S,P`,
+      );
+
+      fireEvent.click(
+        within(feedback).getByRole("button", { name: "Try again" }),
+      );
+      expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
+      expect(screen.queryByTestId("call-2")).toBeNull();
+      expect(screen.getByTestId("bidding-box")).not.toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+
+      // SAYC's call on the second try: the table bids on, with no box to
+      // say so, and the call is marked as found on a retry.
+      mockAddRobotBids.mockResolvedValue(COMPLETE);
+      callFromBox("3♠");
+      await screen.findByTestId("result-card");
+      expect(mockAddRobotBids).toHaveBeenCalledWith(
+        expect.objectContaining({ calls: [bid(1, "S"), pass, bid(3, "S")] }),
+        "S",
+        boardId,
+      );
+      expect(
+        screen.getAllByLabelText("matched SAYC on a retry").length,
+      ).toBeGreaterThan(0);
+
+      // The record keeps the first try.
+      await waitFor(async () => expect(await store.allHands()).toHaveLength(1));
+      const [hand] = await store.allHands();
+      expect(hand.verdicts[0]).toMatchObject({
+        index: 2,
+        call: "3S",
+        saycCall: "3S",
+        firstCall: "2S",
+        matched: false,
+      });
+    });
+
+    it("shows a miss that would end the auction before the review", async () => {
+      // West deals and three pass; SAYC opens 1NT in fourth seat.
+      const passedToSouth: CallHistory = {
+        dealer: "W",
+        calls: [pass, pass, pass],
+      };
+      mockParseBoardId.mockReturnValue({ ...dummyParsed, dealer: "W" });
+      mockAddRobotBids.mockResolvedValue(passedToSouth);
+      mockGetSuggestedCall.mockResolvedValue({
+        call: bid(1, "N"),
+        ruleName: "Notrump Opening",
+      });
+      renderPage();
+      await waitForRobots();
+      await waitFor(() =>
+        expect(mockGetSuggestedCall).toHaveBeenCalledWith(`${boardId}:P,P,P`),
+      );
+
+      callFromBox("Pass");
+      expect(await screen.findByTestId("call-feedback-miss")).toHaveTextContent(
+        "You bid Pass; SAYC bids 1NT",
+      );
+      expect(screen.queryByTestId("result-card")).toBeNull();
+
+      mockAddRobotBids.mockResolvedValue({
+        ...passedToSouth,
+        calls: [...passedToSouth.calls, pass],
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Keep Pass" }));
+      await screen.findByTestId("result-card");
+      expect(screen.getByTestId("verdict-missed")).toHaveTextContent(
+        "1 of your 1 call differed from SAYC",
+      );
+    });
+
+    it("lets a call held before SAYC's answer go on once it matches", async () => {
+      let answer: (call: CallInterpretation) => void = () => {};
+      mockGetSuggestedCall.mockReturnValue(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      renderPage();
+      await waitForRobots();
+      mockAddRobotBids.mockClear();
+      callFromBox("3♠");
+      expect(mockAddRobotBids).not.toHaveBeenCalled();
+      answer({ call: bid(3, "S"), ruleName: "Jump Raise" });
+      await waitFor(() =>
+        expect(mockAddRobotBids).toHaveBeenCalledWith(
+          expect.objectContaining({ calls: [bid(1, "S"), pass, bid(3, "S")] }),
+          "S",
+          boardId,
+        ),
+      );
+      expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
     });
 
     it("restarts the hand from the first call", async () => {

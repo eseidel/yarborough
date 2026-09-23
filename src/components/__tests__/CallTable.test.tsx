@@ -204,6 +204,49 @@ describe("CallTable", () => {
     expect(screen.getByTestId("call-2").textContent).toContain("✗");
   });
 
+  it("marks SAYC's call found on a retry", () => {
+    const history = makeHistory([
+      { type: "bid", level: 1, strain: "C" },
+      { type: "pass" },
+      { type: "bid", level: 1, strain: "H" },
+    ]);
+    render(
+      <CallTable
+        callHistory={history}
+        userPosition="S"
+        verdicts={{ 2: "retried" }}
+      />,
+    );
+    expect(screen.getByLabelText("matched SAYC on a retry").textContent).toBe(
+      "↺",
+    );
+  });
+
+  it("outlines a held call, with nobody to call after it", () => {
+    const onCallClick = vi.fn();
+    const history = makeHistory([
+      { type: "bid", level: 1, strain: "C" },
+      { type: "pass" },
+      { type: "bid", level: 1, strain: "H" },
+    ]);
+    render(
+      <CallTable
+        callHistory={history}
+        userPosition="S"
+        verdicts={{ 2: false }}
+        held
+        onCallClick={onCallClick}
+      />,
+    );
+    const heldCall = screen.getByTestId("call-2");
+    expect(heldCall).toHaveAttribute("data-held", "true");
+    expect(screen.queryByTestId("pending-call")).toBeNull();
+    // It is not in the auction yet, so there is nothing to explain.
+    fireEvent.click(heldCall);
+    expect(onCallClick).not.toHaveBeenCalled();
+    expect(screen.getByTestId("call-0")).not.toHaveAttribute("data-held");
+  });
+
   it("pulses the pending cell while the engine thinks", () => {
     const history = makeHistory([{ type: "pass" }]);
     const { rerender } = render(<CallTable callHistory={history} />);

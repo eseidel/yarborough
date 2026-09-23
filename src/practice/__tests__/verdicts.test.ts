@@ -4,6 +4,7 @@ import {
   buildVerdicts,
   callIndicesFor,
   callsEqual,
+  foundOnRetry,
   prefixKey,
   seatForCall,
   summarizeVerdicts,
@@ -77,6 +78,40 @@ describe("verdicts", () => {
       new Set(),
     );
     expect(complete.map((v) => v.matched)).toEqual([true, true]);
+  });
+
+  it("judges a re-opened turn on its first try", () => {
+    const sayc = {
+      "1S,P": {
+        call: { type: "bid" as const, level: 3, strain: "S" as const },
+      },
+      "1S,P,3S,P,4S,P": { call: { type: "pass" as const } },
+    };
+    // South tried 2♠ first, then took it back and found 3♠.
+    const [retried, kept] = buildVerdicts(HISTORY, "S", sayc, new Set(), {
+      "1S,P": { type: "bid", level: 2, strain: "S" },
+      "1S,P,3S,P,4S,P": { type: "pass" },
+    });
+    expect(retried).toMatchObject({
+      matched: false,
+      firstCall: { type: "bid", level: 2, strain: "S" },
+    });
+    expect(foundOnRetry(retried)).toBe(true);
+    // A first try that stood is an ordinary verdict.
+    expect(kept.matched).toBe(true);
+    expect(kept).not.toHaveProperty("firstCall");
+    expect(foundOnRetry(kept)).toBe(false);
+
+    // Right first, then taken back for a wrong call: a miss, not a retry.
+    const [wrong] = buildVerdicts(
+      { dealer: "N", calls: [...HISTORY.calls.slice(0, 2), { type: "pass" }] },
+      "S",
+      sayc,
+      new Set(),
+      { "1S,P": { type: "bid", level: 3, strain: "S" } },
+    );
+    expect(wrong.matched).toBe(false);
+    expect(foundOnRetry(wrong)).toBe(false);
   });
 
   it("summarizes matches, misses, and help", () => {
