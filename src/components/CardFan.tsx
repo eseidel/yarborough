@@ -14,9 +14,9 @@ import { CARD, EYEBROW } from "./ui";
 const SMALL_RANKS = new Set(["2", "3", "4", "5", "6", "7", "8", "9"]);
 
 /**
- * One card. With `small`, a card below the ten shows its suit in place of
- * its rank, the way a diagram writes AQxxx: an entered hand says how many
- * small cards a suit has, never which.
+ * One card. With `small`, a card below the ten shows an x for its rank, the
+ * way a bridge diagram writes AQxxx: an entered hand says how many spot
+ * cards a suit has, never which.
  */
 export function MiniCard({
   card,
@@ -34,8 +34,8 @@ export function MiniCard({
   const blank = small && SMALL_RANKS.has(card.rank);
   const rank = blank
     ? compact
-      ? "top-1 left-1 text-[13px]"
-      : "top-1 left-1 text-sm"
+      ? "top-px left-1 text-[15px] font-semibold"
+      : "top-0.5 left-1 text-base font-semibold"
     : compact
       ? `top-0 left-[3px] ${card.rank === "T" ? "text-[13px] tracking-[-0.06em]" : "text-[15px]"} font-bold`
       : "top-0 left-1 text-lg font-bold";
@@ -45,7 +45,7 @@ export function MiniCard({
       data-testid="mini-card"
     >
       <span className={`${suit.color} absolute leading-none ${rank}`}>
-        {blank ? suit.symbol : displayRank(card.rank)}
+        {blank ? "x" : displayRank(card.rank)}
       </span>
       <span
         className={`${suit.color} absolute bottom-0 right-0.5 ${compact ? "text-2xl" : "text-3xl"} leading-none`}

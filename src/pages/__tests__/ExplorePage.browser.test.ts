@@ -159,6 +159,61 @@ describe("HandEntrySheet on a phone", () => {
     ).toBeLessThanOrEqual(sheet.getBoundingClientRect().right);
   });
 
+  it("holds as many spot cards as a finger slides across", async () => {
+    renderSheet("42.A973.K5.AQ982");
+    await Promise.all(document.getAnimations().map((a) => a.finished));
+    const row = find('[data-testid="small-cards"]');
+    const cards = [...row.querySelectorAll("button")];
+    const middle = (i: number) => {
+      const box = cards[i].getBoundingClientRect();
+      return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    };
+    const pointer = (type: string, i: number) =>
+      row.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: true,
+          pointerId: 7,
+          clientX: middle(i).x,
+          clientY: middle(i).y,
+        }),
+      );
+    // Spades hold three; slide from the first card to the sixth.
+    flushSync(() => pointer("pointerdown", 0));
+    flushSync(() => pointer("pointermove", 3));
+    flushSync(() => pointer("pointermove", 5));
+    // Mid-slide the tray already reaches the sixth card.
+    const tray = find('[data-testid="small-tray"]');
+    await vi.waitFor(() =>
+      expect(tray.getBoundingClientRect().right).toBeGreaterThan(
+        cards[5].getBoundingClientRect().right,
+      ),
+    );
+    flushSync(() => pointer("pointerup", 5));
+    await Promise.all(document.getAnimations().map((a) => a.finished));
+    // The tray holds the six cards with the same padding on every side, and
+    // stops as far short of the seventh card as it stands off the sixth.
+    const faces = cards.map((c) => c.getBoundingClientRect());
+    const box = tray.getBoundingClientRect();
+    const pads = [
+      faces[0].left - box.left,
+      faces[0].top - box.top,
+      box.right - faces[5].right,
+      box.bottom - faces[5].bottom,
+    ];
+    for (const pad of pads) expect(pad).toBeCloseTo(4, 0);
+    expect(faces[6].left - box.right).toBeCloseTo(4, 0);
+    expect(cards.map((c) => c.getAttribute("aria-pressed"))).toEqual([
+      "true",
+      "true",
+      "true",
+      "true",
+      "true",
+      "true",
+      "false",
+      "false",
+    ]);
+  });
+
   it("gives every key a thumb's width, all inside the sheet", async () => {
     renderSheet("42.A973.K5.AQ982");
     // The keys deal in from a smaller scale: measure them where they land.

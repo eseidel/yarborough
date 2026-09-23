@@ -43,13 +43,13 @@ describe("CardFan", () => {
     render(<Fan hand={handFromCdhsString("42.A973.K5.AQT98")!} small />);
     const cards = screen.getAllByTestId("mini-card");
     expect(cards).toHaveLength(13);
-    // Spades first: A Q 10 are honors, 9 and 8 are blanks.
+    // Spades first: A Q 10 are honors, 9 and 8 are spot cards, written x.
     expect(cards.slice(0, 5).map((card) => card.textContent)).toEqual([
       "A♠",
       "Q♠",
       "10♠",
-      "♠♠",
-      "♠♠",
+      "x♠",
+      "x♠",
     ]);
   });
 
