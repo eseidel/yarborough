@@ -5,6 +5,9 @@ import {
   isBalanced,
   missesText,
   missText,
+  POINT_RULE_EXPLANATIONS,
+  POINT_RULE_NAMES,
+  pointRuleText,
   preferenceText,
   purposePhrase,
 } from "../hand-analysis";
@@ -35,6 +38,40 @@ describe("the numbers of a hand", () => {
   it("knows a balanced hand", () => {
     expect(isBalanced(NOTRUMP)).toBe(true);
     expect(isBalanced(OPENER)).toBe(false); // two doubletons
+  });
+});
+
+describe("pointRuleText", () => {
+  it("counts the hcp and the two longest suits", () => {
+    // ♠AK432 ♥QJ432 ♦4 ♣32
+    const light = handFromCdhsString("32.4.QJ432.AK432")!;
+    expect(pointRuleText("rule_of_20", light)).toBe(
+      "Rule of 20: 10 hcp + 5 ♠ + 5 ♥ = 20, enough to open",
+    );
+    // ♠Q5432 ♥AJ ♦K32 ♣J32
+    const short = handFromCdhsString("J32.K32.AJ.Q5432")!;
+    expect(pointRuleText("rule_of_20", short)).toBe(
+      "Rule of 20: 11 hcp + 5 ♠ + 3 ♦ = 19, short of 20",
+    );
+    expect(pointRuleText("rule_of_19", short)).toBe(
+      "Rule of 19: 11 hcp + 5 ♠ + 3 ♦ = 19, enough to open",
+    );
+  });
+
+  it("counts spades for the rule of 15", () => {
+    // ♠2 ♥AK432 ♦QJ32 ♣K32
+    const hand = handFromCdhsString("K32.QJ32.AK432.2")!;
+    expect(pointRuleText("rule_of_15", hand)).toBe(
+      "Rule of 15: 13 hcp + 1 ♠ = 14, short of 15",
+    );
+  });
+
+  it("explains every rule it names", () => {
+    for (const rule of ["rule_of_20", "rule_of_19", "rule_of_15"] as const) {
+      expect(POINT_RULE_EXPLANATIONS[rule][0]).toContain(
+        `The ${POINT_RULE_NAMES[rule]}`,
+      );
+    }
   });
 });
 

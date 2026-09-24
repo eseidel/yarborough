@@ -3,6 +3,7 @@ import {
   type Call,
   type Hand,
   type Miss,
+  type PointRule,
   type Preference,
   type ShapeFact,
   type PreferEntry,
@@ -117,6 +118,57 @@ export function missesText(misses: Miss[]): string {
     .slice(0, 2)
     .map((miss) => `${missText(miss)}.`)
     .join(" ");
+}
+
+/** A point rule's name, as a player says it. */
+export const POINT_RULE_NAMES: Readonly<Record<PointRule, string>> = {
+  rule_of_20: "Rule of 20",
+  rule_of_19: "Rule of 19",
+  rule_of_15: "Rule of 15",
+};
+
+/**
+ * A point rule for someone meeting it the first time: what it counts, why,
+ * and an example of a hand either side of it.
+ */
+export const POINT_RULE_EXPLANATIONS: Readonly<Record<PointRule, string[]>> = {
+  rule_of_20: [
+    "The Rule of 20 decides whether a hand is strong enough to open the bidding in first or second seat. Add your high-card points (ace 4, king 3, queen 2, jack 1) to the number of cards in your two longest suits. With 20 or more, open; with less, pass.",
+    "Long suits count because they take tricks that high cards alone don't: once the high cards are gone, the small cards of a long suit still win. So a hand with 10 points and two five-card suits opens (10 + 5 + 5 = 20), while a flat hand with 12 points and 4-3-3-3 shape passes (12 + 4 + 3 = 19).",
+    "SAYC also wants at least 8 high-card points: a hand with less and long suits preempts instead.",
+  ],
+  rule_of_19: [
+    "The Rule of 19 is the Rule of 20 a point lighter, for third seat once partner has passed. Add your high-card points (ace 4, king 3, queen 2, jack 1) to the number of cards in your two longest suits. With 19 or more, open.",
+    "Partner has already passed, so your side is unlikely to have a game and a light opening costs little. It gets your side into the auction, makes it harder for the opponents to find their contract, and tells partner what to lead.",
+    "It doesn't apply with a seven-card suit: that hand preempts instead.",
+  ],
+  rule_of_15: [
+    "The Rule of 15 decides whether to open in fourth seat, after three passes. Add your high-card points (ace 4, king 3, queen 2, jack 1) to the number of spades you hold. With 15 or more, open; with less, pass the hand out.",
+    "In fourth seat, passing ends the hand and nobody scores, so you open only when your side is likely to come out ahead. Spades count because they are the highest suit: the side with spades can outbid the other at the same level. With a borderline hand and few spades, opening often just lets the opponents in to win the contract.",
+  ],
+};
+
+/**
+ * A point rule's count for a hand, in the numbers to check against the
+ * cards: "Rule of 20: 11 hcp + 5 ♠ + 3 ♥ = 19, short of 20".
+ */
+export function pointRuleText(rule: PointRule, hand: Hand): string {
+  const hcp = highCardPoints(hand);
+  const bySuit = cardsBySuit(hand);
+  const suits: SuitName[] =
+    rule === "rule_of_15"
+      ? ["S"]
+      : (["S", "H", "D", "C"] as SuitName[])
+          .sort((a, b) => bySuit[b].length - bySuit[a].length)
+          .slice(0, 2);
+  const target = rule === "rule_of_20" ? 20 : rule === "rule_of_19" ? 19 : 15;
+  const total = suits.reduce((sum, suit) => sum + bySuit[suit].length, hcp);
+  const parts = [
+    `${hcp} hcp`,
+    ...suits.map((suit) => `${bySuit[suit].length} ${SUITS[suit].symbol}`),
+  ];
+  const verdict = total >= target ? "enough to open" : `short of ${target}`;
+  return `${POINT_RULE_NAMES[rule]}: ${parts.join(" + ")} = ${total}, ${verdict}`;
 }
 
 /**

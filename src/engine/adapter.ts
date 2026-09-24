@@ -36,6 +36,7 @@ import {
   analyzeHand,
   type CallFit,
   type Miss,
+  type PointRule,
   type Preference,
 } from "./analysis/hand";
 import { Board } from "./core/board";
@@ -719,6 +720,8 @@ export interface HandCallAnalysis extends CallInterpretation {
   fit: CallFit;
   /** What the hand misses, on a call it cannot make (analysis/hand.ts). */
   misses: Miss[];
+  /** The point rule that decided a call z3b makes or the hand misses. */
+  point_rule: PointRule | null;
   /** Why another call was bid, on a call the hand could have made. */
   preference: Preference | null;
 }

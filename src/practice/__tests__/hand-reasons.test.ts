@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   alternativesText,
+  missPointRules,
   missReasons,
   saycBidReasons,
   weighedCall,
@@ -140,5 +141,56 @@ describe("the reasons Practice shows", () => {
       "2♥ doesn't fit your hand. Needs 6–10 hcp, you have 13.",
     ]);
     expect(yourCallReasons(HAND, bid(2, "H"), null)).toEqual([]);
+  });
+});
+
+describe("a point rule on the miss card", () => {
+  // ♠Q5432 ♥AJ ♦K32 ♣J32: 11 + 5 + 3 = 19, a point short of opening.
+  const SHORT = handFromCdhsString("J32.K32.AJ.Q5432")!;
+  const SHORT_ANALYSIS: HandAnalysis = {
+    call: PASS,
+    calls: [
+      weighed(PASS, "chosen"),
+      weighed(bid(1, "S"), "unfit", {
+        misses: [
+          { kind: "points", min: 12, max: 35, actual: 11, withShape: true },
+        ],
+        pointRule: "rule_of_20",
+      }),
+    ],
+  };
+
+  it("counts out the rule the user's call falls short of", () => {
+    expect(missReasons(SHORT, bid(1, "S"), PASS, SHORT_ANALYSIS)).toEqual([
+      "You have 11 hcp.",
+      "1♠ doesn't fit your hand. With this shape, needs 12–35 hcp, you have 11.",
+      "Rule of 20: 11 hcp + 5 ♠ + 3 ♦ = 19, short of 20.",
+    ]);
+    expect(missPointRules(bid(1, "S"), PASS, SHORT_ANALYSIS)).toEqual([
+      "rule_of_20",
+    ]);
+  });
+
+  it("counts out the rule that made SAYC's call an opening", () => {
+    // ♠AK432 ♥QJ432 ♦4 ♣32: 10 + 5 + 5 = 20.
+    const light = handFromCdhsString("32.4.QJ432.AK432")!;
+    const analysis: HandAnalysis = {
+      call: bid(1, "S"),
+      calls: [
+        weighed(PASS, "possible"),
+        weighed(bid(1, "S"), "chosen", { pointRule: "rule_of_20" }),
+      ],
+    };
+    expect(missReasons(light, PASS, bid(1, "S"), analysis)).toEqual([
+      "You have 10 hcp and 5 ♠.",
+      "Rule of 20: 10 hcp + 5 ♠ + 5 ♥ = 20, enough to open.",
+      "Pass fits your hand too.",
+    ]);
+    expect(missPointRules(PASS, bid(1, "S"), analysis)).toEqual(["rule_of_20"]);
+  });
+
+  it("names no rule when none decided either call", () => {
+    expect(missPointRules(bid(2, "H"), bid(3, "H"), ANALYSIS)).toEqual([]);
+    expect(missPointRules(bid(2, "H"), bid(3, "H"), null)).toEqual([]);
   });
 });

@@ -221,6 +221,13 @@ describe("parseHandAnalysis", () => {
           preference: null,
         },
         { call_name: "4N", ...meaning, fit: "planned", misses: [] },
+        {
+          call_name: "1H",
+          ...meaning,
+          fit: "unfit",
+          misses: [],
+          point_rule: "rule_of_20",
+        },
       ],
     });
     expect(analysis.call).toEqual({ type: "bid", level: 1, strain: "S" });
@@ -276,6 +283,27 @@ describe("parseHandAnalysis", () => {
     ]);
     expect(notrump.preference).toBeUndefined();
     expect(blackwood.fit).toBe("planned");
+    expect(blackwood.pointRule).toBeUndefined();
+    expect(analysis.calls[4].pointRule).toBe("rule_of_20");
+  });
+
+  it("refuses a point rule it does not know", () => {
+    expect(() =>
+      parseHandAnalysis({
+        call_name: "1S",
+        calls: [
+          {
+            call_name: "1S",
+            rule_name: null,
+            description: null,
+            knowledge_string: "",
+            fit: "chosen",
+            misses: [],
+            point_rule: "rule_of_22",
+          },
+        ],
+      }),
+    ).toThrow("point rule");
   });
 
   it("has no call when no rule fits the hand", () => {

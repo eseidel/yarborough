@@ -1,7 +1,7 @@
 import type { Hand, HandAnalysis } from "../bridge/types";
 import { callLabel } from "../bridge/types";
 import { type CallVerdict, foundOnRetry } from "../practice/verdicts";
-import { missReasons } from "../practice/hand-reasons";
+import { missPointRules, missReasons } from "../practice/hand-reasons";
 import { HandReasons } from "./HandReasons";
 import { SuitText } from "./SuitText";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./ui";
@@ -70,6 +70,8 @@ export function CallFeedback({
       {hand && analysis !== undefined && (
         <HandReasons
           lines={missReasons(hand, verdict.call, sayc.call, analysis)}
+          rules={missPointRules(verdict.call, sayc.call, analysis)}
+          ruleLinkClassName="text-red-800"
         />
       )}
       {(onTryAgain || onKeep) && (

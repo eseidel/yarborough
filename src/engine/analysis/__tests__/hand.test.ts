@@ -161,6 +161,38 @@ describe("the hand-aware analysis", () => {
     ]);
   });
 
+  it("names the rule of 20 that makes a light hand an opening", () => {
+    // ♠AK432 ♥QJ432 ♦4 ♣32: 10 hcp + 5 + 5 = 20.
+    const { byCall } = analysisFor("32.4.QJ432.AK432");
+    expect(byCall.get("1S")!.fit).toBe("chosen");
+    expect(byCall.get("1S")!.point_rule).toBe("rule_of_20");
+    // ♠Q5432 ♥AJ ♦K32 ♣J32: 11 + 5 + 3 = 19, a point short.
+    const short = analysisFor("J32.K32.AJ.Q5432").byCall;
+    expect(short.get("1S")!.misses[0]).toMatchObject({ kind: "points" });
+    expect(short.get("1S")!.point_rule).toBe("rule_of_20");
+    // The rule is not why it misses a call on the wrong shape.
+    expect(short.get("1H")!.point_rule).toBeNull();
+  });
+
+  it("names no rule where the call's own points decide it", () => {
+    // 1NT implies the rule of 20, but it is 15-17 hcp that this hand misses.
+    const { byCall } = analysisFor("J32.K32.AJ.Q5432");
+    expect(byCall.get("1N")!.point_rule).toBeNull();
+    // Fifteen hcp open whatever the shape: the rule adds nothing.
+    expect(analysisFor(OPENER).byCall.get("1S")!.point_rule).toBeNull();
+  });
+
+  it("names the third- and fourth-seat rules", () => {
+    // Third seat, 11 + 5 + 3 = 19: enough a point lighter.
+    const third = analysisFor("J32.K32.AJ.Q5432", "P P").byCall;
+    expect(third.get("1S")!.fit).toBe("chosen");
+    expect(third.get("1S")!.point_rule).toBe("rule_of_19");
+    // Fourth seat, 13 hcp + 1 spade = 14: pass it out.
+    const fourth = analysisFor("K32.QJ32.AK432.2", "P P P").byCall;
+    expect(fourth.get("P")!.fit).toBe("chosen");
+    expect(fourth.get("1H")!.point_rule).toBe("rule_of_15");
+  });
+
   it("names the part of the shape that sets the points", () => {
     // ♠AQT63 ♥84 ♦63 ♣J852 after P P 1♣: four cards in the opener's clubs,
     // which the fact names as their suit,

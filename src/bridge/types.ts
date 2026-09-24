@@ -406,11 +406,22 @@ export interface Preference {
   entry?: PreferEntry;
 }
 
+/**
+ * An opening's point rule: the rule of 20 in first and second seat, of 19 in
+ * third, of 15 in fourth (hcp plus spades).
+ */
+export type PointRule = "rule_of_20" | "rule_of_19" | "rule_of_15";
+
 /** One legal call, weighed against a hand the user entered. */
 export interface HandCallAnalysis extends CallInterpretation {
   fit: CallFit;
   /** On a call the hand does not fit: what it misses, the points first. */
   misses: Miss[];
+  /**
+   * The point rule that decided the call: on SAYC's call, what made a light
+   * hand an opening; on a call the hand misses, what it falls short of.
+   */
+  pointRule?: PointRule;
   /** On a call the hand could make: why SAYC made another. */
   preference?: Preference;
 }
