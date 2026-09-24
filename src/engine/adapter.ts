@@ -200,7 +200,8 @@ type Range = readonly [min: number, max: number];
  * satisfies it.
  */
 export interface ConstraintsView {
-  readonly minPoints: number;
+  /** Both ends of the "hcp" range count high-card points. */
+  readonly minHcp: number;
   readonly maxPoints: number;
   minLength(suit: Strain): number;
   maxLength(suit: Strain): number;
@@ -218,7 +219,7 @@ export class ConstraintsSerializer {
   private readonly _suitLengthRanges: readonly Range[];
 
   constructor(positionView: ConstraintsView) {
-    this._hcpRange = [positionView.minPoints, positionView.maxPoints];
+    this._hcpRange = [positionView.minHcp, positionView.maxPoints];
     this._suitLengthRanges = SUITS.map(
       (suit): Range => [
         positionView.minLength(suit),

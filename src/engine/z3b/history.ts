@@ -38,6 +38,8 @@ export interface PositionView {
   readonly ruleForLastCall: RuleView | null;
   readonly minPoints: number;
   readonly maxPoints: number;
+  /** High-card points, the unit of `maxPoints`; `minPoints` is what the last call showed. */
+  readonly minHcp: number;
   couldHaveMorePointsThan(points: number): boolean;
   minLength(suit: Strain): number;
   maxLength(suit: Strain): number;
@@ -74,6 +76,7 @@ export interface History {
   isBalancedForPosition(position: EnumValue): boolean;
   minPointsForPosition(position: EnumValue): number;
   maxPointsForPosition(position: EnumValue): number;
+  minHcpForPosition(position: EnumValue): number;
   couldHaveMorePointsThan(position: EnumValue, points: number): boolean;
   /** Which of us (Me or Partner) bid `strain` naturally first, or null. */
   firstNaturalBidder(strain: Strain): EnumValue | null;
