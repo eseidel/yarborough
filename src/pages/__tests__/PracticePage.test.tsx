@@ -1,6 +1,7 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import {
+  act,
   render,
   screen,
   fireEvent,
@@ -573,7 +574,19 @@ describe("PracticePage", () => {
     it("keeps the explanation of South's call from giving away a held-back verdict", async () => {
       await store.setSetting("feedbackTiming", "end");
       mockParseBoardId.mockReturnValue(withSouth);
+      const getSetting = vi.spyOn(store, "getSetting");
       renderPage();
+      // The page reads the setting from IndexedDB while the robots bid. A
+      // call made before it arrives is judged as immediate feedback, so the
+      // miss would hold the table: wait for the page's own read to land.
+      const index = await waitFor(() => {
+        const i = getSetting.mock.calls.findIndex(
+          ([key]) => key === "feedbackTiming",
+        );
+        expect(i).toBeGreaterThanOrEqual(0);
+        return i;
+      });
+      await act(() => getSetting.mock.results[index].value);
       await waitForRobots();
       mockAddRobotBids.mockResolvedValue({
         dealer: "N",
