@@ -444,6 +444,25 @@ describe("the adapter's smaller pieces", () => {
     expect(rebid2n?.knowledge_string).toBe("18 hcp, 2-3C 2-3D 2-3H 5S");
   });
 
+  it("adds support points to a call that agrees partner's suit", () => {
+    // The book gives raises in support points: a limit raise is 10-12.
+    const limitRaise = getCallInterpretations("1S P", "N", "None").find(
+      (interpretation) => interpretation.call_name === "3S",
+    );
+    expect(limitRaise?.knowledge_string).toBe(
+      "6-12 hcp, 10-12 support pts, 3+S",
+    );
+    expect(
+      new ConstraintsSerializer({
+        minHcp: 15,
+        maxPoints: 17,
+        supportPointsRange: [15, 17],
+        minLength: () => 0,
+        maxLength: () => 13,
+      }).exploreString(),
+    ).toBe("15-17 hcp");
+  });
+
   it("returns every solver a request borrows", () => {
     // The branch histories `getCallInterpretations` extends off the auction to
     // read each call's meaning are released (`History.releaseBranch`), so a

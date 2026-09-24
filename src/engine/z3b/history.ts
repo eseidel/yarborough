@@ -40,6 +40,8 @@ export interface PositionView {
   readonly maxPoints: number;
   /** High-card points, the unit of `maxPoints`; `minPoints` is what the last call showed. */
   readonly minHcp: number;
+  /** Support points for the suit the last call agreed with partner, or null. */
+  readonly supportPointsRange: readonly [number, number] | null;
   couldHaveMorePointsThan(points: number): boolean;
   minLength(suit: Strain): number;
   maxLength(suit: Strain): number;
@@ -77,6 +79,7 @@ export interface History {
   minPointsForPosition(position: EnumValue): number;
   maxPointsForPosition(position: EnumValue): number;
   minHcpForPosition(position: EnumValue): number;
+  supportPointsRangeForPosition(position: EnumValue): [number, number] | null;
   couldHaveMorePointsThan(position: EnumValue, points: number): boolean;
   /** Which of us (Me or Partner) bid `strain` naturally first, or null. */
   firstNaturalBidder(strain: Strain): EnumValue | null;

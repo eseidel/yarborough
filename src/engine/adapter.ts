@@ -203,6 +203,11 @@ export interface ConstraintsView {
   /** Both ends of the "hcp" range count high-card points. */
   readonly minHcp: number;
   readonly maxPoints: number;
+  /**
+   * Support points for the suit the call agreed with partner, the count the
+   * book gives raises in; null (or absent) when it agreed none.
+   */
+  readonly supportPointsRange?: readonly [number, number] | null;
   minLength(suit: Strain): number;
   maxLength(suit: Strain): number;
 }
@@ -217,9 +222,11 @@ export class ConstraintsSerializer {
 
   private readonly _hcpRange: Range;
   private readonly _suitLengthRanges: readonly Range[];
+  private readonly _supportPointsRange: Range | null;
 
   constructor(positionView: ConstraintsView) {
     this._hcpRange = [positionView.minHcp, positionView.maxPoints];
+    this._supportPointsRange = positionView.supportPointsRange ?? null;
     this._suitLengthRanges = SUITS.map(
       (suit): Range => [
         positionView.minLength(suit),
@@ -271,10 +278,20 @@ export class ConstraintsSerializer {
     const suitStrings = SUITS.map((suit) =>
       this._prettyStringForSuit(suit),
     ).filter((suitString): suitString is string => Boolean(suitString));
-    const prettyString = `${this._stringForRange(
+    let prettyString = `${this._stringForRange(
       this._hcpRange,
       ConstraintsSerializer.MAX_HCP_PER_HAND,
     )} hcp`;
+    const support = this._supportPointsRange;
+    if (
+      support &&
+      (support[0] !== this._hcpRange[0] || support[1] !== this._hcpRange[1])
+    ) {
+      prettyString += `, ${this._stringForRange(
+        support,
+        ConstraintsSerializer.MAX_HCP_PER_HAND,
+      )} support pts`;
+    }
     if (suitStrings.length) {
       return `${prettyString}, ${suitStrings.join(" ")}`;
     }

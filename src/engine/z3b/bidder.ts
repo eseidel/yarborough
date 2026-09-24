@@ -246,6 +246,14 @@ export class PositionView implements PositionViewInterface {
     return this.history.minHcpForPosition(this.position);
   }
 
+  /**
+   * The least and the most support points this position can hold for the suit its last
+   * call agreed with partner, or null when that call agreed no suit.
+   */
+  get supportPointsRange(): readonly [number, number] | null {
+    return this.history.supportPointsRangeForPosition(this.position);
+  }
+
   couldHaveMorePointsThan(points: number): boolean {
     return this.history.couldHaveMorePointsThan(this.position, points);
   }
@@ -308,6 +316,7 @@ export class History implements HistoryInterface {
   private _minPointsCache: number | undefined;
   private _maxPointsCache: number | undefined;
   private _minHcpCache: number | undefined;
+  private _supportPointsRangeCache: [number, number] | null | undefined;
   private readonly _morePointsThanCache = new Map<number, boolean>();
   private readonly _isBidSuitCache = new Map<string, boolean>();
   private readonly _isUnbidSuitCache = new Map<number, boolean>();
@@ -724,10 +733,21 @@ export class History implements HistoryInterface {
    * booklet: do not count both long-suit points and support points in the same hand).
    */
   get _pointsShownByLastCall(): Expr {
+    const suit = this._fitForLastCall();
+    return suit !== null
+      ? model.supportPointsExprForSuit(suit)
+      : model.playingPoints;
+  }
+
+  /**
+   * The suit the last call agreed with partner, in whose support points it is valued
+   * (see `_pointsShownByLastCall`), or null.
+   */
+  _fitForLastCall(): Strain | null {
     const call = this.callHistory.lastCall; // made by RHO, whose partner is LHO
     const supported = this._supportedSuit();
     if (supported !== null) {
-      return model.supportPointsExprForSuit(supported);
+      return supported;
     }
     if (
       call !== null &&
@@ -736,9 +756,9 @@ export class History implements HistoryInterface {
       !this._annotationsForLastCall.includes(annotations.Artificial) &&
       this.bidSuitNaturally(call.strain!, positions.LHO)
     ) {
-      return model.supportPointsExprForSuit(call.strain!);
+      return call.strain;
     }
-    return model.playingPoints;
+    return null;
   }
 
   _solveForMinPoints(): number {
@@ -787,6 +807,35 @@ export class History implements HistoryInterface {
       return history._solveForMinHcp();
     }
     return 0;
+  }
+
+  _solveForSupportPointsRange(): [number, number] | null {
+    if (this._supportPointsRangeCache !== undefined) {
+      return this._supportPointsRangeCache;
+    }
+    const suit = this._fitForLastCall();
+    let result: [number, number] | null = null;
+    if (suit !== null) {
+      const solver = this._solver();
+      const expr = model.supportPointsExprForSuit(suit);
+      const predicate = (points: number) => isPossible(solver, expr.le(points));
+      const min = predicate(0) ? 0 : this._lowerBound(predicate, 1, 60);
+      // The most: the least count no hand reaches, less one.
+      const max =
+        this._lowerBound(
+          (points) => !isPossible(solver, expr.ge(points)),
+          min + 1,
+          61,
+        ) - 1;
+      result = [min, max];
+    }
+    this._supportPointsRangeCache = result;
+    return result;
+  }
+
+  supportPointsRangeForPosition(position: EnumValue): [number, number] | null {
+    const history = this._historyAfterLastCallFor(position);
+    return history ? history._solveForSupportPointsRange() : null;
   }
 
   _solveForMaxPoints(): number {
