@@ -102,8 +102,18 @@ describe("HandDiagram", () => {
     // No words in front of them: a list of contracts under a side's
     // points, beside the deal, is read for what it is.
     render(<HandDiagram deal={MOCK_DEAL} table={TABLE} {...BOARD} />);
-    expect(screen.getByTestId("makeable-NS").textContent).toBe("4♠, 3NT, 2♦");
+    expect(screen.getByTestId("makeable-NS").textContent).toBe(
+      "4♠, 3NT (N), 2♦",
+    );
     expect(screen.getByTestId("makeable-EW").textContent).toBe("2♥, 1♣");
+  });
+
+  it("names the declarer when only one partner makes the contract", () => {
+    // 3NT makes from North (9 tricks) and fails from South (6), so the
+    // list must not suggest either partner can play it.
+    render(<HandDiagram deal={MOCK_DEAL} table={TABLE} {...BOARD} />);
+    expect(screen.getByTestId("makeable-NS").textContent).toContain("3NT (N)");
+    expect(screen.getByTestId("makeable-NS").textContent).not.toContain("4♠ (");
   });
 
   it("dashes a side that can make nothing", () => {
