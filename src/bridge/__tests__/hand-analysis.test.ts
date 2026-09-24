@@ -94,6 +94,18 @@ describe("missText", () => {
     expect(
       points({
         kind: "lengths",
+        lengths: [{ suit: "C", length: 4, bidBy: "opponents" }],
+      }),
+    ).toBe("With 4 ♣ (their suit), needs 18+ hcp, you have 7");
+    expect(
+      points({
+        kind: "lengths",
+        lengths: [{ suit: "H", length: 1, bidBy: "partner" }],
+      }),
+    ).toBe("With a singleton ♥ (partner's suit), needs 18+ hcp, you have 7");
+    expect(
+      points({
+        kind: "lengths",
         lengths: [
           { suit: "H", length: 5 },
           { suit: "S", length: 2 },

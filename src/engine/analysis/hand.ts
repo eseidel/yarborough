@@ -86,11 +86,40 @@ export type Miss =
   | { kind: "honors"; suit: string | null };
 
 /**
+ * Who bid the suit of the auction's last contract: a rule that counts the
+ * length in it (an overcall with four cards in their suit) reads better
+ * saying so.  The auction is public, so this tells a player nothing hidden.
+ */
+export type SuitBidder = "partner" | "opponents";
+
+export interface LastSuit {
+  suit: string;
+  bid_by: SuitBidder;
+}
+
+/** The suit of the last contract before `position` calls, and who bid it. */
+export function _lastSuitFor(history: CallHistory): LastSuit | null {
+  const position = history.positionToCall();
+  for (const [caller, call] of history.enumerateReversedCalls()) {
+    if (!call.isContract()) continue;
+    if (!call.strain!.isSuit() || caller === position) return null;
+    return {
+      suit: call.strain!.char,
+      bid_by: caller.inPartnershipWith(position) ? "partner" : "opponents",
+    };
+  }
+  return null;
+}
+
+/**
  * One fact about a hand's shape, the hand's own: the length of one or two of
  * its suits, the length of its shortest suit, or whether it is balanced.
  */
 export type ShapeFact =
-  | { kind: "lengths"; lengths: { suit: string; length: number }[] }
+  | {
+      kind: "lengths";
+      lengths: { suit: string; length: number; bid_by: SuitBidder | null }[];
+    }
   | { kind: "shortest"; length: number }
   | { kind: "balanced"; balanced: boolean };
 
@@ -220,10 +249,14 @@ export function _boundsOf(
 }
 
 /** The facts `_shapeFactFor` tries, simplest first, with their expressions. */
-function _shapeFacts(hand: Hand): [ShapeFact, Expr][] {
+function _shapeFacts(
+  hand: Hand,
+  lastSuit: LastSuit | null,
+): [ShapeFact, Expr][] {
   const lengthFact = (suit: Strain) => ({
     suit: suit.char,
     length: hand.lengthOfSuit(suit),
+    bid_by: lastSuit?.suit === suit.char ? lastSuit.bid_by : null,
   });
   const lengthExpr = (suit: Strain) =>
     model.exprForSuit(suit).eq(hand.lengthOfSuit(suit));
@@ -271,8 +304,9 @@ function _shapeFactFor(
   pointsFact: Expr,
   min: number,
   max: number,
+  lastSuit: LastSuit | null,
 ): ShapeFact | null {
-  for (const [fact, expr] of _shapeFacts(hand)) {
+  for (const [fact, expr] of _shapeFacts(hand, lastSuit)) {
     solver.push();
     try {
       solver.add(expr);
@@ -293,7 +327,12 @@ function _shapeFactFor(
  * Empty when no hand at all satisfies the meaning here (the rule cannot be
  * bid, whatever the cards), which is nothing a player could fix.
  */
-export function _missesFor(meaning: Expr, hand: Hand, call: Call): Miss[] {
+export function _missesFor(
+  meaning: Expr,
+  hand: Hand,
+  call: Call,
+  lastSuit: LastSuit | null = null,
+): Miss[] {
   const solver = _solverPool.borrow();
   try {
     solver.add(meaning);
@@ -323,7 +362,7 @@ export function _missesFor(meaning: Expr, hand: Hand, call: Call): Miss[] {
         actual: hcp,
         with_shape: withShape,
         shape: withShape
-          ? _shapeFactFor(solver, hand, pointsFact, min, max)
+          ? _shapeFactFor(solver, hand, pointsFact, min, max, lastSuit)
           : null,
       });
     }
@@ -478,6 +517,7 @@ export function analyzeHand(
   const selection = bidder.callSelectionFor(hand, callHistory);
   const ordering = bidder.system.priorityOrdering;
   const verdicts = new Map<string, CallVerdict>();
+  const lastSuit = _lastSuitFor(callHistory);
 
   new Interpreter().withHistory(callHistory, (history) => {
     const selector = new RuleSelector(bidder.system, history, null);
@@ -535,7 +575,9 @@ export function analyzeHand(
         const meaning = variants.length === 1 ? variants[0] : z3.Or(variants);
         verdict = {
           fit: "unfit",
-          misses: variants.length ? _missesFor(meaning, hand, call) : [],
+          misses: variants.length
+            ? _missesFor(meaning, hand, call, lastSuit)
+            : [],
           preference: null,
         };
       }
