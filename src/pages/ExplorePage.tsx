@@ -188,7 +188,7 @@ function Result({
     : null;
   return (
     <section
-      className={`${CARD} flex items-center gap-3 px-3.5 py-4`}
+      className={`${CARD} animate-rise flex items-center gap-3 px-3.5 py-4`}
       data-testid="explore-result"
     >
       <div>
@@ -355,6 +355,8 @@ export function ExplorePage() {
 
   const handleSelect = useCallback(
     (interp: CallInterpretation) => {
+      // The calls on show are the last point's until the next load.
+      if (loading) return;
       try {
         navigator.vibrate?.(8);
       } catch {
@@ -363,7 +365,7 @@ export function ExplorePage() {
       navigate(explorePath(boardNumber, [...history.calls, interp.call]));
       scrollToTop();
     },
-    [history, boardNumber, navigate],
+    [history, boardNumber, navigate, loading],
   );
 
   const restart = useCallback(() => {
@@ -418,15 +420,37 @@ export function ExplorePage() {
               onEdit={() => setSheet({ seat, editing: true })}
             />
             <div className={`${CARD} overflow-hidden`}>
-              {loading ? (
-                <div className="p-4 text-center text-gray-400">Loading…</div>
+              {loading && interpretations.length === 0 ? (
+                <div className="animate-fade-late p-4 text-center text-gray-400">
+                  Loading…
+                </div>
               ) : (
-                <CallMenu
-                  interpretations={interpretations}
-                  analysis={shown ? weighed : null}
-                  hand={shown ? (hand ?? null) : null}
-                  onSelect={handleSelect}
-                />
+                // While the calls after the one just made load, the calls
+                // before it stay in place, dimmed and out of reach, rather
+                // than the menu collapsing to a line and opening again. None
+                // of them depends on a hand: the page has turned it face
+                // down. The new list, and the same list weighed against a
+                // hand shown or no longer weighed, fades in.
+                <div
+                  key={
+                    loading
+                      ? "previous"
+                      : `${callsString}|${shown && weighed ? "weighed" : "plain"}`
+                  }
+                  className={
+                    loading ? "pointer-events-none opacity-50" : "animate-fade"
+                  }
+                  inert={loading}
+                  aria-busy={loading}
+                  data-testid="explore-calls"
+                >
+                  <CallMenu
+                    interpretations={interpretations}
+                    analysis={shown ? weighed : null}
+                    hand={shown ? (hand ?? null) : null}
+                    onSelect={handleSelect}
+                  />
+                </div>
               )}
             </div>
           </>

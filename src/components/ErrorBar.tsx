@@ -6,7 +6,7 @@ export function ErrorBar({
   onDismiss?: () => void;
 }) {
   return (
-    <div className="bg-red-100 text-red-800 text-sm px-4 py-2 flex items-center justify-between">
+    <div className="animate-fade bg-red-100 text-red-800 text-sm px-4 py-2 flex items-center justify-between">
       <span>{message}</span>
       {onDismiss && (
         <button

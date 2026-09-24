@@ -251,7 +251,7 @@ export function HandDiagram({
       // The middle column takes its width from what is in it, so North and
       // South share one left edge instead of being centred separately and
       // landing at two, and the equal sides keep the pair in the middle.
-      className={`${CARD} grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-2 p-3`}
+      className={`${CARD} animate-rise grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-2 p-3`}
       data-testid="hand-diagram"
     >
       <SideSummary deal={deal} side="NS" table={table} align="start" />

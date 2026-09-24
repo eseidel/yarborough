@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import {
   type Call,
   type CallHistory,
@@ -19,6 +19,28 @@ function isVulnerable(pos: string, vulnerability: Vulnerability): boolean {
   if (vulnerability === "None") return false;
   if (vulnerability === "NS") return pos === "N" || pos === "S";
   return pos === "E" || pos === "W";
+}
+
+/** Between one call landing in the auction and the next, when several land at once. */
+export const CALL_STAGGER_MS = 90;
+
+/**
+ * Where the calls that have just arrived start: the calls from this index on
+ * land one after another. The calls on the table when it first shows are
+ * already there, and a call taken back lands nothing, so it is the length of
+ * the auction until the auction grows.
+ */
+function useFirstArrival(length: number): number {
+  const [seen, setSeen] = useState({ length, firstArrival: length });
+  if (seen.length !== length) {
+    const next = {
+      length,
+      firstArrival: length > seen.length ? seen.length : length,
+    };
+    setSeen(next);
+    return next.firstArrival;
+  }
+  return seen.firstArrival;
 }
 
 /** How a verdict looks on the call it judges. */
@@ -99,6 +121,8 @@ export function CallTable({
     insertAfterIndex = Math.min(lastCallIndexOnRow, displayCalls.length - 1);
   }
 
+  const firstArrival = useFirstArrival(calls.length);
+
   const showExplanation =
     selectedCallIndex != null && (explanationLoading || callExplanation);
 
@@ -133,14 +157,29 @@ export function CallTable({
           const isHeld = held && i === calls.length - 1;
           const clickable = onCallClick != null && call !== null && !isHeld;
           const verdict = verdicts?.[i];
+          // The calls just made land in turn, and the next seat's marker
+          // after them.
+          const arriving =
+            firstArrival < calls.length && i >= firstArrival
+              ? call
+                ? "animate-pop"
+                : "animate-fade"
+              : "";
           return (
             <Fragment key={i}>
               <div
-                className={`relative rounded py-1.5 text-base ${clickable ? "cursor-pointer hover:bg-gray-100" : ""} ${isSelected ? "bg-emerald-50 ring-1 ring-inset ring-emerald-200" : ""} ${isHeld ? "bg-red-50/60 text-gray-500 outline-dashed outline-1 -outline-offset-2 outline-red-300" : ""}`}
+                className={`relative rounded py-1.5 text-base transition-colors ${arriving} ${clickable ? "cursor-pointer hover:bg-gray-100" : ""} ${isSelected ? "bg-emerald-50 ring-1 ring-inset ring-emerald-200" : ""} ${isHeld ? "bg-red-50/60 text-gray-500 outline-dashed outline-1 -outline-offset-2 outline-red-300" : ""}`}
                 onClick={clickable ? () => onCallClick(i) : undefined}
                 role={clickable ? "button" : undefined}
                 data-testid={call ? `call-${i}` : "pending-call"}
                 data-held={isHeld || undefined}
+                style={
+                  arriving
+                    ? {
+                        animationDelay: `${(i - firstArrival) * CALL_STAGGER_MS}ms`,
+                      }
+                    : undefined
+                }
               >
                 {call ? (
                   <CallDisplay call={call} />
@@ -153,7 +192,7 @@ export function CallTable({
                 )}
                 {verdict !== undefined && (
                   <span
-                    className={`absolute top-0.5 right-1 text-xs font-bold leading-none ${VERDICT_MARKS[String(verdict)].className}`}
+                    className={`animate-pop absolute top-0.5 right-1 text-xs font-bold leading-none ${VERDICT_MARKS[String(verdict)].className}`}
                     aria-label={VERDICT_MARKS[String(verdict)].label}
                   >
                     {VERDICT_MARKS[String(verdict)].mark}
@@ -162,13 +201,15 @@ export function CallTable({
               </div>
               {i === insertAfterIndex && showExplanation && (
                 <div
-                  className="col-span-4 rounded-lg bg-gray-50 p-2 text-left text-sm"
+                  className="animate-rise col-span-4 rounded-lg bg-gray-50 p-2 text-left text-sm"
                   data-testid="call-explanation"
                 >
                   {explanationLoading ? (
-                    <span className="text-gray-500">Loading...</span>
+                    <span className="animate-fade-late block text-gray-500">
+                      Loading...
+                    </span>
                   ) : (
-                    <div className="flex justify-between items-start gap-2">
+                    <div className="animate-fade flex justify-between items-start gap-2">
                       <div>
                         {callExplanation?.ruleName ? (
                           <>

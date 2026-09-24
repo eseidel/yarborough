@@ -26,11 +26,11 @@ export const LINK_SMALL = `${LINK} text-xs`;
 
 /** The one call to action of a screen. */
 export const PRIMARY_BUTTON =
-  "min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-base text-white transition-colors hover:bg-emerald-800 disabled:opacity-50";
+  "min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-base text-white transition hover:bg-emerald-800 motion-safe:enabled:active:scale-[0.98] disabled:opacity-50";
 
 /** Everything else with a box around it. */
 export const SECONDARY_BUTTON =
-  "min-h-11 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-sm text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40";
+  "min-h-11 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-sm text-gray-800 transition hover:bg-gray-50 motion-safe:enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40";
 
 /** An action with no box, for the quiet end of the page. */
 export const TEXT_BUTTON =

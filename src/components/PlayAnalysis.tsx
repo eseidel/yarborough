@@ -80,7 +80,7 @@ export function PlayAnalysis({
   const tricks = contract && declarer ? table[contract.strain][declarer] : null;
 
   return (
-    <section className={`${SECTION} text-gray-700`}>
+    <section className={`${SECTION} animate-fade text-gray-700`}>
       <h2 className={EYEBROW}>How the cards play</h2>
       {contract && lead && tricksAfterLead !== null && (
         <p data-testid="double-dummy-after-lead">
