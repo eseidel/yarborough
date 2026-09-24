@@ -4,6 +4,7 @@ import {
   type Hand,
   type Miss,
   type Preference,
+  type ShapeFact,
   type PreferEntry,
   type SuitName,
   callLabel,
@@ -30,6 +31,47 @@ function range(min: number, max: number, unit: string, top: number): string {
   return `${min}–${max} ${unit}`;
 }
 
+function lengthPhrase(suit: SuitName, length: number): string {
+  const symbol = SUITS[suit].symbol;
+  switch (length) {
+    case 0:
+      return `a void in ${symbol}`;
+    case 1:
+      return `a singleton ${symbol}`;
+    case 2:
+      return `a doubleton ${symbol}`;
+    default:
+      return `${length} ${symbol}`;
+  }
+}
+
+const NO_SHORTER = [
+  "",
+  "no void",
+  "no singleton or void",
+  "no doubleton, singleton or void",
+];
+
+/** The part of the hand's shape a point range depends on: "With 4 ♣". */
+export function shapeText(shape: ShapeFact | undefined): string {
+  switch (shape?.kind) {
+    case "lengths":
+      return `With ${shape.lengths
+        .map(({ suit, length }) => lengthPhrase(suit, length))
+        .join(" and ")}`;
+    case "shortest":
+      return shape.length > 0 && shape.length < NO_SHORTER.length
+        ? `With ${NO_SHORTER[shape.length]}`
+        : "With this shape";
+    case "balanced":
+      return shape.balanced
+        ? "With a balanced hand"
+        : "With an unbalanced hand";
+    default:
+      return "With this shape";
+  }
+}
+
 /**
  * One requirement a hand misses, in a sentence to check against the cards:
  * "Needs 15–17 hcp, you have 13".
@@ -37,7 +79,9 @@ function range(min: number, max: number, unit: string, top: number): string {
 export function missText(miss: Miss): string {
   switch (miss.kind) {
     case "points": {
-      const needs = miss.withShape ? "With this shape, needs" : "Needs";
+      const needs = miss.withShape
+        ? `${shapeText(miss.shape)}, needs`
+        : "Needs";
       return `${needs} ${range(miss.min, miss.max, "hcp", 37)}, you have ${miss.actual}`;
     }
     case "length": {

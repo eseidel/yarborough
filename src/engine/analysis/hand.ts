@@ -72,6 +72,9 @@ export type Miss =
       // the bounds hold for this hand's shape and are narrower than the
       // rule's own (a rule of twenty, support points): "with this shape"
       with_shape: boolean;
+      // for `with_shape`: the part of the shape that alone narrows the bounds
+      // this far, when one of the ShapeFact kinds does
+      shape: ShapeFact | null;
     }
   | { kind: "length"; suit: string; min: number; max: number; actual: number }
   // the rule wants a balanced hand, and the suit lengths are each allowed
@@ -81,6 +84,15 @@ export type Miss =
   // the shape and the points are right: the honors are not (a stopper, the
   // quality of a suit); `suit` when one suit's honors are the whole problem
   | { kind: "honors"; suit: string | null };
+
+/**
+ * One fact about a hand's shape, the hand's own: the length of one or two of
+ * its suits, the length of its shortest suit, or whether it is balanced.
+ */
+export type ShapeFact =
+  | { kind: "lengths"; lengths: { suit: string; length: number }[] }
+  | { kind: "shortest"; length: number }
+  | { kind: "balanced"; balanced: boolean };
 
 /** The entry of a rule's prefer list (prefer.ts) that ordered two calls. */
 export interface PreferEntry {
@@ -207,6 +219,74 @@ export function _boundsOf(
   return [min, low];
 }
 
+/** The facts `_shapeFactFor` tries, simplest first, with their expressions. */
+function _shapeFacts(hand: Hand): [ShapeFact, Expr][] {
+  const lengthFact = (suit: Strain) => ({
+    suit: suit.char,
+    length: hand.lengthOfSuit(suit),
+  });
+  const lengthExpr = (suit: Strain) =>
+    model.exprForSuit(suit).eq(hand.lengthOfSuit(suit));
+  const facts: [ShapeFact, Expr][] = SUITS.map((suit) => [
+    { kind: "lengths", lengths: [lengthFact(suit)] },
+    lengthExpr(suit),
+  ]);
+  const shortest = Math.min(...SUITS.map((suit) => hand.lengthOfSuit(suit)));
+  facts.push([
+    { kind: "shortest", length: shortest },
+    z3.And(SUITS.map((suit) => model.exprForSuit(suit).ge(shortest))),
+  ]);
+  const balanced = hand.isBalanced();
+  facts.push([
+    { kind: "balanced", balanced },
+    balanced ? model.balanced : z3.Not(model.balanced),
+  ]);
+  // Two suits, longest first: a rule of twenty counts the two longest.
+  const bySize = [...SUITS].sort(
+    (a, b) => hand.lengthOfSuit(b) - hand.lengthOfSuit(a),
+  );
+  for (let i = 0; i < bySize.length; i++) {
+    for (let j = i + 1; j < bySize.length; j++) {
+      facts.push([
+        {
+          kind: "lengths",
+          lengths: [lengthFact(bySize[i]), lengthFact(bySize[j])],
+        },
+        z3.And([lengthExpr(bySize[i]), lengthExpr(bySize[j])]),
+      ]);
+    }
+  }
+  return facts;
+}
+
+/**
+ * The simplest fact about `hand`'s shape that alone narrows the point count
+ * `solver` allows to [min, max], the bounds of the hand's whole shape: what a
+ * player is told about their shape when told why they need those points.
+ * Null when only the whole shape does.
+ */
+function _shapeFactFor(
+  solver: Solver,
+  hand: Hand,
+  pointsFact: Expr,
+  min: number,
+  max: number,
+): ShapeFact | null {
+  for (const [fact, expr] of _shapeFacts(hand)) {
+    solver.push();
+    try {
+      solver.add(expr);
+      // Cheap first: the fact must rule out the hand's own point count.
+      if (model.isPossible(solver, pointsFact)) continue;
+      const [least, most] = _boundsOf(solver, model.highCardPoints, 0, MAX_HCP);
+      if (least === min && most === max) return fact;
+    } finally {
+      solver.pop();
+    }
+  }
+  return null;
+}
+
 /**
  * What `hand` misses of `meaning`, which it does not satisfy.
  *
@@ -242,6 +322,9 @@ export function _missesFor(meaning: Expr, hand: Hand, call: Call): Miss[] {
         max,
         actual: hcp,
         with_shape: withShape,
+        shape: withShape
+          ? _shapeFactFor(solver, hand, pointsFact, min, max)
+          : null,
       });
     }
 

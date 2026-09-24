@@ -10,6 +10,7 @@ import type {
   Position,
   PreferEntry,
   Preference,
+  ShapeFact,
   StrainName,
   SuitName,
 } from "./types";
@@ -181,6 +182,36 @@ function suitName(value: unknown): SuitName {
   return oneOf(value, ["C", "D", "H", "S"] as const, "suit");
 }
 
+function parseShapeFact(value: unknown): ShapeFact {
+  const fact = record(value, "shape");
+  switch (fact.kind) {
+    case "lengths": {
+      if (!Array.isArray(fact.lengths) || !fact.lengths.length) {
+        throw new Error("The bidding engine returned an invalid shape");
+      }
+      return {
+        kind: "lengths",
+        lengths: fact.lengths.map((item: unknown) => {
+          const entry = record(item, "suit length");
+          return {
+            suit: suitName(entry.suit),
+            length: count(entry.length, "suit length"),
+          };
+        }),
+      };
+    }
+    case "shortest":
+      return { kind: "shortest", length: count(fact.length, "suit length") };
+    case "balanced":
+      if (typeof fact.balanced !== "boolean") {
+        throw new Error("The bidding engine returned an invalid shape");
+      }
+      return { kind: "balanced", balanced: fact.balanced };
+    default:
+      throw new Error("The bidding engine returned an invalid shape");
+  }
+}
+
 function parseMiss(value: unknown): Miss {
   const miss = record(value, "miss");
   switch (miss.kind) {
@@ -191,6 +222,7 @@ function parseMiss(value: unknown): Miss {
         max: count(miss.max, "point bound"),
         actual: count(miss.actual, "point count"),
         withShape: miss.with_shape === true,
+        ...(miss.shape == null ? {} : { shape: parseShapeFact(miss.shape) }),
       };
     case "length":
       return {

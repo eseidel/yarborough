@@ -185,6 +185,30 @@ describe("parseHandAnalysis", () => {
           fit: "unfit",
           misses: [
             { kind: "points", min: 15, max: 17, actual: 13, with_shape: false },
+            {
+              kind: "points",
+              min: 18,
+              max: 34,
+              actual: 13,
+              with_shape: true,
+              shape: { kind: "lengths", lengths: [{ suit: "C", length: 4 }] },
+            },
+            {
+              kind: "points",
+              min: 22,
+              max: 34,
+              actual: 13,
+              with_shape: true,
+              shape: { kind: "balanced", balanced: false },
+            },
+            {
+              kind: "points",
+              min: 6,
+              max: 9,
+              actual: 10,
+              with_shape: true,
+              shape: { kind: "shortest", length: 3 },
+            },
             { kind: "length", suit: "H", min: 5, max: 13, actual: 2 },
             { kind: "balanced" },
             { kind: "shape" },
@@ -214,6 +238,30 @@ describe("parseHandAnalysis", () => {
     });
     expect(notrump.misses).toEqual([
       { kind: "points", min: 15, max: 17, actual: 13, withShape: false },
+      {
+        kind: "points",
+        min: 18,
+        max: 34,
+        actual: 13,
+        withShape: true,
+        shape: { kind: "lengths", lengths: [{ suit: "C", length: 4 }] },
+      },
+      {
+        kind: "points",
+        min: 22,
+        max: 34,
+        actual: 13,
+        withShape: true,
+        shape: { kind: "balanced", balanced: false },
+      },
+      {
+        kind: "points",
+        min: 6,
+        max: 9,
+        actual: 10,
+        withShape: true,
+        shape: { kind: "shortest", length: 3 },
+      },
       { kind: "length", suit: "H", min: 5, max: 13, actual: 2 },
       { kind: "balanced" },
       { kind: "shape" },
@@ -267,6 +315,33 @@ describe("parseHandAnalysis", () => {
         ],
       }),
     ).toThrow("point bound");
+    for (const shape of [
+      { kind: "lengths", lengths: [] },
+      { kind: "lengths", lengths: [{ suit: "N", length: 4 }] },
+      { kind: "shortest", length: "3" },
+      { kind: "balanced", balanced: "yes" },
+      { kind: "square" },
+    ]) {
+      expect(() =>
+        parseHandAnalysis({
+          calls: [
+            {
+              ...call,
+              misses: [
+                {
+                  kind: "points",
+                  min: 18,
+                  max: 34,
+                  actual: 7,
+                  with_shape: true,
+                  shape,
+                },
+              ],
+            },
+          ],
+        }),
+      ).toThrow(/shape|suit/);
+    }
     expect(() =>
       parseHandAnalysis({
         calls: [

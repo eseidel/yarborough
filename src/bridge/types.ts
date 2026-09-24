@@ -337,6 +337,15 @@ export function handFromCdhsString(text: string): Hand | null {
 export type CallFit = "chosen" | "possible" | "unfit" | "planned" | "no_rule";
 
 /**
+ * One fact about a hand's own shape: the length of one or two of its suits,
+ * the length of its shortest suit, or whether it is balanced.
+ */
+export type ShapeFact =
+  | { kind: "lengths"; lengths: { suit: SuitName; length: number }[] }
+  | { kind: "shortest"; length: number }
+  | { kind: "balanced"; balanced: boolean };
+
+/**
  * One requirement of a call that the hand does not meet. A bound of 0, or of
  * 13 cards or 37 points, is no bound at all.
  */
@@ -348,6 +357,8 @@ export type Miss =
       actual: number;
       /** The bounds are for this hand's shape, narrower than the rule's own. */
       withShape: boolean;
+      /** For `withShape`: the part of the shape that alone narrows them. */
+      shape?: ShapeFact;
     }
   | { kind: "length"; suit: SuitName; min: number; max: number; actual: number }
   | { kind: "balanced" }
