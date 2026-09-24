@@ -33,26 +33,64 @@
     <title>Bidding Practice - SAYC Bridge</title>
   </head>
   <body>
-    <!-- React replaces this on boot. It is here so that a crawler (or a
-         visitor whose engine download has not finished) gets the same
-         description of the site that AboutFooter renders, rather than an
-         empty document. Keep it in sync with src/components/AboutFooter.tsx. -->
+    <!-- React replaces this on boot. It is here so that a crawler gets the
+         same description of the site that AboutFooter renders, rather than
+         an empty document. It is also what a visitor sees until the app
+         script has downloaded, so it is drawn as the app's own shell: the
+         NavBar, the page background, and the description set as the footer,
+         below the fold where the app puts it. Unstyled, it flashed a page of
+         bare text on a first visit. The classes are the ones NavBar,
+         PracticePage and AboutFooter use; keep them, and the text, in sync
+         with src/components/NavBar.tsx and src/components/AboutFooter.tsx.
+         scripts/test-production-build.mjs checks that the first paint looks
+         like the app. -->
     <div id="root">
-      <h1>Practice Bridge Bidding &mdash; SAYC</h1>
-      <p>
-        Practice bidding
-        <a href="https://en.wikipedia.org/wiki/Standard_American"
-          >Standard American Yellow Card</a
+      <div class="min-h-screen bg-gray-50 flex flex-col">
+        <nav
+          class="bg-emerald-800 text-white px-4 py-2 flex items-center justify-center gap-2 shadow"
         >
-        (SAYC). Bid a hand against the autobidder, or use the
-        <a href="/explore">bid explorer</a> to see what every call in an auction
-        would mean.
-      </p>
-      <p>
-        The autobidder follows the official ACBL pamphlet as well as
-        <i>Standard Bidding With SAYC</i> by Ned Downey and Ellen Pomer.
-      </p>
-      <p>Loading the bidding engine&hellip;</p>
+          <a
+            href="/"
+            class="px-4 py-2 rounded text-base font-medium text-emerald-100"
+            >Practice</a
+          >
+          <a
+            href="/explore"
+            class="px-4 py-2 rounded text-base font-medium text-emerald-100"
+            >Explore</a
+          >
+          <a
+            href="/progress"
+            class="px-4 py-2 rounded text-base font-medium text-emerald-100"
+            >Progress</a
+          >
+        </nav>
+        <div class="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-3">
+          <div class="min-h-screen"></div>
+          <footer class="mt-8 mb-4 px-4 text-sm text-gray-600 space-y-3">
+            <h1 class="text-base font-semibold text-gray-800">
+              Practice Bridge Bidding &mdash; SAYC
+            </h1>
+            <p>
+              Practice bidding
+              <a
+                href="https://en.wikipedia.org/wiki/Standard_American"
+                class="font-medium text-emerald-700"
+                >Standard American Yellow Card</a
+              >
+              (SAYC). Bid a hand against the autobidder, or use the
+              <a href="/explore" class="font-medium text-emerald-700"
+                >bid explorer</a
+              >
+              to see what every call in an auction would mean.
+            </p>
+            <p>
+              The autobidder follows the official ACBL pamphlet as well as
+              <i>Standard Bidding With SAYC</i> by Ned Downey and Ellen Pomer.
+            </p>
+          </footer>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
