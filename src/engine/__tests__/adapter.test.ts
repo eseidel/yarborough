@@ -164,7 +164,8 @@ describe("the JSON adapter", () => {
       (interpretation) => interpretation.call_name === "1H",
     )!;
     expect(open1h.rule_name).toBe("One Level Suit Opening");
-    expect(open1h.knowledge_string).toBe("12-21 hcp, 5+H");
+    // Eight high-card points open by the rule of twenty with a 7-5 hand.
+    expect(open1h.knowledge_string).toBe("8-21 hcp, 5+H");
 
     const open1nt = interpretations.find(
       (interpretation) => interpretation.call_name === "1N",
@@ -400,7 +401,7 @@ describe("the adapter's smaller pieces", () => {
   it("serializes an unconstrained hand as a question mark", () => {
     expect(
       new ConstraintsSerializer({
-        minPoints: 0,
+        minHcp: 0,
         maxPoints: 37,
         minLength: () => 0,
         maxLength: () => 13,
@@ -410,12 +411,37 @@ describe("the adapter's smaller pieces", () => {
     // a suit nothing is known about is left out.
     expect(
       new ConstraintsSerializer({
-        minPoints: 12,
+        minHcp: 12,
         maxPoints: 37,
         minLength: (suit) => [1, 6, 0, 2][suit.index],
         maxLength: (suit) => [1, 13, 13, 4][suit.index],
       }).exploreString(),
     ).toBe("12+ hcp, 1C 6+D 2-4S");
+  });
+
+  it("counts both ends of a call's point range in high-card points", () => {
+    // The low end used to be what the call showed (hcp plus length points)
+    // and the high end hcp, so 2N over 1S P 1N P read "19-18 hcp".
+    for (const auction of ["1S P 1N P", "1N P 2D P 2H P", "2H P 2N P"]) {
+      for (const interpretation of getCallInterpretations(
+        auction,
+        "N",
+        "None",
+      )) {
+        const range =
+          interpretation.knowledge_string?.match(/^(\d+)-(\d+) hcp/);
+        if (range) {
+          expect(
+            Number(range[1]),
+            `${auction} ${interpretation.call_name}: ${interpretation.knowledge_string}`,
+          ).toBeLessThan(Number(range[2]));
+        }
+      }
+    }
+    const rebid2n = getCallInterpretations("1S P 1N P", "N", "None").find(
+      (interpretation) => interpretation.call_name === "2N",
+    );
+    expect(rebid2n?.knowledge_string).toBe("18 hcp, 2-3C 2-3D 2-3H 5S");
   });
 
   it("returns every solver a request borrows", () => {

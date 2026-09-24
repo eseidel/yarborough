@@ -237,6 +237,15 @@ export class PositionView implements PositionViewInterface {
     return this.history.maxPointsForPosition(this.position);
   }
 
+  /**
+   * The fewest high-card points this position can hold.  Not `minPoints`, which counts
+   * what the last call showed (hcp plus length or support points) and so can exceed
+   * `maxPoints`, which counts hcp.
+   */
+  get minHcp(): number {
+    return this.history.minHcpForPosition(this.position);
+  }
+
   couldHaveMorePointsThan(points: number): boolean {
     return this.history.couldHaveMorePointsThan(this.position, points);
   }
@@ -298,6 +307,7 @@ export class History implements HistoryInterface {
   private _isBalancedCache: boolean | undefined;
   private _minPointsCache: number | undefined;
   private _maxPointsCache: number | undefined;
+  private _minHcpCache: number | undefined;
   private readonly _morePointsThanCache = new Map<number, boolean>();
   private readonly _isBidSuitCache = new Map<string, boolean>();
   private readonly _isUnbidSuitCache = new Map<number, boolean>();
@@ -755,6 +765,26 @@ export class History implements HistoryInterface {
     const history = this._historyAfterLastCallFor(position);
     if (history) {
       return history._solveForMinPoints();
+    }
+    return 0;
+  }
+
+  _solveForMinHcp(): number {
+    if (this._minHcpCache !== undefined) {
+      return this._minHcpCache;
+    }
+    const solver = this._solver();
+    const predicate = (points: number) =>
+      isPossible(solver, model.points.le(points));
+    const result = predicate(0) ? 0 : this._lowerBound(predicate, 1, 37);
+    this._minHcpCache = result;
+    return result;
+  }
+
+  minHcpForPosition(position: EnumValue): number {
+    const history = this._historyAfterLastCallFor(position);
+    if (history) {
+      return history._solveForMinHcp();
     }
     return 0;
   }
