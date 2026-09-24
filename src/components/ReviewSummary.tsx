@@ -12,7 +12,6 @@ import { useHandAnalysis } from "../practice/useHandAnalysis";
 import {
   type CallVerdict,
   callIndicesFor,
-  foundOnRetry,
   summarizeVerdicts,
 } from "../practice/verdicts";
 import { type YourHand, useCallExplanation } from "../hooks/useCallExplanation";
@@ -38,27 +37,15 @@ function MissedCall({
   const analysis = useHandAnalysis(
     hand ? { hand, history, index: verdict.index, vulnerability } : null,
   );
-  // A call found on a retry is explained by the try that missed.
-  const retried = foundOnRetry(verdict);
-  const yours = retried ? verdict.firstCall! : verdict.call;
   return (
     <li className="py-2 first:pt-0 last:pb-0" data-testid="missed-call">
       <div>
-        {retried ? (
-          <span
-            className="mr-1 font-bold text-amber-600"
-            aria-label="matched SAYC on a retry"
-          >
-            ↺
-          </span>
-        ) : (
-          <span className="mr-1 font-bold text-red-600">✗</span>
-        )}
+        <span className="mr-1 font-bold text-red-600">✗</span>
         You bid{" "}
         <span className="font-semibold">
-          <SuitText text={callLabel(yours)} />
+          <SuitText text={callLabel(verdict.call)} />
         </span>
-        {retried ? ", then SAYC's " : ". SAYC bids "}
+        . SAYC bids{" "}
         <span className="font-semibold">
           <SuitText text={callLabel(sayc.call)} />
         </span>
@@ -75,7 +62,7 @@ function MissedCall({
       </div>
       {hand && analysis !== undefined && (
         <HandReasons
-          lines={missReasons(hand, yours, sayc.call, analysis)}
+          lines={missReasons(hand, verdict.call, sayc.call, analysis)}
           className="mt-0.5 text-gray-700"
         />
       )}

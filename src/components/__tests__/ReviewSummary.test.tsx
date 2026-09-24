@@ -139,7 +139,7 @@ describe("ReviewSummary", () => {
     expect(onShowOptions).toHaveBeenCalledWith(HISTORY, 2);
   });
 
-  it("counts SAYC's call found on a retry by the try that missed", () => {
+  it("reads SAYC's call found on a retry as the auction shows it", () => {
     render(
       <ReviewSummary
         history={{
@@ -163,16 +163,11 @@ describe("ReviewSummary", () => {
         vulnerability="None"
       />,
     );
-    expect(screen.getByTestId("verdict-missed").textContent).toBe(
-      "1 of your 2 calls differed from SAYC",
+    expect(screen.getByTestId("verdict-on-system").textContent).toBe(
+      "✓ All 2 of your calls followed SAYC",
     );
-    const missed = screen.getByTestId("missed-call");
-    expect(
-      within(missed).getByLabelText("matched SAYC on a retry"),
-    ).toBeInTheDocument();
-    expect(missed.textContent).toContain(
-      "You bid 2♥, then SAYC's 4♥: Jump Raise.",
-    );
+    expect(screen.queryByTestId("missed-call")).toBeNull();
+    expect(screen.queryByText(/2♥/)).toBeNull();
   });
 
   it("shows where SAYC's own auction ends and explains its calls on tap", async () => {

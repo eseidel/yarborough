@@ -153,5 +153,24 @@ describe("verdicts", () => {
       ]).onSystem,
     ).toBe(true);
     expect(summarizeVerdicts([]).onSystem).toBe(false);
+
+    // SAYC's call found on a retry reads as a match, but not on system.
+    const retried = summarizeVerdicts([
+      {
+        index: 0,
+        call: { type: "pass" },
+        sayc,
+        matched: false,
+        assisted: false,
+        firstCall: { type: "double" },
+      },
+    ]);
+    expect(retried).toMatchObject({
+      total: 1,
+      matched: 1,
+      retried: 1,
+      missed: [],
+      onSystem: false,
+    });
   });
 });
