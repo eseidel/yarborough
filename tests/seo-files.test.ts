@@ -59,11 +59,10 @@ describe("index.html", () => {
 
   it("ships crawlable copy in the shell, not an empty root div", () => {
     const root_div = html.slice(html.indexOf('<div id="root">'));
-    expect(root_div).toContain("<h1>");
     // "bridge bidding practice" and "sayc bridge" are the two query families
     // that earn the site's traffic; the heading should contain both.
-    expect(root_div).toMatch(/<h1>[^<]*Bridge Bidding[^<]*<\/h1>/i);
-    expect(root_div).toMatch(/<h1>[^<]*SAYC[^<]*<\/h1>/i);
+    expect(root_div).toMatch(/<h1[^>]*>[^<]*Bridge Bidding[^<]*<\/h1>/i);
+    expect(root_div).toMatch(/<h1[^>]*>[^<]*SAYC[^<]*<\/h1>/i);
     expect(root_div).toContain("Standard American Yellow Card");
     expect(root_div).toContain('href="/explore"');
   });

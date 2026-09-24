@@ -48,6 +48,52 @@ function checkAssets() {
   return engineChunk;
 }
 
+/** Where the nav bar sits, how it is drawn, and where the page's text starts. */
+function measureFirstScreen() {
+  const nav = document.querySelector("#root nav");
+  const heading = document.querySelector("#root h1");
+  return {
+    nav: nav && {
+      height: nav.getBoundingClientRect().height,
+      background: getComputedStyle(nav).backgroundColor,
+    },
+    headingTop: heading?.getBoundingClientRect().top ?? null,
+    viewportHeight: window.innerHeight,
+  };
+}
+
+/**
+ * The first paint of a first visit is the static shell in index.html, shown
+ * until the app script has downloaded. It must look like the app, not like a
+ * page of bare text: the same nav bar, and the crawler's description below
+ * the fold. Blocking the app script holds the page at that first paint.
+ */
+async function checkFirstPaint(browser, origin) {
+  const app = await browser.newPage();
+  await app.goto(`${origin}/`);
+  await app.locator('[data-testid="call-table"]').waitFor();
+  const booted = await app.evaluate(measureFirstScreen);
+  await app.close();
+
+  const shell = await browser.newPage();
+  await shell.route(/\/assets\/index-[\w-]+\.js$/, (route) => route.abort());
+  await shell.goto(`${origin}/`);
+  const firstPaint = await shell.evaluate(measureFirstScreen);
+  await shell.close();
+
+  assert.notEqual(firstPaint.nav, null, "the static shell has no nav bar");
+  assert.deepEqual(
+    firstPaint.nav,
+    booted.nav,
+    "the static shell's nav bar does not match the app's",
+  );
+  assert.ok(
+    firstPaint.headingTop !== null &&
+      firstPaint.headingTop >= firstPaint.viewportHeight,
+    `the static shell's text starts on screen, at ${firstPaint.headingTop}px`,
+  );
+}
+
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -117,6 +163,7 @@ async function main() {
     await waitForServer(`${origin}/`);
     const browser = await chromium.launch();
     try {
+      await checkFirstPaint(browser, origin);
       const page = await browser.newPage();
       const externalRequests = new Set();
       const browserErrors = [];
