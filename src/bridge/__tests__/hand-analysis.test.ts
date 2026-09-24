@@ -8,7 +8,12 @@ import {
   preferenceText,
   purposePhrase,
 } from "../hand-analysis";
-import { type Call, handFromCdhsString, highCardPoints } from "../types";
+import {
+  type Call,
+  type ShapeFact,
+  handFromCdhsString,
+  highCardPoints,
+} from "../types";
 
 const bid = (level: number, strain: "C" | "D" | "H" | "S" | "N"): Call => ({
   type: "bid",
@@ -71,6 +76,48 @@ describe("missText", () => {
         withShape: true,
       }),
     ).toBe("With this shape, needs 18 hcp, you have 11");
+  });
+
+  it("names the part of the shape a point range depends on", () => {
+    const points = (shape: ShapeFact) =>
+      missText({
+        kind: "points",
+        min: 18,
+        max: 37,
+        actual: 7,
+        withShape: true,
+        shape,
+      });
+    expect(
+      points({ kind: "lengths", lengths: [{ suit: "C", length: 4 }] }),
+    ).toBe("With 4 ♣, needs 18+ hcp, you have 7");
+    expect(
+      points({
+        kind: "lengths",
+        lengths: [
+          { suit: "H", length: 5 },
+          { suit: "S", length: 2 },
+        ],
+      }),
+    ).toBe("With 5 ♥ and a doubleton ♠, needs 18+ hcp, you have 7");
+    expect(
+      points({ kind: "lengths", lengths: [{ suit: "D", length: 1 }] }),
+    ).toBe("With a singleton ♦, needs 18+ hcp, you have 7");
+    expect(
+      points({ kind: "lengths", lengths: [{ suit: "D", length: 0 }] }),
+    ).toBe("With a void in ♦, needs 18+ hcp, you have 7");
+    expect(points({ kind: "shortest", length: 3 })).toBe(
+      "With no doubleton, singleton or void, needs 18+ hcp, you have 7",
+    );
+    expect(points({ kind: "shortest", length: 4 })).toBe(
+      "With this shape, needs 18+ hcp, you have 7",
+    );
+    expect(points({ kind: "balanced", balanced: false })).toBe(
+      "With an unbalanced hand, needs 18+ hcp, you have 7",
+    );
+    expect(points({ kind: "balanced", balanced: true })).toBe(
+      "With a balanced hand, needs 18+ hcp, you have 7",
+    );
   });
 
   it("says the side of a length the hand is on", () => {

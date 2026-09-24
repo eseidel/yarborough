@@ -114,7 +114,14 @@ describe("the hand-aware analysis", () => {
   it("puts the points first, then the shape", () => {
     const { byCall } = analysisFor(OPENER);
     expect(byCall.get("1N")!.misses).toEqual([
-      { kind: "points", min: 15, max: 17, actual: 13, with_shape: false },
+      {
+        kind: "points",
+        min: 15,
+        max: 17,
+        actual: 13,
+        with_shape: false,
+        shape: null,
+      },
       { kind: "balanced" },
     ]);
   });
@@ -122,15 +129,57 @@ describe("the hand-aware analysis", () => {
   it("counts the points with the hand's own shape", () => {
     const { byCall } = analysisFor(RESPONDER, "1H P");
     expect(byCall.get("2H")!.misses).toEqual([
-      { kind: "points", min: 6, max: 9, actual: 10, with_shape: true },
+      {
+        kind: "points",
+        min: 6,
+        max: 9,
+        actual: 10,
+        with_shape: true,
+        shape: { kind: "shortest", length: 3 },
+      },
     ]);
     // Support points count shortness, which this 4-3-3-3 hand has none of.
-    // Over 1♠, a takeout double with three spades needs a much stronger
-    // hand than one short in spades does.
+    // Over 1♠, a takeout double with five hearts and a doubleton spade needs
+    // a much stronger hand than one short in spades does.
     const overcall = analysisFor("J96.A52.KQJ74.83", "1S").byCall;
     expect(overcall.get("X")!.misses).toEqual([
-      { kind: "points", min: 18, max: 35, actual: 11, with_shape: true },
+      {
+        kind: "points",
+        min: 18,
+        max: 35,
+        actual: 11,
+        with_shape: true,
+        shape: {
+          kind: "lengths",
+          lengths: [
+            { suit: "H", length: 5 },
+            { suit: "S", length: 2 },
+          ],
+        },
+      },
     ]);
+  });
+
+  it("names the part of the shape that sets the points", () => {
+    // ♠AQT63 ♥84 ♦63 ♣J852 after P P 1♣: four cards in the opener's clubs,
+    // so a 1♠ overcall needs 18+ (overcalls.ts StandardDirectOvercall).
+    const overcall = analysisFor("J852.63.84.AQT63", "P P 1C").byCall;
+    expect(overcall.get("1S")!.misses).toEqual([
+      {
+        kind: "points",
+        min: 18,
+        max: 34,
+        actual: 7,
+        with_shape: true,
+        shape: { kind: "lengths", lengths: [{ suit: "C", length: 4 }] },
+      },
+    ]);
+    // Unbalanced, a 2♣ opening needs 22+.
+    expect(analysisFor(OPENER).byCall.get("2C")!.misses[0]).toMatchObject({
+      kind: "points",
+      min: 22,
+      shape: { kind: "balanced", balanced: false },
+    });
   });
 
   it("marks a call only a plan makes", () => {
