@@ -31,18 +31,23 @@ function range(min: number, max: number, unit: string, top: number): string {
   return `${min}–${max} ${unit}`;
 }
 
-function lengthPhrase(suit: SuitName, length: number): string {
+const BID_BY = { partner: "partner's suit", opponents: "their suit" };
+
+function lengthPhrase(
+  suit: SuitName,
+  length: number,
+  bidBy?: "partner" | "opponents",
+): string {
   const symbol = SUITS[suit].symbol;
-  switch (length) {
-    case 0:
-      return `a void in ${symbol}`;
-    case 1:
-      return `a singleton ${symbol}`;
-    case 2:
-      return `a doubleton ${symbol}`;
-    default:
-      return `${length} ${symbol}`;
-  }
+  const cards =
+    length === 0
+      ? `a void in ${symbol}`
+      : length === 1
+        ? `a singleton ${symbol}`
+        : length === 2
+          ? `a doubleton ${symbol}`
+          : `${length} ${symbol}`;
+  return bidBy ? `${cards} (${BID_BY[bidBy]})` : cards;
 }
 
 const NO_SHORTER = [
@@ -57,7 +62,7 @@ export function shapeText(shape: ShapeFact | undefined): string {
   switch (shape?.kind) {
     case "lengths":
       return `With ${shape.lengths
-        .map(({ suit, length }) => lengthPhrase(suit, length))
+        .map(({ suit, length, bidBy }) => lengthPhrase(suit, length, bidBy))
         .join(" and ")}`;
     case "shortest":
       return shape.length > 0 && shape.length < NO_SHORTER.length

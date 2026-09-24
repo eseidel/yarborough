@@ -341,7 +341,15 @@ export type CallFit = "chosen" | "possible" | "unfit" | "planned" | "no_rule";
  * the length of its shortest suit, or whether it is balanced.
  */
 export type ShapeFact =
-  | { kind: "lengths"; lengths: { suit: SuitName; length: number }[] }
+  | {
+      kind: "lengths";
+      /** `bidBy`: who bid the suit of the last contract, when it is this one. */
+      lengths: {
+        suit: SuitName;
+        length: number;
+        bidBy?: "partner" | "opponents";
+      }[];
+    }
   | { kind: "shortest"; length: number }
   | { kind: "balanced"; balanced: boolean };
 

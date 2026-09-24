@@ -191,7 +191,10 @@ describe("parseHandAnalysis", () => {
               max: 34,
               actual: 13,
               with_shape: true,
-              shape: { kind: "lengths", lengths: [{ suit: "C", length: 4 }] },
+              shape: {
+                kind: "lengths",
+                lengths: [{ suit: "C", length: 4, bid_by: "opponents" }],
+              },
             },
             {
               kind: "points",
@@ -244,7 +247,10 @@ describe("parseHandAnalysis", () => {
         max: 34,
         actual: 13,
         withShape: true,
-        shape: { kind: "lengths", lengths: [{ suit: "C", length: 4 }] },
+        shape: {
+          kind: "lengths",
+          lengths: [{ suit: "C", length: 4, bidBy: "opponents" }],
+        },
       },
       {
         kind: "points",
@@ -318,6 +324,10 @@ describe("parseHandAnalysis", () => {
     for (const shape of [
       { kind: "lengths", lengths: [] },
       { kind: "lengths", lengths: [{ suit: "N", length: 4 }] },
+      {
+        kind: "lengths",
+        lengths: [{ suit: "C", length: 4, bid_by: "declarer" }],
+      },
       { kind: "shortest", length: "3" },
       { kind: "balanced", balanced: "yes" },
       { kind: "square" },

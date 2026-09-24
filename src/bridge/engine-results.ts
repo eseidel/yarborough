@@ -196,6 +196,15 @@ function parseShapeFact(value: unknown): ShapeFact {
           return {
             suit: suitName(entry.suit),
             length: count(entry.length, "suit length"),
+            ...(entry.bid_by == null
+              ? {}
+              : {
+                  bidBy: oneOf(
+                    entry.bid_by,
+                    ["partner", "opponents"] as const,
+                    "suit bidder",
+                  ),
+                }),
           };
         }),
       };

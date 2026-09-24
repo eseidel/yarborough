@@ -12,7 +12,8 @@ import { Hand } from "../../core/hand";
 import { _solverPool, setBidderLog } from "../../z3b/bidder";
 import * as model from "../../z3b/model";
 import { z3 } from "../../z3b/z3";
-import { _boundsOf, _missesFor } from "../hand";
+import { CallHistory } from "../../core/callhistory";
+import { _boundsOf, _lastSuitFor, _missesFor } from "../hand";
 
 // Hands are C.D.H.S, the way the repository writes them.
 // ♠AQ982 ♥K5 ♦A973 ♣42: thirteen points and five spades, so SAYC opens 1♠.
@@ -152,8 +153,8 @@ describe("the hand-aware analysis", () => {
         shape: {
           kind: "lengths",
           lengths: [
-            { suit: "H", length: 5 },
-            { suit: "S", length: 2 },
+            { suit: "H", length: 5, bid_by: null },
+            { suit: "S", length: 2, bid_by: "opponents" },
           ],
         },
       },
@@ -162,6 +163,7 @@ describe("the hand-aware analysis", () => {
 
   it("names the part of the shape that sets the points", () => {
     // ♠AQT63 ♥84 ♦63 ♣J852 after P P 1♣: four cards in the opener's clubs,
+    // which the fact names as their suit,
     // so a 1♠ overcall needs 18+ (overcalls.ts StandardDirectOvercall).
     const overcall = analysisFor("J852.63.84.AQT63", "P P 1C").byCall;
     expect(overcall.get("1S")!.misses).toEqual([
@@ -171,7 +173,10 @@ describe("the hand-aware analysis", () => {
         max: 34,
         actual: 7,
         with_shape: true,
-        shape: { kind: "lengths", lengths: [{ suit: "C", length: 4 }] },
+        shape: {
+          kind: "lengths",
+          lengths: [{ suit: "C", length: 4, bid_by: "opponents" }],
+        },
       },
     ]);
     // Unbalanced, a 2♣ opening needs 22+.
@@ -180,6 +185,23 @@ describe("the hand-aware analysis", () => {
       min: 22,
       shape: { kind: "balanced", balanced: false },
     });
+  });
+
+  it("knows who bid the suit of the last contract", () => {
+    const lastSuit = (calls: string) =>
+      _lastSuitFor(CallHistory.fromString(calls, "N", "None"));
+    expect(lastSuit("P P 1C")).toEqual({ suit: "C", bid_by: "opponents" });
+    expect(lastSuit("1H P")).toEqual({ suit: "H", bid_by: "partner" });
+    expect(lastSuit("1H X")).toEqual({ suit: "H", bid_by: "partner" });
+    expect(lastSuit("1N P")).toBeNull();
+    expect(lastSuit("")).toBeNull();
+    expect(lastSuit("1D P 1H P 1S P")).toEqual({
+      suit: "S",
+      bid_by: "partner",
+    });
+    expect(lastSuit("1D 1H P P")).toEqual({ suit: "H", bid_by: "opponents" });
+    // The player's own suit is nobody else's.
+    expect(lastSuit("1D X XX X")).toBeNull();
   });
 
   it("marks a call only a plan makes", () => {
