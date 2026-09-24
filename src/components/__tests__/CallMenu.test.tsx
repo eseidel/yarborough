@@ -90,7 +90,7 @@ describe("CallMenu", () => {
       "call-row-4N",
       "call-row-7C",
     ]);
-    expect(within(row("7C")).getByText("Not a SAYC call here")).toBeTruthy();
+    expect(within(row("7C")).getByText("No SAYC meaning")).toBeTruthy();
     expect(row("1S").dataset.fit).toBeUndefined();
   });
 
@@ -154,7 +154,7 @@ describe("CallMenu", () => {
     it("marks a call made only by plan and one no rule makes", () => {
       renderWeighed();
       expect(row("4N").textContent).toContain("Only bid as part of a plan");
-      expect(row("7C").textContent).toContain("Not a SAYC call here");
+      expect(row("7C").textContent).toContain("No SAYC meaning");
     });
 
     it("still makes any call, fitting or not", () => {

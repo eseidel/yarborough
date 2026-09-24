@@ -106,8 +106,8 @@ export function OptionsSheet({
             </div>
             <div className="text-xs text-gray-500">
               {onSelect
-                ? "What each call would say. Tap one to bid it."
-                : "What each call would have said here."}
+                ? "What each call means in SAYC here. Tap one to bid it."
+                : "What each call means in SAYC at this point in the auction."}
             </div>
           </div>
           <button

@@ -68,7 +68,7 @@ function WeighedRow({
           <CallDisplay call={weighed.call} />
         </span>
         <span className="self-center text-[13px] text-gray-400">
-          Not a SAYC call here
+          No SAYC meaning
         </span>
       </>
     );
@@ -176,9 +176,7 @@ export function CallMenu({
                 {hasMeaning(interp) ? (
                   <Meaning interp={interp} />
                 ) : (
-                  <div className="text-sm text-gray-400">
-                    Not a SAYC call here
-                  </div>
+                  <div className="text-sm text-gray-400">No SAYC meaning</div>
                 )}
               </span>
             </>

@@ -105,17 +105,13 @@ function PracticeBoard({
         ),
       )
     : undefined;
-  // The verdict on the user's latest call, once the engine has it: the call
-  // held for it, or the last one made.
-  const latestVerdict =
-    heldVerdict ??
-    (!auctionDone && feedbackTiming === "immediate" && session.verdictsComplete
-      ? (verdicts[verdicts.length - 1] ?? null)
-      : null);
+  // Only a miss held out of the auction gets a box: once the user keeps it,
+  // the box goes and the call table's mark is all that remains of it.
+  const latestVerdict = heldVerdict;
 
   // The user's hand weighed where it explains a miss, and where they asked
   // for SAYC's call. Never on the options sheet: that lists what each call
-  // would say and leaves the choice to the learner.
+  // means and leaves the choice to the learner.
   const feedbackAnalysis = useHandAnalysis(
     latestVerdict && !latestVerdict.matched
       ? { hand, history, index: latestVerdict.index, vulnerability }
@@ -189,7 +185,7 @@ function PracticeBoard({
           <>
             {latestVerdict && (
               <CallFeedback
-                // A miss after a kept miss is a new box, and arrives as one.
+                // Each miss is a new box, and arrives as one.
                 key={latestVerdict.index}
                 verdict={latestVerdict}
                 hand={hand}
@@ -198,8 +194,8 @@ function PracticeBoard({
                   session.showOptions({ history, index: latestVerdict.index })
                 }
                 onDefer={() => session.setFeedbackTiming("end")}
-                onTryAgain={heldVerdict ? session.tryAgain : undefined}
-                onKeep={heldVerdict ? session.keep : undefined}
+                onTryAgain={session.tryAgain}
+                onKeep={session.keep}
               />
             )}
             {session.hintShown && !session.held && (
@@ -245,7 +241,7 @@ function PracticeBoard({
                 disabled={!session.canTakeBack}
                 className={`${TEXT_BUTTON} disabled:opacity-40 disabled:no-underline`}
               >
-                Take back
+                Undo bid
               </button>
               <button
                 type="button"

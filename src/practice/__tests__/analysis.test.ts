@@ -1,17 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { DoubleDummyTable } from "../../dds/dds-core";
 import {
-  bestClass,
-  biddableOver,
-  biddingVerdict,
-  contractClass,
   describePlay,
   formatContract,
   formatContractBy,
   listMakeable,
   makeableContracts,
-  outranks,
-  sideOf,
 } from "../analysis";
 
 // N-S make 4♠ (10 tricks, North or South), 3NT (9, North only), 2♦ (8);
@@ -50,35 +44,6 @@ describe("analysis", () => {
     expect(listMakeable([])).toBe("");
   });
 
-  it("classifies contracts", () => {
-    expect(contractClass(3, "N")).toBe("game");
-    expect(contractClass(4, "H")).toBe("game");
-    expect(contractClass(4, "D")).toBe("partscore");
-    expect(contractClass(5, "C")).toBe("game");
-    expect(contractClass(6, "S")).toBe("small slam");
-    expect(contractClass(7, "N")).toBe("grand slam");
-    expect(bestClass(makeableContracts(TABLE, "NS"))).toBe("game");
-    expect(bestClass([])).toBeNull();
-  });
-
-  it("knows which contracts could still be bid over another", () => {
-    const contract = { level: 3, strain: "S" as const };
-    expect(outranks(4, "C", contract)).toBe(true);
-    expect(outranks(3, "N", contract)).toBe(true);
-    expect(outranks(3, "H", contract)).toBe(false);
-    expect(outranks(3, "S", contract)).toBe(false);
-    expect(outranks(2, "N", contract)).toBe(false);
-    // N-S make 4♠, 3NT and 2♦; over 3♠ only the first two are bids.
-    const over = biddableOver(makeableContracts(TABLE, "NS"), contract);
-    expect(over.map((c) => formatContract(c.level, c.strain))).toEqual([
-      "4♠",
-      "3NT",
-    ]);
-    expect(
-      biddableOver(makeableContracts(TABLE, "NS"), { level: 5, strain: "C" }),
-    ).toEqual([]);
-  });
-
   it("formats contracts and results", () => {
     expect(formatContract(2, "H", "X")).toBe("2♥X");
     expect(formatContractBy({ level: 3, strain: "N" }, "S")).toBe(
@@ -87,110 +52,5 @@ describe("analysis", () => {
     expect(describePlay(4, 10)).toBe("makes 4 (10 tricks)");
     expect(describePlay(4, 11)).toBe("makes 5 (11 tricks)");
     expect(describePlay(4, 8)).toBe("goes down 2 (8 tricks)");
-    expect(sideOf("W")).toBe("EW");
-  });
-
-  describe("biddingVerdict", () => {
-    it("judges our contract against the best the cards allow", () => {
-      expect(
-        biddingVerdict({ level: 4, strain: "S" }, "N", TABLE, "NS"),
-      ).toEqual({
-        text: "N-S reached the game the cards allow.",
-        tone: "good",
-      });
-      const slam: DoubleDummyTable = {
-        ...TABLE,
-        S: { N: 12, E: 1, S: 12, W: 1 },
-      };
-      expect(
-        biddingVerdict({ level: 4, strain: "S" }, "N", slam, "NS"),
-      ).toEqual({ text: "N-S missed a small slam.", tone: "mixed" });
-      expect(
-        biddingVerdict({ level: 2, strain: "S" }, "S", TABLE, "NS"),
-      ).toEqual({ text: "N-S stopped short of game.", tone: "mixed" });
-      const partscore: DoubleDummyTable = {
-        ...NOTHING,
-        S: { N: 8, E: 4, S: 8, W: 4 },
-      };
-      expect(
-        biddingVerdict({ level: 2, strain: "S" }, "S", partscore, "NS"),
-      ).toEqual({ text: "There is no game for N-S.", tone: "good" });
-      expect(
-        biddingVerdict({ level: 5, strain: "D" }, "N", TABLE, "NS"),
-      ).toEqual({ text: "Too high for these cards.", tone: "bad" });
-    });
-
-    it("judges the opponents' contract by what we could have made", () => {
-      expect(
-        biddingVerdict({ level: 2, strain: "H" }, "E", TABLE, "NS"),
-      ).toEqual({ text: "A missed game for N-S.", tone: "bad" });
-      const nothingForUs: DoubleDummyTable = {
-        ...NOTHING,
-        H: { N: 4, E: 9, S: 4, W: 9 },
-      };
-      expect(
-        biddingVerdict(
-          { level: 4, strain: "H", doubled: "X" },
-          "W",
-          nothingForUs,
-          "NS",
-        ),
-      ).toEqual({ text: "Defending was right.", tone: "good" });
-      // N-S make 2♠, which is a bid over 2♥ but not over 3♥.
-      const partscore: DoubleDummyTable = {
-        ...nothingForUs,
-        S: { N: 8, E: 5, S: 7, W: 5 },
-      };
-      expect(
-        biddingVerdict({ level: 2, strain: "H" }, "E", partscore, "NS"),
-      ).toEqual({
-        text: "N-S could have competed in a partscore.",
-        tone: "mixed",
-      });
-      expect(
-        biddingVerdict({ level: 3, strain: "H" }, "E", partscore, "NS"),
-      ).toEqual({
-        text: "E-W bid too high for N-S to compete.",
-        tone: "good",
-      });
-      // Their partscore fails: nothing to regret.
-      expect(
-        biddingVerdict({ level: 4, strain: "H" }, "E", partscore, "NS"),
-      ).toEqual({ text: "Defending was right.", tone: "good" });
-      // A game we make is no miss either when it sits under their contract.
-      const shutOut: DoubleDummyTable = {
-        ...NOTHING,
-        S: { N: 3, E: 10, S: 3, W: 10 },
-        H: { N: 10, E: 3, S: 10, W: 3 },
-      };
-      expect(
-        biddingVerdict({ level: 4, strain: "S" }, "E", shutOut, "NS"),
-      ).toEqual({
-        text: "E-W bid too high for N-S to compete.",
-        tone: "good",
-      });
-      expect(
-        biddingVerdict({ level: 4, strain: "D" }, "E", shutOut, "NS"),
-      ).toEqual({ text: "A missed game for N-S.", tone: "bad" });
-    });
-
-    it("judges a pass-out", () => {
-      expect(biddingVerdict(null, null, TABLE, "NS")).toEqual({
-        text: "Passed out with a game available to N-S.",
-        tone: "bad",
-      });
-      expect(biddingVerdict(null, null, NOTHING, "NS")).toEqual({
-        text: "Passed out, and N-S can make nothing.",
-        tone: "good",
-      });
-      const partscore: DoubleDummyTable = {
-        ...NOTHING,
-        D: { N: 8, E: 4, S: 8, W: 4 },
-      };
-      expect(biddingVerdict(null, null, partscore, "NS")).toEqual({
-        text: "Passed out with only a partscore available to N-S.",
-        tone: "mixed",
-      });
-    });
   });
 });

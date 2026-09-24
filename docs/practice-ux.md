@@ -125,14 +125,15 @@ is over). South is always the user. Top to bottom, each phase showed:
       their meanings.
    2. **Play card.** Double dummy in sentences, one job per line and nothing
       said twice. The result line: "With all four hands in view and best play
-      by both sides, 4♠ by North makes 4 (10 tricks)." The lead line: "After
-      West's normal ♦4 lead (fourth best), it makes 5", or, when the lead
-      changes nothing, that it does not. A verdict in a few words that ties
-      the contract to the cards: reached the game, stopped short of game,
-      too high, a missed game, or defending was right. Then what each side
-      can make, N-S on one line and E-W on the next, so the two are easy to
-      tell apart at a glance. The twenty-cell trick table itself is not
-      shown; the sentences carry what a learner needs.
+      by both sides, 4♠ by North makes 4 (10 tricks)." The lead line fixes the
+      standard opening lead and plays perfectly from there: "The result above
+      assumes the defense finds the best opening lead. If West makes the
+      standard lead, the ♦4 (fourth best), and both sides play perfectly after
+      that, 4♠ makes 5 (11 tricks)", or, when the lead changes nothing, "the
+      result is the same". There is no judgment of the bidding: the results
+      say it. What each side can make sits on the hand diagram. The
+      twenty-cell trick table itself is not shown; the sentences carry what a
+      learner needs.
    3. **Hands.** All four hands as the same mini cards South bid from, laid
       out as at the table: North across the top, West and East side by side,
       South across the bottom, each with its high-card points and South
@@ -148,14 +149,14 @@ is over). South is always the user. Top to bottom, each phase showed:
 
 ### The action button, by phase
 
-| Phase    | Primary                                  | Secondary               | Tertiary (text)                              |
-| -------- | ---------------------------------------- | ----------------------- | -------------------------------------------- |
-| Bidding  | The bidding box                          | Options · Show SAYC bid | Take back · Restart hand · Skip hand · Share |
-| Thinking | Everything disabled; the `?` cell pulses |                         |                                              |
-| Review   | Next hand                                | Bid again · Share       |                                              |
+| Phase    | Primary                                  | Secondary               | Tertiary (text)                             |
+| -------- | ---------------------------------------- | ----------------------- | ------------------------------------------- |
+| Bidding  | The bidding box                          | Options · Show SAYC bid | Undo bid · Restart hand · Skip hand · Share |
+| Thinking | Everything disabled; the `?` cell pulses |                         |                                             |
+| Review   | Next hand                                | Bid again · Share       |                                             |
 
 "Rebid" and "Rebid Hand" became "Restart hand" during bidding (it throws away
-calls) and "Bid again" in review (it is a second attempt). "Take back" undoes
+calls) and "Bid again" in review (it is a second attempt). "Undo bid" undoes
 only South's latest call: the robots' replies to it are dropped, or discarded
 if they are still thinking, and the re-opened turn keeps its cached SAYC bid.
 It is offered during bidding only; a reviewed hand is already in the record. "Skip hand" and
