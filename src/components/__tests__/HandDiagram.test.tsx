@@ -116,6 +116,20 @@ describe("HandDiagram", () => {
     expect(screen.getByTestId("makeable-NS").textContent).not.toContain("4♠ (");
   });
 
+  it("gives the other partner's best in the strain beside it", () => {
+    // South makes 1NT (7 tricks) where North makes 3NT.
+    render(
+      <HandDiagram
+        deal={MOCK_DEAL}
+        table={{ ...TABLE, N: { N: 9, E: 4, S: 7, W: 4 } }}
+        {...BOARD}
+      />,
+    );
+    expect(screen.getByTestId("makeable-NS").textContent).toBe(
+      "4♠, 3NT (N), 1NT (S), 2♦",
+    );
+  });
+
   it("dashes a side that can make nothing", () => {
     const nothing = { N: 6, E: 6, S: 6, W: 6 };
     render(

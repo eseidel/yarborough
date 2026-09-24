@@ -18,41 +18,53 @@ const STRAIN_RANK: StrainName[] = ["N", "S", "H", "D", "C"];
 export interface MakeableContract {
   level: number;
   strain: StrainName;
-  declarer: Position;
+  /** Who declares it, or null where both partners take the same tricks. */
+  declarer: Position | null;
   tricks: number;
-  /** Whether the other partner takes as many tricks, so either can declare. */
-  eitherDeclarer: boolean;
 }
 
 /**
- * The highest contract `side` can make in each strain, by whichever partner
- * takes more tricks, highest level first. Empty when the side makes nothing.
+ * The highest contract `side` can make in each strain, highest level first.
+ * Where the partners take the same tricks it is one contract either can
+ * play. Where they differ, each partner's best follows the other's, the
+ * better first, so "3NT (N), 1NT (S)" reads together; a partner who makes
+ * nothing in the strain is left out.
  */
 export function makeableContracts(
   table: DoubleDummyTable,
   side: Side,
 ): MakeableContract[] {
-  const contracts: MakeableContract[] = [];
+  const groups: MakeableContract[][] = [];
   for (const strain of STRAIN_RANK) {
     const [first, second] = SIDE_SEATS[side];
-    const declarer =
-      table[strain][second] > table[strain][first] ? second : first;
-    const tricks = table[strain][declarer];
-    if (tricks >= 7) {
-      contracts.push({
-        level: tricks - 6,
-        strain,
-        declarer,
-        tricks,
-        eitherDeclarer: table[strain][first] === table[strain][second],
-      });
-    }
+    const [better, worse] =
+      table[strain][second] > table[strain][first]
+        ? [second, first]
+        : [first, second];
+    const contract = (declarer: Position, tricks: number) => ({
+      level: tricks - 6,
+      strain,
+      declarer,
+      tricks,
+    });
+    const best = table[strain][better];
+    const other = table[strain][worse];
+    if (best < 7) continue;
+    groups.push(
+      best === other
+        ? [{ ...contract(better, best), declarer: null }]
+        : other >= 7
+          ? [contract(better, best), contract(worse, other)]
+          : [contract(better, best)],
+    );
   }
-  return contracts.sort(
-    (a, b) =>
-      b.level - a.level ||
-      STRAIN_RANK.indexOf(a.strain) - STRAIN_RANK.indexOf(b.strain),
-  );
+  return groups
+    .sort(
+      (a, b) =>
+        b[0].level - a[0].level ||
+        STRAIN_RANK.indexOf(a[0].strain) - STRAIN_RANK.indexOf(b[0].strain),
+    )
+    .flat();
 }
 
 /** "4♠", "3NT", "2♥X". */
@@ -95,16 +107,15 @@ export function describePlay(level: number, tricks: number): string {
 }
 
 /**
- * "4♠, 3NT (N), 2♦", and empty where a side can make none. A contract only
- * one partner makes names that partner, since from the other side of the
- * table it fails.
+ * "4♠, 3NT (N), 1NT (S), 2♦", and empty where a side can make none. A
+ * contract that depends on who declares names the declarer.
  */
 export function listMakeable(contracts: MakeableContract[]): string {
   return contracts
     .map(
       (c) =>
         formatContract(c.level, c.strain) +
-        (c.eitherDeclarer ? "" : ` (${c.declarer})`),
+        (c.declarer ? ` (${c.declarer})` : ""),
     )
     .join(", ");
 }
