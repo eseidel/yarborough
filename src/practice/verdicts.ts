@@ -102,21 +102,36 @@ export function buildVerdicts(
 
 export interface VerdictSummary {
   total: number;
+  /** Calls that ended up as SAYC's, including those found on a retry. */
   matched: number;
   assisted: number;
+  /** SAYC's calls found only after taking back another. */
+  retried: number;
+  /** Calls that stood as something other than SAYC's. */
   missed: CallVerdict[];
-  /** Every call matched and none was assisted. */
+  /** Every call matched on its first try and none was assisted. */
   onSystem: boolean;
 }
 
+/**
+ * How the auction as it stands compares with SAYC. A call taken back and
+ * replaced by SAYC's reads as SAYC's here, as the auction does; the record
+ * still judges it on its first try.
+ */
 export function summarizeVerdicts(verdicts: CallVerdict[]): VerdictSummary {
-  const missed = verdicts.filter((v) => !v.matched);
+  const retried = verdicts.filter(foundOnRetry).length;
+  const missed = verdicts.filter((v) => !v.matched && !foundOnRetry(v));
   const assisted = verdicts.filter((v) => v.assisted).length;
   return {
     total: verdicts.length,
     matched: verdicts.length - missed.length,
     assisted,
+    retried,
     missed,
-    onSystem: verdicts.length > 0 && missed.length === 0 && assisted === 0,
+    onSystem:
+      verdicts.length > 0 &&
+      missed.length === 0 &&
+      retried === 0 &&
+      assisted === 0,
   };
 }

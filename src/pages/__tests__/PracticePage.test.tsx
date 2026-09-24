@@ -846,8 +846,15 @@ describe("PracticePage", () => {
         boardId,
       );
       expect(
-        screen.getAllByLabelText("matched SAYC on a retry").length,
-      ).toBeGreaterThan(0);
+        within(screen.getByTestId("call-table")).getByLabelText(
+          "matched SAYC on a retry",
+        ),
+      ).toBeInTheDocument();
+      // The review reads the auction as it stands, not the try taken back.
+      expect(await screen.findByTestId("verdict-on-system")).toHaveTextContent(
+        "All 2 of your calls followed SAYC",
+      );
+      expect(screen.queryByTestId("missed-call")).toBeNull();
 
       // The record keeps the first try.
       await waitFor(async () => expect(await store.allHands()).toHaveLength(1));
