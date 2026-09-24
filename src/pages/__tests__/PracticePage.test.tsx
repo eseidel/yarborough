@@ -1,7 +1,6 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import {
-  act,
   render,
   screen,
   fireEvent,
@@ -574,19 +573,7 @@ describe("PracticePage", () => {
     it("keeps the explanation of South's call from giving away a held-back verdict", async () => {
       await store.setSetting("feedbackTiming", "end");
       mockParseBoardId.mockReturnValue(withSouth);
-      const getSetting = vi.spyOn(store, "getSetting");
       renderPage();
-      // The page reads the setting from IndexedDB while the robots bid. A
-      // call made before it arrives is judged as immediate feedback, so the
-      // miss would hold the table: wait for the page's own read to land.
-      const index = await waitFor(() => {
-        const i = getSetting.mock.calls.findIndex(
-          ([key]) => key === "feedbackTiming",
-        );
-        expect(i).toBeGreaterThanOrEqual(0);
-        return i;
-      });
-      await act(() => getSetting.mock.results[index].value);
       await waitForRobots();
       mockAddRobotBids.mockResolvedValue({
         dealer: "N",
@@ -613,6 +600,47 @@ describe("PracticePage", () => {
       expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
       expect(screen.queryByTestId("hand-reasons")).toBeNull();
       expect(mockGetHandAnalysis).not.toHaveBeenCalled();
+    });
+
+    it("keeps the box closed until the feedback setting has loaded", async () => {
+      // A call made on the fallback (feedback after each call) would be held
+      // as a miss by someone who asked for feedback at the end.
+      await store.setSetting("feedbackTiming", "end");
+      mockParseBoardId.mockReturnValue(withSouth);
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const getSetting = store.getSetting.bind(store);
+      vi.spyOn(store, "getSetting").mockImplementation(async (key) => {
+        if (key === "feedbackTiming") await gate;
+        return getSetting(key);
+      });
+      renderPage();
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${boardId}:1S,P`,
+        ),
+      );
+      expect(screen.getByTestId("bidding-box")).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      release();
+      await waitForRobots();
+      mockAddRobotBids.mockResolvedValue({
+        dealer: "N",
+        calls: [bid(1, "S"), pass, bid(2, "S"), pass],
+      });
+      fireEvent.click(
+        within(screen.getByTestId("bidding-box"))
+          .getAllByRole("button")
+          .find((b) => b.textContent === "2♠")!,
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("location-path")).toHaveTextContent(
+          `/bid/${boardId}:1S,P,2S,P`,
+        ),
+      );
+      expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
     });
 
     it("opens a point in Explore with South's hand in session storage, not the link", async () => {

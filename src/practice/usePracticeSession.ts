@@ -154,10 +154,8 @@ export function usePracticeSession(
     "adaptiveTargets",
     null,
   );
-  const [feedbackTiming, setFeedbackTiming] = useSetting<FeedbackTiming>(
-    "feedbackTiming",
-    "immediate",
-  );
+  const [feedbackTiming, setFeedbackTiming, feedbackTimingLoaded] =
+    useSetting<FeedbackTiming>("feedbackTiming", "immediate");
   const [options, setOptions] = useState<AuctionPoint | null>(null);
   const record = useRecord();
   const summary = useMemo(() => summarize(record.hands), [record.hands]);
@@ -190,8 +188,14 @@ export function usePracticeSession(
   const auctionDone = isAuctionComplete(history);
   const callsKey = history.calls.map(callToString).join(",");
   const auctionKey = `${baseId}:${callsKey}`;
+  // The learner's calls are judged by the feedback setting, so the box waits
+  // for it: a call made on the fallback would be held as an immediate miss
+  // by someone who asked for feedback at the end.
   const userToCall =
-    !auctionDone && !thinking && currentPlayer(history) === userPosition;
+    !auctionDone &&
+    !thinking &&
+    feedbackTimingLoaded &&
+    currentPlayer(history) === userPosition;
   const currentKey = userToCall
     ? prefixKey(history, history.calls.length)
     : null;

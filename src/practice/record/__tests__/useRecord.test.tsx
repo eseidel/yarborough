@@ -61,7 +61,9 @@ describe("useSetting", () => {
       useSetting<"immediate" | "end">("feedbackTiming", "immediate"),
     );
     expect(result.current[0]).toBe("immediate");
-    await waitFor(() => expect(result.current[0]).toBe("end"));
+    expect(result.current[2]).toBe(false);
+    await waitFor(() => expect(result.current[2]).toBe(true));
+    expect(result.current[0]).toBe("end");
 
     await act(async () => {
       await result.current[1]("immediate");
@@ -72,10 +74,18 @@ describe("useSetting", () => {
     );
   });
 
+  it("counts a setting never stored as loaded, on its fallback", async () => {
+    const store = await openRecordStore(new IDBFactory(), "hook-unset");
+    useRecordStoreForTests(Promise.resolve(store));
+    const { result } = renderHook(() => useSetting("focus", "Random"));
+    await waitFor(() => expect(result.current[2]).toBe(true));
+    expect(result.current[0]).toBe("Random");
+  });
+
   it("keeps the fallback where the store cannot open", async () => {
     useRecordStoreForTests(Promise.reject(new Error("no IndexedDB")));
     const { result } = renderHook(() => useSetting("focus", "Random"));
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await waitFor(() => expect(result.current[2]).toBe(true));
     expect(result.current[0]).toBe("Random");
     await act(async () => {
       await result.current[1]("Notrump");
