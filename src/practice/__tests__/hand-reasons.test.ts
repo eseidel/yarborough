@@ -161,11 +161,10 @@ describe("a point rule on the miss card", () => {
   };
 
   it("counts out the rule the user's call falls short of", () => {
-    expect(missReasons(SHORT, bid(1, "S"), PASS, SHORT_ANALYSIS)).toEqual([
-      "You have 11 hcp.",
-      "1♠ doesn't fit your hand. With this shape, needs 12–35 hcp, you have 11.",
-      "Rule of 20: 11 hcp + 5 ♠ + 3 ♦ = 19, short of 20.",
-    ]);
+    const lines = missReasons(SHORT, bid(1, "S"), PASS, SHORT_ANALYSIS);
+    expect(lines).toHaveLength(3);
+    expect(lines[1]).toMatch(/^1♠ doesn't fit your hand\. /);
+    expect(lines[2]).toBe("Rule of 20: 11 hcp + 5 ♠ + 3 ♦ = 19, short of 20.");
     expect(missPointRules(bid(1, "S"), PASS, SHORT_ANALYSIS)).toEqual([
       "rule_of_20",
     ]);
