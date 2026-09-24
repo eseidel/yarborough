@@ -1,6 +1,7 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import {
+  act,
   render,
   screen,
   fireEvent,
@@ -572,9 +573,18 @@ describe("PracticePage", () => {
 
     it("keeps the explanation of South's call from giving away a held-back verdict", async () => {
       await store.setSetting("feedbackTiming", "end");
+      const readSetting = vi.spyOn(store, "getSetting");
       mockParseBoardId.mockReturnValue(withSouth);
       renderPage();
       await waitForRobots();
+      // The stored setting arrives on its own schedule; bid only once it has,
+      // or the call is held as a miss under the default of feedback each call.
+      await waitFor(() =>
+        expect(readSetting).toHaveBeenCalledWith("feedbackTiming"),
+      );
+      await act(() =>
+        Promise.all(readSetting.mock.results.map((r) => r.value)),
+      );
       mockAddRobotBids.mockResolvedValue({
         dealer: "N",
         calls: [bid(1, "S"), pass, bid(2, "S"), pass],
