@@ -189,6 +189,8 @@ function PracticeBoard({
           <>
             {latestVerdict && (
               <CallFeedback
+                // A miss after a kept miss is a new box, and arrives as one.
+                key={latestVerdict.index}
                 verdict={latestVerdict}
                 hand={hand}
                 analysis={feedbackAnalysis}

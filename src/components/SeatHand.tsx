@@ -43,6 +43,10 @@ function GhostCards() {
  * asking: an invitation when the seat has entered nothing, the backs of its
  * cards when it has, and its cards only once someone taps them. The page
  * turns them face down again on every call.
+ *
+ * Each of these arrives with a fade, keyed so that one replacing another
+ * starts afresh, and none of them lingers on its way out: face down is at
+ * once.
  */
 export function SeatHand({
   seat,
@@ -69,9 +73,10 @@ export function SeatHand({
   if (!hand) {
     return (
       <button
+        key="enter"
         type="button"
         onClick={onEnter}
-        className="flex w-full items-center gap-3 rounded-xl border-[1.5px] border-dashed border-gray-300 px-3.5 py-3 text-left transition-colors hover:bg-gray-100/70 active:bg-gray-100"
+        className="animate-fade flex w-full items-center gap-3 rounded-xl border-[1.5px] border-dashed border-gray-300 px-3.5 py-3 text-left transition-colors hover:bg-gray-100/70 active:bg-gray-100"
       >
         <GhostCards />
         <span>
@@ -89,10 +94,11 @@ export function SeatHand({
   if (!shown) {
     return (
       <button
+        key="backs"
         type="button"
         onClick={onShow}
         aria-label={`Show ${name}'s hand`}
-        className={`${CARD} flex w-full items-center gap-3.5 px-3.5 py-3 text-left active:bg-gray-50`}
+        className={`${CARD} animate-fade flex w-full items-center gap-3.5 px-3.5 py-3 text-left active:bg-gray-50`}
       >
         <CardBacks />
         <span className="text-[15px] font-semibold text-gray-900">
@@ -128,14 +134,15 @@ export function SeatHand({
 
   return (
     <section
-      className={`${CARD} px-3.5 pt-1.5 pb-3`}
+      key="cards"
+      className={`${CARD} animate-fade px-3.5 pt-1.5 pb-3`}
       data-testid={`hand-${seat}`}
     >
       <div className="flex min-h-9 items-center">
         <span className={EYEBROW}>{name}</span>
         {weighing && (
-          <span className="ml-2 animate-pulse text-xs text-gray-400">
-            Weighing the calls…
+          <span className="animate-fade-late ml-2 text-xs text-gray-400">
+            <span className="animate-pulse">Weighing the calls…</span>
           </span>
         )}
         <span className="-mr-2 ml-auto flex">

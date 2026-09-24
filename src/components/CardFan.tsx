@@ -10,6 +10,9 @@ import {
 } from "../bridge/types";
 import { CARD, EYEBROW } from "./ui";
 
+/** Between one card of a fresh deal landing and the next. */
+export const DEAL_STAGGER_MS = 15;
+
 /** Ranks below the ten: what a player enters only as a count. */
 const SMALL_RANKS = new Set(["2", "3", "4", "5", "6", "7", "8", "9"]);
 
@@ -66,20 +69,31 @@ function SuitRow({
   cards,
   small,
   compact,
+  dealFrom,
 }: {
   cards: Card[];
   small?: boolean;
   compact?: boolean;
+  /** Deal the cards in, the first as the hand's card number `dealFrom`. */
+  dealFrom?: number;
 }) {
   return (
     <div className="flex min-w-0">
       {cards.map((card, i) => (
         <div
           key={`${card.suit}${card.rank}`}
-          className={
+          className={`${
             i < cards.length - 1
               ? `flex-1 min-w-0 ${compact ? (card.rank === "T" ? "max-w-5" : "max-w-4") : "max-w-5"} relative`
               : "shrink-0"
+          } ${dealFrom === undefined ? "" : "animate-deal"}`}
+          style={
+            dealFrom === undefined
+              ? undefined
+              : {
+                  animationDelay: `${(dealFrom + i) * DEAL_STAGGER_MS}ms`,
+                  animationFillMode: "backwards",
+                }
           }
         >
           <MiniCard card={card} small={small} compact={compact} />
@@ -110,7 +124,8 @@ export function Fan({ hand, small = false }: { hand: Hand; small?: boolean }) {
 /**
  * A hand as mini cards, fanned by suit in a wrapped row. The user bids
  * looking at this; the review shows all four hands as text instead, which
- * costs a fraction of the height.
+ * costs a fraction of the height. A new hand is dealt in, card by card,
+ * in a fraction of a second.
  */
 export function CardFan({
   hand,
@@ -120,6 +135,10 @@ export function CardFan({
   position?: Position;
 }) {
   const bySuit = cardsBySuit(hand);
+  // Where each suit's cards come in the deal: after the suits left of it.
+  const dealFrom = FAN_SUIT_ORDER.map((_, i) =>
+    FAN_SUIT_ORDER.slice(0, i).reduce((n, s) => n + bySuit[s].length, 0),
+  );
 
   return (
     <div
@@ -138,11 +157,11 @@ export function CardFan({
         data-testid="suit-rows"
         className="flex justify-center flex-wrap gap-1.5 items-end min-h-[60px]"
       >
-        {FAN_SUIT_ORDER.map((suit) => {
+        {FAN_SUIT_ORDER.map((suit, i) => {
           const cards = bySuit[suit];
           // A fan is one wrapped row, so a void is simply fewer cards.
           if (cards.length === 0) return null;
-          return <SuitRow key={suit} cards={cards} />;
+          return <SuitRow key={suit} cards={cards} dealFrom={dealFrom[i]} />;
         })}
       </div>
     </div>

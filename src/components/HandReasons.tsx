@@ -14,7 +14,11 @@ export function HandReasons({
 }) {
   if (!lines.length) return null;
   return (
-    <div className={`space-y-0.5 ${className}`} data-testid="hand-reasons">
+    // The engine often weighs the hand after the box around it has opened.
+    <div
+      className={`animate-fade space-y-0.5 ${className}`}
+      data-testid="hand-reasons"
+    >
       {lines.map((line) => (
         <div key={line}>
           <SuitText text={line} />

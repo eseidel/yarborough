@@ -155,6 +155,52 @@ describe("ExplorePage", () => {
     ).toBeTruthy();
   });
 
+  it("keeps the last calls in place, out of reach and weighed against no hand, while the next load", async () => {
+    saveHands({ N: NORTH });
+    const router = renderAt("/explore/1");
+    await menuLoaded();
+    fireEvent.click(screen.getByRole("button", { name: "Show North's hand" }));
+    await waitFor(() =>
+      expect(screen.getByTestId("call-row-1S").dataset.fit).toBe("chosen"),
+    );
+
+    let answer: (value: CallInterpretation[]) => void = () => {};
+    vi.mocked(engine.getCallInterpretations).mockReturnValueOnce(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+    fireEvent.click(screen.getByTestId("call-row-1S"));
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/explore/1:1S"),
+    );
+
+    // The menu does not collapse to a line while it loads...
+    const waiting = screen.getByTestId("explore-calls");
+    expect(waiting).toHaveAttribute("aria-busy", "true");
+    expect(waiting).toHaveAttribute("inert");
+    expect(screen.queryByText("Loading…")).toBeNull();
+    // ...but nothing in it says anything about North's hand any more, and
+    // a tap on it makes no call.
+    expect(screen.getByTestId("call-row-1S").dataset.fit).toBeUndefined();
+    expect(screen.queryByText("SAYC")).toBeNull();
+    expect(screen.queryAllByTestId("mini-card")).toHaveLength(0);
+    fireEvent.click(screen.getByTestId("call-row-1H"));
+    expect(router.state.location.pathname).toBe("/explore/1:1S");
+
+    await act(async () => {
+      answer([{ call: PASS, ruleName: "Pass" }]);
+    });
+    const loaded = screen.getByTestId("explore-calls");
+    expect(loaded).toHaveAttribute("aria-busy", "false");
+    expect(loaded).not.toHaveAttribute("inert");
+    expect(screen.queryByTestId("call-row-1H")).toBeNull();
+    fireEvent.click(screen.getByTestId("call-row-P"));
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/explore/1:1S,P"),
+    );
+  });
+
   it("restarts the auction on the same board, keeping the hands", async () => {
     saveHands({ N: NORTH });
     const router = renderAt("/explore/5:1S,P");

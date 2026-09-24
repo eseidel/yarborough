@@ -34,16 +34,17 @@ export function SaycHint({
   if (!suggestion) {
     return (
       <div
-        className="animate-pulse rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+        className="animate-rise rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
         data-testid="sayc-hint-loading"
       >
-        Working out the SAYC bid…
+        <span className="animate-pulse">Working out the SAYC bid…</span>
       </div>
     );
   }
   return (
     <div
-      className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm"
+      // In place of the wait, when there was one.
+      className="animate-fade bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm"
       data-testid="sayc-hint"
     >
       <div className="flex items-start justify-between gap-3">

@@ -1,6 +1,48 @@
 @import "tailwindcss";
 
-/* A card arriving in a hand being entered. */
+/*
+ * Motion. Everything that moves is an arrival: a call joining the auction, a
+ * panel opening, a sheet rising, a list for the next call. Nothing animates
+ * on its way out, so a tap never waits on a transition and a hand turned
+ * face down at the table is gone at once. Arrivals fade and travel a few
+ * pixels in under a quarter of a second, and never run for a reader who has
+ * asked for reduced motion: the classes do nothing outside this query.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  /* A card arriving in a hand being entered. */
+  .animate-deal {
+    animation: deal 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* A panel opening in the page: feedback, a hint, an explanation. */
+  .animate-rise {
+    animation: rise 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+
+  /* Content replacing other content in place. */
+  .animate-fade {
+    animation: fade 0.18s ease-out backwards;
+  }
+
+  /*
+   * A wait worth mentioning only if it lasts: a fast answer replaces it
+   * before it shows, so the page does not flash "Loading…".
+   */
+  .animate-fade-late {
+    animation: fade 0.2s ease-out 0.3s backwards;
+  }
+
+  /* A call landing in the auction, or its verdict landing on it. */
+  .animate-pop {
+    animation: pop 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+
+  /* A sheet rising from the foot of the screen, and the dimming behind it. */
+  .animate-sheet {
+    animation: sheet 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
 @keyframes deal {
   from {
     transform: translateY(8px) scale(0.85);
@@ -12,12 +54,28 @@
   }
 }
 
-.animate-deal {
-  animation: deal 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+@keyframes rise {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .animate-deal {
-    animation: none;
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+}
+
+@keyframes sheet {
+  from {
+    transform: translateY(100%);
   }
 }

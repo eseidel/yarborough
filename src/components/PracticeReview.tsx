@@ -169,7 +169,7 @@ export function PracticeReview({
     <>
       <div
         ref={result}
-        className={`${CARD} scroll-mt-4 space-y-3 p-4`}
+        className={`${CARD} animate-rise scroll-mt-4 space-y-3 p-4`}
         data-testid="result-card"
       >
         <ContractResult

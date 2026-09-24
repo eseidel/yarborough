@@ -159,10 +159,13 @@ export function ProgressPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavBar />
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4">
+      {/* The record fades in once it is read; the wait says so only if it lasts. */}
+      <div
+        className={`flex-1 flex flex-col max-w-md mx-auto w-full p-4 gap-4 ${record.loading ? "" : "animate-fade"}`}
+      >
         {record.loading ? (
-          <p className="text-center text-sm text-gray-400 animate-pulse">
-            Loading your record…
+          <p className="animate-fade-late text-center text-sm text-gray-400">
+            <span className="animate-pulse">Loading your record…</span>
           </p>
         ) : insights.overall.hands === 0 ? (
           <div

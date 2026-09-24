@@ -13,10 +13,15 @@ const STRAINS: StrainName[] = ["C", "D", "H", "S", "N"];
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 const MAX_VISIBLE_ROWS = 4;
 
+/** A call's button gives a little under the finger. */
+const PRESS = "transition motion-safe:enabled:active:scale-95";
+
 /**
  * The bidding box. Illegal calls are dimmed; `disabled` dims everything
  * while the engine is bidding for the other seats, so the box keeps its
- * place on the page instead of disappearing.
+ * place on the page instead of disappearing. The dimming waits a moment,
+ * so a quick reply from the table does not flicker the box, and lifts at
+ * once.
  */
 export function BiddingBox({
   onBid,
@@ -45,11 +50,11 @@ export function BiddingBox({
   const rdblLegal = !disabled && isCallLegal({ type: "redouble" }, callHistory);
   const dblLegal = !disabled && isCallLegal({ type: "double" }, callHistory);
   const passLegal = !disabled && isCallLegal({ type: "pass" }, callHistory);
-  const idle = "bg-gray-50 text-gray-300 cursor-not-allowed";
+  const idle = `bg-gray-50 text-gray-300 cursor-not-allowed ${disabled ? "delay-100" : ""}`;
 
   return (
     <div
-      className={`${CARD} space-y-2 p-3 ${disabled ? "opacity-60" : ""}`}
+      className={`${CARD} space-y-2 p-3 transition-opacity ${disabled ? "opacity-60 delay-100" : ""}`}
       data-testid="bidding-box"
       aria-disabled={disabled}
     >
@@ -58,7 +63,7 @@ export function BiddingBox({
         <button
           disabled={!rdblLegal}
           onClick={() => onBid({ type: "redouble" })}
-          className={`flex-1 rounded-lg py-2.5 font-semibold transition-colors ${
+          className={`flex-1 rounded-lg py-2.5 font-semibold ${PRESS} ${
             rdblLegal ? "bg-blue-100 hover:bg-blue-200 text-blue-700" : idle
           }`}
         >
@@ -67,7 +72,7 @@ export function BiddingBox({
         <button
           disabled={!passLegal}
           onClick={() => onBid({ type: "pass" })}
-          className={`flex-1 rounded-lg py-2.5 font-semibold transition-colors ${
+          className={`flex-1 rounded-lg py-2.5 font-semibold ${PRESS} ${
             passLegal ? "bg-gray-200 hover:bg-gray-300 text-gray-700" : idle
           }`}
         >
@@ -76,7 +81,7 @@ export function BiddingBox({
         <button
           disabled={!dblLegal}
           onClick={() => onBid({ type: "double" })}
-          className={`flex-1 rounded-lg py-2.5 font-semibold transition-colors ${
+          className={`flex-1 rounded-lg py-2.5 font-semibold ${PRESS} ${
             dblLegal ? "bg-red-100 hover:bg-red-200 text-red-700" : idle
           }`}
         >
@@ -95,7 +100,7 @@ export function BiddingBox({
                 key={`${level}${strain}`}
                 disabled={!legal}
                 onClick={() => onBid(call)}
-                className={`rounded-lg py-2.5 text-base font-semibold transition-colors ${
+                className={`rounded-lg py-2.5 text-base font-semibold ${PRESS} ${
                   legal ? "bg-gray-100 hover:bg-emerald-100" : idle
                 }`}
               >

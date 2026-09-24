@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { CallTable } from "../CallTable";
+import { CALL_STAGGER_MS, CallTable } from "../CallTable";
 import {
   CALL_TABLE_ORDER,
   POSITION_NAMES,
@@ -13,6 +13,77 @@ describe("CallTable", () => {
   const makeHistory = (calls: Call[], dealer = "N" as const): CallHistory => ({
     dealer,
     calls,
+  });
+
+  describe("calls arriving", () => {
+    const ONE_CLUB: Call = { type: "bid", level: 1, strain: "C" };
+    const PASS: Call = { type: "pass" };
+    const ONE_HEART: Call = { type: "bid", level: 1, strain: "H" };
+
+    const delay = (el: HTMLElement) => el.style.animationDelay;
+
+    it("lets the calls on the table when it first shows simply be there", () => {
+      render(<CallTable callHistory={makeHistory([ONE_CLUB, PASS])} />);
+      expect(screen.getByTestId("call-0").className).not.toMatch(/animate-/);
+      expect(screen.getByTestId("call-1").className).not.toMatch(/animate-/);
+      expect(screen.getByTestId("pending-call").className).not.toMatch(
+        /animate-/,
+      );
+    });
+
+    it("lands the calls just made one after another, then the next seat's marker", () => {
+      const { rerender } = render(
+        <CallTable callHistory={makeHistory([ONE_CLUB])} />,
+      );
+      rerender(
+        <CallTable callHistory={makeHistory([ONE_CLUB, PASS, ONE_HEART])} />,
+      );
+
+      expect(screen.getByTestId("call-0").className).not.toMatch(/animate-/);
+      expect(screen.getByTestId("call-1")).toHaveClass("animate-pop");
+      expect(delay(screen.getByTestId("call-1"))).toBe("0ms");
+      expect(screen.getByTestId("call-2")).toHaveClass("animate-pop");
+      expect(delay(screen.getByTestId("call-2"))).toBe(`${CALL_STAGGER_MS}ms`);
+      const pending = screen.getByTestId("pending-call");
+      expect(pending).toHaveClass("animate-fade");
+      expect(delay(pending)).toBe(`${2 * CALL_STAGGER_MS}ms`);
+    });
+
+    it("lands nothing when a call is taken back", () => {
+      const { rerender } = render(
+        <CallTable callHistory={makeHistory([ONE_CLUB])} />,
+      );
+      rerender(<CallTable callHistory={makeHistory([ONE_CLUB, PASS])} />);
+      rerender(<CallTable callHistory={makeHistory([ONE_CLUB])} />);
+
+      expect(screen.getByTestId("call-0").className).not.toMatch(/animate-/);
+      expect(screen.getByTestId("pending-call").className).not.toMatch(
+        /animate-/,
+      );
+    });
+
+    it("keeps a landed call still while the table re-renders around it", () => {
+      const onCallClick = vi.fn();
+      const { rerender } = render(
+        <CallTable
+          callHistory={makeHistory([ONE_CLUB])}
+          onCallClick={onCallClick}
+        />,
+      );
+      const history = makeHistory([ONE_CLUB, PASS]);
+      rerender(<CallTable callHistory={history} onCallClick={onCallClick} />);
+      const landed = screen.getByTestId("call-1");
+      rerender(
+        <CallTable
+          callHistory={history}
+          onCallClick={onCallClick}
+          selectedCallIndex={0}
+        />,
+      );
+      // The same element with the same class: its animation does not restart.
+      expect(screen.getByTestId("call-1")).toBe(landed);
+      expect(landed).toHaveClass("animate-pop");
+    });
   });
 
   it("renders calls in the table", () => {

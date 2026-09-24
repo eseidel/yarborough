@@ -88,7 +88,7 @@ export function OptionsSheet({
 
   return (
     <div
-      className="fixed inset-0 z-20 flex items-end justify-center bg-black/40"
+      className="animate-fade fixed inset-0 z-20 flex items-end justify-center bg-black/40"
       onClick={onClose}
       data-testid="options-sheet"
     >
@@ -96,7 +96,7 @@ export function OptionsSheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-md max-h-[80vh] flex flex-col bg-white rounded-t-2xl shadow-xl"
+        className="animate-sheet w-full max-w-md max-h-[80vh] flex flex-col bg-white rounded-t-2xl shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -125,14 +125,16 @@ export function OptionsSheet({
               The options could not be loaded: {current.error}
             </div>
           ) : !current?.interpretations ? (
-            <div className="p-4 text-center text-gray-400 animate-pulse">
-              Loading…
+            <div className="animate-fade-late p-4 text-center text-gray-400">
+              <span className="animate-pulse">Loading…</span>
             </div>
           ) : (
-            <CallMenu
-              interpretations={current.interpretations}
-              onSelect={onSelect}
-            />
+            <div className="animate-fade">
+              <CallMenu
+                interpretations={current.interpretations}
+                onSelect={onSelect}
+              />
+            </div>
           )}
         </div>
         {onExplore && (

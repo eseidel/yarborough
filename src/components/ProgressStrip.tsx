@@ -47,11 +47,16 @@ export function ProgressStrip({
             </span>
           )}
         </span>
-        <span className="text-gray-400 text-xs">{open ? "▲" : "▼"}</span>
+        <span
+          aria-hidden
+          className={`text-gray-400 text-xs motion-safe:transition-transform motion-safe:duration-200 ${open ? "rotate-180" : ""}`}
+        >
+          ▼
+        </span>
       </button>
       {open && (
         <div
-          className="px-3 pb-3 space-y-2 border-t border-gray-100 pt-2"
+          className="animate-fade px-3 pb-3 space-y-2 border-t border-gray-100 pt-2"
           data-testid="progress-details"
         >
           <p className="text-xs text-gray-500">
