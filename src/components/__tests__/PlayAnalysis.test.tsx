@@ -34,7 +34,7 @@ const LEAD = {
 };
 
 describe("PlayAnalysis", () => {
-  it("states the contract's result, the lead's effect, and the verdict in words", () => {
+  it("says what the standard lead does to the contract, and nothing else", () => {
     render(
       <PlayAnalysis
         history={FOUR_SPADES}
@@ -43,15 +43,11 @@ describe("PlayAnalysis", () => {
     );
     // The contract and its result are the card's headline, above this.
     expect(screen.queryByTestId("double-dummy-contract")).toBeNull();
-    const afterLead = screen.getByTestId("double-dummy-after-lead");
-    expect(afterLead.textContent).toBe(
-      "After East’s normal lead, the ♥8 (fourth best), it makes 5 (11 tricks): the defense no longer sees declarer’s cards before the first trick.",
+    expect(screen.getByTestId("double-dummy-after-lead").textContent).toBe(
+      "The result above assumes the defense finds the best opening lead. If East makes the standard lead, the ♥8 (fourth best), and both sides play perfectly after that, 4♠ makes 5 (11 tricks).",
     );
-    // The verdict judges; the result above is not repeated, and what each
-    // side can make belongs to the hand diagram now.
-    expect(screen.getByTestId("play-verdict").textContent).toBe(
-      "Too high for these cards.",
-    );
+    // No judgment of the bidding: the results speak for themselves.
+    expect(screen.queryByTestId("play-verdict")).toBeNull();
     expect(screen.queryByTestId("makeable-NS")).toBeNull();
   });
 
@@ -63,7 +59,7 @@ describe("PlayAnalysis", () => {
       />,
     );
     expect(screen.getByTestId("double-dummy-after-lead").textContent).toBe(
-      "East’s normal lead, the ♥8 (fourth best), does not change that.",
+      "If East makes the standard lead, the ♥8 (fourth best), and both sides play perfectly after that, the result is the same.",
     );
   });
 
@@ -78,8 +74,8 @@ describe("PlayAnalysis", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  it("judges a passed-out board", () => {
-    render(
+  it("shows nothing for a passed-out board", () => {
+    const { container } = render(
       <PlayAnalysis
         history={{
           dealer: "N",
@@ -93,10 +89,7 @@ describe("PlayAnalysis", () => {
         analysis={{ table: TABLE, lead: null, tricksAfterLead: null }}
       />,
     );
-    expect(screen.queryByTestId("double-dummy-contract")).toBeNull();
-    expect(screen.getByTestId("play-verdict").textContent).toBe(
-      "Passed out with only a partscore available to N-S.",
-    );
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("reports loading and failure", () => {

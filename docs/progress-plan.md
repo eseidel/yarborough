@@ -89,7 +89,7 @@ id, indexed by `completedAt` and by `boardId`:
 
 A hand is written once, when the auction is complete and every verdict is in,
 exactly where the `localStorage` counters are updated today. Bidding the same
-board again writes another record; "Take back" never writes.
+board again writes another record; "Undo bid" never writes.
 
 **`settings`** is a key-value store for the few preferences the page keeps:
 feedback timing, the current focus, and the adaptive mode's last targets.

@@ -1,6 +1,5 @@
 // The double-dummy table, read out in words a learner can act on: what the
-// contract does, what each side could have made, and how the bidding
-// compares with the cards.
+// contract does, and what each side could have made.
 
 import type { CallHistory, Position, StrainName } from "../bridge/types";
 import { POSITION_NAMES, strainSymbol } from "../bridge/types";
@@ -15,14 +14,6 @@ export const SIDE_LABEL: Record<Side, string> = { NS: "N-S", EW: "E-W" };
 const SIDE_SEATS: Record<Side, Position[]> = { NS: ["N", "S"], EW: ["E", "W"] };
 /** Strain order for listing contracts at the same level: notrump first. */
 const STRAIN_RANK: StrainName[] = ["N", "S", "H", "D", "C"];
-
-export function sideOf(position: Position): Side {
-  return position === "N" || position === "S" ? "NS" : "EW";
-}
-
-export function otherSide(side: Side): Side {
-  return side === "NS" ? "EW" : "NS";
-}
 
 export interface MakeableContract {
   level: number;
@@ -55,61 +46,6 @@ export function makeableContracts(
       b.level - a.level ||
       STRAIN_RANK.indexOf(a.strain) - STRAIN_RANK.indexOf(b.strain),
   );
-}
-
-/** True when a bid of `level` `strain` would be legal over `contract`. */
-export function outranks(
-  level: number,
-  strain: StrainName,
-  contract: ContractInfo,
-): boolean {
-  if (level !== contract.level) return level > contract.level;
-  return STRAIN_RANK.indexOf(strain) < STRAIN_RANK.indexOf(contract.strain);
-}
-
-/**
- * Those of `contracts` a side could still have bid over `contract`. A
- * makeable contract the opponents have already bid past is no answer to
- * them: with 3♠ on the table, making 3♥ would have taken a bid of 4♥.
- */
-export function biddableOver(
-  contracts: MakeableContract[],
-  contract: ContractInfo,
-): MakeableContract[] {
-  return contracts.filter((c) => outranks(c.level, c.strain, contract));
-}
-
-export type ContractClass = "partscore" | "game" | "small slam" | "grand slam";
-const CLASS_RANK: ContractClass[] = [
-  "partscore",
-  "game",
-  "small slam",
-  "grand slam",
-];
-
-export function contractClass(
-  level: number,
-  strain: StrainName,
-): ContractClass {
-  if (level === 7) return "grand slam";
-  if (level === 6) return "small slam";
-  const gameLevel =
-    strain === "N" ? 3 : strain === "H" || strain === "S" ? 4 : 5;
-  return level >= gameLevel ? "game" : "partscore";
-}
-
-function classRank(contractClass: ContractClass): number {
-  return CLASS_RANK.indexOf(contractClass);
-}
-
-/** The most valuable class among `contracts`, or null when there are none. */
-export function bestClass(contracts: MakeableContract[]): ContractClass | null {
-  let best: ContractClass | null = null;
-  for (const contract of contracts) {
-    const cls = contractClass(contract.level, contract.strain);
-    if (best === null || classRank(cls) > classRank(best)) best = cls;
-  }
-  return best;
 }
 
 /** "4♠", "3NT", "2♥X". */
@@ -154,80 +90,4 @@ export function describePlay(level: number, tricks: number): string {
 /** "4♠, 3NT, 2♦", and empty where a side can make none. */
 export function listMakeable(contracts: MakeableContract[]): string {
   return contracts.map((c) => formatContract(c.level, c.strain)).join(", ");
-}
-
-export interface PlayVerdict {
-  text: string;
-  tone: "good" | "mixed" | "bad";
-}
-
-/**
- * How the bidding compares with what the cards allow, from `userSide`'s
- * point of view: a judgment in a few words. It names neither the contract's
- * own result nor the contracts each side can make, since the play card
- * gives both of those on their own lines. `contract` is null for a
- * passed-out board.
- */
-export function biddingVerdict(
-  contract: ContractInfo | null,
-  declarer: Position | null,
-  table: DoubleDummyTable,
-  userSide: Side,
-): PlayVerdict {
-  const us = SIDE_LABEL[userSide];
-  const ourBest = bestClass(makeableContracts(table, userSide));
-
-  if (!contract || !declarer) {
-    if (ourBest && ourBest !== "partscore") {
-      return {
-        text: `Passed out with a ${ourBest} available to ${us}.`,
-        tone: "bad",
-      };
-    }
-    if (ourBest === "partscore") {
-      return {
-        text: `Passed out with only a partscore available to ${us}.`,
-        tone: "mixed",
-      };
-    }
-    return { text: `Passed out, and ${us} can make nothing.`, tone: "good" };
-  }
-
-  const tricks = table[contract.strain][declarer];
-  const makes = contractMakes(contract.level, tricks);
-
-  if (sideOf(declarer) === userSide) {
-    const cls = contractClass(contract.level, contract.strain);
-    if (!makes) return { text: "Too high for these cards.", tone: "bad" };
-    if (ourBest === null || classRank(cls) >= classRank(ourBest)) {
-      return cls === "partscore"
-        ? { text: `There is no game for ${us}.`, tone: "good" }
-        : { text: `${us} reached the ${cls} the cards allow.`, tone: "good" };
-    }
-    return cls === "partscore"
-      ? { text: `${us} stopped short of game.`, tone: "mixed" }
-      : { text: `${us} missed a ${ourBest}.`, tone: "mixed" };
-  }
-
-  // Only a contract that outranks theirs was ever ours to bid, so judge the
-  // auction by those alone: a side sitting under the opponents' contract
-  // missed nothing it could have had.
-  const available = bestClass(
-    biddableOver(makeableContracts(table, userSide), contract),
-  );
-
-  if (available && available !== "partscore") {
-    return { text: `A missed ${available} for ${us}.`, tone: "bad" };
-  }
-  if (available === "partscore" && makes) {
-    return { text: `${us} could have competed in a partscore.`, tone: "mixed" };
-  }
-  if (!available && ourBest && makes) {
-    const them = SIDE_LABEL[otherSide(userSide)];
-    return {
-      text: `${them} bid too high for ${us} to compete.`,
-      tone: "good",
-    };
-  }
-  return { text: "Defending was right.", tone: "good" };
 }

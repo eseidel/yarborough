@@ -193,7 +193,6 @@ export function PracticeReview({
           analysis={doubleDummy?.analysis ?? null}
           loading={doubleDummy === null}
           error={doubleDummy?.error ?? null}
-          userSide="NS"
         />
         {summary.hands > 0 && <RecordLine summary={summary} />}
       </div>

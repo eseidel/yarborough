@@ -42,12 +42,15 @@ describe("OptionsSheet", () => {
     expect(screen.getByRole("dialog")).toHaveAccessibleName(
       "Options after 1NT · Pass",
     );
+    expect(
+      screen.getByText("What each call means in SAYC here. Tap one to bid it."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Loading…")).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getByText("Stayman")).toBeInTheDocument(),
     );
     expect(mockGetCallInterpretations).toHaveBeenCalledWith("1N,P", "N", "NS");
-    expect(screen.getByText("Not a SAYC call here")).toBeInTheDocument();
+    expect(screen.getByText("No SAYC meaning")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Stayman"));
     expect(onSelect).toHaveBeenCalledWith(
@@ -70,6 +73,11 @@ describe("OptionsSheet", () => {
     expect(screen.getByRole("dialog")).toHaveAccessibleName(
       "Options as opener",
     );
+    expect(
+      screen.getByText(
+        "What each call means in SAYC at this point in the auction.",
+      ),
+    ).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getByText("Stayman")).toBeInTheDocument(),
     );

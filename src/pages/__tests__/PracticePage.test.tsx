@@ -337,9 +337,9 @@ describe("PracticePage", () => {
       expect(screen.getByLabelText("differed from SAYC")).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: /^Keep 2/ }));
       await waitFor(() => expect(screen.getByTestId("call-3")).toBeVisible());
-      // The box stays up, now without the choice.
-      expect(screen.getByTestId("call-feedback-miss")).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+      // The box goes; the call table's mark is what remains of the miss.
+      expect(screen.queryByTestId("call-feedback-miss")).toBeNull();
+      expect(screen.getByLabelText("differed from SAYC")).toBeInTheDocument();
       expect(mockAddRobotBids).toHaveBeenLastCalledWith(
         expect.objectContaining({
           calls: [bid(1, "S"), pass, bid(2, "S")],
@@ -708,7 +708,7 @@ describe("PracticePage", () => {
       renderPage();
       await waitForRobots();
       // Nothing of South's to undo yet.
-      expect(screen.getByRole("button", { name: /take back/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Undo bid" })).toBeDisabled();
 
       mockAddRobotBids.mockResolvedValue({
         dealer: "N",
@@ -726,7 +726,7 @@ describe("PracticePage", () => {
         ),
       );
 
-      fireEvent.click(screen.getByRole("button", { name: /take back/i }));
+      fireEvent.click(screen.getByRole("button", { name: "Undo bid" }));
       // Back to the turn before 2♠, with the robots' replies gone.
       expect(screen.getByTestId("location-path")).toHaveTextContent(
         `/bid/${boardId}:1S,P`,
@@ -737,7 +737,7 @@ describe("PracticePage", () => {
         "aria-disabled",
         "true",
       );
-      expect(screen.getByRole("button", { name: /take back/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Undo bid" })).toBeDisabled();
       // The re-opened turn's SAYC bid was cached, not fetched again.
       const suggestCalls = mockGetSuggestedCall.mock.calls.filter(
         ([id]) => id === `${boardId}:1S,P`,
@@ -773,7 +773,7 @@ describe("PracticePage", () => {
         "true",
       );
 
-      fireEvent.click(screen.getByRole("button", { name: /take back/i }));
+      fireEvent.click(screen.getByRole("button", { name: "Undo bid" }));
       expect(screen.getByTestId("bidding-box")).not.toHaveAttribute(
         "aria-disabled",
         "true",
@@ -1049,9 +1049,7 @@ describe("PracticePage", () => {
       expect(screen.getByTestId("double-dummy-after-lead")).toHaveTextContent(
         "makes 5 (11 tricks)",
       );
-      expect(screen.getByTestId("play-verdict")).toHaveTextContent(
-        "N-S reached the game the cards allow.",
-      );
+      expect(screen.queryByTestId("play-verdict")).toBeNull();
       expect(mockGetTricksAfterLead).toHaveBeenCalledWith(
         dummyParsed.deal,
         "S",
@@ -1142,9 +1140,6 @@ describe("PracticePage", () => {
       );
       expect(screen.getByTestId("sayc-auction")).toHaveTextContent(
         "SAYC reaches 4♠ by North",
-      );
-      expect(screen.getByTestId("play-verdict")).toHaveTextContent(
-        "N-S stopped short of game.",
       );
       // The diagram gives each side's points and what it could have made.
       expect(screen.getByTestId("side-NS")).toHaveTextContent(/N-S \d+ HCP/);
