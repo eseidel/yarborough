@@ -40,8 +40,24 @@ describe("analysis", () => {
       "C",
     ]);
     expect(makeableContracts(NOTHING, "NS")).toEqual([]);
-    expect(listMakeable(ns)).toBe("4♠, 3NT, 2♦");
+    expect(listMakeable(ns)).toBe("4♠, 3NT (N), 2♦");
+    expect(listMakeable(makeableContracts(TABLE, "EW"))).toBe("2♥, 1♣ (W)");
     expect(listMakeable([])).toBe("");
+  });
+
+  it("names the partner who makes more tricks, whichever seat it is", () => {
+    // South is the better declarer in hearts; ties name nobody.
+    const table: DoubleDummyTable = {
+      ...NOTHING,
+      H: { N: 8, E: 5, S: 10, W: 5 },
+      S: { N: 8, E: 5, S: 8, W: 5 },
+    };
+    const ns = makeableContracts(table, "NS");
+    expect(ns.map((c) => [c.declarer, c.eitherDeclarer])).toEqual([
+      ["S", false],
+      ["N", true],
+    ]);
+    expect(listMakeable(ns)).toBe("4♥ (S), 2♠");
   });
 
   it("formats contracts and results", () => {

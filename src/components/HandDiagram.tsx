@@ -152,7 +152,8 @@ function TextHand({
  * The contracts need no words in front of them: a list of them under a
  * side's points, beside the deal, is read for what it is. They wait on the
  * double-dummy solver, so the line is left off until it answers, and is a
- * dash where the side can make nothing.
+ * dash where the side can make nothing. A contract only one partner makes
+ * carries that partner's seat, "3NT (N)".
  */
 function SideSummary({
   deal,

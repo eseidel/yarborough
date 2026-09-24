@@ -20,6 +20,8 @@ export interface MakeableContract {
   strain: StrainName;
   declarer: Position;
   tricks: number;
+  /** Whether the other partner takes as many tricks, so either can declare. */
+  eitherDeclarer: boolean;
 }
 
 /**
@@ -32,14 +34,19 @@ export function makeableContracts(
 ): MakeableContract[] {
   const contracts: MakeableContract[] = [];
   for (const strain of STRAIN_RANK) {
-    let best: MakeableContract | null = null;
-    for (const declarer of SIDE_SEATS[side]) {
-      const tricks = table[strain][declarer];
-      if (tricks >= 7 && (!best || tricks > best.tricks)) {
-        best = { level: tricks - 6, strain, declarer, tricks };
-      }
+    const [first, second] = SIDE_SEATS[side];
+    const declarer =
+      table[strain][second] > table[strain][first] ? second : first;
+    const tricks = table[strain][declarer];
+    if (tricks >= 7) {
+      contracts.push({
+        level: tricks - 6,
+        strain,
+        declarer,
+        tricks,
+        eitherDeclarer: table[strain][first] === table[strain][second],
+      });
     }
-    if (best) contracts.push(best);
   }
   return contracts.sort(
     (a, b) =>
@@ -87,7 +94,17 @@ export function describePlay(level: number, tricks: number): string {
   return `makes ${tricks - 6} (${tricks} ${plural})`;
 }
 
-/** "4♠, 3NT, 2♦", and empty where a side can make none. */
+/**
+ * "4♠, 3NT (N), 2♦", and empty where a side can make none. A contract only
+ * one partner makes names that partner, since from the other side of the
+ * table it fails.
+ */
 export function listMakeable(contracts: MakeableContract[]): string {
-  return contracts.map((c) => formatContract(c.level, c.strain)).join(", ");
+  return contracts
+    .map(
+      (c) =>
+        formatContract(c.level, c.strain) +
+        (c.eitherDeclarer ? "" : ` (${c.declarer})`),
+    )
+    .join(", ");
 }
