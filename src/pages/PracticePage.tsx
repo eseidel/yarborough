@@ -179,6 +179,12 @@ function PracticeBoard({
           explanationLoading={explanation.explanationLoading}
           handReasons={explanation.handReasons}
           onShowOptions={(index) => session.showOptions({ history, index })}
+          onPendingClick={
+            userToCall
+              ? () =>
+                  session.showOptions({ history, index: history.calls.length })
+              : undefined
+          }
         />
 
         {!auctionDone && (

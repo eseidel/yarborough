@@ -675,6 +675,19 @@ describe("PracticePage", () => {
       );
     });
 
+    it("opens the options from the ? in the auction", async () => {
+      renderPage();
+      await waitForRobots();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Options for your call" }),
+      );
+      const sheet = await screen.findByRole("dialog");
+      expect(sheet).toHaveAccessibleName("Options after 1♠ · Pass");
+      await waitFor(() =>
+        expect(within(sheet).getByText("Simple Raise")).toBeInTheDocument(),
+      );
+    });
+
     it("explains a tapped call and offers the options at that point, read-only", async () => {
       mockGetCallInterpretations.mockResolvedValue([
         { call: bid(1, "S"), ruleName: "One Level Suit Opening" },
