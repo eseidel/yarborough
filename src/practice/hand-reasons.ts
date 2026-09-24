@@ -6,11 +6,13 @@ import type {
   Hand,
   HandAnalysis,
   HandCallAnalysis,
+  PointRule,
 } from "../bridge/types";
 import { callLabel, callToString } from "../bridge/types";
 import {
   chosenText,
   missesText,
+  pointRuleText,
   preferenceText,
 } from "../bridge/hand-analysis";
 
@@ -75,8 +77,27 @@ export function alternativesText(
 }
 
 /**
+ * The point rules that decided SAYC's call and the user's, SAYC's first:
+ * named on the miss card, each with a way to read what it is.
+ */
+export function missPointRules(
+  yours: Call,
+  sayc: Call,
+  analysis: HandAnalysis | null,
+): PointRule[] {
+  const rules: PointRule[] = [];
+  for (const call of [sayc, yours]) {
+    const rule = weighedCall(analysis, call)?.pointRule;
+    if (rule && !rules.includes(rule)) rules.push(rule);
+  }
+  return rules;
+}
+
+/**
  * Why SAYC bids `sayc` rather than the user's `yours`, from the hand: the
- * numbers SAYC's call is chosen on, then where the user's call stands.
+ * numbers SAYC's call is chosen on, then where the user's call stands. A
+ * point rule that decided either call is counted out after it: "Rule of 20:
+ * 11 hcp + 5 ♠ + 3 ♥ = 19, short of 20."
  */
 export function missReasons(
   hand: Hand,
@@ -85,8 +106,17 @@ export function missReasons(
   analysis: HandAnalysis | null,
 ): string[] {
   const lines = [chosenText(hand, sayc)];
+  const chosen = weighedCall(analysis, sayc);
+  if (chosen?.fit === "chosen" && chosen.pointRule) {
+    lines.push(`${pointRuleText(chosen.pointRule, hand)}.`);
+  }
   const weighed = weighedCall(analysis, yours);
-  if (weighed && weighed.fit !== "chosen") lines.push(yourCallText(weighed));
+  if (weighed && weighed.fit !== "chosen") {
+    lines.push(yourCallText(weighed));
+    if (weighed.pointRule && weighed.pointRule !== chosen?.pointRule) {
+      lines.push(`${pointRuleText(weighed.pointRule, hand)}.`);
+    }
+  }
   return lines;
 }
 

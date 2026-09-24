@@ -7,7 +7,7 @@ import type {
 } from "../bridge/types";
 import { callLabel } from "../bridge/types";
 import { contractHeadline } from "../practice/analysis";
-import { missReasons } from "../practice/hand-reasons";
+import { missPointRules, missReasons } from "../practice/hand-reasons";
 import { useHandAnalysis } from "../practice/useHandAnalysis";
 import {
   type CallVerdict,
@@ -63,6 +63,8 @@ function MissedCall({
       {hand && analysis !== undefined && (
         <HandReasons
           lines={missReasons(hand, verdict.call, sayc.call, analysis)}
+          rules={missPointRules(verdict.call, sayc.call, analysis)}
+          ruleLinkClassName="text-emerald-700"
           className="mt-0.5 text-gray-700"
         />
       )}

@@ -7,6 +7,7 @@ import type {
   HandCallAnalysis,
   Miss,
   OpeningLead,
+  PointRule,
   Position,
   PreferEntry,
   Preference,
@@ -282,16 +283,27 @@ function parsePreference(value: unknown): Preference | undefined {
   };
 }
 
+const POINT_RULES: readonly PointRule[] = [
+  "rule_of_20",
+  "rule_of_19",
+  "rule_of_15",
+];
+
 function parseHandCallAnalysis(value: unknown): HandCallAnalysis {
   const analysis = record(value, "hand call analysis");
   if (!Array.isArray(analysis.misses)) {
     throw new Error("The bidding engine returned invalid misses");
   }
   const preference = parsePreference(analysis.preference);
+  const pointRule =
+    analysis.point_rule == null
+      ? null
+      : oneOf(analysis.point_rule, POINT_RULES, "point rule");
   return {
     ...parseCallInterpretation(analysis),
     fit: oneOf(analysis.fit, CALL_FITS, "call fit"),
     misses: analysis.misses.map(parseMiss),
+    ...(pointRule ? { pointRule } : {}),
     ...(preference ? { preference } : {}),
   };
 }

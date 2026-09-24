@@ -108,4 +108,54 @@ describe("CallFeedback", () => {
       "You have 13 hcp and 4 ♥.2♥ doesn't fit your hand. Needs 6–10 hcp, you have 13.",
     );
   });
+
+  it("names a point rule and explains it on request", () => {
+    // ♠Q5432 ♥AJ ♦K32 ♣J32: 11 + 5 + 3 = 19, a point short of opening.
+    const hand = handFromCdhsString("J32.K32.AJ.Q5432")!;
+    const verdict: CallVerdict = {
+      ...MISS,
+      index: 0,
+      call: { type: "bid", level: 1, strain: "S" },
+      sayc: { ...MISS.sayc, call: { type: "pass" }, ruleName: undefined },
+    };
+    render(
+      <CallFeedback
+        verdict={verdict}
+        hand={hand}
+        analysis={{
+          call: { type: "pass" },
+          calls: [
+            { call: { type: "pass" }, fit: "chosen", misses: [] },
+            {
+              call: { type: "bid", level: 1, strain: "S" },
+              fit: "unfit",
+              misses: [
+                {
+                  kind: "points",
+                  min: 12,
+                  max: 35,
+                  actual: 11,
+                  withShape: true,
+                },
+              ],
+              pointRule: "rule_of_20",
+            },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByTestId("hand-reasons").textContent).toContain(
+      "Rule of 20: 11 hcp + 5 ♠ + 3 ♦ = 19, short of 20.",
+    );
+    const learn = screen.getByRole("button", {
+      name: "What's the Rule of 20?",
+    });
+    expect(learn.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText(/two longest suits/)).toBeNull();
+    fireEvent.click(learn);
+    expect(learn.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText(/two longest suits/)).toBeTruthy();
+    fireEvent.click(learn);
+    expect(screen.queryByText(/two longest suits/)).toBeNull();
+  });
 });

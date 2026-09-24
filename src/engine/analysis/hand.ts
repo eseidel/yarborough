@@ -158,10 +158,23 @@ export interface Preference {
   entry: PreferEntry | null;
 }
 
+/**
+ * An opening's point rule, by the count it names: the rule of 20 (first and
+ * second seat), 19 (third seat, a point lighter) and 15 (fourth seat, hcp
+ * plus spades).  model.ts `ruleOfTwenty`, `ruleOfNineteen`, `ruleOfFifteen`.
+ */
+export type PointRule = "rule_of_20" | "rule_of_19" | "rule_of_15";
+
 export interface CallVerdict {
   fit: CallFit;
   /** For `unfit`: what the hand misses, the point count first. */
   misses: Miss[];
+  /**
+   * For `chosen` and `unfit`: the point rule that decided the call, when one
+   * did.  On `chosen` it is what made a light hand an opening; on `unfit`,
+   * what a hand short of an opening fails.
+   */
+  point_rule: PointRule | null;
   /** For `possible`: why the bidder made another call instead. */
   preference: Preference | null;
 }
@@ -424,6 +437,82 @@ export function _missesFor(
   }
 }
 
+const POINT_RULES: readonly [PointRule, Expr][] = [
+  ["rule_of_20", model.ruleOfTwenty],
+  ["rule_of_19", model.ruleOfNineteen],
+  ["rule_of_15", model.ruleOfFifteen],
+];
+
+/**
+ * A point rule's count for `hand` and the count it needs: hcp plus the two
+ * longest suits, or hcp plus spades for the rule of 15.
+ */
+export function _pointRuleCount(
+  rule: PointRule,
+  hand: Hand,
+): [count: number, target: number] {
+  const hcp = hand.highCardPoints();
+  if (rule === "rule_of_15") {
+    return [hcp + hand.lengthOfSuit(SUITS[3]), 15];
+  }
+  const [first, second] = SUITS.map((suit) => hand.lengthOfSuit(suit)).sort(
+    (a, b) => b - a,
+  );
+  return [hcp + first + second, rule === "rule_of_20" ? 20 : 19];
+}
+
+/** The least hcp `solver` allows with `facts` too, or null for none. */
+function _leastHcp(solver: Solver, ...facts: Expr[]): number | null {
+  solver.push();
+  try {
+    solver.add(...facts);
+    if (solver.check() !== "sat") return null;
+    return _boundsOf(solver, model.highCardPoints, 0, MAX_HCP)[0];
+  } finally {
+    solver.pop();
+  }
+}
+
+/**
+ * The point rule that decides whether `hand` can make a call of `meaning`,
+ * or null.  A rule decides it when the meaning holds only with the rule, and
+ * the rule alone sets the least hcp this hand's shape needs for the call:
+ * a 1NT opening implies the rule of 20 as well, but its 15 hcp are its own.
+ * `fits` says which way the hand went: for a call the hand makes, the rule
+ * must be one a hand with these hcp could fail (it made a light hand an
+ * opening); for a call it misses, the hand's count must fall short.
+ */
+export function _pointRuleFor(
+  meaning: Expr,
+  hand: Hand,
+  fits: boolean,
+): PointRule | null {
+  const hcp = model.highCardPoints.eq(hand.highCardPoints());
+  const lengths = lengthsOf(hand);
+  const solver = _solverPool.borrow();
+  try {
+    for (const [rule, expr] of POINT_RULES) {
+      const [count, target] = _pointRuleCount(rule, hand);
+      if (
+        fits
+          ? !model.isPossible(solver, z3.And(hcp, z3.Not(expr)))
+          : count >= target
+      ) {
+        continue;
+      }
+      // The meaning must imply the rule.
+      if (model.isPossible(solver, z3.And(meaning, z3.Not(expr)))) continue;
+      const least = _leastHcp(solver, meaning, lengths);
+      if (least !== null && least === _leastHcp(solver, expr, lengths)) {
+        return rule;
+      }
+    }
+    return null;
+  } finally {
+    _solverPool.restore(solver);
+  }
+}
+
 function _entryOf(rule: CompiledRule, index: number): PreferEntry {
   const entries = prefer._normalize(rule.field("prefer") ?? []);
   if (index >= entries.length) return { kind: "unnamed", calls: [] };
@@ -551,17 +640,38 @@ export function analyzeHand(
 
     for (const call of calls) {
       const entry = meanings.get(call.name);
+      const meaning = entry?.[1].length
+        ? entry[1].length === 1
+          ? entry[1][0][1]
+          : z3.Or(entry[1].map(([, variant]) => variant))
+        : null;
       let verdict: CallVerdict;
       if (selection && call.equals(selection.call)) {
-        verdict = { fit: "chosen", misses: [], preference: null };
+        verdict = {
+          fit: "chosen",
+          misses: [],
+          point_rule: meaning ? _pointRuleFor(meaning, hand, true) : null,
+          preference: null,
+        };
       } else if (!entry) {
-        verdict = { fit: "no_rule", misses: [], preference: null };
+        verdict = {
+          fit: "no_rule",
+          misses: [],
+          point_rule: null,
+          preference: null,
+        };
       } else if (entry[0].requiresPlanning) {
-        verdict = { fit: "planned", misses: [], preference: null };
+        verdict = {
+          fit: "planned",
+          misses: [],
+          point_rule: null,
+          preference: null,
+        };
       } else if (fitting.has(call.name)) {
         verdict = {
           fit: "possible",
           misses: [],
+          point_rule: null,
           preference: _preferenceFor(
             call,
             fitting.get(call.name)!,
@@ -571,13 +681,16 @@ export function analyzeHand(
           ),
         };
       } else {
-        const variants = entry[1].map(([, meaning]) => meaning);
-        const meaning = variants.length === 1 ? variants[0] : z3.Or(variants);
+        const misses = meaning ? _missesFor(meaning, hand, call, lastSuit) : [];
         verdict = {
           fit: "unfit",
-          misses: variants.length
-            ? _missesFor(meaning, hand, call, lastSuit)
-            : [],
+          misses,
+          // Only a hand short of the points: with the wrong shape, the rule
+          // is not what it misses.
+          point_rule:
+            meaning && misses[0]?.kind === "points"
+              ? _pointRuleFor(meaning, hand, false)
+              : null,
           preference: null,
         };
       }
