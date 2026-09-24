@@ -70,6 +70,7 @@ export function CallTable({
   callExplanation,
   explanationLoading,
   onShowOptions,
+  onPendingClick,
   handReasons,
   header,
 }: {
@@ -95,6 +96,8 @@ export function CallTable({
   explanationLoading?: boolean;
   /** Offered in the explanation: every call that was legal at that point. */
   onShowOptions?: (callIndex: number) => void;
+  /** The "?" for the next call is tappable: the options at that point. */
+  onPendingClick?: () => void;
   /** What the user's own hand says about the selected call, when it is theirs. */
   handReasons?: string[];
   /** Sits above the seats, inside the same panel: what board this is. */
@@ -155,7 +158,15 @@ export function CallTable({
         {displayCalls.map((call, i) => {
           const isSelected = selectedCallIndex === i;
           const isHeld = held && i === calls.length - 1;
-          const clickable = onCallClick != null && call !== null && !isHeld;
+          const onClick =
+            call === null
+              ? thinking
+                ? undefined
+                : onPendingClick
+              : isHeld || onCallClick == null
+                ? undefined
+                : () => onCallClick(i);
+          const clickable = onClick != null;
           const verdict = verdicts?.[i];
           // The calls just made land in turn, and the next seat's marker
           // after them.
@@ -169,8 +180,13 @@ export function CallTable({
             <Fragment key={i}>
               <div
                 className={`relative rounded py-1.5 text-base transition-colors ${arriving} ${clickable ? "cursor-pointer hover:bg-gray-100" : ""} ${isSelected ? "bg-emerald-50 ring-1 ring-inset ring-emerald-200" : ""} ${isHeld ? "bg-red-50/60 text-gray-500 outline-dashed outline-1 -outline-offset-2 outline-red-300" : ""}`}
-                onClick={clickable ? () => onCallClick(i) : undefined}
+                onClick={onClick}
                 role={clickable ? "button" : undefined}
+                aria-label={
+                  clickable && call === null
+                    ? "Options for your call"
+                    : undefined
+                }
                 data-testid={call ? `call-${i}` : "pending-call"}
                 data-held={isHeld || undefined}
                 style={

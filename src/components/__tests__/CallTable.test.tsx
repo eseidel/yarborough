@@ -329,6 +329,35 @@ describe("CallTable", () => {
     expect(pending.querySelector(".animate-pulse")).not.toBeNull();
   });
 
+  it("opens the options from the pending ? when offered", () => {
+    const onPendingClick = vi.fn();
+    const history = makeHistory([{ type: "pass" }]);
+    const { rerender } = render(<CallTable callHistory={history} />);
+    expect(screen.getByTestId("pending-call")).not.toHaveAttribute("role");
+
+    rerender(
+      <CallTable callHistory={history} onPendingClick={onPendingClick} />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Options for your call" }),
+    );
+    expect(onPendingClick).toHaveBeenCalledTimes(1);
+
+    // While the engine bids, the marker is not the user's to tap.
+    rerender(
+      <CallTable
+        callHistory={history}
+        onPendingClick={onPendingClick}
+        thinking
+      />,
+    );
+    fireEvent.click(screen.getByTestId("pending-call"));
+    expect(onPendingClick).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: "Options for your call" }),
+    ).toBeNull();
+  });
+
   it("offers every option at the selected call's point", () => {
     const onShowOptions = vi.fn();
     const history = makeHistory([
