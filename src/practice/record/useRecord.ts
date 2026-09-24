@@ -83,13 +83,17 @@ export function useRecord() {
 
 /**
  * One setting from the record's settings store, with `fallback` until it
- * loads and wherever the store is unavailable.
+ * loads and wherever the store is unavailable. The third value says whether
+ * the stored value has been read (or found missing), so a caller whose
+ * behavior depends on the setting can wait for it instead of acting on the
+ * fallback.
  */
 export function useSetting<T>(
   key: SettingKey,
   fallback: T,
-): [T, (value: T) => Promise<void>] {
+): [T, (value: T) => Promise<void>, boolean] {
   const [value, setValueState] = useState<T>(fallback);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +104,9 @@ export function useSetting<T>(
       })
       .catch(() => {
         // Keep the fallback.
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -110,6 +117,7 @@ export function useSetting<T>(
     (next: T) =>
       new Promise<void>((resolve) => {
         setValueState(next);
+        setLoaded(true);
         recordStore()
           .then((store) => store.setSetting(key, next))
           .catch(() => {
@@ -120,5 +128,5 @@ export function useSetting<T>(
     [key],
   );
 
-  return [value, setValue];
+  return [value, setValue, loaded];
 }
